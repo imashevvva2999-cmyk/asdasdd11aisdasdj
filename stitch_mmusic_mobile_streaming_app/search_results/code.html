@@ -1,0 +1,277 @@
+<!DOCTYPE html><html class="dark" lang="en" style=""><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"><meta content="mobile_tab" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{width:100vw;margin:0;padding:0;background-color:#131315;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "secondary": "#ffb955", "on-secondary-fixed": "#291800", "on-primary": "#68000b", "primary-fixed-dim": "#ffb3ae", "on-primary-fixed": "#410004", "surface": "#131315", "tertiary-container": "#e96a4a", "surface-bright": "#39393b", "surface-variant": "#353437", "on-surface": "#e5e1e4", "surface-dim": "#131315", "surface-container": "#201f21", "outline": "#ab8886", "surface-container-low": "#1c1b1d", "tertiary": "#ffb4a2", "on-primary-container": "#5c0008", "surface-container-high": "#2a2a2c", "on-tertiary-fixed-variant": "#862208", "error": "#ffb4ab", "tertiary-fixed": "#ffdad2", "on-tertiary-container": "#560e00", "on-error": "#690005", "error-container": "#93000a", "surface-tint": "#ffb3ae", "inverse-primary": "#bb1522", "on-surface-variant": "#e4bdba", "primary-fixed": "#ffdad7", "on-error-container": "#ffdad6", "on-tertiary": "#621100", "on-secondary": "#452b00", "on-primary-fixed-variant": "#930014", "secondary-fixed-dim": "#ffb955", "tertiary-fixed-dim": "#ffb4a2", "on-secondary-container": "#4f3100", "primary-container": "#ff5351", "inverse-surface": "#e5e1e4", "surface-container-highest": "#353437", "on-background": "#e5e1e4", "on-secondary-fixed-variant": "#633f00", "on-tertiary-fixed": "#3c0700", "inverse-on-surface": "#313032", "secondary-container": "#dc9100", "outline-variant": "#5b403e", "secondary-fixed": "#ffddb4", "background": "#131315", "surface-container-lowest": "#0e0e10", "primary": "#ffb3ae" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "space-sm": "0.5rem", "space-lg": "1.25rem", "margin": "1.25rem", "space-xl": "2rem", "space-md": "0.75rem", "gutter": "1rem", "space-xs": "0.25rem" }, fontFamily: { "body-lg": ["Inter"], "headline-md": ["Plus Jakarta Sans"], "body-sm": ["Inter"], "display-lg-mobile": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "body-md": ["Inter"], "label-md": ["Inter"], "mono-num": ["Inter"], "label-lg": ["Inter"], "label-sm": ["Inter"], "headline-lg": ["Plus Jakarta Sans"], "display-lg": ["Plus Jakarta Sans"] }, fontSize: { "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "400" }], "headline-md": ["20px", { "lineHeight": "26px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "body-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "400" }], "display-lg-mobile": ["28px", { "lineHeight": "34px", "letterSpacing": "-0.025em", "fontWeight": "800" }], "headline-sm": ["18px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }], "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }], "mono-num": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "500" }], "label-lg": ["14px", { "lineHeight": "18px", "letterSpacing": "0.01em", "fontWeight": "600" }], "label-sm": ["10px", { "lineHeight": "12px", "letterSpacing": "0.06em", "fontWeight": "700" }], "headline-lg": ["24px", { "lineHeight": "30px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "display-lg": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.03em", "fontWeight": "800" }] } } } };</script></head><body class="bg-surface text-on-surface font-body-md text-body-md flex flex-col h-screen overflow-hidden selection:bg-primary-container selection:text-on-primary-container"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"></header><main class="flex flex-col relative w-full pt-16 bg-surface flex-1 overflow-y-auto no-scrollbar"><div class="flex flex-col w-full text-on-surface">
+<!-- Live Search Query Field & Pill Quick Filters -->
+<section class="px-margin pt-space-sm pb-space-md flex flex-col gap-space-md">
+<!-- Active Search Bar -->
+<div class="relative w-full flex items-center">
+<div class="absolute left-3.5 flex items-center justify-center pointer-events-none text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px]">search</span>
+</div>
+<input class="w-full h-11 pl-10 pr-10 rounded-full bg-surface-container-high text-on-surface font-body-md text-body-md placeholder:text-outline focus:outline-none focus:bg-surface-variant transition-all duration-200" id="search-input" placeholder="Songs, artists, or albums..." type="text" value="Solaris Echo">
+<button aria-label="Clear query" class="absolute right-3 w-6 h-6 rounded-full bg-surface-variant text-on-surface-variant flex items-center justify-center hover:text-on-surface active:scale-90 transition-transform" id="clear-search-btn">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+<!-- Category Filter Horizontal Scroll -->
+<div class="flex items-center gap-space-sm overflow-x-auto no-scrollbar py-0.5">
+<button class="filter-chip h-8 px-4 rounded-full bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-md text-label-md shrink-0 flex items-center transition-colors">
+        All
+      </button>
+<button class="filter-chip h-8 px-4 rounded-full bg-primary-container text-on-primary-container font-label-md text-label-md shrink-0 flex items-center shadow-sm">
+        Songs
+      </button>
+<button class="filter-chip h-8 px-4 rounded-full bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-md text-label-md shrink-0 flex items-center transition-colors">
+        Artists
+      </button>
+<button class="filter-chip h-8 px-4 rounded-full bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-md text-label-md shrink-0 flex items-center transition-colors">
+        Albums
+      </button>
+<button class="filter-chip h-8 px-4 rounded-full bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-md text-label-md shrink-0 flex items-center transition-colors">
+        Playlists
+      </button>
+</div>
+</section>
+<!-- Top Result Highlight Card -->
+<section class="px-margin mb-space-lg">
+<div class="flex items-center justify-between mb-space-xs">
+<span class="font-headline-sm text-headline-sm text-on-surface">Top Result</span>
+</div>
+<div class="relative overflow-hidden w-full rounded-2xl bg-surface-container p-space-md flex items-center justify-between shadow-lg active:bg-surface-container-high transition-colors group cursor-pointer">
+<!-- Glow ambient reflection behind avatar -->
+<div class="absolute -left-4 w-28 h-28 bg-primary/20 rounded-full blur-2xl pointer-events-none"></div>
+<div class="flex items-center gap-space-md min-w-0 z-10">
+<div class="relative shrink-0 w-16 h-16 rounded-full overflow-hidden shadow-md">
+<img alt="Solaris Echo" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" src="https://lh3.googleusercontent.com/aida/AEtjO1VJ25AWM7I4SxuwfeC1-uugFEZsvulwg2ujl_N533S2IQQr3lkTSVMiLGRiq7ueU8360Mb97ceJBIGCWtwjEMA0Yu-HOdKtRFXp4V0sT8pB-TCx8grvmAuZ5ZBW3h0EinQKChM6pEEkr75VvFERxNSLtRVCL8-h6KzpKPV4u5twAhe9sEvJMj7XaiG-TYZz122Zmoj6rBF1kKUhLeCzepI6O9OM-842kucB9fS9P5Cw0ZjosNNc8IQ9Lc8">
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Solaris Echo</span>
+<span class="material-symbols-outlined text-[16px] text-primary" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate mt-0.5">Artist • 420K monthly listeners</span>
+</div>
+</div>
+<!-- Quick Play Action Button -->
+<button aria-label="Play Solaris Echo top tracks" class="z-10 shrink-0 w-11 h-11 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center shadow-[0_4px_16px_rgba(255,83,81,0.4)] active:scale-90 hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-[24px]" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+</div>
+</section>
+<!-- Songs Section -->
+<section class="px-margin mb-space-lg">
+<div class="flex items-center justify-between mb-space-sm">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Songs</h2>
+<a class="font-label-md text-label-md text-primary hover:underline" href="#">See all</a>
+</div>
+<div class="flex flex-col gap-1">
+<!-- Track 1 (Active / Playing) -->
+<div class="flex items-center justify-between h-14 px-2.5 rounded-xl bg-surface-container/60 hover:bg-surface-container active:scale-[0.99] transition-all cursor-pointer">
+<div class="flex items-center gap-space-md min-w-0">
+<div class="relative w-10 h-10 rounded-lg overflow-hidden shrink-0">
+<img class="w-full h-full object-cover" data-alt="Cosmic nebula artwork with shimmering pink starbursts and violet deep space clouds, modern synthwave album aesthetic in dark obsidian framing" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDPSeUf0U5K9OK2L1yRLfNGQKzlube5r2YcwZI4mQFrvNAU6aHWydIiMDMd-TmB_JaFWMdRqR1R8q9_lUU8TSynxjmTp9nesUxZgtsqeSgrMkLJGcsRR25ksIgElTuQoOltxMPEpMQD99-L9IFYoan002GwRNtKs7iGklvnOAFqvWWKOWmFEzw1WuCoucWbJN9N2ZtJUddUgdl567q0vSkXJXuS0qSYQIAWwZQ8mKoBTnRkHJdPcVkL">
+<div class="absolute inset-0 bg-surface-container-lowest/40 flex items-center justify-center">
+<!-- Animated Equalizer Bars for Active Track -->
+<div class="flex items-end gap-[2px] h-3">
+<span class="w-[3px] bg-primary rounded-full animate-pulse h-3"></span>
+<span class="w-[3px] bg-primary rounded-full animate-bounce h-2"></span>
+<span class="w-[3px] bg-primary rounded-full animate-pulse h-3.5"></span>
+</div>
+</div>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-body-md text-body-md text-primary font-semibold truncate">Midnight Mirage</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Solaris Echo</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm shrink-0">
+<span class="font-mono-num text-mono-num text-on-surface-variant">3:42</span>
+<button aria-label="Favorite track" class="w-8 h-8 rounded-full flex items-center justify-center text-primary active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">favorite</span>
+</button>
+<button aria-label="Song options" class="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:text-on-surface active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Track 2 -->
+<div class="flex items-center justify-between h-14 px-2.5 rounded-xl hover:bg-surface-container/50 active:scale-[0.99] transition-all cursor-pointer">
+<div class="flex items-center gap-space-md min-w-0">
+<div class="w-10 h-10 rounded-lg overflow-hidden shrink-0">
+<img class="w-full h-full object-cover" data-alt="Monolithic textured stone tablet displaying concentric luminous liquid amber energy ripple rings, late night dark atmospheric music cover art" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC1x1S5gNwNhB1ZLQKwizOwmPHhf73guqxkloy8p8VnivdEhSUhsy5kKRa8_QLCPuK4Lup_NxdXYecPFVFCCQu8iogk6attZEkSAHaTv6JKIfg6iQ4y_I1LbGHiPGrDSMkvoplwHQBCp_kFoQnZmu_b4Kdkd6ZVyNzEhXpoimTy89JTge-0PqAj6JSK64IjzIoVx-TrCtu-lwfiMTavff_c438QM3oiSbH_DcouzNqReihTMLIeeVqd">
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-body-md text-body-md text-on-surface truncate">Horizon</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Solaris Echo</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm shrink-0">
+<span class="font-mono-num text-mono-num text-on-surface-variant">5:08</span>
+<button aria-label="Favorite track" class="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:text-on-surface active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[18px]">favorite</span>
+</button>
+<button aria-label="Song options" class="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:text-on-surface active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Track 3 -->
+<div class="flex items-center justify-between h-14 px-2.5 rounded-xl hover:bg-surface-container/50 active:scale-[0.99] transition-all cursor-pointer">
+<div class="flex items-center gap-space-md min-w-0">
+<div class="w-10 h-10 rounded-lg overflow-hidden shrink-0">
+<img alt="Abyssal Bloom cover art" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1VpiPrLZD7vNJur8B5p8AtjvdRmDbNlKQ-y2tRnWwAE_womMP5nJxrtW7MLcCEIKX0b1OP4r-6bxtdJFRi1NaHCwVo-eVgdKQm0ZqzN2CXGiKgN5BmgsjI49piYRvdhB9hGEeCZr2Qdv1XhzVAHz0xvfRCMYKx2zRb4FBM2kZO7RFkwc72gPL9dRVOAE2sjJY7-rIw5EIHDFCrMmt2uB91QOCPsc_b6CRWBhfiCeq7up7Qw0T4qDWPen3o">
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-body-md text-body-md text-on-surface truncate">Abyssal Bloom</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Elena Rostova feat. Solaris Echo</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm shrink-0">
+<span class="font-mono-num text-mono-num text-on-surface-variant">3:56</span>
+<button aria-label="Favorite track" class="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:text-on-surface active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[18px]">favorite</span>
+</button>
+<button aria-label="Song options" class="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:text-on-surface active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Artists Section (Horizontal Swiper) -->
+<section class="px-margin mb-space-lg">
+<div class="flex items-center justify-between mb-space-sm">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Artists</h2>
+</div>
+<div class="grid grid-cols-2 gap-space-md">
+<!-- Artist 1 -->
+<div class="flex flex-col items-center text-center p-space-md rounded-2xl bg-surface-container-low hover:bg-surface-container active:scale-[0.98] transition-all cursor-pointer">
+<div class="w-20 h-20 rounded-full overflow-hidden shadow-md mb-space-sm">
+<img alt="Solaris Echo" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1VJ25AWM7I4SxuwfeC1-uugFEZsvulwg2ujl_N533S2IQQr3lkTSVMiLGRiq7ueU8360Mb97ceJBIGCWtwjEMA0Yu-HOdKtRFXp4V0sT8pB-TCx8grvmAuZ5ZBW3h0EinQKChM6pEEkr75VvFERxNSLtRVCL8-h6KzpKPV4u5twAhe9sEvJMj7XaiG-TYZz122Zmoj6rBF1kKUhLeCzepI6O9OM-842kucB9fS9P5Cw0ZjosNNc8IQ9Lc8">
+</div>
+<span class="font-headline-sm text-headline-sm text-on-surface truncate w-full">Solaris Echo</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Artist</span>
+</div>
+<!-- Artist 2 -->
+<div class="flex flex-col items-center text-center p-space-md rounded-2xl bg-surface-container-low hover:bg-surface-container active:scale-[0.98] transition-all cursor-pointer">
+<div class="w-20 h-20 rounded-full overflow-hidden shadow-md mb-space-sm">
+<img class="w-full h-full object-cover" data-alt="Editorial portrait of alternative indie musician duo Clover and The Pulse, stylish cinematic warm studio backlighting in moody dark palette" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDxH1CHrwmnKATTCPGvuEjwLuz0U7uuqBj7_TKHGirsAnkufb5lsqHP_hT45y33n3fxFtcWygpV2aDvZUTDIVS0Ao2YjbSiG2DHdlQKYdZKV8zNvCKF4rCtb3ni2oNd0uHAUdlPqkmSwODfhuyYjQ4XffuutFJpP41TXBRDjU3jqzNGVutzAVw56Lth7DFQwOe74SfMhVdb9tcNFMj7hvIJfvWRMq5gUi9Y-FlEqBvp9v7cXorc0MRB">
+</div>
+<span class="font-headline-sm text-headline-sm text-on-surface w-full leading-tight">Clover &amp; The Pulse</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Artist</span>
+</div>
+</div>
+</section>
+<!-- Albums Section -->
+<section class="px-margin mb-space-lg">
+<div class="flex items-center justify-between mb-space-sm">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Albums &amp; EPs</h2>
+</div>
+<div class="grid grid-cols-2 gap-space-md">
+<!-- Album 1 -->
+<div class="flex flex-col gap-space-xs group cursor-pointer">
+<div class="w-full aspect-square rounded-xl overflow-hidden bg-surface-container-high shadow-md">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Dark slate stone with liquid amber rippling shockwaves, minimalist abstract high fidelity record cover, obsidian and gold highlights" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDkKza_aZJsF9fGuCqUIPZikejcYjKFw63MQ9aoa6FZMt0Eu1tgo1YJaD2DQmZ614vN6289n9upKX7Gc1Plb_UfdOM5YT8gdWhlVU0wisDH6Sro85A6MitV5QuXG1rN3M84cIJjihU0YzncBvSuwfybu1H8AF-AxlzcW8opHRvjfRxPwNvIV8QqmRSIBqi-FFpn97uniLShMvkDV7Ps4ZeRjmB3m3fVV8Sv1PQNKI0S1NtYXc8Idqf3">
+</div>
+<span class="font-label-lg text-label-lg text-on-surface truncate mt-1">Horizon (Deluxe)</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">2024 • Album</span>
+</div>
+<!-- Album 2 -->
+<div class="flex flex-col gap-space-xs group cursor-pointer">
+<div class="w-full aspect-square rounded-xl overflow-hidden bg-surface-container-high shadow-md">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Breathtaking deep cosmos starry nebula with vibrant magenta and indigo dust spirals, dreamy ambient electronic record cover art" src="https://lh3.googleusercontent.com/aida/AEtjO1XmK83LsqpdgasfuqM4x4uat-HBSpCpuHvONFUlzCT-FhiXFQRhMVWqsPCPDv_igDoRyTpI1tIs74ya2TE3pquI63uoW-grg7fEc9YUaZ1BR53_KFV_aIXr1nLYbnwEgPFPoIl0RFV3dytL35lR7SPINy317-w_Vvci1DSw6aSr9DKfSvnYdBfdpvva-GU7N43HpOxtI2xjhL48B1OG3wGDfQOeoK1nJomWYp7upFjUjbSCPQamy4u4sXI">
+</div>
+<span class="font-label-lg text-label-lg text-on-surface truncate mt-1">Nebula Dreams</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">2023 • EP</span>
+</div>
+</div>
+</section>
+<!-- Playlists Section -->
+<section class="px-margin mb-space-lg">
+<div class="flex items-center justify-between mb-space-sm">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Featured Playlists</h2>
+</div>
+<div class="flex items-center gap-space-md p-space-md rounded-2xl bg-surface-container-low hover:bg-surface-container active:scale-[0.99] transition-all cursor-pointer">
+<div class="w-16 h-16 rounded-xl overflow-hidden shrink-0 shadow-md">
+<img alt="This is Solaris Echo playlist artwork" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1UFJMgz7xpFTynEuPSwiXyJLP-O5ZM4KbKUqGxrc9_aaDVrH0AmirtJKw4unmojsP7FujW79LpWPOVGSvLBhYHZQgd-xeYH6nWrzzDGrT3m5miZ7lOf1a3Is5BTteBmc3wkRBQEl1Uw36V8OpQR55Y48w30cZ7bBBgF_MgisUYguqaXXpKaabkNDZO23CPNR7alp2h6wF3kU7Wr0cw4tFZl_i9qHNLfeb77rvAX-Z6qAc1nbH_nFmeeZQ">
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-sm text-label-sm text-primary uppercase tracking-wider mb-0.5">Official Playlist</span>
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">This is Solaris Echo</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Playlist • 45 songs • 2 hr 48 min</span>
+</div>
+<div class="ml-auto shrink-0 text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</div>
+</div>
+</section>
+<!-- Docked Floating Mini Player Card (Fixed directly above bottom navigation bar) -->
+<div class="w-full h-36 shrink-0"></div><div class="fixed bottom-20 left-4 right-4 z-40 max-w-lg mx-auto">
+<div class="relative overflow-hidden w-full h-14 rounded-2xl bg-surface-container-highest/90 backdrop-blur-2xl px-3 flex items-center justify-between shadow-[0_8px_32px_rgba(0,0,0,0.6)] cursor-pointer">
+<!-- 2px Progress bar pinned to top border -->
+<div class="absolute top-0 left-0 right-0 h-[2px] bg-surface-variant">
+<div class="h-full bg-primary-container w-[42%]"></div>
+</div>
+<!-- Song info & Track Thumbnail -->
+<div class="flex items-center gap-space-sm min-w-0 pr-2">
+<div class="w-10 h-10 rounded-lg overflow-hidden shrink-0">
+<img class="w-full h-full object-cover" data-alt="Cosmic nebula artwork in deep purple and glowing magenta with star clouds, ambient synthesizer music art" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDkrEN9X9gw-1lIjQtZEVRqhKUorcrm27eRvgGwu2VQEP25OCOqr6iYBWe2swySuvWxQZQLmTL6QjPceFJhxsPhpH0zOD61nhqO20OsrP9hndfIiFjrr11RCgdRIwbuI-60B7LjYp4qPNk7yMokr5YC_vQXn4fBIGkKDse-phRjZZV-EeKFDX0TZwdv149dewKLjdCpmMeTT3KRJ-EdTij3zxYdm8J7C501IZ2hEMUGG4eqHKMS-pEy">
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-lg text-label-lg text-on-surface truncate leading-tight">Midnight Mirage</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Solaris Echo</span>
+</div>
+</div>
+<!-- Tactile Playback Actions -->
+<div class="flex items-center gap-1 shrink-0" onclick="event.stopPropagation()">
+<button aria-label="Bluetooth speaker output" class="w-9 h-9 rounded-full flex items-center justify-center text-primary active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[20px]">speaker_group</span>
+</button>
+<button aria-label="Pause playback" class="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-[0_2px_12px_rgba(255,179,174,0.3)] active:scale-90 transition-transform" id="mini-player-toggle">
+<span class="material-symbols-outlined text-[22px]" style="font-variation-settings: 'FILL' 1;">pause</span>
+</button>
+<button aria-label="Next track" class="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:text-on-surface active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[22px]">skip_next</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<script>
+  (function initSearchMicroInteractions() {
+    const input = document.getElementById('search-input');
+    const clearBtn = document.getElementById('clear-search-btn');
+    const playToggle = document.getElementById('mini-player-toggle');
+    const chips = document.querySelectorAll('.filter-chip');
+
+    if (clearBtn && input) {
+      clearBtn.addEventListener('click', () => {
+        input.value = '';
+        input.focus();
+      });
+    }
+
+    if (playToggle) {
+      let isPlaying = true;
+      playToggle.addEventListener('click', () => {
+        isPlaying = !isPlaying;
+        const icon = playToggle.querySelector('.material-symbols-outlined');
+        if (icon) {
+          icon.textContent = isPlaying ? 'pause' : 'play_arrow';
+        }
+      });
+    }
+
+    chips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        chips.forEach(c => {
+          c.className = 'filter-chip h-8 px-4 rounded-full bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-md text-label-md shrink-0 flex items-center transition-colors';
+        });
+        chip.className = 'filter-chip h-8 px-4 rounded-full bg-primary-container text-on-primary-container font-label-md text-label-md shrink-0 flex items-center shadow-sm';
+      });
+    });
+  })();
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-4px_24px_rgba(0,0,0,0.4)]" data-active-classes="text-primary font-label-md"><div class="flex justify-around items-center h-16 px-margin max-w-lg mx-auto"><a class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] gap-space-xs text-on-surface-variant hover:text-on-surface transition-colors" data-path="home" href="#"><span class="material-symbols-outlined text-[24px]">home</span><span class="font-label-sm text-label-sm">Home</span></a><a aria-current="page" class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] gap-space-xs transition-colors text-primary font-label-md" data-path="search-results" href="#"><span class="material-symbols-outlined text-[24px]">search</span><span class="font-label-sm text-label-sm">Search</span></a><a class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] gap-space-xs text-on-surface-variant hover:text-on-surface transition-colors" data-path="library" href="#"><span class="material-symbols-outlined text-[24px]">library_music</span><span class="font-label-sm text-label-sm">Library</span></a></div></nav>
+
+
+
+</body></html>

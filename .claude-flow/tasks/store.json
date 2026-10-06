@@ -1,0 +1,117 @@
+{
+  "tasks": {
+    "task-1790853058268-pp2jtt": {
+      "taskId": "task-1790853058268-pp2jtt",
+      "type": "research",
+      "description": "Mmusic docs — TZ: docs/technical-specification.md (overview, goals, functional reqs, bank integration, tech reqs, data models, acceptance criteria)",
+      "priority": "high",
+      "status": "pending",
+      "progress": 0,
+      "assignedTo": [],
+      "tags": [
+        "mmusic",
+        "docs"
+      ],
+      "createdAt": "2026-10-01T11:10:58.268Z",
+      "startedAt": null,
+      "completedAt": null
+    },
+    "task-1790853059449-n1ng2d": {
+      "taskId": "task-1790853059449-n1ng2d",
+      "type": "research",
+      "description": "Mmusic docs — Screens and design structure: docs/screens.md (25 screens, components, states)",
+      "priority": "high",
+      "status": "pending",
+      "progress": 0,
+      "assignedTo": [],
+      "tags": [
+        "mmusic",
+        "docs"
+      ],
+      "createdAt": "2026-10-01T11:10:59.449Z",
+      "startedAt": null,
+      "completedAt": null
+    },
+    "task-1790853060128-nnauhw": {
+      "taskId": "task-1790853060128-nnauhw",
+      "type": "research",
+      "description": "Mmusic docs — Architecture: docs/architecture.md",
+      "priority": "high",
+      "status": "pending",
+      "progress": 0,
+      "assignedTo": [],
+      "tags": [
+        "mmusic",
+        "docs"
+      ],
+      "createdAt": "2026-10-01T11:11:00.128Z",
+      "startedAt": null,
+      "completedAt": null
+    },
+    "task-1790853060697-bv9y7k": {
+      "taskId": "task-1790853060697-bv9y7k",
+      "type": "research",
+      "description": "Mmusic docs — User flows: docs/user-flow.md",
+      "priority": "high",
+      "status": "pending",
+      "progress": 0,
+      "assignedTo": [],
+      "tags": [
+        "mmusic",
+        "docs"
+      ],
+      "createdAt": "2026-10-01T11:11:00.697Z",
+      "startedAt": null,
+      "completedAt": null
+    },
+    "task-1790853061278-r6jbtv": {
+      "taskId": "task-1790853061278-r6jbtv",
+      "type": "research",
+      "description": "Mmusic docs — Development plan: docs/development-plan.md + docs/tasks.md",
+      "priority": "high",
+      "status": "pending",
+      "progress": 0,
+      "assignedTo": [],
+      "tags": [
+        "mmusic",
+        "docs"
+      ],
+      "createdAt": "2026-10-01T11:11:01.278Z",
+      "startedAt": null,
+      "completedAt": null
+    },
+    "task-1790853061848-1ao3z8": {
+      "taskId": "task-1790853061848-1ao3z8",
+      "type": "research",
+      "description": "Mmusic docs — Open questions: docs/open-questions.md",
+      "priority": "high",
+      "status": "pending",
+      "progress": 0,
+      "assignedTo": [],
+      "tags": [
+        "mmusic",
+        "docs"
+      ],
+      "createdAt": "2026-10-01T11:11:01.848Z",
+      "startedAt": null,
+      "completedAt": null
+    },
+    "task-1790853062559-wjkmc0": {
+      "taskId": "task-1790853062559-wjkmc0",
+      "type": "research",
+      "description": "Mmusic docs — README.md + CLAUDE.md project section",
+      "priority": "high",
+      "status": "pending",
+      "progress": 0,
+      "assignedTo": [],
+      "tags": [
+        "mmusic",
+        "docs"
+      ],
+      "createdAt": "2026-10-01T11:11:02.559Z",
+      "startedAt": null,
+      "completedAt": null
+    }
+  },
+  "version": "3.0.0"
+}

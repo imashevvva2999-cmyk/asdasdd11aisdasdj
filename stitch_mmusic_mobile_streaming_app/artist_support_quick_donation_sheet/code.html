@@ -1,0 +1,226 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport">
+<meta content="mobile_stack" name="shell-type">
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<style>
+    @layer base {
+      html, body {
+        width: 100%;
+        min-height: 100vh;
+        margin: 0;
+        padding: 0;
+        background-color: #0e0e10;
+        color: #f4f4f5;
+        font-family: 'Inter', sans-serif;
+      }
+      body {
+        overscroll-behavior-y: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .pb-safe {
+        padding-bottom: env(safe-area-inset-bottom, 16px);
+      }
+      .pt-safe {
+        padding-top: env(safe-area-inset-top, 12px);
+      }
+    }
+    ::-webkit-scrollbar {
+      display: none;
+    }
+  </style>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#ffb3ae",
+            "primary-container": "#ff5351",
+            "on-primary-container": "#5c0008",
+            surface: "#131315",
+            "surface-container": "#201f21",
+            "surface-container-high": "#2a2a2c",
+            "surface-container-lowest": "#0e0e10"
+          },
+          fontFamily: {
+            sans: ["Inter", "sans-serif"],
+            headline: ["Plus Jakarta Sans", "sans-serif"]
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="bg-[#0e0e10] text-[#f4f4f5] antialiased">
+<!-- Mobile Root Container (Standard 390x844 responsive mobile wrapper) -->
+<div class="w-full min-h-screen bg-[#0e0e10] text-[#f4f4f5] relative overflow-hidden font-sans select-none flex flex-col justify-end">
+<!-- BACKGROUND: Dimmed, blurred Artist Profile for Solaris Echo -->
+<div class="absolute inset-0 z-0 flex flex-col overflow-hidden pointer-events-none select-none">
+<!-- Artist Cover Banner -->
+<div class="relative w-full h-80 overflow-hidden bg-[#18181b]">
+<img alt="Solaris Echo" class="w-full h-full object-cover scale-105 filter blur-[2px]" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAgI9Gxec0j1QL2ZBSNeGsFzOAofP0zK0A5urPOybehx0vhxzoxibVNRVtwE8pzPo6afAlfTfZcvoisYOTr9D-eMGOUrqCIt8H5u9PiqHjjD7nPw3m2IUxh9YvaZjMvw9QzuGGpD6I_I-3jlNXMRePvCGyrzso1sSGGZAQ9XwlAe6gOHtWaax4eoI_Qa648BKwn-GHq80iuEcRD2LKy92uEH_YVyUCxC2bPKmjoHqWBA7zieOPAhERE">
+<div class="absolute inset-0 bg-gradient-to-b from-black/40 via-[#0e0e10]/60 to-[#0e0e10]"></div>
+</div>
+<!-- Top Header Navigation Bar (Blurred Context) -->
+<div class="absolute top-0 inset-x-0 h-14 pt-safe px-4 flex items-center justify-between text-white/80">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[22px]">arrow_back_ios_new</span>
+<span class="text-sm font-semibold tracking-wide font-headline">Solaris Echo</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[20px]">share</span>
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</div>
+</div>
+<!-- Artist Info Card in Background -->
+<div class="px-5 -mt-16 relative z-10 flex flex-col gap-3">
+<div class="flex items-end justify-between">
+<div class="w-24 h-24 rounded-2xl overflow-hidden shadow-2xl ring-2 ring-white/10 bg-[#201f21]">
+<img alt="Solaris Echo portrait" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1VJ25AWM7I4SxuwfeC1-uugFEZsvulwg2ujl_N533S2IQQr3lkTSVMiLGRiq7ueU8360Mb97ceJBIGCWtwjEMA0Yu-HOdKtRFXp4V0sT8pB-TCx8grvmAuZ5ZBW3h0EinQKChM6pEEkr75VvFERxNSLtRVCL8-h6KzpKPV4u5twAhe9sEvJMj7XaiG-TYZz122Zmoj6rBF1kKUhLeCzepI6O9OM-842kucB9fS9P5Cw0ZjosNNc8IQ9Lc8">
+</div>
+<div class="px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md text-white font-medium text-xs flex items-center gap-1.5 border border-white/10">
+<span class="material-symbols-outlined text-[15px] text-[#ff4b4b]">favorite</span>
+<span class="">Following</span>
+</div>
+</div>
+<div class="mt-2">
+<h2 class="text-2xl text-white font-bold font-headline tracking-tight">Solaris Echo</h2>
+<p class="text-xs text-zinc-400 mt-0.5">1.4M Monthly Listeners • Berlin, DE</p>
+</div>
+</div>
+<!-- Scrim overlay -->
+<div class="absolute inset-0 bg-black/60 backdrop-blur-sm z-0 pointer-events-none"></div>
+</div>
+<!-- BOTTOM SHEET: Elevated support modal container -->
+<div class="relative z-10 w-full bg-[#18181b] border-t border-white/10 rounded-t-[32px] p-5 pb-8 shadow-2xl flex flex-col gap-3.5">
+  <!-- Top Drag Handle -->
+  <div class="w-10 h-1 bg-white/20 rounded-full mx-auto shrink-0"></div>
+
+  <!-- Header Section -->
+  <div class="flex items-start justify-between shrink-0">
+    <div class="flex flex-col">
+      <div class="flex items-center gap-1.5">
+        <h3 class="font-headline text-[18px] text-white font-bold tracking-tight">Support Artist</h3>
+        <span class="material-symbols-outlined text-[#ff4b4b] text-[18px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+      </div>
+      <p class="text-xs text-zinc-400 mt-0.5">Direct artist patronage for Solaris Echo</p>
+    </div>
+    <button aria-label="Close" class="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-colors" onclick="if(window.history.length&gt;1){window.history.back()}">
+      <span class="material-symbols-outlined text-[18px]">close</span>
+    </button>
+  </div>
+
+  <!-- 5 Circular Support Amount Options in a single row -->
+  <div class="grid grid-cols-5 gap-2 my-2 shrink-0">
+    <!-- Option 1: 10 сом -->
+    <div class="flex flex-col items-center gap-1.5 cursor-pointer group" onclick="selectCircularAmount(this, 10)">
+      <div class="w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center transition-all group-active:scale-95 group-hover:bg-white/10">
+        <span class="font-semibold text-[15px] text-white">10</span>
+      </div>
+      <span class="text-[11px] text-zinc-400 font-medium leading-none">10 сом</span>
+    </div>
+
+    <!-- Option 2: 50 сом -->
+    <div class="flex flex-col items-center gap-1.5 cursor-pointer group" onclick="selectCircularAmount(this, 50)">
+      <div class="w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center transition-all group-active:scale-95 group-hover:bg-white/10">
+        <span class="font-semibold text-[15px] text-white">50</span>
+      </div>
+      <span class="text-[11px] text-zinc-400 font-medium leading-none">50 сом</span>
+    </div>
+
+    <!-- Option 3: 100 сом (Active / Highlighted) -->
+    <div class="flex flex-col items-center gap-1.5 cursor-pointer group amount-option active-tier" onclick="selectCircularAmount(this, 100)">
+      <div class="w-14 h-14 rounded-full bg-[#ff4b4b] border-2 border-[#ff4b4b] shadow-[0_0_16px_rgba(255,75,75,0.45)] flex items-center justify-center transition-all group-active:scale-95">
+        <span class="font-bold text-[16px] text-white">100</span>
+      </div>
+      <span class="text-[11px] text-[#ff4b4b] font-semibold leading-none">100 сом</span>
+    </div>
+
+    <!-- Option 4: 500 сом -->
+    <div class="flex flex-col items-center gap-1.5 cursor-pointer group" onclick="selectCircularAmount(this, 500)">
+      <div class="w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center transition-all group-active:scale-95 group-hover:bg-white/10">
+        <span class="font-semibold text-[15px] text-white">500</span>
+      </div>
+      <span class="text-[11px] text-zinc-400 font-medium leading-none">500 сом</span>
+    </div>
+
+    <!-- Option 5: More / Custom Amount -->
+    <div class="flex flex-col items-center gap-1.5 cursor-pointer group" onclick="selectCircularAmount(this, 'custom')">
+      <div class="w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center transition-all group-active:scale-95 group-hover:bg-white/10">
+        <span class="material-symbols-outlined text-[20px] text-zinc-300 group-hover:text-white" style="font-variation-settings: 'FILL' 1;">favorite</span>
+      </div>
+      <span class="text-[11px] text-zinc-400 font-medium leading-none">More</span>
+    </div>
+  </div>
+
+  <!-- Primary CTA Action Button -->
+  <div class="flex flex-col gap-2 shrink-0 pt-1 pb-safe">
+    <button id="ctaBtn" onclick="processDonation(this)" class="w-full py-3.5 rounded-full font-bold text-white shadow-lg flex items-center justify-center gap-2 text-base transition-transform active:scale-[0.98]" style="background: linear-gradient(135deg, rgb(255, 92, 77) 0%, rgb(255, 61, 46) 100%); box-shadow: rgba(255, 75, 75, 0.4) 0px 8px 24px -4px;">
+      <span class="material-symbols-outlined text-[20px] fill-current" style="font-variation-settings: 'FILL' 1;">bolt</span>
+      <span id="ctaText" class="">Support with 100 сом</span>
+    </button>
+    <p class="text-[11px] text-center text-zinc-400 flex items-center justify-center gap-1.5 mt-0.5">
+      <span class="material-symbols-outlined text-[13px] text-zinc-400">lock</span>
+      <span class="">Direct payout to artist • Instant settlement via MBANK</span>
+    </p>
+  </div>
+</div>
+</div>
+<script>
+    let currentAmount = 250;
+
+    function selectTier(cardElement, name, amount, perk) {
+      document.querySelectorAll('.tier-card').forEach(card => {
+        card.classList.remove('border-2', 'border-[#ff4b4b]', 'bg-[#ff4b4b]/10', 'shadow-[0_0_20px_rgba(255,75,75,0.25)]');
+        card.classList.add('border', 'border-white/10', 'bg-white/5');
+        
+        const badge = card.querySelector('.popular-badge');
+        if (badge) badge.remove();
+
+        const amtText = card.querySelector('span:first-child');
+        if (amtText) {
+          amtText.classList.remove('text-[#ff4b4b]');
+          amtText.classList.add('text-white');
+        }
+
+        const perkEl = card.querySelector('.truncate.font-medium');
+        if (perkEl) {
+          perkEl.classList.remove('text-[#ffb3ae]', 'font-medium');
+          perkEl.classList.add('text-zinc-400');
+        }
+      });
+
+      cardElement.classList.remove('border', 'border-white/10', 'bg-white/5');
+      cardElement.classList.add('border-2', 'border-[#ff4b4b]', 'bg-[#ff4b4b]/10', 'shadow-[0_0_20px_rgba(255,75,75,0.25)]');
+
+      const amtText = cardElement.querySelector('span:first-child');
+      if (amtText) {
+        amtText.classList.remove('text-white');
+        amtText.classList.add('text-[#ff4b4b]');
+      }
+
+      currentAmount = amount;
+      document.getElementById('tierSummaryText').textContent = `Tier: ${name} ($${amount})`;
+      document.getElementById('ctaText').textContent = `Support with $${amount}`;
+    }
+
+    function processDonation(btn) {
+      const originalContent = btn.innerHTML;
+      btn.innerHTML = '<span class="material-symbols-outlined text-[20px] animate-spin">progress_activity</span><span>Processing with MBANK...</span>';
+      btn.disabled = true;
+
+      setTimeout(() => {
+        btn.classList.remove('from-[#ff4b4b]', 'to-[#ff6b4a]');
+        btn.classList.add('bg-emerald-600');
+        btn.innerHTML = '<span class="material-symbols-outlined text-[20px]">check_circle</span><span>Transmitted to Solaris Echo!</span>';
+      }, 1100);
+    }
+  </script>
+
+
+</body></html>

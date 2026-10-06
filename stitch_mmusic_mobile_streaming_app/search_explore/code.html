@@ -1,0 +1,375 @@
+<!DOCTYPE html><html class="dark" lang="en" style="width: 390px; min-height: 100%; position: relative; height: 1385px; overflow: hidden;"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport">
+<meta content="mobile_tab" name="shell-type">
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "surface": "#0e0e10",
+            "surface-container": "#18181b",
+            "surface-container-high": "#202024",
+            "surface-container-low": "#131315",
+            "brand-accent": "#ff4b4b",
+            "primary": "#ff4b4b",
+            "on-surface": "#f4f4f5",
+            "on-surface-variant": "#a1a1aa"
+          },
+          fontFamily: {
+            sans: ["Plus Jakarta Sans", "Inter", "sans-serif"],
+            display: ["Plus Jakarta Sans", "sans-serif"]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    body {
+      background-color: #0e0e10;
+      color: #f4f4f5;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      overscroll-behavior-y: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    @keyframes pulse-wave {
+      0%, 100% { height: 4px; }
+      50% { height: 12px; }
+    }
+    .wave-1 { animation: pulse-wave 1s ease-in-out infinite; }
+    .wave-2 { animation: pulse-wave 0.7s ease-in-out infinite 0.2s; }
+    .wave-3 { animation: pulse-wave 1.2s ease-in-out infinite 0.4s; }
+  </style>
+</head>
+<body class="bg-[#0e0e10] text-[#f4f4f5] min-h-screen flex flex-col justify-between selection:bg-[#ff4b4b]/30">
+<!-- Main Scrollable Container -->
+<main class="w-full flex-1 overflow-y-auto no-scrollbar pt-6 px-4 pb-40">
+<!-- TOP STATUS BAR & HEADER -->
+<header class="flex items-center justify-between py-2 mb-4">
+<div class="flex items-center gap-2">
+<span class="text-xl font-extrabold tracking-tight text-white flex items-center gap-1.5">
+<span class="text-[#ff4b4b]">M</span>music
+        </span>
+<div class="flex items-end gap-[2px] h-3.5 px-1">
+<span class="w-[2.5px] bg-[#ff4b4b] rounded-full wave-1"></span>
+<span class="w-[2.5px] bg-[#ff4b4b] rounded-full wave-2"></span>
+<span class="w-[2.5px] bg-[#ff4b4b] rounded-full wave-3"></span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="w-9 h-9 rounded-full bg-[#18181b] border border-white/5 flex items-center justify-center text-zinc-400 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[20px]">cast</span>
+</button>
+<button class="w-9 h-9 rounded-full bg-[#18181b] border border-white/5 flex items-center justify-center text-zinc-400 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+</button>
+</div>
+</header>
+<!-- 2. SEARCH BAR -->
+<section class="mb-5">
+<div class="relative w-full flex items-center bg-[#1c1b1d] border border-white/10 rounded-full px-4 py-3 shadow-lg focus-within:border-[#ff4b4b]/60 focus-within:shadow-[0_0_20px_rgba(255,75,75,0.18)] transition-all">
+<span class="material-symbols-outlined text-zinc-400 text-[22px] mr-3 select-none flex-shrink-0">search</span>
+<input class="w-full bg-transparent text-sm text-[#f4f4f5] placeholder:text-zinc-500 font-medium focus:outline-none min-w-0" id="search-input" placeholder="What do you want to listen to?" type="text">
+<button aria-label="Microphone Voice Search" class="w-8 h-8 rounded-full flex items-center justify-center text-zinc-400 hover:text-white active:scale-95 transition-transform flex-shrink-0 ml-1">
+<span class="material-symbols-outlined text-[20px]">mic</span>
+</button>
+</div>
+</section>
+<!-- 3. RECENT SEARCHES -->
+<section class="mb-6">
+<div class="flex items-center justify-between mb-2">
+<span class="text-xs font-bold tracking-wider text-zinc-400 uppercase">Recent Searches</span>
+<button class="text-xs text-zinc-400 hover:text-white transition-colors cursor-pointer" id="clear-all-recent">Clear all</button>
+</div>
+<div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1" id="recent-chips-container">
+<div class="recent-chip bg-zinc-800/80 hover:bg-zinc-700 text-zinc-200 text-xs px-3.5 py-1.5 rounded-full flex items-center gap-1.5 border border-white/5 flex-shrink-0 cursor-pointer group transition-colors">
+<span class="chip-query">Tame Impala</span>
+<button class="remove-chip-btn text-zinc-400 group-hover:text-white flex items-center ml-0.5">
+<span class="material-symbols-outlined text-[13px]">close</span>
+</button>
+</div>
+<div class="recent-chip bg-zinc-800/80 hover:bg-zinc-700 text-zinc-200 text-xs px-3.5 py-1.5 rounded-full flex items-center gap-1.5 border border-white/5 flex-shrink-0 cursor-pointer group transition-colors">
+<span class="chip-query">Ambient Techno</span>
+<button class="remove-chip-btn text-zinc-400 group-hover:text-white flex items-center ml-0.5">
+<span class="material-symbols-outlined text-[13px]">close</span>
+</button>
+</div>
+<div class="recent-chip bg-zinc-800/80 hover:bg-zinc-700 text-zinc-200 text-xs px-3.5 py-1.5 rounded-full flex items-center gap-1.5 border border-white/5 flex-shrink-0 cursor-pointer group transition-colors">
+<span class="chip-query">Billie Eilish</span>
+<button class="remove-chip-btn text-zinc-400 group-hover:text-white flex items-center ml-0.5">
+<span class="material-symbols-outlined text-[13px]">close</span>
+</button>
+</div>
+<div class="recent-chip bg-zinc-800/80 hover:bg-zinc-700 text-zinc-200 text-xs px-3.5 py-1.5 rounded-full flex items-center gap-1.5 border border-white/5 flex-shrink-0 cursor-pointer group transition-colors">
+<span class="chip-query">Solaris Echo</span>
+<button class="remove-chip-btn text-zinc-400 group-hover:text-white flex items-center ml-0.5">
+<span class="material-symbols-outlined text-[13px]">close</span>
+</button>
+</div>
+</div>
+</section>
+<!-- 4. TRENDING SEARCHES (Exactly ONE Section) -->
+<section class="mb-8">
+<div class="flex items-center justify-between mb-3">
+<h2 class="font-bold text-white text-base flex items-center gap-1.5">
+<span class="text-[#ff4b4b]">↗</span> Trending Searches
+        </h2>
+
+</div>
+<div class="grid grid-cols-2 gap-2.5">
+<!-- 01 -->
+<div class="trending-card bg-[#18181b] p-3 rounded-xl border border-white/5 hover:border-white/10 active:scale-[0.98] transition-all cursor-pointer flex items-center gap-3">
+<span class="text-xs font-bold text-[#ff4b4b] font-mono">01</span>
+<div class="flex flex-col min-w-0 flex-1">
+<span class="text-xs font-bold text-white truncate">Challengers OST</span>
+<span class="text-[11px] text-zinc-400 truncate">Trent Reznor</span>
+</div>
+</div>
+<!-- 02 -->
+<div class="trending-card bg-[#18181b] p-3 rounded-xl border border-white/5 hover:border-white/10 active:scale-[0.98] transition-all cursor-pointer flex items-center gap-3">
+<span class="text-xs font-bold text-[#ff4b4b] font-mono">02</span>
+<div class="flex flex-col min-w-0 flex-1">
+<span class="text-xs font-bold text-white truncate">Midnight Mirage</span>
+<span class="text-[11px] text-zinc-400 truncate">Solaris Echo</span>
+</div>
+</div>
+<!-- 03 -->
+<div class="trending-card bg-[#18181b] p-3 rounded-xl border border-white/5 hover:border-white/10 active:scale-[0.98] transition-all cursor-pointer flex items-center gap-3">
+<span class="text-xs font-bold text-zinc-400 font-mono">03</span>
+<div class="flex flex-col min-w-0 flex-1">
+<span class="text-xs font-bold text-white truncate">Fred again..</span>
+<span class="text-[11px] text-zinc-400 truncate">Electronic</span>
+</div>
+</div>
+<!-- 04 -->
+<div class="trending-card bg-[#18181b] p-3 rounded-xl border border-white/5 hover:border-white/10 active:scale-[0.98] transition-all cursor-pointer flex items-center gap-3">
+<span class="text-xs font-bold text-zinc-400 font-mono">04</span>
+<div class="flex flex-col min-w-0 flex-1">
+<span class="text-xs font-bold text-white truncate">Discovery</span>
+<span class="text-[11px] text-zinc-400 truncate">Daft Punk</span>
+</div>
+</div>
+</div>
+</section>
+<!-- 5. SPACING & BROWSE ALL -->
+<section class="mt-8 mb-4">
+<div class="flex items-center justify-between mb-4">
+<h2 class="text-xl font-bold text-white tracking-tight">Browse All</h2>
+</div>
+<!-- FEATURED CARD: Kyrgyz Music -->
+<div class="group relative h-36 rounded-2xl overflow-hidden border border-white/10 shadow-xl cursor-pointer active:scale-[0.99] transition-all">
+<img alt="Kyrgyz Music" class="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida/AEtjO1VdKFECVzeYXkoWFpvKwZDTXnx7k5MvEIu4-ufk42FWbV0l1RzCzBqX6KKYHnk6CeCe02ypzQcpugDCQ4ou_EJeSWq9sotKPG9Q9cLXHuk4XT0GjT4mwEyckwyq8Qw44vLMTOtdQSs3RFUNTY1uscPMfEjhSOru-borBZeQUILPMwG95S6eEvOccZYkxl5ZtTvD0Z8wJbgZQVcgKPB56QmgjArfxXxnrR24zfXHhaPwL9f3mXwgO3fOMic">
+<!-- Gradient Overlay -->
+<div class="absolute inset-0 bg-gradient-to-t from-[#0e0e10] via-black/60 to-transparent"></div>
+<div class="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-transparent"></div>
+<!-- Content -->
+<div class="absolute inset-0 p-4 flex flex-col justify-end z-10">
+<div class="flex items-center gap-2 mb-1">
+
+</div>
+<span class="text-xl font-bold text-white tracking-tight drop-shadow-md">Kyrgyz Music</span>
+<span class="text-xs text-zinc-300 font-medium drop-shadow-sm mt-0.5">Ethno-synth &amp; Komuz beats</span>
+</div>
+<!-- Decorative Glow Accent -->
+<div class="absolute -right-6 -bottom-6 w-28 h-28 rounded-full bg-[#ff4b4b]/20 blur-2xl pointer-events-none"></div>
+</div>
+</section>
+<!-- 6. 2-COLUMN CATEGORY GRID (FULL LONG CATALOG - ALL 12 CATEGORIES) -->
+<section class="grid grid-cols-2 gap-3 mt-4">
+<!-- 1. Made For You -->
+<div class="group relative h-[84px] rounded-xl overflow-hidden border border-white/5 p-3 flex flex-col justify-end shadow-md cursor-pointer active:scale-[0.98] transition-all">
+<img alt="Made For You" class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" src="https://lh3.googleusercontent.com/aida/AEtjO1XtePPHJDJdf_O3rEv0SxH1QGggrP3WBzb0aSSwdvqWDAXYuwdOv3WuQW2mpT_eqT5ARIpEEfIT8GhLu8dGVZmOT5su4I2xSt-rbWsQ532csD8_5X-YwBc4qAQdJWhjN4sNPDX1SLGlJh7z7XmHKzoVVX2W9S9H7QZ69fxNnp4VYxjcfM6mXFFttkFgMfSNGYQTetVb4IsKzbD6AqOKBhFwagiBkeP6gCULhKhE7-faNQGTQIW5ycyzWKE">
+<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20"></div>
+<span class="z-10 text-sm font-bold text-white tracking-tight drop-shadow-sm leading-tight">Made For You</span>
+</div>
+<!-- 2. Charts & Viral -->
+<div class="group relative h-[84px] rounded-xl overflow-hidden border border-white/5 p-3 flex flex-col justify-end shadow-md cursor-pointer active:scale-[0.98] transition-all">
+<img alt="Charts &amp; Viral" class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" src="https://lh3.googleusercontent.com/aida/AEtjO1VV4ONY2-5DQ8ZN8MuUI9d5czawytsBc6fpvvY5w1xCekd2dOw5Li9yVkv3PlCJp-b58G-9PWIkW7J5JP9xRKwJFa3TS3Vi491rgrT482_DLRxtSt70Skz7Tzx0E2hlNwdb7zlJVf8uChi6FqV_0lyzwyc5ZDioVkGofH9kTN0HVx6FI0LFGkcz4TjGNa2CSREVc5YHHwZuvgZa_ushWk0-4FUmyVQu1y4xQ1P4pwZUVUG9sMFhDIIefw">
+<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20"></div>
+<span class="z-10 text-sm font-bold text-white tracking-tight drop-shadow-sm leading-tight">Charts &amp; Viral</span>
+</div>
+<!-- 3. Pop -->
+<div class="group relative h-[84px] rounded-xl overflow-hidden border border-white/5 p-3 flex flex-col justify-end shadow-md cursor-pointer active:scale-[0.98] transition-all">
+<img alt="Pop" class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" src="https://lh3.googleusercontent.com/aida/AEtjO1U7VS93kTwNlJhqJnAIjLdwlz_XSYBUbJ4nalD28G-96GuJL1G9jmXufUi6TYWHPxGnSykTD5ZHU004TJANFnibzyx0HfBY23hn6hpxvViYWXCcGvQI-AVCl0fJ4MKZ8Opdv49jJ_7K9cpj5CikRDoVeBdyTPWLK3TZIMTf4_gESV6Pe8bGzlPbQYCgEDwv-pY_WKEpOO-QBPeLX67hTPwE7sNkOqZFcFc1ZQtoq-1Ksw5uVcBgbm3yhZU">
+<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20"></div>
+<span class="z-10 text-sm font-bold text-white tracking-tight drop-shadow-sm leading-tight">Pop</span>
+</div>
+<!-- 4. Hip-Hop & R&B -->
+<div class="group relative h-[84px] rounded-xl overflow-hidden border border-white/5 p-3 flex flex-col justify-end shadow-md cursor-pointer active:scale-[0.98] transition-all">
+<img alt="Hip-Hop &amp; R&amp;B" class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" src="https://lh3.googleusercontent.com/aida/AEtjO1VNa_bzMuFOBVvZYfRBeFq4_qFbKBvoZmntVmoaxXLCVHiZa0qpio6eICjmkwqJn1h78OykML-KZkQBrrXXm-yBe2zRQPanjRUzkPaYUHVH0plfwDViek0VIedZXnsnOQGBNGpio7vtRJFOccw7IN8wkVt-XkGDqGM5JLzx5SeeHSnkjwz0rdxOmwMmuJL0Zxupt1XYsPlgAvd6wn3u6agi46HOEYmBEQAq6XNJrd0pCeC3PltbsYPUrg">
+<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20"></div>
+<span class="z-10 text-sm font-bold text-white tracking-tight drop-shadow-sm leading-tight">Hip-Hop &amp; R&amp;B</span>
+</div>
+<!-- 5. Electronic & Dance -->
+<div class="group relative h-[84px] rounded-xl overflow-hidden border border-white/5 p-3 flex flex-col justify-end shadow-md cursor-pointer active:scale-[0.98] transition-all">
+<img alt="Electronic &amp; Dance" class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" src="https://lh3.googleusercontent.com/aida/AEtjO1V-LmlGK3BM-GFBmRHOalf6PxgJm26VWBwXlaY4cL8pEcsn0se4FhKXfgOcOy8S2J050wOOHmt6WnI-X9BWc_rLQZJ_dCKt1rOMKJWgFXIWbSS6Tc91XKty_Ax1f6jr2TOm6wNRaM5HTYxy0ZEVvV_1NYes6DwKJrNYVv_NVqVZDPHfw1q8dQeKB33DVu6Xie-iDPDsGgZ_cbsdwNFu6W4nR60negsAFTWl4dhcv2FbYtIqJ1y3M8VF6A">
+<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20"></div>
+<span class="z-10 text-sm font-bold text-white tracking-tight drop-shadow-sm leading-tight">Electronic &amp; Dance</span>
+</div>
+<!-- 6. Rock & Indie -->
+<div class="group relative h-[84px] rounded-xl overflow-hidden border border-white/5 p-3 flex flex-col justify-end shadow-md cursor-pointer active:scale-[0.98] transition-all">
+<img alt="Rock &amp; Indie" class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" src="https://lh3.googleusercontent.com/aida/AEtjO1XIE8K-_5dL4eyXIOnBrhB2pDQXNKZUwwCcExWnym2WemuUmc58iB5B1xBeN-FbzgycTPhVt9rlWWhPyOd6w_32AxbYzD_j3kWTe3TXr4kAB-PJs5D1mfCuKhTTyz0QygYjJ5s4gpttAbagsTc815wSmuu5_ZSoBb8cnDVlsaGP2eckoE5nmoeTyTS2AFyOSCugzCFYTqZZmygqDirOd3ltWxjsmWnVY7od3qpC6WRdK2Gv40AHr74fadU">
+<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20"></div>
+<span class="z-10 text-sm font-bold text-white tracking-tight drop-shadow-sm leading-tight">Rock &amp; Indie</span>
+</div>
+<!-- 7. Jazz & Soul -->
+<div class="group relative h-[84px] rounded-xl overflow-hidden border border-white/5 p-3 flex flex-col justify-end shadow-md cursor-pointer active:scale-[0.98] transition-all">
+<img alt="Jazz &amp; Soul" class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" src="https://lh3.googleusercontent.com/aida/AEtjO1W793uriacfhyqVXRNOkRAjSWEElB2yqH03Ex3axSkeb-9wZfYisrQXicZV5l7I5Ppaq5_zLLrRyl8fyOOkrTDHqbjKchxYRGiBE1gx2aD3WiDE6mtzyjRXzjQ3ge0Sil7GvwYLu7nBLvRs4j6ikV0rz9Wr7w-VPUfLbZULxZN7kBb9ku--McaxpJJClP7rkRdIGnPcj76wp-j3Jji4WBC7Na3WHpfh6h2PswiGrfDRbCUSUfRDjBS9BQ">
+<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20"></div>
+<span class="z-10 text-sm font-bold text-white tracking-tight drop-shadow-sm leading-tight">Jazz &amp; Soul</span>
+</div>
+<!-- 8. Chill & Lo-Fi -->
+<div class="group relative h-[84px] rounded-xl overflow-hidden border border-white/5 p-3 flex flex-col justify-end shadow-md cursor-pointer active:scale-[0.98] transition-all">
+<img alt="Chill &amp; Lo-Fi" class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" src="https://lh3.googleusercontent.com/aida/AEtjO1V0R8zGmXbUctWYdu6Gc8y5zc97Ckbo2LLBGgAn6ShspdiZ2CRyhr2T2vsVUKcV2qiB8JGn1DwQGVAVyjaFQHIarMHBS8Wp6B8NoxbwVMx704_pAn77C1RLXoRThUf1x97BJgtZ8T5B6em6oSiC8Y5ghupwDBWJa0SjDZITvU9Ofx6ApRPmnfOZRaCnBq0VxRiNCFzAJXuQ8MaYJegpWeEXKF4Jsgfh0_70nR5ALy-Pv3NdAa1fSi2qIr8">
+<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20"></div>
+<span class="z-10 text-sm font-bold text-white tracking-tight drop-shadow-sm leading-tight">Chill &amp; Lo-Fi</span>
+</div>
+<!-- 9. Deep Focus & Ambient -->
+<div class="group relative h-[84px] rounded-xl overflow-hidden border border-white/5 p-3 flex flex-col justify-end shadow-md cursor-pointer active:scale-[0.98] transition-all">
+<img alt="Deep Focus &amp; Ambient" class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" src="https://lh3.googleusercontent.com/aida/AEtjO1V0R8zGmXbUctWYdu6Gc8y5zc97Ckbo2LLBGgAn6ShspdiZ2CRyhr2T2vsVUKcV2qiB8JGn1DwQGVAVyjaFQHIarMHBS8Wp6B8NoxbwVMx704_pAn77C1RLXoRThUf1x97BJgtZ8T5B6em6oSiC8Y5ghupwDBWJa0SjDZITvU9Ofx6ApRPmnfOZRaCnBq0VxRiNCFzAJXuQ8MaYJegpWeEXKF4Jsgfh0_70nR5ALy-Pv3NdAa1fSi2qIr8">
+<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20"></div>
+<span class="z-10 text-sm font-bold text-white tracking-tight drop-shadow-sm leading-tight">Deep Focus &amp; Ambient</span>
+</div>
+<!-- 10. Workout & High Energy -->
+<div class="group relative h-[84px] rounded-xl overflow-hidden border border-white/5 p-3 flex flex-col justify-end shadow-md cursor-pointer active:scale-[0.98] transition-all">
+<img alt="Workout &amp; High Energy" class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" src="https://lh3.googleusercontent.com/aida/AEtjO1U1FLckxWbTP__EUX_Kz_JOGNVhEl65_NmU1IcnCe2nJTzi-7PqynmvT4yh31NtW1epwzef_N4r1ficsAweXnw8E_rim2Y10Kf1UM8YeeZw4H793sGgAMlFzsfMkgfB1nhnvAScOuNRgTMLZ6R-xOMYccpOsQksykyK6sgiosci5DXW_zNGQOOhgbXXbeQqnuho64RKCchIf6_8-fMDHxLTNkHzQLzB5_FUSS3BjCrj2xFEr1G9VsZCPBY">
+<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20"></div>
+<span class="z-10 text-sm font-bold text-white tracking-tight drop-shadow-sm leading-tight">Workout &amp; High Energy</span>
+</div>
+<!-- 11. Classical & Film -->
+<div class="group relative h-[84px] rounded-xl overflow-hidden border border-white/5 p-3 flex flex-col justify-end shadow-md cursor-pointer active:scale-[0.98] transition-all">
+<img alt="Classical &amp; Film" class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" src="https://lh3.googleusercontent.com/aida/AEtjO1XZ4_ILEFfKZ8vfDnBqdqzGfqJellVMZUIeJUAKWTOA7bGqVDlWKmAcba-4gsarF5hvs-77j0R7P9aESvhBkf1xHwmoTO3DEGwsZGqDbfr2B3Cv4l6gBundNZguVX6BEvR2G_9YFPAghUaej0m8o15wAzHERcKOhYuAD8FkbteL5tYHFgJT2OWw8J7B15QVmi0zbshUAtJa8tLqllS3zHNE_v6jUvCg6Uh98W2RYWfw9jxj_I5fGwGzXLw">
+<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20"></div>
+<span class="z-10 text-sm font-bold text-white tracking-tight drop-shadow-sm leading-tight">Classical &amp; Film</span>
+</div>
+<!-- 12. Fresh Finds -->
+<div class="group relative h-[84px] rounded-xl overflow-hidden border border-white/5 p-3 flex flex-col justify-end shadow-md cursor-pointer active:scale-[0.98] transition-all">
+<img alt="Fresh Finds" class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" src="https://lh3.googleusercontent.com/aida/AEtjO1W4MMCNTkmnqV8CiJhtCpdaGTx86OtLp72FPI6yWnMDxxaayB0OWIinW38RyaJyJG2Y9OncIqCywruomNhQSVm7ZxZgoSH8Z-7FIQ6XbQ_VaZ6ewWe8tN6TCllq2_NGNV0DjhJ-uR2Y7BVeu1s7_nw4vKM0G4O0E4aCwFvrGX-WGXNVp76NqeM_Cxgx8eTpFcko0zGH1TM3Klm6teQhDygygiwX06VX0VU0u53Wz7r6nzvuy5p2Q-DrGmA">
+<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20"></div>
+<span class="z-10 text-sm font-bold text-white tracking-tight drop-shadow-sm leading-tight">Fresh Finds</span>
+</div>
+</section>
+</main>
+<!-- 8. PERSISTENT MINI PLAYER -->
+<div class="fixed bottom-16 left-0 right-0 max-w-[390px] mx-auto px-3 z-40">
+<div class="w-full bg-[#18181b]/95 backdrop-blur-md border border-white/10 rounded-xl p-2.5 flex items-center justify-between shadow-2xl relative overflow-hidden group cursor-pointer active:scale-[0.99] transition-transform">
+<!-- Thin orange/red accent progress bar on top -->
+<div class="absolute top-0 left-0 right-0 h-[2px] bg-zinc-800">
+<div class="h-full bg-[#ff4b4b] w-[45%]"></div>
+</div>
+<!-- Artwork & Track Details -->
+<div class="flex items-center gap-2.5 min-w-0 pr-2">
+<div class="w-10 h-10 rounded-lg bg-[#202024] flex-shrink-0 relative overflow-hidden border border-white/10 flex items-center justify-center">
+<img alt="Midnight Mirage" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1V0R8zGmXbUctWYdu6Gc8y5zc97Ckbo2LLBGgAn6ShspdiZ2CRyhr2T2vsVUKcV2qiB8JGn1DwQGVAVyjaFQHIarMHBS8Wp6B8NoxbwVMx704_pAn77C1RLXoRThUf1x97BJgtZ8T5B6em6oSiC8Y5ghupwDBWJa0SjDZITvU9Ofx6ApRPmnfOZRaCnBq0VxRiNCFzAJXuQ8MaYJegpWeEXKF4Jsgfh0_70nR5ALy-Pv3NdAa1fSi2qIr8">
+<div class="absolute inset-0 bg-black/20"></div>
+</div>
+<div class="min-w-0 flex flex-col">
+<span class="text-xs font-semibold text-white truncate">Midnight Mirage</span>
+<span class="text-[11px] text-zinc-400 truncate">Solaris Echo</span>
+</div>
+</div>
+<!-- Playback Controls (Clean SVGs) -->
+<div class="flex items-center gap-1 flex-shrink-0">
+<!-- Previous Track -->
+<button aria-label="Previous" class="w-8 h-8 rounded-full flex items-center justify-center text-zinc-400 hover:text-white transition-colors">
+<svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+<path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"></path>
+</svg>
+</button>
+<!-- Play / Pause -->
+<button aria-label="Play" class="w-9 h-9 rounded-full bg-[#ff4b4b] text-white flex items-center justify-center shadow-[0_4px_14px_rgba(255,75,75,0.4)] active:scale-95 transition-all">
+<svg class="w-4 h-4 fill-current ml-0.5" viewBox="0 0 24 24">
+<path d="M8 5v14l11-7z"></path>
+</svg>
+</button>
+<!-- Next Track -->
+<button aria-label="Next" class="w-8 h-8 rounded-full flex items-center justify-center text-zinc-400 hover:text-white transition-colors">
+<svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+<path d="m6 18 8.5-6L6 6v12zM16 6v12h2V6h-2z"></path>
+</svg>
+</button>
+</div>
+</div>
+</div>
+<!-- 9. BOTTOM NAVIGATION BAR -->
+<nav class="fixed bottom-0 left-0 right-0 max-w-[390px] mx-auto bg-[#0e0e10]/95 backdrop-blur-lg border-t border-white/5 py-2.5 px-6 flex justify-around items-center z-50">
+<!-- Home Tab -->
+<a class="flex flex-col items-center justify-center gap-1 w-16 text-zinc-500 hover:text-zinc-300 transition-colors" href="#">
+<span class="material-symbols-outlined text-[24px]">home</span>
+<span class="text-[10px] font-medium tracking-tight">Home</span>
+</a>
+<!-- Search Tab (ACTIVE) -->
+<a aria-current="page" class="flex flex-col items-center justify-center gap-1 w-16 text-[#ff4b4b] font-bold transition-colors" href="#">
+<span class="material-symbols-outlined text-[24px]">search</span>
+<span class="text-[10px] font-bold tracking-tight">Search</span>
+</a>
+<!-- Library Tab -->
+<a class="flex flex-col items-center justify-center gap-1 w-16 text-zinc-500 hover:text-zinc-300 transition-colors" href="#">
+<span class="material-symbols-outlined text-[24px]">library_music</span>
+<span class="text-[10px] font-medium tracking-tight">Library</span>
+</a>
+</nav>
+<!-- Interactive JavaScript Logic -->
+<script>
+    (function() {
+      const searchInput = document.getElementById('search-input');
+      const recentChipsContainer = document.getElementById('recent-chips-container');
+      const clearAllRecent = document.getElementById('clear-all-recent');
+
+      // Dismiss chip or populate search
+      if (recentChipsContainer) {
+        recentChipsContainer.addEventListener('click', (e) => {
+          const removeBtn = e.target.closest('.remove-chip-btn');
+          if (removeBtn) {
+            e.stopPropagation();
+            const chip = removeBtn.closest('.recent-chip');
+            if (chip) chip.remove();
+            return;
+          }
+          const chip = e.target.closest('.recent-chip');
+          if (chip && searchInput) {
+            const query = chip.querySelector('.chip-query')?.textContent;
+            if (query) {
+              searchInput.value = query.trim();
+              searchInput.focus();
+            }
+          }
+        });
+      }
+
+      // Clear all recent
+      if (clearAllRecent && recentChipsContainer) {
+        clearAllRecent.addEventListener('click', () => {
+          recentChipsContainer.innerHTML = '<span class="text-xs text-zinc-500 py-1">No recent searches</span>';
+        });
+      }
+
+      // Trending Cards tap to search
+      const trendingCards = document.querySelectorAll('.trending-card');
+      trendingCards.forEach(card => {
+        card.addEventListener('click', () => {
+          const title = card.querySelector('.truncate')?.textContent;
+          if (title && searchInput) {
+            searchInput.value = title.trim();
+            searchInput.focus();
+          }
+        });
+      });
+    })();
+  </script>
+
+
+<div id="snapdom-sandbox" data-snapdom-sandbox="true" aria-hidden="true" style="position: absolute; left: -9999px; top: -9999px; width: 0px; height: 0px; overflow: hidden;"></div></body></html>
