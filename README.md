@@ -3,7 +3,7 @@
 Мобильное приложение для стриминга музыки в цифровой экосистеме банка (в дизайне — MBANK, подтверждение: OQ-01).
 Отличительная функция — прямая поддержка артистов донатами со счёта банка.
 
-> **Статус: этап документации.** Код приложения ещё не пишется. Документация ожидает утверждения заказчиком.
+> **Статус: разработка начата (2026-10-06).** Документация утверждена и используется как источник истины. Идёт Фаза 1 (`docs/development-plan.md`) — монорепозиторий, базовый мобильный клиент и API.
 
 ## Документация
 
@@ -36,12 +36,25 @@
 ## Структура репозитория (сейчас)
 
 ```
+apps/mobile/                           # Expo + TypeScript + Expo Router (React Native)
+apps/api/                              # NestJS backend, /health живой
+packages/design-tokens/                # токены Nocturne Audio из DESIGN.md — источник истины для стилей
 docs/                                  # ТЗ и проектная документация
-stitch_mmusic_mobile_streaming_app/    # исходный дизайн
+stitch_mmusic_mobile_streaming_app/    # исходный дизайн (не изменяется)
+docker-compose.yml                     # Postgres + Redis для локальной разработки
+.env.example                           # шаблон переменных окружения (без секретов)
 CLAUDE.md                              # инструкции для AI-агентов (Claude Code + Ruflo)
-package.json                           # пока содержит только @receptron/laya (роль — OQ-41)
 ```
-Целевая структура — `docs/architecture.md` §7.
+Монорепо на pnpm workspaces + Turborepo. Корневой `package.json` также содержит `@receptron/laya` (роль — OQ-41, не подключён ни к одной подсистеме). Целевая структура — `docs/architecture.md` §7.
+
+```bash
+pnpm install        # установить все пакеты монорепо
+pnpm dev             # запустить mobile + api в dev-режиме (turbo)
+pnpm typecheck       # tsc --noEmit во всех пакетах
+pnpm lint            # линт во всех пакетах
+pnpm test            # тесты во всех пакетах
+docker compose up -d # поднять Postgres + Redis
+```
 
 ## Планирование
 

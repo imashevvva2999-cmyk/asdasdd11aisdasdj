@@ -5,3 +5,26 @@
 .claude-flow/data/
 .claude-flow/logs/
 .claude-flow/sessions/
+
+# Node / pnpm
+node_modules/
+.pnpm-store/
+.turbo/
+
+# Build outputs
+dist/
+build/
+.expo/
+.expo-shared/
+*.tsbuildinfo
+
+# NestJS
+apps/api/dist/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store

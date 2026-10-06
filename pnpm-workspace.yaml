@@ -1,0 +1,8 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+  - "workers/*"
+
+allowBuilds:
+  onnxruntime-node: true
+  unrs-resolver: true
