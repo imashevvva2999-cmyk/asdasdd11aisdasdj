@@ -1,5 +1,6 @@
 import { Text, type TextProps, type TextStyle } from 'react-native';
 
+import { resolveFontFamily } from '@/constants/fonts';
 import { Colors, TypeScale } from '@/constants/theme';
 import type { TypeScaleToken } from '@mmusic/design-tokens';
 
@@ -16,11 +17,10 @@ export function ThemedText({ style, variant = 'body-md', emphasis = 'high', ...r
 
   const resolvedStyle: TextStyle = {
     color,
-    fontFamily: token.fontFamily,
+    fontFamily: resolveFontFamily(token.fontFamily, token.fontWeight),
     fontSize: token.fontSize,
     lineHeight: token.lineHeight,
     letterSpacing: token.letterSpacing,
-    fontWeight: token.fontWeight as TextStyle['fontWeight'],
   };
 
   return <Text style={[resolvedStyle, style]} {...rest} />;
