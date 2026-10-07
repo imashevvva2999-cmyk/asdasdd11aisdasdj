@@ -146,3 +146,17 @@ export const generatedArtworkByArtistId: Record<string, LocalOrRemoteImage | und
   'elena-rostova': safeRequire(() => require('../../assets/artwork/generated/elena-rostova.jpg')),
   'nils-frahm': safeRequire(() => require('../../assets/artwork/generated/nils-frahm.jpg')),
 };
+
+/**
+ * Procedurally generated local abstract artwork (Home See All filter-
+ * behavior pass) for 3 new mock singles — Afterimage (Tate Vane), Still
+ * Water (Elena Rostova), Night Signal (Sable Duo) — added because only one
+ * single ('refraction-horizon') existed in the catalog before this pass,
+ * too thin to demonstrate a working "Singles" filter. Same build technique
+ * and provenance rules as `generatedArtworkByTrackId` above.
+ */
+export const generatedArtworkByAlbumId: Record<string, LocalOrRemoteImage | undefined> = {
+  afterimage: safeRequire(() => require('../../assets/artwork/generated/afterimage.jpg')),
+  'still-water': safeRequire(() => require('../../assets/artwork/generated/still-water.jpg')),
+  'night-signal': safeRequire(() => require('../../assets/artwork/generated/night-signal.jpg')),
+};

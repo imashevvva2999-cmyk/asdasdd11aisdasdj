@@ -1,4 +1,4 @@
-import { stitchArtworkByAlbumId } from '@/constants/stitch-artwork';
+import { generatedArtworkByAlbumId, stitchArtworkByAlbumId } from '@/constants/stitch-artwork';
 
 import type { Album } from './types';
 
@@ -21,12 +21,18 @@ export const albums: Album[] = [
     trackIds: ['midnight-mirage', 'horizon', 'obsidian-frequencies', 'ember-tide', 'resonant-field-reprise', 'abyssal-bloom-feat'],
   },
   { id: 'neo-classical-horizons', title: 'Neo-Classical Horizons', artistId: 'nils-frahm', artistName: 'Nils Frahm', type: 'album', year: 2022, trackCount: 9 },
+  // Home See All "Singles" filter needs more than one single to be meaningful.
+  { id: 'afterimage', title: 'Afterimage', artistId: 'tate-vane', artistName: 'Tate Vane', type: 'single', year: 2026, trackCount: 1 },
+  { id: 'still-water', title: 'Still Water', artistId: 'elena-rostova', artistName: 'Elena Rostova', type: 'single', year: 2026, trackCount: 1 },
+  { id: 'night-signal', title: 'Night Signal', artistId: 'sable-duo', artistName: 'Sable Duo', type: 'single', year: 2026, trackCount: 1 },
 ];
 
 // Fill in recovered Stitch artwork (Фаза 4 restoration pass) — a plain id
 // lookup, not a require() of its own; see src/constants/stitch-artwork.ts.
+// Falls back to a procedurally generated cover (frontend-wide artwork audit
+// pass) only for albums/singles with no recovered Stitch asset.
 for (const album of albums) {
-  const coverUri = stitchArtworkByAlbumId[album.id];
+  const coverUri = stitchArtworkByAlbumId[album.id] ?? generatedArtworkByAlbumId[album.id];
   if (coverUri) album.coverUri = coverUri;
 }
 
