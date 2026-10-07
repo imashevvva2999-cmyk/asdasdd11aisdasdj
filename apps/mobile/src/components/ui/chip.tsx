@@ -86,6 +86,51 @@ const styles = StyleSheet.create({
   },
 });
 
+export type RemovableChipProps = {
+  label: string;
+  onPress?: (event: GestureResponderEvent) => void;
+  onRemove?: () => void;
+  style?: ViewStyle;
+};
+
+/** Recent-search style chip with an inline remove (×) button (docs/screens.md §3.2 S-03). */
+export function RemovableChip({ label, onPress, onRemove, style }: RemovableChipProps) {
+  return (
+    <PressableScale onPress={onPress} accessibilityRole="button" style={[removableStyles.base, style]}>
+      <ThemedText variant="label-md" emphasis="medium">
+        {label}
+      </ThemedText>
+      {onRemove && (
+        <PressableScale
+          accessibilityRole="button"
+          accessibilityLabel={`Remove ${label}`}
+          onPress={onRemove}
+          style={removableStyles.removeButton}
+        >
+          <ThemedText variant="label-sm" emphasis="medium">
+            ×
+          </ThemedText>
+        </PressableScale>
+      )}
+    </PressableScale>
+  );
+}
+
+const removableStyles = StyleSheet.create({
+  base: {
+    height: 32,
+    borderRadius: Radii.full,
+    paddingHorizontal: Spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    backgroundColor: Colors.surface.l2,
+  },
+  removeButton: {
+    marginLeft: 2,
+  },
+});
+
 export type AmountChipProps = {
   /** Pre-formatted amount label, e.g. "100" (currency unit shown by the caller — KGS/сом, OQ-08). */
   amount: string;

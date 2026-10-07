@@ -1,7 +1,8 @@
 import { Tabs } from 'expo-router';
 
 import { Icon } from '@/components/ui/icon';
-import { Colors } from '@/constants/theme';
+import { resolveFontFamily } from '@/constants/fonts';
+import { Colors, TypeScale } from '@/constants/theme';
 
 /**
  * Main bottom navigation — Home / Search / Library (docs/screens.md §1 "Таб-бар [Д]").
@@ -24,8 +25,14 @@ export default function TabsLayout() {
         tabBarActiveTintColor: Colors.primary,
         tabBarInactiveTintColor: Colors.text.medium,
         tabBarStyle: {
-          backgroundColor: Colors.surface.l1,
-          borderTopColor: 'rgba(255, 255, 255, 0.08)',
+          backgroundColor: 'rgba(19, 19, 21, 0.92)',
+          borderTopColor: 'rgba(255, 255, 255, 0.05)',
+          height: 64,
+          paddingTop: 8,
+        },
+        tabBarLabelStyle: {
+          fontFamily: resolveFontFamily(TypeScale['label-sm'].fontFamily, TypeScale['label-sm'].fontWeight),
+          fontSize: TypeScale['label-sm'].fontSize,
         },
       }}
     >

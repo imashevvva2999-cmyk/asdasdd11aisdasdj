@@ -1,8 +1,8 @@
-export { AmountChip, Chip } from './chip';
-export type { AmountChipProps, ChipProps } from './chip';
+export { AmountChip, Chip, RemovableChip } from './chip';
+export type { AmountChipProps, ChipProps, RemovableChipProps } from './chip';
 
-export { AvatarCard, CoverCard, FeaturedBanner, StatCard } from './card';
-export type { AvatarCardProps, CoverCardProps, FeaturedBannerProps, StatCardProps } from './card';
+export { AvatarCard, CoverCard, FeaturedBanner, MoodCard, QuickTile, RankedTile, StatCard } from './card';
+export type { AvatarCardProps, CoverCardProps, FeaturedBannerProps, MoodCardProps, QuickTileProps, RankedTileProps, StatCardProps } from './card';
 
 export { Badge } from './badge';
 export type { BadgeProps } from './badge';

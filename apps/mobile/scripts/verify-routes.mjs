@@ -15,15 +15,17 @@ import { join } from 'node:path';
 const root = join(import.meta.dirname, '..');
 const distDir = join(root, 'dist');
 
-/** @type {{ path: string; mustContain: string[]; label: string }[]} */
+/** @type {{ path: string; mustContain: string[]; mustNotContain?: string[]; label: string }[]} */
 const expectations = [
-  { path: 'home/index.html', mustContain: ['S-01'], label: 'Home (tab root)' },
-  { path: 'home/see-all.html', mustContain: ['S-02'], label: 'See All (home tab stack)' },
-  { path: 'search/index.html', mustContain: ['S-03'], label: 'Search (tab root)' },
-  { path: 'search/results.html', mustContain: ['S-04'], label: 'Search Results' },
-  { path: 'search/all-genres.html', mustContain: ['S-06'], label: 'All Genres & Moods' },
-  { path: 'search/genre/[id].html', mustContain: ['S-07'], label: 'Genre detail' },
-  { path: 'library/index.html', mustContain: ['S-12'], label: 'Library (tab root)' },
+  // Фаза 4, batch 1 — real screens, must NOT render the dev ScreenPlaceholder any more.
+  { path: 'home/index.html', mustContain: ['For you', 'Trending Now', 'New Releases', 'Jump Back In', 'Vibe Mixes'], mustNotContain: ['PLACEHOLDER'], label: 'Home (S-01)' },
+  { path: 'home/see-all.html', mustContain: ['This Week', 'Fresh Finds'], mustNotContain: ['PLACEHOLDER'], label: 'See All (S-02)' },
+  { path: 'search/index.html', mustContain: ['What do you want to listen to', 'RECENT SEARCHES', 'TRENDING SEARCHES', 'Browse All'], mustNotContain: ['PLACEHOLDER'], label: 'Search / Explore (S-03)' },
+  { path: 'search/results.html', mustContain: ['Top Result', 'Songs'], mustNotContain: ['PLACEHOLDER'], label: 'Search Results (S-04)' },
+  { path: 'search/all-genres.html', mustContain: ['Explore 24+ sonic realms', 'Curated Realms'], mustNotContain: ['PLACEHOLDER'], label: 'All Genres & Moods (S-06)' },
+  { path: 'search/genre/[id].html', mustContain: ['Essential Compilations', 'Pioneering Artists'], mustNotContain: ['PLACEHOLDER'], label: 'Genre detail (S-07)' },
+  { path: 'library/index.html', mustContain: ['Your Library', 'Liked Songs'], mustNotContain: ['PLACEHOLDER'], label: 'Library (S-12)' },
+  // Still placeholders — later Фаза 4 batches.
   { path: 'library/liked-songs.html', mustContain: ['S-13'], label: 'Liked Songs' },
   { path: 'artist/[id].html', mustContain: ['S-08'], label: 'Artist Profile (shared route)' },
   { path: 'album/[id].html', mustContain: ['S-09'], label: 'Album (shared route)' },
@@ -52,7 +54,7 @@ execSync('npx expo export --platform web', { cwd: root, stdio: 'inherit' });
 
 let failures = 0;
 
-for (const { path, mustContain, label } of expectations) {
+for (const { path, mustContain, mustNotContain = [], label } of expectations) {
   const filePath = join(distDir, path);
   if (!existsSync(filePath)) {
     console.error(`✗ MISSING  ${label} — ${path}`);
@@ -63,11 +65,13 @@ for (const { path, mustContain, label } of expectations) {
   const html = readFileSync(filePath, 'utf8');
   const leakedUndefined = (html.match(/undefined/g) ?? []).length;
   const missingMarkers = mustContain.filter((marker) => !html.includes(marker));
+  const forbiddenMarkers = mustNotContain.filter((marker) => html.includes(marker));
 
-  if (leakedUndefined > 0 || missingMarkers.length > 0) {
+  if (leakedUndefined > 0 || missingMarkers.length > 0 || forbiddenMarkers.length > 0) {
     console.error(`✗ FAIL     ${label} — ${path}`);
     if (leakedUndefined > 0) console.error(`    leaked "undefined" ${leakedUndefined}x`);
     if (missingMarkers.length > 0) console.error(`    missing content: ${missingMarkers.join(', ')}`);
+    if (forbiddenMarkers.length > 0) console.error(`    contains forbidden content: ${forbiddenMarkers.join(', ')}`);
     failures += 1;
   } else {
     console.log(`✓ OK       ${label}`);

@@ -158,28 +158,50 @@ export type LibraryRowProps = {
   coverShape?: 'square' | 'circle';
   title: string;
   subtitle?: string;
-  trailing?: 'chevron' | 'download_done' | 'none';
+  verified?: boolean;
+  downloaded?: boolean;
+  /** 'chevron' (artists/navigable), 'more' (playlists/albums — "⋮" options), 'none'. */
+  trailing?: 'chevron' | 'more' | 'none';
   onPress?: (event: GestureResponderEvent) => void;
+  onOptionsPress?: () => void;
   style?: ViewStyle;
 };
 
-/** Library list row — cover/avatar → title → type•meta → trailing affordance. */
-export function LibraryRow({ coverUri, coverShape = 'square', title, subtitle, trailing = 'chevron', onPress, style }: LibraryRowProps) {
+/** Library list row — cover/avatar → title (+verified) → type•meta → downloaded
+ * badge → trailing affordance (docs/screens.md §3.10 S-12). */
+export function LibraryRow({
+  coverUri,
+  coverShape = 'square',
+  title,
+  subtitle,
+  verified,
+  downloaded,
+  trailing = 'chevron',
+  onPress,
+  onOptionsPress,
+  style,
+}: LibraryRowProps) {
   return (
     <PressableScale onPress={onPress} style={[styles.row, style]} accessibilityRole="button">
-      <Cover uri={coverUri} shape={coverShape} />
+      <Cover uri={coverUri} shape={coverShape} size={56} radius={Radii.md} />
       <View style={styles.titleBlock}>
-        <ThemedText variant="label-lg" numberOfLines={1}>
-          {title}
-        </ThemedText>
+        <View style={libraryRowStyles.titleRow}>
+          <ThemedText variant="body-lg" numberOfLines={1} style={libraryRowStyles.titleText}>
+            {title}
+          </ThemedText>
+          {verified && <Icon name="verified" size={14} color={Colors.primary} />}
+        </View>
         {subtitle && (
           <ThemedText variant="body-sm" emphasis="medium" numberOfLines={1}>
             {subtitle}
           </ThemedText>
         )}
       </View>
+      {downloaded && <Icon name="download-done" size={18} color={Colors.secondary} />}
       {trailing === 'chevron' && <Icon name="chevron-right" color={Colors.text.medium} />}
-      {trailing === 'download_done' && <Icon name="download-done" color={Colors.text.medium} />}
+      {trailing === 'more' && (
+        <IconButton icon="more-vert" accessibilityLabel="Options" size={36} onPress={onOptionsPress} style={styles.transparentIconButton} />
+      )}
     </PressableScale>
   );
 }
@@ -257,6 +279,17 @@ export function MenuRow({ icon, title, subtitle, onPress, style }: MenuRowProps)
     </PressableScale>
   );
 }
+
+const libraryRowStyles = StyleSheet.create({
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  titleText: {
+    flexShrink: 1,
+  },
+});
 
 const menuStyles = StyleSheet.create({
   row: {
