@@ -5,6 +5,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Artwork, Chip, IconButton, PillButton, TextField } from '@/components/ui';
+import { sampleImageChoices } from '@/constants/stitch-artwork';
 import { Colors, Spacing } from '@/constants/theme';
 import { useArtistStore } from '@/state/artist-store';
 
@@ -42,6 +43,10 @@ export default function ArtistSetupScreen() {
   const [genre, setGenre] = useState<string | undefined>(undefined);
   const [bio, setBio] = useState('');
   const [location, setLocation] = useState('');
+  // Simulated photo picker (no native image picker installed) — cycles the
+  // bundled sample images, same approach as Upload Track's cover picker.
+  const [photoIndex, setPhotoIndex] = useState<number | null>(null);
+  const photoUri = photoIndex === null ? undefined : sampleImageChoices[photoIndex];
 
   const trimmedName = stageName.trim();
   const canCreate = trimmedName.length > 0;
@@ -53,8 +58,12 @@ export default function ArtistSetupScreen() {
       genre,
       bio: bio.trim() || undefined,
       location: location.trim() || undefined,
+      photoUri,
     });
-    router.replace('/profile/artist/dashboard');
+    // Unwind Become an Artist / Setup so Back from the Dashboard returns to
+    // the Profile Hub (which now shows "Artist Dashboard"), not the onboarding.
+    router.dismissTo('/profile');
+    router.push('/profile/artist/dashboard');
   }
 
   return (
@@ -62,8 +71,14 @@ export default function ArtistSetupScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.avatarBlock}>
           <View style={styles.avatarWrap}>
-            <Artwork shape="circle" size={112} radius={56} />
-            <IconButton icon="photo-camera" accessibilityLabel="Add artist photo" size={32} style={styles.cameraButton} onPress={() => {}} />
+            <Artwork shape="circle" size={112} radius={56} uri={photoUri} />
+            <IconButton
+              icon="photo-camera"
+              accessibilityLabel={photoUri ? 'Change artist photo' : 'Add artist photo'}
+              size={32}
+              style={styles.cameraButton}
+              onPress={() => setPhotoIndex((index) => (index === null ? 0 : (index + 1) % sampleImageChoices.length))}
+            />
           </View>
         </View>
 

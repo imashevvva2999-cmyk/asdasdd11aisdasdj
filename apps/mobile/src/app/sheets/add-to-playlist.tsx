@@ -6,6 +6,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Artwork, Icon, IconButton, MenuRow, PillButton, PlaylistPickerRow, TextField, Toast } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
+import { goBack } from '@/lib/navigation';
 import { getTrackById } from '@/mocks';
 import { usePlaylistsStore } from '@/state/playlists-store';
 import { usePlayerStore } from '@/state/player-store';
@@ -56,7 +57,7 @@ export default function AddToPlaylistSheet() {
             Choose one or more destinations
           </ThemedText>
         </View>
-        <IconButton icon="close" accessibilityLabel="Close" onPress={() => router.back()} />
+        <IconButton icon="close" accessibilityLabel="Close" onPress={() => goBack()} />
       </View>
 
       {track && (
@@ -97,7 +98,7 @@ export default function AddToPlaylistSheet() {
 
         {filteredPlaylists.map((playlist) => {
           const added = trackId ? (playlist.trackIds ?? []).includes(trackId) : false;
-          const countLabel = `${playlist.trackCount} songs${playlist.updatedLabel ? ` • ${playlist.updatedLabel}` : ''}`;
+          const countLabel = `${playlist.trackCount} ${playlist.trackCount === 1 ? 'song' : 'songs'}${playlist.updatedLabel ? ` • ${playlist.updatedLabel}` : ''}`;
           return (
             <PlaylistPickerRow
               key={playlist.id}
@@ -111,7 +112,7 @@ export default function AddToPlaylistSheet() {
         })}
       </ScrollView>
 
-      <PillButton label="Done" onPress={() => router.back()} style={styles.doneButton} />
+      <PillButton label="Done" onPress={() => goBack()} style={styles.doneButton} />
 
       <Toast message={toastLabel ? `✓ ${toastLabel}` : ''} icon="check" visible={Boolean(toastLabel)} />
     </ThemedView>

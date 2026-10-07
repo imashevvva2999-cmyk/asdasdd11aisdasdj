@@ -38,6 +38,8 @@ export function Toggle({ value, onValueChange, disabled = false, accessibilityLa
     <Pressable
       accessibilityRole="switch"
       accessibilityState={{ checked: value, disabled }}
+      // react-native-web doesn't map `accessibilityState.checked` for switches.
+      aria-checked={value}
       accessibilityLabel={accessibilityLabel}
       disabled={disabled}
       onPress={() => onValueChange?.(!value)}

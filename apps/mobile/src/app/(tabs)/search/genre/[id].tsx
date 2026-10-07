@@ -5,7 +5,10 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { AvatarCard, CoverCard, PillButton, TrackRow } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
+import { useToast } from '@/hooks/use-toast';
 import { albums, artists, genreDetails, getGenreById, tracks } from '@/mocks';
+import { useLibraryStore } from '@/state/library-store';
+import { usePlayerStore } from '@/state/player-store';
 
 /** S-07 Genre / Category detail (docs/screens.md §3.2). */
 export default function GenreDetailScreen() {
@@ -17,6 +20,18 @@ export default function GenreDetailScreen() {
   const pioneeringArtists = artists.slice(0, 4);
   const trending = tracks.slice(0, 4);
   const newReleases = albums.slice(3, 6);
+  const trendingIds = trending.map((track) => track.id);
+  const play = usePlayerStore((s) => s.play);
+  const followed = useLibraryStore((s) => s.followedGenreIds.has(id ?? ''));
+  const toggleGenreFollowed = useLibraryStore((s) => s.toggleGenreFollowed);
+  const { showToast, toast } = useToast();
+  const genreTitle = genre?.title ?? detail?.heroTitle ?? 'this genre';
+
+  function playTrending(trackId = trendingIds[0]) {
+    if (!trackId) return;
+    play(trackId, trendingIds);
+    router.push('/player/now-playing');
+  }
 
   return (
     <ThemedView surface="canvas" style={styles.flex}>
@@ -34,8 +49,17 @@ export default function GenreDetailScreen() {
             </ThemedText>
           )}
           <View style={styles.heroActions}>
-            <PillButton label="Listen Now" onPress={() => {}} style={styles.heroButton} />
-            <PillButton label="Follow" variant="secondary" onPress={() => {}} style={styles.heroButton} />
+            <PillButton label="Listen Now" onPress={() => playTrending()} style={styles.heroButton} />
+            <PillButton
+              label={followed ? 'Following' : 'Follow'}
+              variant="secondary"
+              onPress={() => {
+                if (!id) return;
+                toggleGenreFollowed(id);
+                showToast(followed ? `Unfollowed ${genreTitle}` : `Following ${genreTitle}`, 'check');
+              }}
+              style={styles.heroButton}
+            />
           </View>
         </View>
 
@@ -85,8 +109,8 @@ export default function GenreDetailScreen() {
                 artist={track.artistName}
                 lossless={track.lossless}
                 explicit={track.explicit}
-                onPress={() => router.push({ pathname: '/player/now-playing', params: { trackId: track.id } })}
-                onOptionsPress={() => {}}
+                onPress={() => playTrending(track.id)}
+                onOptionsPress={() => router.push({ pathname: '/sheets/options', params: { kind: 'track', id: track.id } })}
               />
             ))}
           </View>
@@ -109,6 +133,7 @@ export default function GenreDetailScreen() {
           </ScrollView>
         </View>
       </ScrollView>
+      {toast}
     </ThemedView>
   );
 }

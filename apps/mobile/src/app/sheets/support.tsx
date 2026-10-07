@@ -6,6 +6,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { AmountChip, Icon, IconButton, PillButton, TextField } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
+import { goBack } from '@/lib/navigation';
 import { getArtistById, quickDonationAmountsKgs } from '@/mocks';
 import { useSupportStore } from '@/state/support-store';
 
@@ -84,7 +85,7 @@ export default function SupportSheet() {
             Direct artist patronage for {artist.name}
           </ThemedText>
         </View>
-        <IconButton icon="close" accessibilityLabel="Close" onPress={() => router.back()} />
+        <IconButton icon="close" accessibilityLabel="Close" onPress={() => goBack()} />
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>

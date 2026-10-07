@@ -7,6 +7,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { EmptyState, IconButton, QueueRow, Toggle, TrackRow } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
+import { goBack } from '@/lib/navigation';
 import { getTrackById, type Track } from '@/mocks';
 import { usePlayerStore } from '@/state/player-store';
 
@@ -25,20 +26,28 @@ export default function QueueScreen() {
     [queue],
   );
   const currentIndex = usePlayerStore((s) => s.currentIndex);
-  const removeFromQueue = usePlayerStore((s) => s.removeFromQueue);
   const playFromQueueIndex = usePlayerStore((s) => s.playFromQueueIndex);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
+  const autoplay = usePlayerStore((s) => s.autoplay);
+  const toggleAutoplay = usePlayerStore((s) => s.toggleAutoplay);
 
   const current = queueTracks[currentIndex];
   const upcoming = queueTracks.slice(currentIndex + 1);
+  const openCurrentOptions = () => {
+    if (current) router.push({ pathname: '/sheets/options', params: { kind: 'track', id: current.id } });
+  };
 
   return (
     <ThemedView surface="canvas" style={styles.flex}>
       <SafeAreaView style={styles.flex}>
         <View style={styles.header}>
-          <IconButton icon="keyboard-arrow-down" accessibilityLabel="Collapse" onPress={() => router.back()} />
+          <IconButton icon="keyboard-arrow-down" accessibilityLabel="Collapse" onPress={() => goBack()} />
           <ThemedText variant="headline-sm">Playback Queue</ThemedText>
-          <IconButton icon="more-horiz" accessibilityLabel="More options" onPress={() => {}} />
+          {current ? (
+            <IconButton icon="more-horiz" accessibilityLabel="More options" onPress={openCurrentOptions} />
+          ) : (
+            <View style={styles.headerSpacer} />
+          )}
         </View>
 
         <View style={styles.content}>
@@ -47,7 +56,7 @@ export default function QueueScreen() {
               <ThemedText variant="label-sm" emphasis="medium" style={styles.eyebrow}>
                 NOW PLAYING
               </ThemedText>
-              <TrackRow coverUri={current.coverUri} title={current.title} artist={current.artistName} isPlaying={isPlaying} onOptionsPress={() => {}} />
+              <TrackRow coverUri={current.coverUri} title={current.title} artist={current.artistName} isPlaying={isPlaying} onOptionsPress={openCurrentOptions} />
             </View>
           )}
 
@@ -82,7 +91,7 @@ export default function QueueScreen() {
                 Keep playing similar music
               </ThemedText>
             </View>
-            <Toggle value={false} onValueChange={() => {}} accessibilityLabel="Infinity Autoplay" />
+            <Toggle value={autoplay} onValueChange={toggleAutoplay} accessibilityLabel="Infinity Autoplay" />
           </View>
         </View>
       </SafeAreaView>
@@ -104,6 +113,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  headerSpacer: {
+    width: 44,
   },
   content: {
     flex: 1,

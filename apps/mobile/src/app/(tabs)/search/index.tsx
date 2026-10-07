@@ -7,6 +7,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { CoverCard, FeaturedBanner, Icon, IconButton, RankedTile, RemovableChip, TextField, TextLinkButton } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
+import { useToast } from '@/hooks/use-toast';
 import { featuredGenre, genres, initialRecentSearches, trendingSearches } from '@/mocks';
 
 /** S-03 Search / Explore — tab root (docs/screens.md §3.2). */
@@ -19,6 +20,9 @@ export default function SearchScreen() {
   // tile rendered at the same x position stacked vertically) — Фаза 4 visual QA
   // pass finding, verified directly in Chrome DevTools.
   const genreRows = chunkPairs(genres);
+  const { showToast, toast } = useToast();
+  const openResults = (query?: string) =>
+    router.push(query ? { pathname: '/search/results', params: { q: query } } : '/search/results');
 
   return (
     <ThemedView surface="canvas" style={styles.flex}>
@@ -29,8 +33,18 @@ export default function SearchScreen() {
             <Icon name="graphic-eq" size={16} color={Colors.primary} />
           </View>
           <View style={styles.headerActions}>
-            <IconButton icon="cast" accessibilityLabel="Cast" onPress={() => {}} size={36} />
-            <IconButton icon="notifications" accessibilityLabel="Notifications" onPress={() => {}} size={36} />
+            <IconButton
+              icon="cast"
+              accessibilityLabel="Cast"
+              onPress={() => showToast("Casting to other devices isn't available yet", 'cast')}
+              size={36}
+            />
+            <IconButton
+              icon="notifications"
+              accessibilityLabel="Notifications"
+              onPress={() => showToast("Notifications aren't available yet", 'notifications')}
+              size={36}
+            />
           </View>
         </View>
       </SafeAreaView>
@@ -39,8 +53,16 @@ export default function SearchScreen() {
         <TextField
           placeholder="What do you want to listen to?"
           leftAccessory={<Icon name="search" color={Colors.text.medium} />}
-          rightAccessory={<Icon name="mic" color={Colors.text.medium} />}
-          onFocus={() => router.push('/search/results')}
+          rightAccessory={
+            <IconButton
+              icon="mic"
+              size={32}
+              color={Colors.text.medium}
+              accessibilityLabel="Voice search"
+              onPress={() => showToast("Voice search isn't available yet", 'mic')}
+            />
+          }
+          onFocus={() => openResults()}
         />
 
         {recentSearches.length > 0 && (
@@ -56,7 +78,7 @@ export default function SearchScreen() {
                 <RemovableChip
                   key={query}
                   label={query}
-                  onPress={() => router.push('/search/results')}
+                  onPress={() => openResults(query)}
                   onRemove={() => setRecentSearches((prev) => prev.filter((q) => q !== query))}
                 />
               ))}
@@ -75,7 +97,7 @@ export default function SearchScreen() {
                 rank={index + 1}
                 title={item.query}
                 subtitle={item.meta}
-                onPress={() => router.push('/search/results')}
+                onPress={() => openResults(item.query)}
                 style={styles.trendingItem}
               />
             ))}
@@ -113,6 +135,7 @@ export default function SearchScreen() {
           ))}
         </View>
       </ScrollView>
+      {toast}
     </ThemedView>
   );
 }

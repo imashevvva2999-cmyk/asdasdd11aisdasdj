@@ -99,6 +99,9 @@ export type MoodMix = {
   trackCount: number;
   icon: string;
   tint: 'primary' | 'tertiary' | 'secondary';
+  /** Local sample of what tapping the mix plays (the full mix is a backend
+   * recommendation concern — `trackCount` is the designed display figure). */
+  trackIds: TrackId[];
 };
 
 export type LibraryItemKind = 'playlist' | 'artist' | 'album';

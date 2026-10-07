@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Icon, IconButton, TextField, Toast, ToggleRow, ValueRow } from '@/components/ui';
+import { Icon, IconButton, PressableScale, TextField, ToggleRow, ValueRow } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
+import { useToast } from '@/hooks/use-toast';
 
 type SettingsRow = { id: string; label: string; render: () => React.ReactNode };
 type SettingsSection = { id: string; title: string; rows: SettingsRow[] };
@@ -26,12 +27,13 @@ export default function SettingsScreen() {
   const [crossfadeSec, setCrossfadeSec] = useState(4);
   const [fastPayAuth, setFastPayAuth] = useState(true);
   const [supportReceipts, setSupportReceipts] = useState(true);
-  const [clearCacheToastVisible, setClearCacheToastVisible] = useState(false);
+  const [cacheCleared, setCacheCleared] = useState(false);
+  const { showToast, toast } = useToast();
 
-  function handleClearCache() {
-    setClearCacheToastVisible(true);
-    setTimeout(() => setClearCacheToastVisible(false), 2000);
-  }
+  const handleClearCache = useCallback(() => {
+    setCacheCleared(true);
+    showToast('Cache cleared', 'cleaning-services');
+  }, [showToast]);
 
   const sections: SettingsSection[] = useMemo(
     () => [
@@ -60,12 +62,12 @@ export default function SettingsScreen() {
             label: 'Download over Cellular',
             render: () => <ToggleRow title="Download over Cellular" value={downloadOverCellular} onValueChange={setDownloadOverCellular} />,
           },
-          { id: 'storage-used', label: 'Storage Used', render: () => <ValueRow title="Storage Used" value="14.2 GB (Music 12.8 • Cache 1.4)" /> },
+          { id: 'storage-used', label: 'Storage Used', render: () => <ValueRow title="Storage Used" value={cacheCleared ? '12.8 GB (Music 12.8 • Cache 0)' : '14.2 GB (Music 12.8 • Cache 1.4)'} /> },
           {
             id: 'clear-cache',
             label: 'Clear Cache',
             render: () => (
-              <ValueRow title="Clear Cache" value="1.4 GB" onPress={handleClearCache} />
+              <ValueRow title="Clear Cache" value={cacheCleared ? '0 B' : '1.4 GB'} onPress={handleClearCache} />
             ),
           },
         ],
@@ -137,7 +139,7 @@ export default function SettingsScreen() {
         ],
       },
     ],
-    [lossless, dolbyAtmos, volumeNormalization, downloadOverCellular, gapless, crossfadeSec, fastPayAuth, supportReceipts],
+    [lossless, dolbyAtmos, volumeNormalization, downloadOverCellular, gapless, crossfadeSec, fastPayAuth, supportReceipts, cacheCleared, handleClearCache],
   );
 
   const filteredSections = useMemo(() => {
@@ -181,20 +183,23 @@ export default function SettingsScreen() {
             Powered by MBANK Core Architecture
           </ThemedText>
           <View style={styles.footerLinks}>
-            <ThemedText variant="body-sm" emphasis="primary">
-              Terms
-            </ThemedText>
-            <ThemedText variant="body-sm" emphasis="primary">
-              Privacy
-            </ThemedText>
-            <ThemedText variant="body-sm" emphasis="primary">
-              Audio Licenses
-            </ThemedText>
+            {['Terms', 'Privacy', 'Audio Licenses'].map((label) => (
+              <PressableScale
+                key={label}
+                accessibilityRole="link"
+                accessibilityLabel={label}
+                onPress={() => showToast(`The ${label} page isn't available yet`, 'info')}
+              >
+                <ThemedText variant="body-sm" emphasis="primary">
+                  {label}
+                </ThemedText>
+              </PressableScale>
+            ))}
           </View>
         </View>
       </ScrollView>
 
-      <Toast message="Cache cleared" icon="cleaning-services" visible={clearCacheToastVisible} />
+      {toast}
     </ThemedView>
   );
 }

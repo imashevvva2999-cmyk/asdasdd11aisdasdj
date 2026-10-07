@@ -6,6 +6,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { CoverCard, EqualizerIndicator, FeaturedBanner, IconButton, MoodCard, QuickTile, SectionHeader, TrackRow } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
+import { useToast } from '@/hooks/use-toast';
 import {
   forYouTiles,
   getAlbumById,
@@ -17,6 +18,7 @@ import {
   newReleases,
   trendingNowAlbumIds,
 } from '@/mocks';
+import { useLibraryStore } from '@/state/library-store';
 import { usePlayerStore } from '@/state/player-store';
 
 /** S-01 Home — tab root (docs/screens.md §3.1). */
@@ -25,8 +27,10 @@ export default function HomeScreen() {
   const play = usePlayerStore((s) => s.play);
   const currentTrackId = usePlayerStore((s) => s.currentTrackId());
   const isPlaying = usePlayerStore((s) => s.isPlaying);
-  const isLiked = usePlayerStore((s) => s.isLiked);
-  const toggleLike = usePlayerStore((s) => s.toggleLike);
+  const libraryItems = useLibraryStore((s) => s.items);
+  const toggleSaved = useLibraryStore((s) => s.toggleSaved);
+  const isAlbumSaved = (albumId: string) => libraryItems.some((item) => item.kind === 'album' && item.refId === albumId);
+  const { showToast, toast } = useToast();
 
   return (
     <ThemedView surface="canvas" style={styles.flex}>
@@ -39,8 +43,15 @@ export default function HomeScreen() {
                 key={tile.id}
                 title={tile.title}
                 coverUri={tile.coverUri}
-                onPress={() => {}}
-                onPlayPress={() => {}}
+                onPress={() => {
+                  if (tile.artistId) {
+                    router.push({ pathname: '/artist/[id]', params: { id: tile.artistId } });
+                    return;
+                  }
+                  play(tile.trackIds[0]!, tile.trackIds);
+                  router.push('/player/now-playing');
+                }}
+                onPlayPress={() => play(tile.trackIds[0]!, tile.trackIds)}
                 style={styles.forYouItem}
               />
             ))}
@@ -70,7 +81,6 @@ export default function HomeScreen() {
             {trendingNowAlbumIds.map((albumId) => {
               const album = getAlbumById(albumId);
               if (!album) return null;
-              const firstTrackId = album.trackIds?.[0];
               return (
                 <CoverCard
                   key={album.id}
@@ -80,9 +90,9 @@ export default function HomeScreen() {
                   title={album.title}
                   subtitle={album.artistName}
                   meta={`${album.trackCount} Tracks`}
-                  liked={firstTrackId ? isLiked(firstTrackId) : false}
+                  liked={isAlbumSaved(album.id)}
                   onPress={() => router.push({ pathname: '/album/[id]', params: { id: album.id } })}
-                  onToggleLike={firstTrackId ? () => toggleLike(firstTrackId) : undefined}
+                  onToggleLike={() => toggleSaved('album', album.id)}
                 />
               );
             })}
@@ -114,7 +124,11 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.section}>
-          <SectionHeader title="Jump Back In" actionLabel="History" onActionPress={() => {}} />
+          <SectionHeader
+            title="Jump Back In"
+            actionLabel="History"
+            onActionPress={() => showToast("Full listening history isn't available yet", 'history')}
+          />
           <View style={styles.trackList}>
             {jumpBackInTrackIds.map((trackId) => {
               const track = getTrackById(trackId);
@@ -133,7 +147,7 @@ export default function HomeScreen() {
                     play(track.id, jumpBackInTrackIds);
                     router.push({ pathname: '/player/now-playing', params: { trackId: track.id } });
                   }}
-                  onOptionsPress={() => {}}
+                  onOptionsPress={() => router.push({ pathname: '/sheets/options', params: { kind: 'track', id: track.id } })}
                 />
               );
             })}
@@ -153,12 +167,16 @@ export default function HomeScreen() {
                 trackCountLabel={`${mix.trackCount} Tracks`}
                 icon={mix.icon}
                 tint={mix.tint}
-                onPress={() => {}}
+                onPress={() => {
+                  play(mix.trackIds[0]!, mix.trackIds);
+                  router.push('/player/now-playing');
+                }}
               />
             ))}
           </View>
         </View>
       </ScrollView>
+      {toast}
     </ThemedView>
   );
 }

@@ -5,7 +5,9 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Artwork, Chip, Icon, PillButton, TextField, TextLinkButton, Toast, ToggleRow } from '@/components/ui';
+import { sampleImageChoices } from '@/constants/stitch-artwork';
 import { Colors, Radii, Spacing } from '@/constants/theme';
+import { goBack } from '@/lib/navigation';
 import { useArtistStore } from '@/state/artist-store';
 
 const GENRE_OPTIONS = ['Electronic', 'Ambient', 'Synthwave', 'Indie', 'Dream Pop', 'Neo-Classical', 'Hip-Hop', 'Pop', 'Rock', 'Jazz', 'Lo-Fi'];
@@ -34,6 +36,10 @@ export default function UploadTrackScreen() {
   const entries = useArtistStore((s) => s.entries);
 
   const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
+  // Simulated picker (no native image picker is installed) — cycles the bundled
+  // sample covers, mirroring "Browse File" above.
+  const [coverIndex, setCoverIndex] = useState<number | null>(null);
+  const coverUri = coverIndex === null ? undefined : sampleImageChoices[coverIndex];
   const [title, setTitle] = useState('');
   const [collaborators, setCollaborators] = useState('');
   const [genre, setGenre] = useState<string | undefined>(undefined);
@@ -57,6 +63,7 @@ export default function UploadTrackScreen() {
       genre,
       explicit,
       durationSec: MOCK_FILE_DURATION_SEC,
+      coverUri,
     });
   }
 
@@ -73,7 +80,7 @@ export default function UploadTrackScreen() {
     setDraftSavedToastVisible(true);
     setTimeout(() => {
       setDraftSavedToastVisible(false);
-      router.back();
+      goBack('/profile/artist/dashboard');
     }, 900);
   }
 
@@ -97,8 +104,16 @@ export default function UploadTrackScreen() {
           <ThemedText variant="body-md" emphasis="medium" style={styles.centerText}>
             &quot;{activeEntry.track.title}&quot; is now live on your artist profile.
           </ThemedText>
-          <PillButton label="View Public Profile" onPress={() => router.replace('/profile/artist/dashboard')} style={styles.resultButton} />
-          <TextLinkButton label="Back to Dashboard" onPress={() => router.back()} />
+          <PillButton
+            label="View Public Profile"
+            onPress={() => {
+              // Leave Upload Track first so Back from the public profile lands on the Dashboard.
+              router.dismissTo('/profile/artist/dashboard');
+              router.push({ pathname: '/artist/[id]', params: { id: activeEntry.track.artistId } });
+            }}
+            style={styles.resultButton}
+          />
+          <TextLinkButton label="Back to Dashboard" onPress={() => goBack('/profile/artist/dashboard')} />
         </View>
       </ThemedView>
     );
@@ -151,8 +166,13 @@ export default function UploadTrackScreen() {
             Cover Artwork
           </ThemedText>
           <View style={styles.coverRow}>
-            <Artwork size={64} radius={Radii.md} />
-            <PillButton label="Change Cover" variant="secondary" onPress={() => {}} disabled={isBusy} />
+            <Artwork size={64} radius={Radii.md} uri={coverUri} />
+            <PillButton
+              label={coverUri ? 'Change Cover' : 'Choose Cover'}
+              variant="secondary"
+              onPress={() => setCoverIndex((index) => (index === null ? 0 : (index + 1) % sampleImageChoices.length))}
+              disabled={isBusy || sampleImageChoices.length === 0}
+            />
           </View>
         </View>
 

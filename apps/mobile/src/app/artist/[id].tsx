@@ -1,5 +1,4 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -7,6 +6,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Artwork, AvatarCard, CoverCard, IconButton, Icon, PillButton, SectionHeader, TrackRow } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
 import { getAlbumById, getArtistById, getTrackById } from '@/mocks';
+import { useLibraryStore } from '@/state/library-store';
 import { usePlayerStore } from '@/state/player-store';
 
 /** Pre-renders the enriched `solaris-echo` artist for static web export (verify-routes.mjs);
@@ -21,11 +21,13 @@ export function generateStaticParams() {
  * is what any listener sees when they open an artist from Home/Search/Library/Album.
  */
 export default function ArtistProfileScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const artist = getArtistById(id ?? '');
-  const [isFollowing, setIsFollowing] = useState(false);
+  const { id = '' } = useLocalSearchParams<{ id: string }>();
+  const artist = getArtistById(id);
+  const isFollowing = useLibraryStore((s) => s.isSaved('artist', id));
+  const toggleSaved = useLibraryStore((s) => s.toggleSaved);
 
   const play = usePlayerStore((s) => s.play);
+  const playShuffled = usePlayerStore((s) => s.playShuffled);
   const currentTrackId = usePlayerStore((s) => s.currentTrackId());
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const isLiked = usePlayerStore((s) => s.isLiked);
@@ -66,14 +68,10 @@ export default function ArtistProfileScreen() {
             <PillButton
               label={isFollowing ? 'Following' : 'Follow'}
               variant={isFollowing ? 'secondary' : 'primary'}
-              onPress={() => setIsFollowing((v) => !v)}
+              onPress={() => toggleSaved('artist', artist.id)}
               style={styles.flexButton}
             />
-            <IconButton
-              icon="shuffle"
-              accessibilityLabel="Shuffle popular tracks"
-              onPress={() => popularTrackIds.length > 0 && play(popularTrackIds[0]!, popularTrackIds)}
-            />
+            <IconButton icon="shuffle" accessibilityLabel="Shuffle popular tracks" onPress={() => playShuffled(popularTrackIds)} />
             <IconButton
               icon="play-arrow"
               accessibilityLabel="Play popular tracks"
@@ -104,6 +102,7 @@ export default function ArtistProfileScreen() {
                   liked={isLiked(track!.id)}
                   onPress={() => play(track!.id, popularTrackIds)}
                   onToggleLike={() => toggleLike(track!.id)}
+                  onOptionsPress={() => router.push({ pathname: '/sheets/options', params: { kind: 'track', id: track!.id } })}
                 />
               ))}
             </View>

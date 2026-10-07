@@ -5,6 +5,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Artwork, Icon, PillButton, TextLinkButton } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
+import { goBack } from '@/lib/navigation';
 import { getArtistById } from '@/mocks';
 import { useSupportStore } from '@/state/support-store';
 
@@ -29,7 +30,7 @@ export default function SupportConfirmSheet() {
         <ThemedText variant="body-md" emphasis="medium" style={styles.notFound}>
           Nothing to confirm. Go back and choose a support amount.
         </ThemedText>
-        <TextLinkButton label="Back" onPress={() => router.back()} style={styles.notFoundLink} />
+        <TextLinkButton label="Back" onPress={() => goBack()} style={styles.notFoundLink} />
       </ThemedView>
     );
   }
@@ -74,7 +75,7 @@ export default function SupportConfirmSheet() {
           onPress={handleConfirm}
           style={styles.cta}
         />
-        <TextLinkButton label="Cancel" onPress={() => router.back()} disabled={stage === 'processing'} />
+        <TextLinkButton label="Cancel" onPress={() => goBack()} disabled={stage === 'processing'} />
       </View>
     </ThemedView>
   );

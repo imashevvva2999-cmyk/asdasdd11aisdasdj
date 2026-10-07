@@ -21,7 +21,7 @@ const expectations = [
   { path: 'home/index.html', mustContain: ['For you', 'Trending Now', 'New Releases', 'Jump Back In', 'Vibe Mixes'], mustNotContain: ['PLACEHOLDER'], label: 'Home (S-01)' },
   { path: 'home/see-all.html', mustContain: ['This Week', 'Fresh Finds'], mustNotContain: ['PLACEHOLDER'], label: 'See All (S-02)' },
   { path: 'search/index.html', mustContain: ['What do you want to listen to', 'RECENT SEARCHES', 'TRENDING SEARCHES', 'Browse All'], mustNotContain: ['PLACEHOLDER'], label: 'Search / Explore (S-03)' },
-  { path: 'search/results.html', mustContain: ['Top Result', 'Songs'], mustNotContain: ['PLACEHOLDER'], label: 'Search Results (S-04)' },
+  { path: 'search/results.html', mustContain: ['Search Mmusic', 'Trending right now'], mustNotContain: ['PLACEHOLDER', 'No results for'], label: 'Search Results (S-04)' },
   { path: 'search/all-genres.html', mustContain: ['Explore 24+ sonic realms', 'Curated Realms'], mustNotContain: ['PLACEHOLDER'], label: 'All Genres & Moods (S-06)' },
   { path: 'search/genre/[id].html', mustContain: ['Essential Compilations', 'Pioneering Artists'], mustNotContain: ['PLACEHOLDER'], label: 'Genre detail (S-07)' },
   { path: 'library/index.html', mustContain: ['Your Library', 'Liked Songs'], mustNotContain: ['PLACEHOLDER'], label: 'Library (S-12)' },

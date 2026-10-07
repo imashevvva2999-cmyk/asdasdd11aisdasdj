@@ -7,6 +7,9 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { EmptyState, IconButton } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
+import { useToast } from '@/hooks/use-toast';
+import { goBack } from '@/lib/navigation';
+import { shareEntity } from '@/lib/share';
 import { getLyricsForTrack } from '@/mocks';
 import { usePlayerStore } from '@/state/player-store';
 
@@ -18,6 +21,7 @@ export default function LyricsScreen() {
   const togglePlayPause = usePlayerStore((s) => s.togglePlayPause);
   const next = usePlayerStore((s) => s.next);
   const previous = usePlayerStore((s) => s.previous);
+  const { showToast, toast } = useToast();
 
   const lines = track ? getLyricsForTrack(track.id) : undefined;
 
@@ -35,7 +39,7 @@ export default function LyricsScreen() {
     <ThemedView surface="canvas" style={styles.flex}>
       <SafeAreaView style={styles.flex}>
         <View style={styles.header}>
-          <IconButton icon="keyboard-arrow-down" accessibilityLabel="Collapse" onPress={() => router.back()} />
+          <IconButton icon="keyboard-arrow-down" accessibilityLabel="Collapse" onPress={() => goBack()} />
           <View style={styles.headerCenter}>
             {track && (
               <>
@@ -48,7 +52,15 @@ export default function LyricsScreen() {
               </>
             )}
           </View>
-          <IconButton icon="share" accessibilityLabel="Share" onPress={() => {}} />
+          <IconButton
+            icon="share"
+            accessibilityLabel="Share"
+            onPress={async () => {
+              if (!track) return;
+              const shared = await shareEntity('track', track.id, track.title);
+              if (!shared) showToast("Sharing isn't available on this device", 'share');
+            }}
+          />
         </View>
 
         {!track || !lines ? (
@@ -92,6 +104,7 @@ export default function LyricsScreen() {
           <TabLink label="Queue" onPress={() => router.push('/player/queue')} />
         </View>
       </SafeAreaView>
+      {toast}
     </ThemedView>
   );
 }

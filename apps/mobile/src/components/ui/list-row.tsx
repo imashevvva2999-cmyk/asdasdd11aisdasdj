@@ -266,7 +266,7 @@ export type MenuRowProps = {
  * reused by Artist Flow's S-25 feature rows and S-23 "Studio Sanctuary" / "Become an Artist"). */
 export function MenuRow({ icon, title, subtitle, onPress, style }: MenuRowProps) {
   return (
-    <PressableScale onPress={onPress} style={[menuStyles.row, style]} accessibilityRole="button">
+    <PressableScale onPress={onPress} disabled={!onPress} style={[menuStyles.row, style]} accessibilityRole={onPress ? 'button' : undefined}>
       <View style={menuStyles.iconCircle}>
         <Icon name={icon} color={Colors.primary} />
       </View>
@@ -280,7 +280,7 @@ export function MenuRow({ icon, title, subtitle, onPress, style }: MenuRowProps)
           </ThemedText>
         )}
       </View>
-      <Icon name="chevron-right" color={Colors.text.medium} />
+      {onPress && <Icon name="chevron-right" color={Colors.text.medium} />}
     </PressableScale>
   );
 }

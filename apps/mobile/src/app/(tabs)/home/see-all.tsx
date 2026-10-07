@@ -6,8 +6,11 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Chip, CoverCard, IconButton, PillButton } from '@/components/ui';
 import type { LocalOrRemoteImage } from '@/constants/stitch-artwork';
-import { Spacing } from '@/constants/theme';
+import { Colors, Spacing } from '@/constants/theme';
+import { useToast } from '@/hooks/use-toast';
 import { albums, getTrackById, type Album, type Track } from '@/mocks';
+import { useLibraryStore } from '@/state/library-store';
+import { usePlayerStore } from '@/state/player-store';
 
 const FILTERS = ['This Week', 'Top Charts', 'Albums', 'Singles'] as const;
 type FilterKey = (typeof FILTERS)[number];
@@ -18,6 +21,7 @@ const TOP_CHART_TRACK_IDS = ['midnight-mirage', 'horizon', 'obsidian-frequencies
 
 type SeeAllItem = {
   id: string;
+  kind: 'album' | 'track';
   title: string;
   subtitle: string;
   coverUri?: LocalOrRemoteImage;
@@ -28,6 +32,7 @@ type SeeAllItem = {
 function albumToItem(album: Album): SeeAllItem {
   return {
     id: album.id,
+    kind: 'album',
     title: album.title,
     subtitle: album.artistName,
     coverUri: album.coverUri,
@@ -39,6 +44,7 @@ function albumToItem(album: Album): SeeAllItem {
 function trackToItem(track: Track, rank: number): SeeAllItem {
   return {
     id: track.id,
+    kind: 'track',
     title: track.title,
     subtitle: track.artistName,
     coverUri: track.coverUri,
@@ -82,6 +88,28 @@ function getFilterContent(filter: FilterKey): { sectionTitle: string; heroItem?:
 export default function SeeAllScreen() {
   const [activeFilter, setActiveFilter] = useState<FilterKey>('This Week');
   const { sectionTitle, heroItem, items } = useMemo(() => getFilterContent(activeFilter), [activeFilter]);
+  const libraryItems = useLibraryStore((s) => s.items);
+  const toggleSaved = useLibraryStore((s) => s.toggleSaved);
+  const likedTrackIds = usePlayerStore((s) => s.likedTrackIds);
+  const toggleLike = usePlayerStore((s) => s.toggleLike);
+  const { showToast, toast } = useToast();
+
+  const heroSaved = heroItem
+    ? heroItem.kind === 'track'
+      ? likedTrackIds.has(heroItem.id)
+      : libraryItems.some((item) => item.kind === 'album' && item.refId === heroItem.id)
+    : false;
+
+  function handleSaveHero() {
+    if (!heroItem) return;
+    if (heroItem.kind === 'track') {
+      toggleLike(heroItem.id);
+      showToast(heroSaved ? 'Removed from Liked Songs' : 'Added to Liked Songs', 'favorite');
+    } else {
+      toggleSaved('album', heroItem.id);
+      showToast(heroSaved ? 'Removed from Library' : 'Saved to Library', 'check');
+    }
+  }
 
   return (
     <ThemedView surface="canvas" style={styles.flex}>
@@ -102,8 +130,17 @@ export default function SeeAllScreen() {
             </ThemedText>
             <View style={styles.heroActions}>
               <PillButton label="Listen Now" onPress={heroItem.onPress} style={styles.heroButton} />
-              <IconButton icon="bookmark-add" accessibilityLabel="Save" onPress={() => {}} />
-              <IconButton icon="more-horiz" accessibilityLabel="More options" onPress={() => {}} />
+              <IconButton
+                icon={heroSaved ? 'bookmark-added' : 'bookmark-add'}
+                color={heroSaved ? Colors.primary : undefined}
+                accessibilityLabel={heroSaved ? 'Saved' : 'Save'}
+                onPress={handleSaveHero}
+              />
+              <IconButton
+                icon="more-horiz"
+                accessibilityLabel="More options"
+                onPress={() => router.push({ pathname: '/sheets/options', params: { kind: heroItem.kind, id: heroItem.id } })}
+              />
             </View>
           </View>
         )}
@@ -128,6 +165,7 @@ export default function SeeAllScreen() {
           </ScrollView>
         </View>
       </ScrollView>
+      {toast}
     </ThemedView>
   );
 }

@@ -1,12 +1,17 @@
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Artwork, CircleButton, IconButton, TrackRow } from '@/components/ui';
-import { Spacing } from '@/constants/theme';
-import { getPlaylistById, getTrackById } from '@/mocks';
+import { Colors, Spacing } from '@/constants/theme';
+import { useToast } from '@/hooks/use-toast';
+import { nextSortMode, sortTracks, type TrackSortMode } from '@/lib/sort-tracks';
+import { getTrackById, type Track } from '@/mocks';
+import { useLibraryStore } from '@/state/library-store';
 import { usePlayerStore } from '@/state/player-store';
+import { usePlaylistsStore } from '@/state/playlists-store';
 
 /** Pre-renders `late-night-flow` (the playlist with a full `trackIds` listing) for
  * static web export (verify-routes.mjs); other playlist IDs still resolve at runtime. */
@@ -20,14 +25,26 @@ export function generateStaticParams() {
  * presentational layout is implemented here).
  */
 export default function PlaylistScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const playlist = getPlaylistById(id ?? '');
+  const { id = '' } = useLocalSearchParams<{ id: string }>();
+  const playlist = usePlaylistsStore((s) => s.getPlaylistById(id));
 
   const play = usePlayerStore((s) => s.play);
+  const playShuffled = usePlayerStore((s) => s.playShuffled);
   const currentTrackId = usePlayerStore((s) => s.currentTrackId());
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const isLiked = usePlayerStore((s) => s.isLiked);
   const toggleLike = usePlayerStore((s) => s.toggleLike);
+  const isSaved = useLibraryStore((s) => s.isSaved('playlist', id));
+  const isDownloaded = useLibraryStore((s) => s.isDownloaded(id));
+  const toggleSaved = useLibraryStore((s) => s.toggleSaved);
+  const toggleDownloaded = useLibraryStore((s) => s.toggleDownloaded);
+  const [sortMode, setSortMode] = useState<TrackSortMode>('Default order');
+  const { showToast, toast } = useToast();
+
+  const trackList = useMemo(
+    () => sortTracks((playlist?.trackIds ?? []).map((trackId) => getTrackById(trackId)).filter((t): t is Track => Boolean(t)), sortMode),
+    [playlist?.trackIds, sortMode],
+  );
 
   if (!playlist) {
     return (
@@ -39,8 +56,7 @@ export default function PlaylistScreen() {
     );
   }
 
-  const trackList = (playlist.trackIds ?? []).map((trackId) => getTrackById(trackId)).filter(Boolean);
-  const trackIdsForPlayback = trackList.map((t) => t!.id);
+  const trackIdsForPlayback = trackList.map((t) => t.id);
 
   return (
     <ThemedView surface="canvas" style={styles.flex}>
@@ -56,25 +72,50 @@ export default function PlaylistScreen() {
             </ThemedText>
           )}
           <ThemedText variant="body-sm" emphasis="medium">
-            {playlist.editorial ? 'Editorial Playlist' : 'Curated by'} {playlist.curator ? `· ${playlist.curator}` : ''}
+            {playlist.editorial
+              ? `Editorial Playlist${playlist.curator ? ` · ${playlist.curator}` : ''}`
+              : playlist.curator
+                ? `Curated by · ${playlist.curator}`
+                : 'Your playlist'}
           </ThemedText>
           <ThemedText variant="body-sm" emphasis="medium">
-            {trackList.length || playlist.trackCount} tracks • {playlist.durationLabel}
+            {formatTrackCount(trackList.length || playlist.trackCount)}
+            {playlist.durationLabel ? ` • ${playlist.durationLabel}` : ''}
           </ThemedText>
 
           <View style={styles.actionsRow}>
             <IconButton
-              icon={trackList[0] && isLiked(trackList[0]!.id) ? 'favorite' : 'favorite-border'}
-              accessibilityLabel="Save playlist"
-              onPress={() => trackList[0] && toggleLike(trackList[0]!.id)}
+              icon={isSaved ? 'favorite' : 'favorite-border'}
+              color={isSaved ? Colors.primary : undefined}
+              accessibilityLabel={isSaved ? 'Remove playlist from Library' : 'Save playlist'}
+              onPress={() => {
+                toggleSaved('playlist', playlist.id);
+                showToast(isSaved ? 'Removed from Library' : 'Saved to Library', 'check');
+              }}
             />
-            <IconButton icon="download" accessibilityLabel="Download" onPress={() => {}} />
-            <IconButton icon="sort" accessibilityLabel="Sort" onPress={() => {}} />
+            <IconButton
+              icon={isDownloaded ? 'download-done' : 'download'}
+              color={isDownloaded ? Colors.secondary : undefined}
+              accessibilityLabel={isDownloaded ? 'Remove download' : 'Download'}
+              onPress={() => {
+                toggleDownloaded(playlist.id, 'playlist');
+                showToast(isDownloaded ? 'Download removed' : 'Marked for offline (demo — no audio is stored yet)', 'download');
+              }}
+            />
+            <IconButton
+              icon="sort"
+              accessibilityLabel={`Sort: ${sortMode}`}
+              onPress={() => {
+                const next = nextSortMode(sortMode);
+                setSortMode(next);
+                showToast(`Sorted by ${next}`, 'sort');
+              }}
+            />
             <View style={styles.spacer} />
             <IconButton
               icon="shuffle"
               accessibilityLabel="Shuffle"
-              onPress={() => trackIdsForPlayback.length > 0 && play(trackIdsForPlayback[0]!, trackIdsForPlayback)}
+              onPress={() => playShuffled(trackIdsForPlayback)}
             />
             <CircleButton
               icon="play-arrow"
@@ -87,24 +128,30 @@ export default function PlaylistScreen() {
         </View>
 
         <View style={styles.trackList}>
+          {trackList.length === 0 && (
+            <ThemedText variant="body-md" emphasis="medium" style={styles.emptyHint}>
+              No tracks yet — add some from any track&apos;s ⋮ menu.
+            </ThemedText>
+          )}
           {trackList.map((track, index) => (
             <TrackRow
-              key={track!.id}
+              key={track.id}
               index={index + 1}
-              title={track!.title}
-              artist={track!.artistName}
-              durationLabel={formatDuration(track!.durationSec)}
-              explicit={track!.explicit}
-              lossless={track!.lossless}
-              isPlaying={currentTrackId === track!.id && isPlaying}
-              liked={isLiked(track!.id)}
-              onPress={() => play(track!.id, trackIdsForPlayback)}
-              onToggleLike={() => toggleLike(track!.id)}
-              onOptionsPress={() => {}}
+              title={track.title}
+              artist={track.artistName}
+              durationLabel={formatDuration(track.durationSec)}
+              explicit={track.explicit}
+              lossless={track.lossless}
+              isPlaying={currentTrackId === track.id && isPlaying}
+              liked={isLiked(track.id)}
+              onPress={() => play(track.id, trackIdsForPlayback)}
+              onToggleLike={() => toggleLike(track.id)}
+              onOptionsPress={() => router.push({ pathname: '/sheets/options', params: { kind: 'track', id: track.id } })}
             />
           ))}
         </View>
       </ScrollView>
+      {toast}
     </ThemedView>
   );
 }
@@ -113,6 +160,10 @@ function formatDuration(totalSeconds: number): string {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   return `${minutes}:${String(seconds).padStart(2, '0')}`;
+}
+
+function formatTrackCount(count: number): string {
+  return `${count} ${count === 1 ? 'track' : 'tracks'}`;
 }
 
 const styles = StyleSheet.create({
@@ -148,5 +199,9 @@ const styles = StyleSheet.create({
   },
   trackList: {
     gap: 2,
+  },
+  emptyHint: {
+    textAlign: 'center',
+    marginTop: Spacing.lg,
   },
 });

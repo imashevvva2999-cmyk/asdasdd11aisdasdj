@@ -1,10 +1,12 @@
 import { create } from 'zustand';
 
+import type { LocalOrRemoteImage } from '@/constants/stitch-artwork';
 import { playlists as seedPlaylists, type Playlist, type PlaylistId, type TrackId } from '@/mocks';
 
 export type CreatePlaylistInput = {
   title: string;
   description?: string;
+  coverUri?: LocalOrRemoteImage;
   isPublic?: boolean;
   isCollaborative?: boolean;
   /** Auto-inserted when created from the Add to Playlist sheet's "New Playlist"
@@ -31,12 +33,13 @@ type PlaylistsState = {
 export const usePlaylistsStore = create<PlaylistsState>((set, get) => ({
   playlists: seedPlaylists,
 
-  createPlaylist: ({ title, description, isPublic = true, isCollaborative = false, initialTrackId }) => {
+  createPlaylist: ({ title, description, coverUri, isPublic = true, isCollaborative = false, initialTrackId }) => {
     const trackIds = initialTrackId ? [initialTrackId] : [];
     const newPlaylist: Playlist = {
       id: `user-playlist-${Date.now()}`,
       title,
       description,
+      coverUri,
       trackCount: trackIds.length,
       durationLabel: trackIds.length > 0 ? undefined : '0 min',
       trackIds,

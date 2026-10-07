@@ -208,3 +208,20 @@ export const generatedArtworkByGenreId: Record<string, LocalOrRemoteImage | unde
   'classical-film': safeRequire(() => require('../../assets/artwork/generated/classical-film.jpg')),
   'fresh-finds': safeRequire(() => require('../../assets/artwork/generated/fresh-finds.jpg')),
 };
+
+/**
+ * Neutral local sample images for the SIMULATED image pickers (Create
+ * Playlist "Add Cover"/"Color Wave", Upload Track "Change Cover", Artist
+ * Setup photo). No native image picker is a dependency yet, so each tap
+ * cycles through these instead — the same simulated-selection approach
+ * Upload Track's "Browse File" already uses. Not tied to any catalog entity,
+ * so a user's pick never duplicates another entity's artwork.
+ */
+export const sampleImageChoices: LocalOrRemoteImage[] = [
+  safeRequire(() => require('../../assets/artwork/samples/sample-1.jpg')),
+  safeRequire(() => require('../../assets/artwork/samples/sample-2.jpg')),
+  safeRequire(() => require('../../assets/artwork/samples/sample-3.jpg')),
+  safeRequire(() => require('../../assets/artwork/samples/sample-4.jpg')),
+  safeRequire(() => require('../../assets/artwork/samples/sample-5.jpg')),
+  safeRequire(() => require('../../assets/artwork/samples/sample-6.jpg')),
+].filter((value): value is LocalOrRemoteImage => Boolean(value));

@@ -1,12 +1,13 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Artwork, CircleButton, Icon, IconButton, PressableScale } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
+import { goBack } from '@/lib/navigation';
 import { getAlbumById } from '@/mocks';
 import { usePlayerStore } from '@/state/player-store';
 
@@ -28,6 +29,7 @@ export default function NowPlayingScreen() {
   const cycleRepeat = usePlayerStore((s) => s.cycleRepeat);
   const toggleLike = usePlayerStore((s) => s.toggleLike);
   const liked = usePlayerStore((s) => (track ? s.isLiked(track.id) : false));
+  const [scrubberWidth, setScrubberWidth] = useState(0);
 
   useEffect(() => {
     if (trackId && trackId !== currentTrackId) {
@@ -56,7 +58,7 @@ export default function NowPlayingScreen() {
     <ThemedView surface="canvas" style={styles.flex}>
       <SafeAreaView style={styles.flex}>
         <View style={styles.header}>
-          <IconButton icon="keyboard-arrow-down" accessibilityLabel="Collapse player" onPress={() => router.back()} />
+          <IconButton icon="keyboard-arrow-down" accessibilityLabel="Collapse player" onPress={() => goBack()} />
           <View style={styles.headerCenter}>
             <ThemedText variant="label-sm" emphasis="medium" style={styles.headerEyebrow}>
               {album ? 'PLAYING FROM ALBUM' : 'PLAYING'}
@@ -68,7 +70,7 @@ export default function NowPlayingScreen() {
           <IconButton
             icon="more-horiz"
             accessibilityLabel="More options"
-            onPress={() => router.push({ pathname: '/sheets/add-to-playlist', params: { trackId: track.id } })}
+            onPress={() => router.push({ pathname: '/sheets/options', params: { kind: 'track', id: track.id } })}
           />
         </View>
 
@@ -96,9 +98,30 @@ export default function NowPlayingScreen() {
         </View>
 
         <View style={styles.scrubberBlock}>
-          <View style={styles.scrubberTrack}>
-            <View style={[styles.scrubberProgress, { width: `${progressRatio * 100}%` }]} />
-          </View>
+          <Pressable
+            accessibilityRole="adjustable"
+            accessibilityLabel="Seek"
+            aria-valuemin={0}
+            aria-valuemax={track.durationSec}
+            aria-valuenow={Math.floor(progressSec)}
+            aria-valuetext={`${formatTime(progressSec)} of ${formatTime(track.durationSec)}`}
+            onLayout={(event) => setScrubberWidth(event.nativeEvent.layout.width)}
+            onPress={(event) => {
+              if (scrubberWidth <= 0) return;
+              // react-native-web press events may omit `locationX`; fall back to
+              // the DOM `offsetX` (same left edge — the bar spans the full width).
+              const native = event.nativeEvent as { locationX?: number; offsetX?: number };
+              const x = Number.isFinite(native.locationX) ? native.locationX : native.offsetX;
+              if (x === undefined || !Number.isFinite(x)) return;
+              const ratio = Math.min(1, Math.max(0, x / scrubberWidth));
+              seekTo(Math.round(ratio * track.durationSec));
+            }}
+            style={styles.scrubberHitArea}
+          >
+            <View style={styles.scrubberTrack}>
+              <View style={[styles.scrubberProgress, { width: `${progressRatio * 100}%` }]} />
+            </View>
+          </Pressable>
           <View style={styles.timeRow}>
             <ThemedText variant="mono-num" emphasis="medium">
               {formatTime(progressSec)}
@@ -141,7 +164,7 @@ export default function NowPlayingScreen() {
             icon="volunteer-activism"
             onPress={() => router.push({ pathname: '/sheets/support', params: { artistId: track.artistId } })}
           />
-          <PlayerTabButton label="Audio" icon="headphones" onPress={() => {}} active />
+          <PlayerTabButton label="Audio" icon="headphones" onPress={() => router.push('/profile/settings')} />
         </View>
       </SafeAreaView>
     </ThemedView>
@@ -222,6 +245,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.margin,
     marginTop: Spacing.lg,
     gap: Spacing.xs,
+  },
+  scrubberHitArea: {
+    paddingVertical: Spacing.sm,
   },
   scrubberTrack: {
     height: 6,

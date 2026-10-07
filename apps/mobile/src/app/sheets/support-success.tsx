@@ -5,6 +5,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Icon, PillButton, TextLinkButton } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
+import { goBack } from '@/lib/navigation';
 import { getArtistById } from '@/mocks';
 import { useSupportStore } from '@/state/support-store';
 
@@ -31,14 +32,14 @@ export default function SupportSuccessSheet() {
         <ThemedText variant="body-md" emphasis="medium" style={styles.notFound}>
           No recent support to show.
         </ThemedText>
-        <TextLinkButton label="Close" onPress={() => router.back()} style={styles.notFoundLink} />
+        <TextLinkButton label="Close" onPress={() => goBack()} style={styles.notFoundLink} />
       </ThemedView>
     );
   }
 
   function handleDone() {
     reset();
-    router.back();
+    goBack();
   }
 
   return (

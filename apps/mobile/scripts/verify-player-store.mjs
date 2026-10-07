@@ -87,6 +87,24 @@ check('removeFromQueue() removes a non-current upcoming track', usePlayerStore.g
 usePlayerStore.getState().playFromQueueIndex(1);
 check('playFromQueueIndex() jumps to and plays the given position', usePlayerStore.getState().currentTrackId() === 'horizon' && usePlayerStore.getState().isPlaying === true);
 
+// Autoplay preference (Queue "Infinity Autoplay" toggle).
+check('autoplay is off by default', usePlayerStore.getState().autoplay === false);
+usePlayerStore.getState().toggleAutoplay();
+check('toggleAutoplay() turns it on', usePlayerStore.getState().autoplay === true);
+usePlayerStore.getState().toggleAutoplay();
+check('toggleAutoplay() again turns it off', usePlayerStore.getState().autoplay === false);
+
+// playShuffled() (Shuffle buttons on Playlist / Album / Artist / Liked Songs).
+const shuffleQueue = ['midnight-mirage', 'horizon', 'ember-tide', 'obsidian-frequencies'];
+usePlayerStore.getState().playShuffled(shuffleQueue);
+check('playShuffled() starts playback', usePlayerStore.getState().isPlaying === true);
+check('playShuffled() enables shuffle mode', usePlayerStore.getState().shuffle === true);
+check('playShuffled() plays a track from the given list', shuffleQueue.includes(usePlayerStore.getState().currentTrackId()));
+
+// seekTo() (Now Playing scrubber tap-to-seek).
+usePlayerStore.getState().seekTo(42);
+check('seekTo() moves progress to the requested second', Math.floor(usePlayerStore.getState().progressSec) === 42);
+
 stopPlayerTicking();
 
 if (failures > 0) {

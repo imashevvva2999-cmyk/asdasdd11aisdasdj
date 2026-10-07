@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 
+import type { LocalOrRemoteImage } from '@/constants/stitch-artwork';
 import { addMockArtist, addMockTrack, currentUser, type Artist, type ArtistId, type Track, type TrackId } from '@/mocks';
 
 export type UploadStatus = 'draft' | 'uploading' | 'processing' | 'published' | 'error';
@@ -15,13 +16,13 @@ export type ArtistSetupInput = {
   genre?: string;
   bio?: string;
   location?: string;
-  photoUri?: string;
+  photoUri?: LocalOrRemoteImage;
 };
 
 export type UploadTrackInput = {
   title: string;
   genre?: string;
-  coverUri?: string;
+  coverUri?: LocalOrRemoteImage;
   explicit?: boolean;
   /** Seconds — from a real file's metadata if a native picker is ever wired
    * in, a fixed mock fallback otherwise. No real audio is decoded (OQ-50). */

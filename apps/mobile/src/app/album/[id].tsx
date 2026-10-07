@@ -5,7 +5,9 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Artwork, CircleButton, IconButton, TrackRow } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
+import { useToast } from '@/hooks/use-toast';
 import { getAlbumById, getTrackById } from '@/mocks';
+import { useLibraryStore } from '@/state/library-store';
 import { usePlayerStore } from '@/state/player-store';
 
 /** Pre-renders `horizon-deluxe` (the album with a full `trackIds` listing) for
@@ -16,9 +18,15 @@ export function generateStaticParams() {
 
 /** S-09 Album (docs/screens.md §3.4). */
 export default function AlbumScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const album = getAlbumById(id ?? '');
+  const { id = '' } = useLocalSearchParams<{ id: string }>();
+  const album = getAlbumById(id);
   const play = usePlayerStore((s) => s.play);
+  const playShuffled = usePlayerStore((s) => s.playShuffled);
+  const isSaved = useLibraryStore((s) => s.isSaved('album', id));
+  const isDownloaded = useLibraryStore((s) => s.isDownloaded(id));
+  const toggleSaved = useLibraryStore((s) => s.toggleSaved);
+  const toggleDownloaded = useLibraryStore((s) => s.toggleDownloaded);
+  const { showToast, toast } = useToast();
   const currentTrackId = usePlayerStore((s) => s.currentTrackId());
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const isLiked = usePlayerStore((s) => s.isLiked);
@@ -58,14 +66,30 @@ export default function AlbumScreen() {
 
           <View style={styles.actionsRow}>
             <IconButton
-              icon={trackList[0] && isLiked(trackList[0]!.id) ? 'favorite' : 'favorite-border'}
-              accessibilityLabel="Save album"
-              onPress={() => trackList[0] && toggleLike(trackList[0]!.id)}
+              icon={isSaved ? 'favorite' : 'favorite-border'}
+              color={isSaved ? Colors.primary : undefined}
+              accessibilityLabel={isSaved ? 'Remove album from Library' : 'Save album'}
+              onPress={() => {
+                toggleSaved('album', album.id);
+                showToast(isSaved ? 'Removed from Library' : 'Saved to Library', 'check');
+              }}
             />
-            <IconButton icon="download" accessibilityLabel="Download" onPress={() => {}} />
-            <IconButton icon="more-horiz" accessibilityLabel="More options" onPress={() => {}} />
+            <IconButton
+              icon={isDownloaded ? 'download-done' : 'download'}
+              color={isDownloaded ? Colors.secondary : undefined}
+              accessibilityLabel={isDownloaded ? 'Remove download' : 'Download'}
+              onPress={() => {
+                toggleDownloaded(album.id, 'album');
+                showToast(isDownloaded ? 'Download removed' : 'Marked for offline (demo — no audio is stored yet)', 'download');
+              }}
+            />
+            <IconButton
+              icon="more-horiz"
+              accessibilityLabel="More options"
+              onPress={() => router.push({ pathname: '/sheets/options', params: { kind: 'album', id: album.id } })}
+            />
             <View style={styles.spacer} />
-            <IconButton icon="shuffle" accessibilityLabel="Shuffle" onPress={() => trackList.length > 0 && play(trackList[0]!.id, trackList.map((t) => t!.id))} />
+            <IconButton icon="shuffle" accessibilityLabel="Shuffle" onPress={() => playShuffled(trackList.map((t) => t!.id))} />
             <CircleButton
               icon="play-arrow"
               accessibilityLabel="Play album"
@@ -90,7 +114,7 @@ export default function AlbumScreen() {
               liked={isLiked(track!.id)}
               onPress={() => play(track!.id, trackList.map((t) => t!.id))}
               onToggleLike={() => toggleLike(track!.id)}
-              onOptionsPress={() => {}}
+              onOptionsPress={() => router.push({ pathname: '/sheets/options', params: { kind: 'track', id: track!.id } })}
             />
           ))}
         </View>
@@ -99,6 +123,7 @@ export default function AlbumScreen() {
           © {album.year} {album.artistName}
         </ThemedText>
       </ScrollView>
+      {toast}
     </ThemedView>
   );
 }

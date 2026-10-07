@@ -1,12 +1,14 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Artwork, AvatarCard, Chip, CircleButton, CoverCard, EmptyState, Icon, LibraryRow, TextField, TrackRow } from '@/components/ui';
+import { Artwork, AvatarCard, Chip, CircleButton, CoverCard, EmptyState, Icon, IconButton, LibraryRow, TextField, TrackRow } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
-import { albums, artists, playlists, tracks, trendingSearches } from '@/mocks';
+import { albums, artists, tracks, trendingSearches } from '@/mocks';
+import { usePlayerStore } from '@/state/player-store';
+import { usePlaylistsStore } from '@/state/playlists-store';
 
 const FILTERS = ['All', 'Songs', 'Artists', 'Albums', 'Playlists'] as const;
 
@@ -17,17 +19,36 @@ const FILTERS = ['All', 'Songs', 'Artists', 'Albums', 'Playlists'] as const;
  * decision (docs/screens.md §2 Artist Flow notes apply the same principle here).
  */
 export default function SearchResultsScreen() {
-  const [query, setQuery] = useState('Solaris Echo');
+  const params = useLocalSearchParams<{ q?: string }>();
+  const initialQuery = typeof params.q === 'string' ? params.q : '';
+  const [query, setQuery] = useState(initialQuery);
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>('All');
+  const playlists = usePlaylistsStore((s) => s.playlists);
+  const play = usePlayerStore((s) => s.play);
+  const likedTrackIds = usePlayerStore((s) => s.likedTrackIds);
+  const toggleLike = usePlayerStore((s) => s.toggleLike);
 
   const q = query.trim().toLowerCase();
   const matchedArtists = useMemo(() => artists.filter((a) => q === '' || a.name.toLowerCase().includes(q)), [q]);
   const matchedTracks = useMemo(() => tracks.filter((t) => q === '' || t.title.toLowerCase().includes(q) || t.artistName.toLowerCase().includes(q)), [q]);
   const matchedAlbums = useMemo(() => albums.filter((a) => q === '' || a.title.toLowerCase().includes(q) || a.artistName.toLowerCase().includes(q)), [q]);
-  const matchedPlaylists = useMemo(() => playlists.filter((p) => q === '' || p.title.toLowerCase().includes(q)), [q]);
+  const matchedPlaylists = useMemo(() => playlists.filter((p) => q === '' || p.title.toLowerCase().includes(q)), [q, playlists]);
 
   const topResult = matchedArtists[0];
   const hasAnyResult = matchedArtists.length > 0 || matchedTracks.length > 0 || matchedAlbums.length > 0 || matchedPlaylists.length > 0;
+
+  function playTopResult() {
+    if (!topResult) return;
+    const queue = topResult.popularTrackIds?.length
+      ? topResult.popularTrackIds
+      : tracks.filter((t) => t.artistId === topResult.id).map((t) => t.id);
+    if (queue.length === 0) {
+      router.push({ pathname: '/artist/[id]', params: { id: topResult.id } });
+      return;
+    }
+    play(queue[0]!, queue);
+    router.push('/player/now-playing');
+  }
 
   return (
     <ThemedView surface="canvas" style={styles.flex}>
@@ -35,11 +56,13 @@ export default function SearchResultsScreen() {
         <TextField
           value={query}
           onChangeText={setQuery}
+          autoFocus={initialQuery === ''}
+          returnKeyType="search"
           placeholder="Songs, artists, or albums..."
           leftAccessory={<Icon name="search" color={Colors.text.medium} />}
           rightAccessory={
             query.length > 0 ? (
-              <Icon name="close" color={Colors.text.medium} />
+              <IconButton icon="close" size={32} color={Colors.text.medium} accessibilityLabel="Clear search" onPress={() => setQuery('')} />
             ) : undefined
           }
         />
@@ -50,15 +73,25 @@ export default function SearchResultsScreen() {
         </View>
       </View>
 
-      {!hasAnyResult ? (
-        <ScrollView contentContainerStyle={styles.emptyContent}>
-          <EmptyState
-            icon="search-off"
-            title={`No results for "${query}"`}
-            hint="Please check your spelling or try searching for another artist, track, album, or genre."
-            actionLabel="Explore All Genres"
-            onActionPress={() => router.push('/search/all-genres')}
-          />
+      {q === '' || !hasAnyResult ? (
+        <ScrollView contentContainerStyle={styles.emptyContent} keyboardShouldPersistTaps="handled">
+          {q === '' ? (
+            <EmptyState
+              icon="search"
+              title="Search Mmusic"
+              hint="Find songs, artists, albums and playlists."
+              actionLabel="Explore All Genres"
+              onActionPress={() => router.push('/search/all-genres')}
+            />
+          ) : (
+            <EmptyState
+              icon="search-off"
+              title={`No results for "${query}"`}
+              hint="Please check your spelling or try searching for another artist, track, album, or genre."
+              actionLabel="Explore All Genres"
+              onActionPress={() => router.push('/search/all-genres')}
+            />
+          )}
           <View style={styles.trendingNow}>
             <View style={styles.trendingHeader}>
               <Icon name="trending-up" size={16} color={Colors.secondary} />
@@ -72,7 +105,7 @@ export default function SearchResultsScreen() {
           </View>
         </ScrollView>
       ) : (
-        <ScrollView contentContainerStyle={styles.content}>
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           {(filter === 'All' || filter === 'Artists') && topResult && (
             <View style={styles.section}>
               <ThemedText variant="headline-sm">Top Result</ThemedText>
@@ -96,7 +129,7 @@ export default function SearchResultsScreen() {
                   size={44}
                   iconSize={22}
                   accessibilityLabel={`Play ${topResult.name} top tracks`}
-                  onPress={() => router.push({ pathname: '/artist/[id]', params: { id: topResult.id } })}
+                  onPress={playTopResult}
                 />
               </View>
             </View>
@@ -114,9 +147,10 @@ export default function SearchResultsScreen() {
                     artist={track.artistName}
                     lossless={track.lossless}
                     explicit={track.explicit}
+                    liked={likedTrackIds.has(track.id)}
                     onPress={() => router.push({ pathname: '/player/now-playing', params: { trackId: track.id } })}
-                    onToggleLike={() => {}}
-                    onOptionsPress={() => {}}
+                    onToggleLike={() => toggleLike(track.id)}
+                    onOptionsPress={() => router.push({ pathname: '/sheets/options', params: { kind: 'track', id: track.id } })}
                   />
                 ))}
               </View>
@@ -168,7 +202,7 @@ export default function SearchResultsScreen() {
                   key={playlist.id}
                   coverUri={playlist.coverUri}
                   title={playlist.title}
-                  subtitle={`Playlist • ${playlist.trackCount} songs${playlist.durationLabel ? ` • ${playlist.durationLabel}` : ''}`}
+                  subtitle={`Playlist • ${playlist.trackCount} ${playlist.trackCount === 1 ? 'song' : 'songs'}${playlist.durationLabel ? ` • ${playlist.durationLabel}` : ''}`}
                   trailing="chevron"
                   onPress={() => router.push({ pathname: '/playlist/[id]', params: { id: playlist.id } })}
                 />

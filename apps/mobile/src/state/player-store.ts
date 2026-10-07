@@ -30,18 +30,24 @@ type PlayerState = {
   shuffle: boolean;
   repeat: RepeatMode;
   likedTrackIds: Set<TrackId>;
+  /** Queue "Infinity Autoplay" toggle (S-17). Preference only — there is no
+   * recommendation source to append similar tracks from yet (OQ-24). */
+  autoplay: boolean;
   tickHandle: ReturnType<typeof setInterval> | null;
 
   currentTrack: () => Track | undefined;
   currentTrackId: () => TrackId | undefined;
   queueTracks: () => Track[];
   play: (trackId: TrackId, queue?: TrackId[]) => void;
+  /** "Shuffle" buttons: turn shuffle on and start from a random track. */
+  playShuffled: (queue: TrackId[]) => void;
   togglePlayPause: () => void;
   pause: () => void;
   next: () => void;
   previous: () => void;
   seekTo: (sec: number) => void;
   toggleShuffle: () => void;
+  toggleAutoplay: () => void;
   cycleRepeat: () => void;
   toggleLike: (trackId: TrackId) => void;
   isLiked: (trackId: TrackId) => boolean;
@@ -90,6 +96,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   shuffle: false,
   repeat: 'off',
   likedTrackIds: new Set(['midnight-mirage', 'abyssal-bloom']),
+  autoplay: false,
   tickHandle: null,
 
   currentTrackId: () => get().queue[get().currentIndex],
@@ -103,6 +110,13 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     const nextQueue = queue ?? (get().queue.includes(trackId) ? get().queue : [trackId]);
     const index = Math.max(0, nextQueue.indexOf(trackId));
     set({ queue: nextQueue, currentIndex: index, isPlaying: true, progressSec: 0 });
+    startTicking(get, set);
+  },
+
+  playShuffled: (queue) => {
+    if (queue.length === 0) return;
+    const startIndex = Math.floor(Math.random() * queue.length);
+    set({ queue, currentIndex: startIndex, shuffle: true, isPlaying: true, progressSec: 0 });
     startTicking(get, set);
   },
 
@@ -144,12 +158,15 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   },
 
   seekTo: (sec) => {
+    if (!Number.isFinite(sec)) return;
     const track = get().currentTrack();
     const clamped = track ? Math.max(0, Math.min(sec, track.durationSec)) : Math.max(0, sec);
     set({ progressSec: clamped });
   },
 
   toggleShuffle: () => set({ shuffle: !get().shuffle }),
+
+  toggleAutoplay: () => set({ autoplay: !get().autoplay }),
 
   cycleRepeat: () => {
     const order: RepeatMode[] = ['off', 'all', 'one'];

@@ -1,11 +1,11 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Artwork, Icon, IconButton, MenuRow, StatCard, Toast } from '@/components/ui';
+import { Artwork, Icon, IconButton, MenuRow, StatCard } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
+import { useToast } from '@/hooks/use-toast';
 import { currentUser, getArtistById } from '@/mocks';
 import { useArtistStore } from '@/state/artist-store';
 import { useSupportStore } from '@/state/support-store';
@@ -22,15 +22,16 @@ import { useSupportStore } from '@/state/support-store';
 export default function ProfileScreen() {
   const history = useSupportStore((s) => s.history);
   const myArtist = useArtistStore((s) => s.artist);
-  const [loggedOutToastVisible, setLoggedOutToastVisible] = useState(false);
+  const { showToast, toast } = useToast();
 
   const totalSupported = history.reduce((sum, entry) => sum + entry.amount, 0);
   const distinctArtistCount = new Set(history.map((entry) => entry.artistId)).size;
   const topArtist = currentUser.topArtistId ? getArtistById(currentUser.topArtistId) : undefined;
 
+  /** No real account/session exists in the frontend-only build (MBANK auth is
+   * a backend concern), so Log Out says so honestly instead of pretending. */
   function handleLogOut() {
-    setLoggedOutToastVisible(true);
-    setTimeout(() => setLoggedOutToastVisible(false), 2000);
+    showToast("Signing out isn't available in this preview", 'logout');
   }
 
   return (
@@ -40,7 +41,13 @@ export default function ProfileScreen() {
           <View style={styles.avatarWrap}>
             <View style={styles.avatarGlow} />
             <Artwork shape="circle" size={96} radius={48} uri={currentUser.photoUri} />
-            <IconButton icon="edit" accessibilityLabel="Edit profile photo" size={32} style={styles.editAvatarButton} onPress={() => {}} />
+            <IconButton
+              icon="edit"
+              accessibilityLabel="Edit profile photo"
+              size={32}
+              style={styles.editAvatarButton}
+              onPress={() => showToast("Changing your photo isn't available yet", 'edit')}
+            />
           </View>
           <View style={styles.nameRow}>
             <ThemedText variant="headline-lg">{currentUser.name}</ThemedText>
@@ -114,7 +121,7 @@ export default function ProfileScreen() {
         <MenuRow icon="logout" title="Log Out" onPress={handleLogOut} />
       </ScrollView>
 
-      <Toast message="Logged out" icon="logout" visible={loggedOutToastVisible} />
+      {toast}
     </ThemedView>
   );
 }
