@@ -1,3 +1,5 @@
+import { stitchArtworkByArtistId } from '@/constants/stitch-artwork';
+
 import type { Artist } from './types';
 
 export const artists: Artist[] = [
@@ -23,6 +25,13 @@ export const artists: Artist[] = [
   { id: 'elena-rostova', name: 'Elena Rostova', monthlyListeners: 275_000, genres: ['Ambient'] },
   { id: 'nils-frahm', name: 'Nils Frahm', monthlyListeners: 4_500_000, genres: ['Neo-Classical'] },
 ];
+
+// Fill in recovered Stitch artwork (Фаза 4 restoration pass) — a plain id
+// lookup, not a require() of its own; see src/constants/stitch-artwork.ts.
+for (const artist of artists) {
+  const photoUri = stitchArtworkByArtistId[artist.id];
+  if (photoUri) artist.photoUri = photoUri;
+}
 
 export function getArtistById(id: string): Artist | undefined {
   return artists.find((artist) => artist.id === id);

@@ -1,3 +1,5 @@
+import { stitchArtworkByTrackId } from '@/constants/stitch-artwork';
+
 import type { Track } from './types';
 
 export const tracks: Track[] = [
@@ -17,6 +19,13 @@ export const tracks: Track[] = [
   { id: 'velvet-skyline-t1', title: 'Velvet Skyline', artistId: 'maya-lin', artistName: 'Maya Lin', albumId: 'velvet-skyline', durationSec: 254, explicit: true },
   { id: 'chronos-echoes-t1', title: 'Chronos Echoes', artistId: 'tate-vane', artistName: 'Tate Vane', albumId: 'chronos-echoes', durationSec: 221 },
 ];
+
+// Fill in recovered Stitch artwork (Фаза 4 restoration pass) — a plain id
+// lookup, not a require() of its own; see src/constants/stitch-artwork.ts.
+for (const track of tracks) {
+  const coverUri = stitchArtworkByTrackId[track.id];
+  if (coverUri) track.coverUri = coverUri;
+}
 
 export function getTrackById(id: string): Track | undefined {
   return tracks.find((track) => track.id === id);

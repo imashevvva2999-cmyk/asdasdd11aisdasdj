@@ -5,7 +5,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Artwork, Icon, IconButton, MenuRow, StatCard, Toast } from '@/components/ui';
-import { Colors, Spacing } from '@/constants/theme';
+import { Colors, Radii, Spacing } from '@/constants/theme';
 import { currentUser, getArtistById } from '@/mocks';
 import { useArtistStore } from '@/state/artist-store';
 import { useSupportStore } from '@/state/support-store';
@@ -25,6 +25,7 @@ export default function ProfileScreen() {
   const [loggedOutToastVisible, setLoggedOutToastVisible] = useState(false);
 
   const totalSupported = history.reduce((sum, entry) => sum + entry.amount, 0);
+  const distinctArtistCount = new Set(history.map((entry) => entry.artistId)).size;
   const topArtist = currentUser.topArtistId ? getArtistById(currentUser.topArtistId) : undefined;
 
   function handleLogOut() {
@@ -37,6 +38,7 @@ export default function ProfileScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.hero}>
           <View style={styles.avatarWrap}>
+            <View style={styles.avatarGlow} />
             <Artwork shape="circle" size={96} radius={48} uri={currentUser.photoUri} />
             <IconButton icon="edit" accessibilityLabel="Edit profile photo" size={32} style={styles.editAvatarButton} onPress={() => {}} />
           </View>
@@ -47,6 +49,12 @@ export default function ProfileScreen() {
           <ThemedText variant="body-sm" emphasis="medium">
             @{currentUser.username} • Member since {currentUser.memberSinceYear}
           </ThemedText>
+          <View style={styles.vipBadge}>
+            <Icon name="graphic-eq" size={14} color={Colors.secondary} />
+            <ThemedText variant="label-sm" style={styles.vipBadgeText}>
+              MBANK VIP SOUND
+            </ThemedText>
+          </View>
         </View>
 
         <View style={styles.statsRow}>
@@ -74,19 +82,18 @@ export default function ProfileScreen() {
             <MenuRow
               icon="volunteer-activism"
               title="Support History"
-              subtitle={`${history.length} contributions`}
+              subtitle={`${totalSupported} сом supported • ${distinctArtistCount} artists`}
               onPress={() => router.push('/profile/support-history')}
             />
             <MenuRow
               icon="graphic-eq"
               title="Audio Quality & Playback"
-              subtitle="Lossless, Dolby Atmos, Crossfade"
               onPress={() => router.push('/profile/settings')}
             />
             <MenuRow
               icon="download-done"
               title="Downloads & Offline"
-              subtitle="14.2 GB • 348 songs"
+              subtitle="14.2 GB used • 348 songs"
               onPress={() => router.push('/profile/settings')}
             />
             <MenuRow
@@ -126,6 +133,16 @@ const styles = StyleSheet.create({
   avatarWrap: {
     position: 'relative',
   },
+  avatarGlow: {
+    position: 'absolute',
+    top: -6,
+    left: -6,
+    right: -6,
+    bottom: -6,
+    borderRadius: Radii.full,
+    backgroundColor: Colors.primary,
+    opacity: 0.25,
+  },
   editAvatarButton: {
     position: 'absolute',
     bottom: -4,
@@ -137,6 +154,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     marginTop: Spacing.md,
+  },
+  vipBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: Colors.surface.l3,
+    borderRadius: Radii.full,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 4,
+    marginTop: Spacing.sm,
+  },
+  vipBadgeText: {
+    color: Colors.secondary,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
   },
   statsRow: {
     flexDirection: 'row',

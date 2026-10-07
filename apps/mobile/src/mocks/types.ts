@@ -5,14 +5,17 @@
  * fetchers in this folder for real API calls later shouldn't require changing
  * screen components — only this folder's internals.
  *
- * `coverUri`/`photoUri` are intentionally left `undefined` everywhere in the mock
- * data: the Stitch exports only ever reference temporary Google-hosted preview
- * images (see docs/screens.md §0 — "в продукте не используются"), so hot-linking
- * them would misrepresent placeholder content as final artwork. Components fall
- * back to a plain surface-colored box when no URI is given — a clearly-identified
- * placeholder, not generated artwork. Replace with real asset URIs per entity
- * once a catalog exists.
+ * `coverUri`/`photoUri` are `LocalOrRemoteImage` (src/constants/stitch-artwork.ts):
+ * a `string` is a remote URL (none currently used — see docs/screens.md §0 on
+ * why Stitch's own temporary Google-hosted preview URLs are never hot-linked),
+ * a `number` or `{ uri, width, height }` object is whatever a local bundled
+ * asset's `require()` resolves to on the current platform (Фаза 4 artwork
+ * restoration pass). Where an entity has neither (no recovered Stitch asset
+ * exists for it), components fall back to a deterministic gradient
+ * placeholder (src/constants/fallback-artwork.ts) instead of a flat grey box
+ * — never generated/invented artwork.
  */
+import type { LocalOrRemoteImage } from '@/constants/stitch-artwork';
 
 export type TrackId = string;
 export type ArtistId = string;
@@ -27,7 +30,7 @@ export type Track = {
   artistName: string;
   albumId?: AlbumId;
   durationSec: number;
-  coverUri?: string;
+  coverUri?: LocalOrRemoteImage;
   explicit?: boolean;
   lossless?: boolean;
 };
@@ -37,7 +40,7 @@ export type Artist = {
   name: string;
   verified?: boolean;
   monthlyListeners?: number;
-  photoUri?: string;
+  photoUri?: LocalOrRemoteImage;
   genres?: string[];
   bio?: string;
   location?: string;
@@ -57,7 +60,7 @@ export type Album = {
   type: 'album' | 'ep' | 'single';
   year: number;
   trackCount: number;
-  coverUri?: string;
+  coverUri?: LocalOrRemoteImage;
   /** Real track references for the album's listing — falls back to `trackCount`
    * (no detailed listing) when omitted, rather than inventing filler rows. */
   trackIds?: TrackId[];
@@ -71,7 +74,7 @@ export type Playlist = {
   editorial?: boolean;
   trackCount: number;
   durationLabel?: string;
-  coverUri?: string;
+  coverUri?: LocalOrRemoteImage;
   /** Real track references — same policy as Album.trackIds. */
   trackIds?: TrackId[];
   /** "Updated 2h ago" style label for the Add to Playlist picker (docs/screens.md §3.7 S-18). */
@@ -86,7 +89,7 @@ export type Genre = {
   title: string;
   subtitle?: string;
   number?: number;
-  coverUri?: string;
+  coverUri?: LocalOrRemoteImage;
 };
 
 export type MoodMix = {
@@ -129,7 +132,7 @@ export type CurrentUser = {
   username: string;
   verified?: boolean;
   memberSinceYear: number;
-  photoUri?: string;
+  photoUri?: LocalOrRemoteImage;
   savedCount: number;
   playlistsCount: number;
   topArtistId?: ArtistId;

@@ -38,6 +38,7 @@ export default function HomeScreen() {
               <QuickTile
                 key={tile.id}
                 title={tile.title}
+                coverUri={tile.coverUri}
                 onPress={() => {}}
                 onPlayPress={() => {}}
                 style={styles.forYouItem}
@@ -52,6 +53,7 @@ export default function HomeScreen() {
               layout="footer"
               title={hero.title}
               subtitle={hero.curator}
+              coverUri={hero.coverUri}
               height={224}
               onPress={() => router.push({ pathname: '/playlist/[id]', params: { id: hero.id } })}
               onPlayPress={() => {
@@ -74,6 +76,7 @@ export default function HomeScreen() {
                   key={album.id}
                   layout="below"
                   width={160}
+                  coverUri={album.coverUri}
                   title={album.title}
                   subtitle={album.artistName}
                   meta={`${album.trackCount} Tracks`}
@@ -99,6 +102,7 @@ export default function HomeScreen() {
                   surfaced
                   width={192}
                   height={176}
+                  coverUri={album.coverUri}
                   title={album.title}
                   subtitle={album.artistName}
                   meta={label}
@@ -119,6 +123,7 @@ export default function HomeScreen() {
               return (
                 <TrackRow
                   key={track.id}
+                  coverUri={track.coverUri}
                   title={track.title}
                   artist={track.artistName}
                   lossless={track.lossless}

@@ -1,3 +1,5 @@
+import { stitchArtworkByAlbumId } from '@/constants/stitch-artwork';
+
 import type { Album } from './types';
 
 export const albums: Album[] = [
@@ -20,6 +22,13 @@ export const albums: Album[] = [
   },
   { id: 'neo-classical-horizons', title: 'Neo-Classical Horizons', artistId: 'nils-frahm', artistName: 'Nils Frahm', type: 'album', year: 2022, trackCount: 9 },
 ];
+
+// Fill in recovered Stitch artwork (Фаза 4 restoration pass) — a plain id
+// lookup, not a require() of its own; see src/constants/stitch-artwork.ts.
+for (const album of albums) {
+  const coverUri = stitchArtworkByAlbumId[album.id];
+  if (coverUri) album.coverUri = coverUri;
+}
 
 export function getAlbumById(id: string): Album | undefined {
   return albums.find((album) => album.id === id);

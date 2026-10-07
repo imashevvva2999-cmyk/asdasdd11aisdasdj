@@ -1,10 +1,17 @@
+import { stitchArtworkByGenreId } from '@/constants/stitch-artwork';
+
 import type { Genre } from './types';
 
-/** Featured regional banner on Search/All Genres (docs/screens.md §3.2 S-03/S-06). */
+/** Featured regional banner on Search/All Genres (docs/screens.md §3.2 S-03/S-06).
+ * Cover recovered from the Kyrgyz Music genre detail Stitch export's own
+ * "Hero Spotlight: Steppe Resonance" image (Фаза 4 restoration pass) — the
+ * direct banner reference in search_explore/code.html itself no longer
+ * resolves, so this is sourced from the deeper genre-detail export instead. */
 export const featuredGenre: Genre = {
   id: 'kyrgyz-music',
   title: 'Kyrgyz Music',
   subtitle: 'Ethno-synth & Komuz beats',
+  coverUri: stitchArtworkByGenreId['kyrgyz-music'],
 };
 
 /** "Curated Realms" / Browse All grid (12 categories, docs/screens.md §3.2 S-06). */

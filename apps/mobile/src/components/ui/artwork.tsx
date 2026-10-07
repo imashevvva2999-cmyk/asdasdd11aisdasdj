@@ -1,12 +1,14 @@
 import { Image } from 'expo-image';
 import { StyleSheet, View, type ViewStyle } from 'react-native';
 
+import { type LocalOrRemoteImage, toImageSource } from '@/constants/stitch-artwork';
 import { Colors, Radii } from '@/constants/theme';
+import { useHydrated } from '@/hooks/use-hydrated';
 
 import { Icon } from './icon';
 
 export type ArtworkProps = {
-  uri?: string;
+  uri?: LocalOrRemoteImage;
   size?: number;
   /** Non-square artwork (e.g. a wide hero) — overrides `size` for height. */
   aspectRatio?: number;
@@ -28,6 +30,7 @@ export type ArtworkProps = {
  */
 export function Artwork({ uri, size = 160, aspectRatio, radius = Radii.lg, shape = 'square', style }: ArtworkProps) {
   const height = aspectRatio ? size / aspectRatio : size;
+  const hydrated = useHydrated();
 
   return (
     <View
@@ -41,8 +44,8 @@ export function Artwork({ uri, size = 160, aspectRatio, radius = Radii.lg, shape
         style,
       ]}
     >
-      {uri ? (
-        <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" />
+      {uri && hydrated ? (
+        <Image source={toImageSource(uri)} style={StyleSheet.absoluteFill} contentFit="cover" />
       ) : (
         <View style={styles.placeholderIcon}>
           <Icon name="music-note" size={Math.max(20, Math.min(size, height) * 0.35)} color={Colors.text.low} />

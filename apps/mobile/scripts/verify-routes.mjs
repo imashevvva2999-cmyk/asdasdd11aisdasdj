@@ -50,7 +50,7 @@ const expectations = [
   { path: 'sheets/support.html', mustContain: ['Artist not found.'], mustNotContain: ['PLACEHOLDER'], label: 'Support Artist (S-19, no artist selected yet)' },
   { path: 'sheets/support-confirm.html', mustContain: ['Nothing to confirm'], mustNotContain: ['PLACEHOLDER'], label: 'Donation Confirmation (S-20, nothing to confirm yet)' },
   { path: 'sheets/support-success.html', mustContain: ['No recent support to show.'], mustNotContain: ['PLACEHOLDER'], label: 'Support Success (S-21, no recent donation yet)' },
-  { path: 'profile/index.html', mustContain: ['Alex Rivera', 'Studio Sanctuary', 'Become an Artist', 'Supported'], mustNotContain: ['PLACEHOLDER'], label: 'Profile Hub (S-23)' },
+  { path: 'profile/index.html', mustContain: ['Alex Rivers', 'Studio Sanctuary', 'Become an Artist', 'Supported'], mustNotContain: ['PLACEHOLDER'], label: 'Profile Hub (S-23)' },
   { path: 'profile/settings.html', mustContain: ['Audio Streaming', 'Downloads &amp; Storage', 'Playback &amp; Sound Engine', 'Account &amp; Payments'], mustNotContain: ['PLACEHOLDER'], label: 'Settings (S-24)' },
   { path: 'profile/support-history.html', mustContain: ['Support History', 'Total Supported', 'MBANK Direct Creator Network'], mustNotContain: ['PLACEHOLDER'], label: 'Support History (S-22)' },
   // Фаза 4, batch 4 — real screens (Artist Flow, UF-14). Dashboard renders

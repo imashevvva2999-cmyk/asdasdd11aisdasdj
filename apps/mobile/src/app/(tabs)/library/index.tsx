@@ -102,6 +102,7 @@ export default function LibraryScreen() {
               return (
                 <LibraryRow
                   key={item.id}
+                  coverUri={playlist.coverUri}
                   title={playlist.title}
                   subtitle={`${playlist.editorial ? 'Editorial' : 'Playlist'} • ${playlist.trackCount} songs`}
                   downloaded={item.downloaded}
@@ -118,6 +119,7 @@ export default function LibraryScreen() {
                 <LibraryRow
                   key={item.id}
                   coverShape="circle"
+                  coverUri={artist.photoUri}
                   title={artist.name}
                   verified={artist.verified}
                   subtitle={`Artist${artist.monthlyListeners ? ` • ${(artist.monthlyListeners / 1_000_000).toFixed(1)}M monthly listeners` : ''}`}
@@ -131,6 +133,7 @@ export default function LibraryScreen() {
             return (
               <LibraryRow
                 key={item.id}
+                coverUri={album.coverUri}
                 title={album.title}
                 subtitle={`Album • ${album.artistName} • ${album.trackCount} tracks`}
                 downloaded={item.downloaded}

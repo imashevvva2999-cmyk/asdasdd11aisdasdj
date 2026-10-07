@@ -3,7 +3,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, View, type GestureResponderEvent, type ViewStyle } from 'react-native';
 
 import { getFallbackGradient } from '@/constants/fallback-artwork';
+import { type LocalOrRemoteImage, toImageSource } from '@/constants/stitch-artwork';
 import { Colors, Radii, Spacing } from '@/constants/theme';
+import { useHydrated } from '@/hooks/use-hydrated';
 
 import { Icon } from './icon';
 import { PressableScale } from './pressable-scale';
@@ -25,7 +27,7 @@ function CoverFallback({ seed, iconSize = 28 }: { seed: string; iconSize?: numbe
 }
 
 export type CoverCardProps = {
-  coverUri?: string;
+  coverUri?: LocalOrRemoteImage;
   title: string;
   subtitle?: string;
   /** Extra line under subtitle, secondary-colored (e.g. "Single • Out Today" — New Releases). */
@@ -71,10 +73,11 @@ export function CoverCard({
   style,
 }: CoverCardProps) {
   const coverHeight = height ?? width;
+  const hydrated = useHydrated();
 
   const cover = (
     <View style={[cardStyles.coverBase, { width, height: coverHeight }, layout === 'overlay' && cardStyles.justifyEnd]}>
-      {coverUri ? <Image source={{ uri: coverUri }} style={StyleSheet.absoluteFill} contentFit="cover" /> : <CoverFallback seed={title} />}
+      {coverUri && hydrated ? <Image source={toImageSource(coverUri)} style={StyleSheet.absoluteFill} contentFit="cover" /> : <CoverFallback seed={title} />}
       {layout === 'overlay' && (
         <>
           <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={StyleSheet.absoluteFill} />
@@ -145,7 +148,7 @@ export function CoverCard({
 }
 
 export type FeaturedBannerProps = {
-  coverUri?: string;
+  coverUri?: LocalOrRemoteImage;
   title: string;
   subtitle?: string;
   height?: number;
@@ -165,11 +168,13 @@ export type FeaturedBannerProps = {
 /** Hero banner (DESIGN.md "Album & Playlist Cards"; docs/screens.md §3.4). Defaults
  * to 16:9; pass `height` for the fixed-height heroes used on Home/Search/Genre. */
 export function FeaturedBanner({ coverUri, title, subtitle, height, layout = 'overlay', onPlayPress, onPress, style }: FeaturedBannerProps) {
+  const hydrated = useHydrated();
+
   if (layout === 'footer') {
     return (
       <PressableScale onPress={onPress} style={[cardStyles.footerBannerWrap, style]} accessibilityRole={onPlayPress ? undefined : 'button'}>
         <View style={[cardStyles.footerBannerImage, { height: height ?? 224 }]}>
-          {coverUri ? <Image source={{ uri: coverUri }} style={StyleSheet.absoluteFill} contentFit="cover" /> : <CoverFallback seed={title} iconSize={40} />}
+          {coverUri && hydrated ? <Image source={toImageSource(coverUri)} style={StyleSheet.absoluteFill} contentFit="cover" /> : <CoverFallback seed={title} iconSize={40} />}
         </View>
         <View style={cardStyles.footerBannerFooter}>
           <View style={cardStyles.footerBannerText}>
@@ -200,7 +205,7 @@ export function FeaturedBanner({ coverUri, title, subtitle, height, layout = 'ov
   return (
     <PressableScale onPress={onPress} style={style} accessibilityRole="button">
       <View style={[cardStyles.banner, height !== undefined && { aspectRatio: undefined, height }]}>
-        {coverUri ? <Image source={{ uri: coverUri }} style={StyleSheet.absoluteFill} contentFit="cover" /> : <CoverFallback seed={title} iconSize={36} />}
+        {coverUri && hydrated ? <Image source={toImageSource(coverUri)} style={StyleSheet.absoluteFill} contentFit="cover" /> : <CoverFallback seed={title} iconSize={36} />}
         <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={StyleSheet.absoluteFill} />
         <View style={cardStyles.coverTextOverlay}>
           <ThemedText variant="headline-md" numberOfLines={1}>
@@ -218,7 +223,7 @@ export function FeaturedBanner({ coverUri, title, subtitle, height, layout = 'ov
 }
 
 export type AvatarCardProps = {
-  photoUri?: string;
+  photoUri?: LocalOrRemoteImage;
   name: string;
   verified?: boolean;
   metaLabel?: string;
@@ -229,12 +234,14 @@ export type AvatarCardProps = {
 
 /** Circular artist avatar card with verified mark + fan/meta count (docs/screens.md §3.4). */
 export function AvatarCard({ photoUri, name, verified, metaLabel, size = 88, onPress, style }: AvatarCardProps) {
+  const hydrated = useHydrated();
+
   return (
     <PressableScale onPress={onPress} style={[{ width: size }, style]} accessibilityRole="button">
       <View style={[cardStyles.avatar, { width: size, height: size, borderRadius: size / 2 }]}>
-        {photoUri && (
+        {photoUri && hydrated && (
           <Image
-            source={{ uri: photoUri }}
+            source={toImageSource(photoUri)}
             style={{ width: size, height: size, borderRadius: size / 2 }}
             contentFit="cover"
           />
@@ -281,7 +288,7 @@ export function StatCard({ label, value, icon, style }: StatCardProps) {
 }
 
 export type QuickTileProps = {
-  coverUri?: string;
+  coverUri?: LocalOrRemoteImage;
   title: string;
   onPress?: (event: GestureResponderEvent) => void;
   onPlayPress?: () => void;
@@ -291,10 +298,12 @@ export type QuickTileProps = {
 /** Compact 2-column "For you" quick-access tile — 48px cover + title + reveal
  * play button (docs/screens.md §3.4 "Quick tile"; Home S-01). */
 export function QuickTile({ coverUri, title, onPress, onPlayPress, style }: QuickTileProps) {
+  const hydrated = useHydrated();
+
   return (
     <PressableScale onPress={onPress} accessibilityRole={onPlayPress ? undefined : 'button'} style={[quickTileStyles.row, style]}>
       <View style={quickTileStyles.cover}>
-        {coverUri ? <Image source={{ uri: coverUri }} style={StyleSheet.absoluteFill} contentFit="cover" /> : <CoverFallback seed={title} iconSize={18} />}
+        {coverUri && hydrated ? <Image source={toImageSource(coverUri)} style={StyleSheet.absoluteFill} contentFit="cover" /> : <CoverFallback seed={title} iconSize={18} />}
       </View>
       <ThemedText variant="label-md" numberOfLines={1} style={quickTileStyles.title}>
         {title}

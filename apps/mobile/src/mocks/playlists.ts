@@ -1,3 +1,5 @@
+import { stitchArtworkByPlaylistId } from '@/constants/stitch-artwork';
+
 import type { Playlist } from './types';
 
 export const playlists: Playlist[] = [
@@ -18,6 +20,13 @@ export const playlists: Playlist[] = [
   { id: 'electronic-essentials', title: 'Electronic Essentials', trackCount: 65, durationLabel: '4 hr 02 min', updatedLabel: 'Updated 5d ago', isPublic: true },
   { id: 'this-is-solaris-echo', title: 'This is Solaris Echo', curator: 'Mmusic Editorial', editorial: true, trackCount: 45, durationLabel: '2 hr 48 min' },
 ];
+
+// Fill in recovered Stitch artwork (Фаза 4 restoration pass) — a plain id
+// lookup, not a require() of its own; see src/constants/stitch-artwork.ts.
+for (const playlist of playlists) {
+  const coverUri = stitchArtworkByPlaylistId[playlist.id];
+  if (coverUri) playlist.coverUri = coverUri;
+}
 
 export function getPlaylistById(id: string): Playlist | undefined {
   return playlists.find((playlist) => playlist.id === id);

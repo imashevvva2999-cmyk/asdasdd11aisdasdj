@@ -3,7 +3,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, View, type GestureResponderEvent, type ViewStyle } from 'react-native';
 
 import { getFallbackGradient } from '@/constants/fallback-artwork';
+import { type LocalOrRemoteImage, toImageSource } from '@/constants/stitch-artwork';
 import { Colors, Radii, Spacing } from '@/constants/theme';
+import { useHydrated } from '@/hooks/use-hydrated';
 
 import { Badge } from './badge';
 import { EqualizerIndicator } from './equalizer';
@@ -18,12 +20,13 @@ const ROW_HEIGHT = 56;
 /** `seed` (usually the row's title) picks a deterministic fallback gradient
  * instead of a flat grey box when there's no real cover (Фаза 4 visual QA
  * pass — see src/constants/fallback-artwork.ts). */
-function Cover({ uri, seed, size = 40, radius = 8, shape = 'square' }: { uri?: string; seed?: string; size?: number; radius?: number; shape?: 'square' | 'circle' }) {
+function Cover({ uri, seed, size = 40, radius = 8, shape = 'square' }: { uri?: LocalOrRemoteImage; seed?: string; size?: number; radius?: number; shape?: 'square' | 'circle' }) {
   const borderRadius = shape === 'circle' ? size / 2 : radius;
+  const hydrated = useHydrated();
   return (
     <View style={[styles.coverPlaceholder, { width: size, height: size, borderRadius }]}>
-      {uri ? (
-        <Image source={{ uri }} style={{ width: size, height: size, borderRadius }} contentFit="cover" />
+      {uri && hydrated ? (
+        <Image source={toImageSource(uri)} style={{ width: size, height: size, borderRadius }} contentFit="cover" />
       ) : (
         <>
           <LinearGradient colors={getFallbackGradient(seed ?? '') as [string, string]} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
@@ -39,7 +42,7 @@ function Cover({ uri, seed, size = 40, radius = 8, shape = 'square' }: { uri?: s
 export type TrackRowProps = {
   /** Track position in the list; replaced by an equalizer icon when `isPlaying`. */
   index?: number;
-  coverUri?: string;
+  coverUri?: LocalOrRemoteImage;
   title: string;
   artist: string;
   durationLabel?: string;
@@ -127,7 +130,7 @@ export function TrackRow({
 }
 
 export type QueueRowProps = {
-  coverUri?: string;
+  coverUri?: LocalOrRemoteImage;
   title: string;
   artist: string;
   durationLabel?: string;
@@ -159,7 +162,7 @@ export function QueueRow({ coverUri, title, artist, durationLabel, onPress, styl
 }
 
 export type LibraryRowProps = {
-  coverUri?: string;
+  coverUri?: LocalOrRemoteImage;
   coverShape?: 'square' | 'circle';
   title: string;
   subtitle?: string;
@@ -212,7 +215,7 @@ export function LibraryRow({
 }
 
 export type PlaylistPickerRowProps = {
-  coverUri?: string;
+  coverUri?: LocalOrRemoteImage;
   title: string;
   trackCountLabel: string;
   selected?: boolean;
