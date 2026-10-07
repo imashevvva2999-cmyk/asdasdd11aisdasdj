@@ -143,9 +143,6 @@ export default function HomeScreen() {
         <View style={styles.sectionLast}>
           <View style={styles.moodHeader}>
             <ThemedText variant="headline-md">Mood & Vibe Mixes</ThemedText>
-            <ThemedText variant="label-sm" emphasis="medium" style={styles.tunedLabel}>
-              TUNED TO YOU
-            </ThemedText>
           </View>
           <View style={styles.moodGrid}>
             {moodMixes.map((mix) => (
@@ -235,9 +232,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: Spacing.sm,
-  },
-  tunedLabel: {
-    letterSpacing: 1,
   },
   moodGrid: {
     flexDirection: 'row',
