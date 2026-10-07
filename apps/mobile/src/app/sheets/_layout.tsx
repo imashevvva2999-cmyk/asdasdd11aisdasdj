@@ -9,5 +9,8 @@ import { Stack } from 'expo-router';
  * is content work for Фаза 4+, not Фаза 3 navigation.
  */
 export default function SheetsStackLayout() {
-  return <Stack screenOptions={{ headerShown: false }} />;
+  // Every sheet route is transparent too: the web stack only drops the theme
+  // background for screens that are themselves transparent presentations, and
+  // SheetScreen draws its own dimmed backdrop over the screen beneath.
+  return <Stack screenOptions={{ headerShown: false, presentation: 'transparentModal', contentStyle: { backgroundColor: 'transparent' } }} />;
 }

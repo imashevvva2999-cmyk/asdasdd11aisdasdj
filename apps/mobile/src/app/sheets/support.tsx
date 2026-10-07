@@ -3,8 +3,7 @@ import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { AmountChip, Icon, IconButton, PillButton, TextField } from '@/components/ui';
+import { AmountChip, Icon, IconButton, PillButton, SheetScreen, TextField } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
 import { goBack } from '@/lib/navigation';
 import { getArtistById, quickDonationAmountsKgs } from '@/mocks';
@@ -36,11 +35,11 @@ export default function SupportSheet() {
 
   if (!artist) {
     return (
-      <ThemedView surface="l2" style={styles.flex}>
+      <SheetScreen>
         <ThemedText variant="body-md" emphasis="medium" style={styles.notFound}>
           Artist not found.
         </ThemedText>
-      </ThemedView>
+      </SheetScreen>
     );
   }
 
@@ -76,8 +75,7 @@ export default function SupportSheet() {
   }
 
   return (
-    <ThemedView surface="l2" style={styles.flex}>
-      <View style={styles.handle} />
+    <SheetScreen>
       <View style={styles.header}>
         <View style={styles.headerText}>
           <ThemedText variant="headline-sm">Support Artist</ThemedText>
@@ -97,15 +95,10 @@ export default function SupportSheet() {
               unit="сом"
               selected={!showCustomInput && amount === preset}
               onPress={() => handleSelectPreset(preset)}
+              style={styles.amountItem}
             />
           ))}
-          <AmountChip
-            amount=""
-            unit="More"
-            selected={showCustomInput}
-            onPress={handleMorePress}
-            style={styles.moreChip}
-          />
+          <AmountChip icon="favorite" label="More" selected={showCustomInput} onPress={handleMorePress} style={styles.amountItem} />
         </View>
 
         {showCustomInput && (
@@ -131,6 +124,7 @@ export default function SupportSheet() {
 
         <PillButton
           label={amount ? `Support with ${amount} сом` : 'Select an amount'}
+          leadingIcon="bolt"
           disabled={!amount}
           onPress={handleContinue}
           style={styles.cta}
@@ -143,7 +137,7 @@ export default function SupportSheet() {
           </ThemedText>
         </View>
       </ScrollView>
-    </ThemedView>
+    </SheetScreen>
   );
 }
 
@@ -152,20 +146,12 @@ const styles = StyleSheet.create({
   notFound: {
     padding: Spacing.margin,
   },
-  handle: {
-    alignSelf: 'center',
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: Colors.text.low,
-    marginTop: Spacing.sm,
-  },
   header: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.margin,
-    paddingTop: Spacing.md,
+    paddingTop: Spacing.sm,
   },
   headerText: {
     flex: 1,
@@ -177,12 +163,10 @@ const styles = StyleSheet.create({
   },
   amountGrid: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.sm,
-    justifyContent: 'center',
+    justifyContent: 'space-between',
   },
-  moreChip: {
-    backgroundColor: Colors.surface.l3,
+  amountItem: {
+    flex: 1,
   },
   customAmountBlock: {
     gap: Spacing.xs,

@@ -1,15 +1,25 @@
-import { router } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Badge, Chip, EmptyState, IconButton, PillButton, StatCard, TrackRow } from '@/components/ui';
-import { Colors, Spacing } from '@/constants/theme';
+import { Artwork, Chip, EmptyState, Icon, IconButton, PillButton, PressableScale, StatCard } from '@/components/ui';
+import { Colors, Radii, Spacing } from '@/constants/theme';
 import { usePlayerStore } from '@/state/player-store';
 import { useArtistStore, type UploadStatus } from '@/state/artist-store';
 
 const FILTERS = ['All', 'Published', 'In Review', 'Draft'] as const;
+
+/** Status text colours from the Stitch release rows: published in the soft
+ * flame tint, in-progress in gold, errors in the error red. */
+const STATUS_COLOR: Record<UploadStatus, string> = {
+  draft: Colors.text.medium,
+  uploading: Colors.secondary,
+  processing: Colors.secondary,
+  published: Colors.tertiary,
+  error: Colors.error,
+};
 
 const STATUS_LABEL: Record<UploadStatus, string> = {
   draft: 'Draft',
@@ -58,24 +68,35 @@ export default function ArtistDashboardScreen() {
 
   return (
     <ThemedView surface="canvas" style={styles.flex}>
+      {/* Stitch S-27 puts the public-profile shortcut in the header, not beside the CTA. */}
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <IconButton
+              icon="person"
+              size={40}
+              accessibilityLabel="View public artist profile"
+              onPress={() => router.push({ pathname: '/artist/[id]', params: { id: artist.id } })}
+            />
+          ),
+        }}
+      />
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.headerRow}>
-          <PillButton label="Upload Track" leadingIcon="upload" onPress={() => router.push('/profile/artist/upload-track')} style={styles.uploadButton} />
-          <IconButton
-            icon="person"
-            accessibilityLabel="View public artist profile"
-            onPress={() => router.push({ pathname: '/artist/[id]', params: { id: artist.id } })}
-          />
-        </View>
+        <PillButton
+          label="Upload Track"
+          leadingIcon="add-circle-outline"
+          onPress={() => router.push('/profile/artist/upload-track')}
+          style={styles.uploadButton}
+        />
 
         <View style={styles.statsRow}>
-          <StatCard label="Listeners" value={String(artist.monthlyListeners ?? 0)} icon="person" />
-          <StatCard label="Streams" value="0" icon="graphic-eq" />
-          <StatCard label="Support" value="0 сом" icon="volunteer-activism" />
+          <StatCard label="Listeners" value={String(artist.monthlyListeners ?? 0)} icon="groups" iconColor={Colors.primary} />
+          <StatCard label="Streams" value="0" icon="play-circle-outline" iconColor={Colors.tertiary} />
+          <StatCard label="Support" value="0 сом" icon="volunteer-activism" iconColor={Colors.secondary} />
         </View>
 
         <View style={styles.section}>
-          <ThemedText variant="headline-sm">Your Releases</ThemedText>
+          <ThemedText variant="headline-md">Your Releases</ThemedText>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
             {FILTERS.map((item) => (
               <Chip key={item} label={item} selected={item === filter} onPress={() => setFilter(item)} />
@@ -92,28 +113,52 @@ export default function ArtistDashboardScreen() {
             />
           ) : (
             <View style={styles.trackList}>
-              {visibleEntries.map((entry) => (
-                <View key={entry.track.id} style={styles.trackEntry}>
-                  <TrackRow
-                    title={entry.track.title}
-                    artist={artist.name}
-                    explicit={entry.track.explicit}
-                    onPress={entry.status === 'published' ? () => play(entry.track.id) : undefined}
-                  />
-                  <View style={styles.trackMeta}>
-                    <Badge
-                      label={STATUS_LABEL[entry.status]}
-                      variant={entry.status === 'published' ? 'lossless' : 'neutral'}
-                      style={entry.status === 'error' ? styles.errorBadge : undefined}
-                    />
-                    {(entry.status === 'uploading' || entry.status === 'processing') && (
+              {visibleEntries.map((entry) => {
+                const inProgress = entry.status === 'uploading' || entry.status === 'processing';
+                const published = entry.status === 'published';
+                return (
+                  <PressableScale
+                    key={entry.track.id}
+                    accessibilityRole={published ? 'button' : undefined}
+                    disabled={!published}
+                    onPress={published ? () => play(entry.track.id) : undefined}
+                    style={styles.releaseCard}
+                  >
+                    <View style={styles.releaseRow}>
+                      {inProgress ? (
+                        <View style={styles.releaseCoverPending}>
+                          <Icon name="sync" size={24} color={Colors.secondary} />
+                        </View>
+                      ) : (
+                        <Artwork uri={entry.track.coverUri} size={48} radius={Radii.DEFAULT} />
+                      )}
+                      <View style={styles.releaseText}>
+                        <ThemedText variant="label-lg" numberOfLines={1}>
+                          {entry.track.title}
+                        </ThemedText>
+                        <ThemedText variant="body-sm" numberOfLines={1} style={{ color: STATUS_COLOR[entry.status] }}>
+                          {inProgress ? STATUS_LABEL[entry.status] : `Single • ${STATUS_LABEL[entry.status]}`}
+                        </ThemedText>
+                      </View>
+                      {published && (
+                        <IconButton
+                          icon="more-vert"
+                          size={36}
+                          color={Colors.text.medium}
+                          accessibilityLabel="Track options"
+                          style={styles.releaseMore}
+                          onPress={() => router.push({ pathname: '/sheets/options', params: { kind: 'track', id: entry.track.id } })}
+                        />
+                      )}
+                    </View>
+                    {inProgress && (
                       <View style={styles.progressTrack}>
                         <View style={[styles.progressFill, entry.status === 'processing' && styles.progressFillAdvanced]} />
                       </View>
                     )}
-                  </View>
-                </View>
-              ))}
+                  </PressableScale>
+                );
+              })}
             </View>
           )}
         </View>
@@ -129,20 +174,16 @@ const styles = StyleSheet.create({
     gap: Spacing.lg,
     paddingBottom: Spacing.xl * 3,
   },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
   uploadButton: {
-    flex: 1,
+    borderRadius: Radii.md,
   },
   statsRow: {
     flexDirection: 'row',
     gap: Spacing.sm,
   },
   section: {
-    gap: Spacing.sm,
+    gap: Spacing.md,
+    marginTop: Spacing.sm,
   },
   filterRow: {
     gap: Spacing.xs,
@@ -150,31 +191,44 @@ const styles = StyleSheet.create({
   trackList: {
     gap: Spacing.sm,
   },
-  trackEntry: {
-    gap: 4,
+  releaseCard: {
+    backgroundColor: Colors.surface.l1,
+    borderRadius: Radii.md,
+    padding: Spacing.sm,
+    gap: Spacing.sm,
   },
-  trackMeta: {
+  releaseRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.sm,
-    paddingLeft: 56,
+    gap: Spacing.md,
   },
-  errorBadge: {
-    backgroundColor: 'rgba(255, 75, 75, 0.18)',
+  releaseCoverPending: {
+    width: 48,
+    height: 48,
+    borderRadius: Radii.DEFAULT,
+    backgroundColor: Colors.surface.l3,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  releaseText: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  releaseMore: {
+    backgroundColor: 'transparent',
   },
   progressTrack: {
-    flex: 1,
     height: 4,
     borderRadius: 2,
     backgroundColor: Colors.surface.l3,
     overflow: 'hidden',
-    maxWidth: 120,
   },
   progressFill: {
     width: '35%',
     height: '100%',
     borderRadius: 2,
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.secondary,
   },
   progressFillAdvanced: {
     width: '70%',

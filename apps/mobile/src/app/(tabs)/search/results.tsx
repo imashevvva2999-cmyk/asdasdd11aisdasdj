@@ -4,8 +4,9 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Artwork, AvatarCard, Chip, CircleButton, CoverCard, EmptyState, Icon, IconButton, LibraryRow, TextField, TrackRow } from '@/components/ui';
-import { Colors, Spacing } from '@/constants/theme';
+import { Artwork, AvatarCard, Chip, CircleButton, CoverCard, EmptyState, Icon, IconButton, LibraryRow, PressableScale, TextField, TrackRow } from '@/components/ui';
+import { Colors, Radii, Spacing } from '@/constants/theme';
+import { useContentWidth } from '@/hooks/use-content-width';
 import { albums, artists, tracks, trendingSearches } from '@/mocks';
 import { usePlayerStore } from '@/state/player-store';
 import { usePlaylistsStore } from '@/state/playlists-store';
@@ -20,11 +21,14 @@ const FILTERS = ['All', 'Songs', 'Artists', 'Albums', 'Playlists'] as const;
  */
 export default function SearchResultsScreen() {
   const params = useLocalSearchParams<{ q?: string }>();
+  const columnWidth = Math.floor((useContentWidth() - Spacing.margin * 2 - Spacing.md) / 2);
   const initialQuery = typeof params.q === 'string' ? params.q : '';
   const [query, setQuery] = useState(initialQuery);
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>('All');
   const playlists = usePlaylistsStore((s) => s.playlists);
   const play = usePlayerStore((s) => s.play);
+  const currentTrackId = usePlayerStore((s) => s.currentTrackId());
+  const isPlaying = usePlayerStore((s) => s.isPlaying);
   const likedTrackIds = usePlayerStore((s) => s.likedTrackIds);
   const toggleLike = usePlayerStore((s) => s.toggleLike);
 
@@ -54,6 +58,7 @@ export default function SearchResultsScreen() {
     <ThemedView surface="canvas" style={styles.flex}>
       <View style={styles.searchBarWrap}>
         <TextField
+          variant="search"
           value={query}
           onChangeText={setQuery}
           autoFocus={initialQuery === ''}
@@ -86,6 +91,8 @@ export default function SearchResultsScreen() {
           ) : (
             <EmptyState
               icon="search-off"
+              variant="hero"
+              actionIcon="explore"
               title={`No results for "${query}"`}
               hint="Please check your spelling or try searching for another artist, track, album, or genre."
               actionLabel="Explore All Genres"
@@ -99,7 +106,15 @@ export default function SearchResultsScreen() {
             </View>
             <View style={styles.trendingChips}>
               {trendingSearches.map((item) => (
-                <Chip key={item.query} label={item.query} onPress={() => setQuery(item.query)} />
+                <PressableScale
+                  key={item.query}
+                  accessibilityRole="button"
+                  onPress={() => setQuery(item.query)}
+                  style={styles.trendingChip}
+                >
+                  <Icon name="search" size={15} color={Colors.primary} />
+                  <ThemedText variant="label-md">{item.query}</ThemedText>
+                </PressableScale>
               ))}
             </View>
           </View>
@@ -120,7 +135,7 @@ export default function SearchResultsScreen() {
                       {topResult.verified && <Icon name="verified" size={16} color={Colors.primary} />}
                     </View>
                     <ThemedText variant="body-sm" emphasis="medium" numberOfLines={1}>
-                      {`Artist${topResult.monthlyListeners ? ` • ${Math.round(topResult.monthlyListeners / 1000)}K monthly listeners` : ''}`}
+                      {`Artist${topResult.monthlyListeners ? ` • ${formatListeners(topResult.monthlyListeners)} monthly listeners` : ''}`}
                     </ThemedText>
                   </View>
                 </View>
@@ -148,6 +163,8 @@ export default function SearchResultsScreen() {
                     lossless={track.lossless}
                     explicit={track.explicit}
                     liked={likedTrackIds.has(track.id)}
+                    active={currentTrackId === track.id}
+                    isPlaying={currentTrackId === track.id && isPlaying}
                     onPress={() => router.push({ pathname: '/player/now-playing', params: { trackId: track.id } })}
                     onToggleLike={() => toggleLike(track.id)}
                     onOptionsPress={() => router.push({ pathname: '/sheets/options', params: { kind: 'track', id: track.id } })}
@@ -160,16 +177,24 @@ export default function SearchResultsScreen() {
           {(filter === 'All' || filter === 'Artists') && matchedArtists.length > 0 && (
             <View style={styles.section}>
               <ThemedText variant="headline-sm">Artists</ThemedText>
-              <View style={styles.artistGrid}>
-                {matchedArtists.map((artist) => (
-                  <AvatarCard
-                    key={artist.id}
-                    photoUri={artist.photoUri}
-                    name={artist.name}
-                    verified={artist.verified}
-                    metaLabel="Artist"
-                    onPress={() => router.push({ pathname: '/artist/[id]', params: { id: artist.id } })}
-                  />
+              <View style={styles.grid}>
+                {chunkPairs(matchedArtists).map((row, rowIndex) => (
+                  <View key={rowIndex} style={styles.gridRow}>
+                    {row.map((artist) => (
+                      <View key={artist.id} style={styles.artistCard}>
+                        <AvatarCard
+                          photoUri={artist.photoUri}
+                          name={artist.name}
+                          verified={artist.verified}
+                          metaLabel="Artist"
+                          size={80}
+                          style={styles.artistCardInner}
+                          onPress={() => router.push({ pathname: '/artist/[id]', params: { id: artist.id } })}
+                        />
+                      </View>
+                    ))}
+                    {row.length === 1 && <View style={styles.gridSpacer} />}
+                  </View>
                 ))}
               </View>
             </View>
@@ -178,17 +203,21 @@ export default function SearchResultsScreen() {
           {(filter === 'All' || filter === 'Albums') && matchedAlbums.length > 0 && (
             <View style={styles.section}>
               <ThemedText variant="headline-sm">Albums & EPs</ThemedText>
-              <View style={styles.albumGrid}>
-                {matchedAlbums.map((album) => (
-                  <CoverCard
-                    key={album.id}
-                    coverUri={album.coverUri}
-                    layout="below"
-                    width={150}
-                    title={album.title}
-                    subtitle={`${album.year} • ${album.type === 'ep' ? 'EP' : album.type === 'single' ? 'Single' : 'Album'}`}
-                    onPress={() => router.push({ pathname: '/album/[id]', params: { id: album.id } })}
-                  />
+              <View style={styles.grid}>
+                {chunkPairs(matchedAlbums).map((row, rowIndex) => (
+                  <View key={rowIndex} style={styles.gridRow}>
+                    {row.map((album) => (
+                      <CoverCard
+                        key={album.id}
+                        coverUri={album.coverUri}
+                        layout="below"
+                        width={columnWidth}
+                        title={album.title}
+                        subtitle={`${album.year} • ${album.type === 'ep' ? 'EP' : album.type === 'single' ? 'Single' : 'Album'}`}
+                        onPress={() => router.push({ pathname: '/album/[id]', params: { id: album.id } })}
+                      />
+                    ))}
+                  </View>
                 ))}
               </View>
             </View>
@@ -198,14 +227,20 @@ export default function SearchResultsScreen() {
             <View style={styles.section}>
               <ThemedText variant="headline-sm">Featured Playlists</ThemedText>
               {matchedPlaylists.map((playlist) => (
-                <LibraryRow
-                  key={playlist.id}
+                <View key={playlist.id} style={styles.playlistCard}>
+                  {playlist.editorial && (
+                    <ThemedText variant="label-sm" emphasis="primary" style={styles.eyebrow}>
+                      Official Playlist
+                    </ThemedText>
+                  )}
+                  <LibraryRow
                   coverUri={playlist.coverUri}
                   title={playlist.title}
                   subtitle={`Playlist • ${playlist.trackCount} ${playlist.trackCount === 1 ? 'song' : 'songs'}${playlist.durationLabel ? ` • ${playlist.durationLabel}` : ''}`}
                   trailing="chevron"
                   onPress={() => router.push({ pathname: '/playlist/[id]', params: { id: playlist.id } })}
-                />
+                  />
+                </View>
               ))}
             </View>
           )}
@@ -213,6 +248,18 @@ export default function SearchResultsScreen() {
       )}
     </ThemedView>
   );
+}
+
+function formatListeners(count: number): string {
+  if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`;
+  if (count >= 1_000) return `${Math.round(count / 1_000)}K`;
+  return String(count);
+}
+
+function chunkPairs<T>(items: T[]): T[][] {
+  const rows: T[][] = [];
+  for (let i = 0; i < items.length; i += 2) rows.push(items.slice(i, i + 2));
+  return rows;
 }
 
 const styles = StyleSheet.create({
@@ -228,12 +275,43 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: Spacing.margin,
-    paddingBottom: Spacing.xl * 3,
+    paddingBottom: Spacing.miniPlayerClearance,
     gap: Spacing.lg,
   },
   emptyContent: {
     paddingHorizontal: Spacing.margin,
-    paddingBottom: Spacing.xl * 3,
+    paddingBottom: Spacing.miniPlayerClearance,
+  },
+  grid: {
+    gap: Spacing.md,
+  },
+  gridRow: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+  },
+  gridSpacer: {
+    flex: 1,
+  },
+  artistCard: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: Spacing.md,
+    borderRadius: Radii.lg,
+    backgroundColor: Colors.surface.l1,
+  },
+  artistCardInner: {
+    width: '100%',
+  },
+  playlistCard: {
+    gap: Spacing.xs,
+    padding: Spacing.sm,
+    borderRadius: Radii.lg,
+    backgroundColor: Colors.surface.l1,
+  },
+  eyebrow: {
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    paddingHorizontal: Spacing.xs,
   },
   section: {
     gap: Spacing.sm,
@@ -267,16 +345,6 @@ const styles = StyleSheet.create({
   trackList: {
     gap: 2,
   },
-  artistGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.md,
-  },
-  albumGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.md,
-  },
   trendingNow: {
     marginTop: Spacing.lg,
     gap: Spacing.sm,
@@ -289,6 +357,17 @@ const styles = StyleSheet.create({
   trendingChips: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.xs,
+    gap: Spacing.sm,
+  },
+  trendingChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    height: 36,
+    paddingHorizontal: Spacing.md,
+    borderRadius: Radii.full,
+    backgroundColor: Colors.surface.l1,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
   },
 });

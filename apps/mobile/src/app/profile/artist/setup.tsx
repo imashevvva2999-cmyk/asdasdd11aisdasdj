@@ -4,9 +4,9 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Artwork, Chip, IconButton, PillButton, TextField } from '@/components/ui';
+import { Artwork, Chip, FormCard, Icon, IconButton, PillButton, TextField } from '@/components/ui';
 import { sampleImageChoices } from '@/constants/stitch-artwork';
-import { Colors, Spacing } from '@/constants/theme';
+import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useArtistStore } from '@/state/artist-store';
 
 const BIO_MAX_LENGTH = 300;
@@ -71,59 +71,69 @@ export default function ArtistSetupScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.avatarBlock}>
           <View style={styles.avatarWrap}>
-            <Artwork shape="circle" size={112} radius={56} uri={photoUri} />
+            <View style={styles.avatarGlow} pointerEvents="none" />
+            <Artwork shape="circle" size={128} radius={64} uri={photoUri} placeholderIcon="add-a-photo" />
             <IconButton
               icon="photo-camera"
               accessibilityLabel={photoUri ? 'Change artist photo' : 'Add artist photo'}
-              size={32}
+              size={36}
+              color={Colors.text.high}
               style={styles.cameraButton}
               onPress={() => setPhotoIndex((index) => (index === null ? 0 : (index + 1) % sampleImageChoices.length))}
             />
           </View>
+          <ThemedText variant="label-lg">Artist Photo</ThemedText>
         </View>
 
-        <View style={styles.field}>
-          <TextField placeholder="Artist / Stage Name" value={stageName} onChangeText={setStageName} />
-        </View>
+        <FormCard>
+          <TextField raised label="Artist / Stage Name" placeholder="Your stage name" value={stageName} onChangeText={setStageName} />
 
-        <View style={styles.field}>
-          <ThemedText variant="label-md" emphasis="medium">
-            Primary Genre
-          </ThemedText>
-          <View style={styles.chipGrid}>
-            {GENRE_OPTIONS.map((option) => (
-              <Chip
-                key={option}
-                label={option}
-                selected={genre === option}
-                onPress={() => setGenre((current) => (current === option ? undefined : option))}
-              />
-            ))}
+          <View style={styles.field}>
+            <ThemedText variant="label-md" emphasis="primary">
+              Primary Genre
+            </ThemedText>
+            <View style={styles.chipGrid}>
+              {GENRE_OPTIONS.map((option) => (
+                <Chip
+                  key={option}
+                  label={option}
+                  selected={genre === option}
+                  onPress={() => setGenre((current) => (current === option ? undefined : option))}
+                />
+              ))}
+            </View>
           </View>
-        </View>
 
-        <View style={styles.field}>
+          <View style={styles.field}>
+            <TextField
+              raised
+              label="Short Bio"
+              placeholder="Tell listeners about your sound"
+              value={bio}
+              onChangeText={(text) => setBio(text.slice(0, BIO_MAX_LENGTH))}
+              maxLength={BIO_MAX_LENGTH}
+              multiline
+              numberOfLines={4}
+            />
+            <ThemedText variant="mono-num" emphasis="medium" style={styles.counter}>
+              {bio.length}/{BIO_MAX_LENGTH}
+            </ThemedText>
+          </View>
+
           <TextField
-            placeholder="Short Bio"
-            value={bio}
-            onChangeText={(text) => setBio(text.slice(0, BIO_MAX_LENGTH))}
-            maxLength={BIO_MAX_LENGTH}
-            multiline
-            numberOfLines={4}
+            raised
+            label="Location / Base City"
+            placeholder="City, Country"
+            value={location}
+            onChangeText={setLocation}
+            leftAccessory={<Icon name="location-on" size={18} color={Colors.primary} />}
           />
-          <ThemedText variant="mono-num" emphasis="medium" style={styles.counter}>
-            {bio.length}/{BIO_MAX_LENGTH}
-          </ThemedText>
-        </View>
-
-        <View style={styles.field}>
-          <TextField placeholder="Location / Base City" value={location} onChangeText={setLocation} />
-        </View>
+        </FormCard>
 
         <PillButton label="Create Artist Profile" trailingIcon="arrow-forward" disabled={!canCreate} onPress={handleCreate} style={styles.cta} />
 
-        <ThemedText variant="body-sm" emphasis="medium" style={styles.disclaimer}>
-          By continuing you agree to Mmusic&apos;s Artist Terms. This is a local preview — no account or payout information is created or verified.
+        <ThemedText variant="body-sm" emphasis="low" style={styles.disclaimer}>
+          By creating a profile, you agree to Mmusic&apos;s Artist Terms. Local preview — nothing is sent or verified.
         </ThemedText>
       </ScrollView>
     </ThemedView>
@@ -139,6 +149,18 @@ const styles = StyleSheet.create({
   },
   avatarBlock: {
     alignItems: 'center',
+    gap: Spacing.lg,
+    paddingTop: Spacing.sm,
+  },
+  avatarGlow: {
+    position: 'absolute',
+    top: -12,
+    left: -12,
+    right: -12,
+    bottom: -12,
+    borderRadius: Radii.full,
+    backgroundColor: Colors.primary,
+    opacity: 0.12,
   },
   avatarWrap: {
     position: 'relative',
@@ -155,7 +177,7 @@ const styles = StyleSheet.create({
   chipGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.xs,
+    gap: Spacing.sm,
   },
   counter: {
     alignSelf: 'flex-end',

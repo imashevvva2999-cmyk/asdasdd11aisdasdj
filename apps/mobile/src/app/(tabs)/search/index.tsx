@@ -1,19 +1,20 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { CoverCard, FeaturedBanner, Icon, IconButton, RankedTile, RemovableChip, TextField, TextLinkButton } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
+import { useContentWidth } from '@/hooks/use-content-width';
 import { useToast } from '@/hooks/use-toast';
 import { featuredGenre, genres, initialRecentSearches, trendingSearches } from '@/mocks';
 
 /** S-03 Search / Explore — tab root (docs/screens.md §3.2). */
 export default function SearchScreen() {
   const [recentSearches, setRecentSearches] = useState(initialRecentSearches);
-  const windowWidth = useWindowDimensions().width;
+  const windowWidth = useContentWidth();
   const genreTileWidth = Math.floor((windowWidth - Spacing.margin * 2 - Spacing.md) / 2);
   // Explicit 2-per-row chunking instead of `flexWrap: 'wrap'`: react-native-web's
   // flex-gap polyfill does not reliably wrap fixed-width flex items here (every
@@ -51,6 +52,7 @@ export default function SearchScreen() {
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <TextField
+          variant="search"
           placeholder="What do you want to listen to?"
           leftAccessory={<Icon name="search" color={Colors.text.medium} />}
           rightAccessory={
@@ -71,7 +73,7 @@ export default function SearchScreen() {
               <ThemedText variant="label-sm" emphasis="medium" style={styles.eyebrow}>
                 RECENT SEARCHES
               </ThemedText>
-              <TextLinkButton label="Clear all" onPress={() => setRecentSearches([])} />
+              <TextLinkButton label="Clear all" tone="muted" onPress={() => setRecentSearches([])} />
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
               {recentSearches.map((query) => (
@@ -87,9 +89,10 @@ export default function SearchScreen() {
         )}
 
         <View style={styles.section}>
-          <ThemedText variant="label-sm" emphasis="medium" style={styles.eyebrow}>
-            TRENDING SEARCHES
-          </ThemedText>
+          <View style={styles.trendingTitleRow}>
+            <Icon name="north-east" size={18} color={Colors.primary} />
+            <ThemedText variant="headline-sm">Trending Searches</ThemedText>
+          </View>
           <View style={styles.trendingGrid}>
             {trendingSearches.map((item, index) => (
               <RankedTile
@@ -125,7 +128,7 @@ export default function SearchScreen() {
                   key={genre.id}
                   layout="overlay"
                   width={genreTileWidth}
-                  height={84}
+                  height={96}
                   coverUri={genre.coverUri}
                   title={genre.title}
                   onPress={() => router.push({ pathname: '/search/genre/[id]', params: { id: genre.id } })}
@@ -183,6 +186,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  trendingTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
   eyebrow: {
     letterSpacing: 1,
   },
@@ -202,7 +210,6 @@ const styles = StyleSheet.create({
   },
   genreGrid: {
     gap: Spacing.md,
-    paddingHorizontal: Spacing.margin,
   },
   genreRow: {
     flexDirection: 'row',

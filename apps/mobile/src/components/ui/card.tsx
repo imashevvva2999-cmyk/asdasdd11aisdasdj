@@ -32,6 +32,9 @@ export type CoverCardProps = {
   subtitle?: string;
   /** Extra line under subtitle, secondary-colored (e.g. "Single • Out Today" — New Releases). */
   meta?: string;
+  /** 'accent' = gold meta line (New Releases "Single • Out Today");
+   * 'muted' = grey numeric meta (Trending "12 Tracks"). */
+  metaTone?: 'accent' | 'muted';
   width?: number;
   /** Defaults to a 1:1 square (`width`). Set for non-square overlay tiles (genre grid ≈ 84px tall). */
   height?: number;
@@ -62,6 +65,7 @@ export function CoverCard({
   title,
   subtitle,
   meta,
+  metaTone = 'accent',
   width = 140,
   height,
   layout = 'overlay',
@@ -72,24 +76,26 @@ export function CoverCard({
   onPress,
   style,
 }: CoverCardProps) {
-  const coverHeight = height ?? width;
+  // A surfaced card pads its cover, so the cover itself is narrower than the card.
+  const coverWidth = surfaced && layout === 'below' ? width - Spacing.sm * 2 : width;
+  const coverHeight = height ?? coverWidth;
   const hydrated = useHydrated();
 
   const cover = (
-    <View style={[cardStyles.coverBase, { width, height: coverHeight }, layout === 'overlay' && cardStyles.justifyEnd]}>
+    <View style={[cardStyles.coverBase, { width: coverWidth, height: coverHeight }, layout === 'overlay' && cardStyles.justifyEnd]}>
       {coverUri && hydrated ? <Image source={toImageSource(coverUri)} style={StyleSheet.absoluteFill} contentFit="cover" /> : <CoverFallback seed={title} />}
       {layout === 'overlay' && (
         <>
           <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={StyleSheet.absoluteFill} />
           {number !== undefined && (
             <View style={cardStyles.numberBadge}>
-              <ThemedText variant="label-sm" emphasis="primary">
+              <ThemedText variant="mono-num" emphasis="medium">
                 {String(number).padStart(2, '0')}
               </ThemedText>
             </View>
           )}
           <View style={cardStyles.coverTextOverlay}>
-            <ThemedText variant="label-lg" numberOfLines={1}>
+            <ThemedText variant="headline-sm" numberOfLines={2}>
               {title}
             </ThemedText>
             {subtitle && (
@@ -131,7 +137,12 @@ export function CoverCard({
             </ThemedText>
           )}
           {meta && (
-            <ThemedText variant="body-sm" style={cardStyles.metaText} numberOfLines={1}>
+            <ThemedText
+              variant={metaTone === 'muted' ? 'mono-num' : 'body-sm'}
+              emphasis={metaTone === 'muted' ? 'medium' : undefined}
+              style={metaTone === 'muted' ? cardStyles.metaMuted : cardStyles.metaText}
+              numberOfLines={1}
+            >
               {meta}
             </ThemedText>
           )}
@@ -175,6 +186,8 @@ export function FeaturedBanner({ coverUri, title, subtitle, height, layout = 'ov
       <PressableScale onPress={onPress} style={[cardStyles.footerBannerWrap, style]} accessibilityRole={onPlayPress ? undefined : 'button'}>
         <View style={[cardStyles.footerBannerImage, { height: height ?? 224 }]}>
           {coverUri && hydrated ? <Image source={toImageSource(coverUri)} style={StyleSheet.absoluteFill} contentFit="cover" /> : <CoverFallback seed={title} iconSize={40} />}
+          {/* Stitch blends the image into the footer instead of a hard seam. */}
+          <LinearGradient colors={['transparent', 'rgba(20, 20, 24, 0.4)', Colors.surface.l1]} locations={[0.4, 0.7, 1]} style={StyleSheet.absoluteFill} />
         </View>
         <View style={cardStyles.footerBannerFooter}>
           <View style={cardStyles.footerBannerText}>
@@ -238,23 +251,33 @@ export function AvatarCard({ photoUri, name, verified, metaLabel, size = 88, onP
 
   return (
     <PressableScale onPress={onPress} style={[{ width: size }, style]} accessibilityRole="button">
-      <View style={[cardStyles.avatar, { width: size, height: size, borderRadius: size / 2 }]}>
-        {photoUri && hydrated && (
-          <Image
-            source={toImageSource(photoUri)}
-            style={{ width: size, height: size, borderRadius: size / 2 }}
-            contentFit="cover"
-          />
+      <View style={{ width: size, height: size, alignSelf: 'center' }}>
+        <View style={[cardStyles.avatar, { width: size, height: size, borderRadius: size / 2 }]}>
+          {photoUri && hydrated ? (
+            <Image
+              source={toImageSource(photoUri)}
+              style={{ width: size, height: size, borderRadius: size / 2 }}
+              contentFit="cover"
+            />
+          ) : (
+            <Icon name="person" size={Math.round(size * 0.4)} color={Colors.text.low} />
+          )}
+        </View>
+        {/* Verified sits on the avatar's corner (Stitch Genre / Results) so the
+            name keeps the full card width instead of truncating. */}
+        {verified && (
+          <View style={cardStyles.avatarVerified}>
+            <Icon name="verified" size={16} color={Colors.primary} />
+          </View>
         )}
       </View>
       <View style={cardStyles.avatarNameRow}>
         <ThemedText variant="label-md" numberOfLines={1} style={cardStyles.avatarName}>
           {name}
         </ThemedText>
-        {verified && <Icon name="verified" size={14} color={Colors.secondary} />}
       </View>
       {metaLabel && (
-        <ThemedText variant="body-sm" emphasis="medium" numberOfLines={1}>
+        <ThemedText variant="body-sm" emphasis="medium" numberOfLines={1} style={cardStyles.avatarName}>
           {metaLabel}
         </ThemedText>
       )}
@@ -266,23 +289,56 @@ export type StatCardProps = {
   label: string;
   value: string;
   icon?: string;
+  /** Per-stat accent (Stitch Artist Dashboard colours each stat's icon). */
+  iconColor?: string;
+  /** Small unit after the value, e.g. "сом". */
+  unit?: string;
+  /** 'metric' = centred large value over an uppercase label, no icon
+   * (Stitch Profile Hub stats). */
+  variant?: 'default' | 'metric';
   style?: ViewStyle;
 };
 
 /** Stat tile — big number + label (Saved/Playlists/Supported, Listening Pulse,
  * Artist Dashboard Listeners/Streams/Support — docs/screens.md §3.4). */
-export function StatCard({ label, value, icon, style }: StatCardProps) {
+export function StatCard({ label, value, icon, iconColor = Colors.primary, unit, variant = 'default', style }: StatCardProps) {
+  if (variant === 'metric') {
+    return (
+      <View style={[cardStyles.stat, cardStyles.statMetric, style]}>
+        <View style={cardStyles.statValueRow}>
+          <ThemedText variant="display-lg-mobile" numberOfLines={1}>
+            {value}
+          </ThemedText>
+          {unit && (
+            <ThemedText variant="label-md" emphasis="medium">
+              {unit}
+            </ThemedText>
+          )}
+        </View>
+        <ThemedText variant="label-sm" emphasis="medium" style={cardStyles.statMetricLabel}>
+          {label}
+        </ThemedText>
+      </View>
+    );
+  }
   return (
     <View style={[cardStyles.stat, style]}>
       <View style={cardStyles.statLabelRow}>
-        {icon && <Icon name={icon} size={14} color={Colors.primary} />}
+        {icon && <Icon name={icon} size={14} color={iconColor} />}
         <ThemedText variant="label-sm" emphasis="medium">
           {label}
         </ThemedText>
       </View>
-      <ThemedText variant="headline-sm" numberOfLines={1}>
-        {value}
-      </ThemedText>
+      <View style={cardStyles.statValueRow}>
+        <ThemedText variant="headline-sm" numberOfLines={1}>
+          {value}
+        </ThemedText>
+        {unit && (
+          <ThemedText variant="label-md" emphasis="medium">
+            {unit}
+          </ThemedText>
+        )}
+      </View>
     </View>
   );
 }
@@ -362,11 +418,12 @@ export type RankedTileProps = {
 export function RankedTile({ rank, title, subtitle, onPress, style }: RankedTileProps) {
   return (
     <PressableScale onPress={onPress} accessibilityRole="button" style={[rankedStyles.card, style]}>
-      <ThemedText variant="mono-num" emphasis="primary">
+      {/* Stitch highlights the top two ranks in coral; the rest are grey. */}
+      <ThemedText variant="mono-num" emphasis={rank <= 2 ? 'primary' : 'medium'} style={rankedStyles.rank}>
         {String(rank).padStart(2, '0')}
       </ThemedText>
       <View style={rankedStyles.textBlock}>
-        <ThemedText variant="label-md" numberOfLines={1}>
+        <ThemedText variant="label-lg" numberOfLines={1}>
           {title}
         </ThemedText>
         {subtitle && (
@@ -415,9 +472,10 @@ const cardStyles = StyleSheet.create({
   },
   footerBannerFooter: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     justifyContent: 'space-between',
     padding: Spacing.lg,
+    paddingTop: 0,
     gap: Spacing.md,
   },
   footerBannerText: {
@@ -430,17 +488,22 @@ const cardStyles = StyleSheet.create({
     height: 56,
     borderRadius: Radii.full,
     backgroundColor: Colors.primary,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 24,
+    shadowOpacity: 0.45,
+    elevation: 8,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
   },
   coverTextOverlay: {
-    padding: Spacing.sm,
+    padding: Spacing.md,
   },
   numberBadge: {
     position: 'absolute',
-    top: Spacing.xs,
-    left: Spacing.xs,
+    top: Spacing.md,
+    right: Spacing.md,
   },
   likeButton: {
     position: 'absolute',
@@ -470,10 +533,15 @@ const cardStyles = StyleSheet.create({
     color: Colors.secondary,
     marginTop: 2,
   },
+  metaMuted: {
+    marginTop: 2,
+  },
   avatar: {
     backgroundColor: Colors.surface.l3,
     overflow: 'hidden',
     alignSelf: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   avatarNameRow: {
     flexDirection: 'row',
@@ -484,6 +552,17 @@ const cardStyles = StyleSheet.create({
   },
   avatarName: {
     textAlign: 'center',
+  },
+  avatarVerified: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    width: 22,
+    height: 22,
+    borderRadius: Radii.full,
+    backgroundColor: Colors.canvas,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   stat: {
     flex: 1,
@@ -496,6 +575,19 @@ const cardStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+  },
+  statValueRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 4,
+  },
+  statMetric: {
+    alignItems: 'center',
+    paddingVertical: Spacing.md,
+  },
+  statMetricLabel: {
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
   },
 });
 
@@ -562,9 +654,14 @@ const rankedStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    backgroundColor: Colors.surface.l2,
+    backgroundColor: Colors.surface.l1,
     borderRadius: Radii.md,
-    padding: Spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+    padding: Spacing.md,
+  },
+  rank: {
+    fontSize: 13,
   },
   textBlock: {
     flex: 1,

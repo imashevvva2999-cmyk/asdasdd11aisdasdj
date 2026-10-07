@@ -1,12 +1,14 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Chip, CoverCard, IconButton, PillButton } from '@/components/ui';
+import { Artwork, Chip, CoverCard, IconButton, PillButton } from '@/components/ui';
 import type { LocalOrRemoteImage } from '@/constants/stitch-artwork';
-import { Colors, Spacing } from '@/constants/theme';
+import { Colors, Radii, Spacing } from '@/constants/theme';
+import { useContentWidth } from '@/hooks/use-content-width';
 import { useToast } from '@/hooks/use-toast';
 import { albums, getTrackById, type Album, type Track } from '@/mocks';
 import { useLibraryStore } from '@/state/library-store';
@@ -93,6 +95,8 @@ export default function SeeAllScreen() {
   const likedTrackIds = usePlayerStore((s) => s.likedTrackIds);
   const toggleLike = usePlayerStore((s) => s.toggleLike);
   const { showToast, toast } = useToast();
+  const heroWidth = useContentWidth() - Spacing.margin * 2;
+  const heroHeight = Math.round(heroWidth / 1.6);
 
   const heroSaved = heroItem
     ? heroItem.kind === 'track'
@@ -121,7 +125,15 @@ export default function SeeAllScreen() {
         </View>
 
         {heroItem && (
-          <View style={styles.heroCard}>
+          // Stitch S-02: 16:10 artwork card with the copy and actions overlaid.
+          <View style={[styles.heroCard, { height: heroHeight }]}>
+            <Artwork uri={heroItem.coverUri} size={heroWidth} aspectRatio={heroWidth / heroHeight} radius={Radii.lg} style={StyleSheet.absoluteFill} />
+            <LinearGradient
+              colors={['transparent', 'rgba(10, 10, 12, 0.6)', 'rgba(10, 10, 12, 0.95)']}
+              locations={[0.2, 0.55, 1]}
+              style={StyleSheet.absoluteFill}
+            />
+            <View style={styles.heroBody}>
             <ThemedText variant="headline-lg" numberOfLines={2}>
               {heroItem.title}
             </ThemedText>
@@ -129,7 +141,7 @@ export default function SeeAllScreen() {
               {heroItem.subtitle} · {heroItem.meta}
             </ThemedText>
             <View style={styles.heroActions}>
-              <PillButton label="Listen Now" onPress={heroItem.onPress} style={styles.heroButton} />
+              <PillButton label="Listen Now" leadingIcon="play-arrow" onPress={heroItem.onPress} style={styles.heroButton} />
               <IconButton
                 icon={heroSaved ? 'bookmark-added' : 'bookmark-add'}
                 color={heroSaved ? Colors.primary : undefined}
@@ -142,6 +154,7 @@ export default function SeeAllScreen() {
                 onPress={() => router.push({ pathname: '/sheets/options', params: { kind: heroItem.kind, id: heroItem.id } })}
               />
             </View>
+            </View>
           </View>
         )}
 
@@ -149,12 +162,12 @@ export default function SeeAllScreen() {
           <View style={styles.sectionHeaderRow}>
             <ThemedText variant="headline-md">{sectionTitle}</ThemedText>
           </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.carousel}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.carouselBleed} contentContainerStyle={styles.carousel}>
             {items.map((item) => (
               <CoverCard
                 key={item.id}
                 layout="below"
-                width={160}
+                width={144}
                 coverUri={item.coverUri}
                 title={item.title}
                 subtitle={item.subtitle}
@@ -181,6 +194,13 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   heroCard: {
+    borderRadius: Radii.lg,
+    overflow: 'hidden',
+    justifyContent: 'flex-end',
+    backgroundColor: Colors.surface.l1,
+  },
+  heroBody: {
+    padding: Spacing.lg,
     gap: Spacing.xs,
   },
   heroActions: {
@@ -191,6 +211,7 @@ const styles = StyleSheet.create({
   },
   heroButton: {
     flex: 1,
+    height: 44,
   },
   section: {
     gap: Spacing.sm,
@@ -202,5 +223,9 @@ const styles = StyleSheet.create({
   },
   carousel: {
     gap: Spacing.md,
+    paddingHorizontal: Spacing.margin,
+  },
+  carouselBleed: {
+    marginHorizontal: -Spacing.margin,
   },
 });

@@ -2,9 +2,8 @@ import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Artwork, Icon, PillButton, TextLinkButton } from '@/components/ui';
-import { Colors, Spacing } from '@/constants/theme';
+import { Artwork, Icon, PillButton, SheetScreen, TextLinkButton } from '@/components/ui';
+import { Colors, Radii, Spacing } from '@/constants/theme';
 import { goBack } from '@/lib/navigation';
 import { getArtistById } from '@/mocks';
 import { useSupportStore } from '@/state/support-store';
@@ -25,13 +24,12 @@ export default function SupportConfirmSheet() {
 
   if (!artist || !amount) {
     return (
-      <ThemedView surface="l2" style={styles.flex}>
-        <View style={styles.handle} />
+      <SheetScreen>
         <ThemedText variant="body-md" emphasis="medium" style={styles.notFound}>
           Nothing to confirm. Go back and choose a support amount.
         </ThemedText>
         <TextLinkButton label="Back" onPress={() => goBack()} style={styles.notFoundLink} />
-      </ThemedView>
+      </SheetScreen>
     );
   }
 
@@ -41,43 +39,57 @@ export default function SupportConfirmSheet() {
   }
 
   return (
-    <ThemedView surface="l2" style={styles.flex}>
-      <View style={styles.handle} />
+    <SheetScreen>
       <View style={styles.content}>
-        <Artwork shape="circle" size={72} radius={36} uri={artist.photoUri} />
-        <View style={styles.nameRow}>
-          <ThemedText variant="headline-sm">Support {artist.name}</ThemedText>
-          {artist.verified && <Icon name="verified" size={16} color={Colors.secondary} />}
+        <View style={styles.avatarHalo}>
+          <Artwork shape="circle" size={88} radius={44} uri={artist.photoUri} placeholderIcon="person" />
         </View>
-        {artist.bio && (
-          <ThemedText variant="body-sm" emphasis="medium" numberOfLines={2} style={styles.centerText}>
-            {artist.bio}
+        <View style={styles.nameRow}>
+          <ThemedText variant="headline-md">Support {artist.name}</ThemedText>
+          {artist.verified && <Icon name="verified" size={18} color={Colors.primary} />}
+        </View>
+        {artist.genres && artist.genres.length > 0 && (
+          <ThemedText variant="body-md" emphasis="medium" numberOfLines={1} style={styles.centerText}>
+            {artist.genres.join(' · ')}
           </ThemedText>
         )}
 
-        <View style={styles.amountBlock}>
-          <ThemedText variant="body-sm" emphasis="medium">
+        <View style={styles.amountCard}>
+          <ThemedText variant="label-sm" style={styles.amountEyebrow}>
             Contribution Amount
           </ThemedText>
-          <ThemedText variant="headline-lg">{amount} сом</ThemedText>
+          <View style={styles.amountRow}>
+            <ThemedText variant="display-lg">{amount}</ThemedText>
+            <ThemedText variant="headline-sm" emphasis="medium">
+              сом
+            </ThemedText>
+          </View>
         </View>
 
-        <View style={styles.accountRow}>
-          <Icon name="account-balance" size={18} color={Colors.text.medium} />
-          <ThemedText variant="body-sm" emphasis="medium">
-            MBANK account •••• 4892 • Direct
+        <View style={styles.accountCard}>
+          <View style={styles.accountIcon}>
+            <Icon name="account-balance-wallet" size={22} color={Colors.secondary} />
+          </View>
+          <ThemedText variant="label-lg" style={styles.accountTitle} numberOfLines={1}>
+            MBANK account •••• 4892
           </ThemedText>
+          <View style={styles.directBadge}>
+            <ThemedText variant="label-md" style={styles.directBadgeText}>
+              Direct
+            </ThemedText>
+          </View>
         </View>
 
         <PillButton
           label={`Confirm & Send ${amount} сом`}
+          trailingIcon="bolt"
           loading={stage === 'processing'}
           onPress={handleConfirm}
           style={styles.cta}
         />
-        <TextLinkButton label="Cancel" onPress={() => goBack()} disabled={stage === 'processing'} />
+        <TextLinkButton label="Cancel" tone="muted" onPress={() => goBack()} disabled={stage === 'processing'} style={styles.cancel} />
       </View>
-    </ThemedView>
+    </SheetScreen>
   );
 }
 
@@ -89,14 +101,6 @@ const styles = StyleSheet.create({
   },
   notFoundLink: {
     alignSelf: 'center',
-    marginTop: Spacing.sm,
-  },
-  handle: {
-    alignSelf: 'center',
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: Colors.text.low,
     marginTop: Spacing.sm,
   },
   content: {
@@ -113,20 +117,65 @@ const styles = StyleSheet.create({
   centerText: {
     textAlign: 'center',
   },
-  amountBlock: {
+  avatarHalo: {
+    padding: 6,
+    borderRadius: Radii.full,
+    backgroundColor: 'rgba(255, 75, 75, 0.18)',
+  },
+  amountCard: {
+    width: '100%',
     alignItems: 'center',
-    marginTop: Spacing.lg,
+    backgroundColor: Colors.surface.l2,
+    borderRadius: Radii.lg,
+    paddingVertical: Spacing.md,
+    marginTop: Spacing.md,
     gap: 2,
   },
-  accountRow: {
+  amountEyebrow: {
+    color: Colors.secondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  amountRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 6,
+  },
+  accountCard: {
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.xs,
-    marginTop: Spacing.lg,
-    marginBottom: Spacing.sm,
+    gap: Spacing.md,
+    backgroundColor: Colors.surface.l2,
+    borderRadius: Radii.lg,
+    padding: Spacing.md,
+  },
+  accountIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: Radii.DEFAULT,
+    backgroundColor: Colors.surface.l3,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  accountTitle: {
+    flex: 1,
+  },
+  directBadge: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+    borderRadius: Radii.sm,
+    backgroundColor: 'rgba(245, 166, 35, 0.18)',
+  },
+  directBadgeText: {
+    color: Colors.secondary,
   },
   cta: {
     width: '100%',
+    height: 56,
     marginTop: Spacing.md,
+  },
+  cancel: {
+    marginTop: Spacing.sm,
   },
 });

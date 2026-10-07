@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Artwork, Chip, Icon, PillButton, TextField, TextLinkButton, Toast, ToggleRow } from '@/components/ui';
+import { Artwork, Chip, FormCard, Icon, PillButton, PressableScale, SegmentedControl, TextField, TextLinkButton, Toast, ToggleRow } from '@/components/ui';
 import { sampleImageChoices } from '@/constants/stitch-artwork';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { goBack } from '@/lib/navigation';
@@ -15,6 +15,15 @@ const GENRE_OPTIONS = ['Electronic', 'Ambient', 'Synthwave', 'Indie', 'Dream Pop
 /** A fixed mock duration standing in for real file metadata — no audio is
  * decoded in this preview (see the "simulated file selection" note below). */
 const MOCK_FILE_DURATION_SEC = 204;
+
+const RELEASE_OPTIONS = [
+  { value: 'now', label: 'Release Now' },
+  { value: 'schedule', label: 'Schedule' },
+] as const;
+
+/** Static decorative waveform for the selected file (Stitch S-28) — no audio
+ * is decoded, so this is an illustration, not a real waveform. */
+const WAVEFORM_BARS = [8, 14, 10, 20, 12, 26, 16, 22, 10, 28, 18, 24, 12, 20, 26, 14, 18, 10, 22, 12, 16, 8];
 
 /**
  * S-28 Upload Track — UF-14 step 4 (docs/screens.md, incomplete design —
@@ -113,7 +122,7 @@ export default function UploadTrackScreen() {
             }}
             style={styles.resultButton}
           />
-          <TextLinkButton label="Back to Dashboard" onPress={() => goBack('/profile/artist/dashboard')} />
+          <PillButton label="Back to Dashboard" variant="secondary" onPress={() => goBack('/profile/artist/dashboard')} style={styles.resultButtonSecondary} />
         </View>
       </ThemedView>
     );
@@ -123,82 +132,123 @@ export default function UploadTrackScreen() {
     <ThemedView surface="canvas" style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.section}>
-          <ThemedText variant="label-md" emphasis="medium" style={styles.sectionTitle}>
-            Upload Audio
-          </ThemedText>
+          <View style={styles.sectionHeader}>
+            <ThemedText variant="headline-md">Upload Audio</ThemedText>
+            <ThemedText variant="label-sm" emphasis="primary">
+              High-quality audio file
+            </ThemedText>
+          </View>
           {selectedFileName ? (
-            <View style={styles.filePreview}>
-              <Icon name="graphic-eq" size={24} color={Colors.primary} />
-              <View style={styles.fileInfo}>
-                <ThemedText variant="label-lg" numberOfLines={1}>
-                  {selectedFileName}
-                </ThemedText>
-                <ThemedText variant="body-sm" emphasis="medium">
-                  {formatDuration(MOCK_FILE_DURATION_SEC)}
-                </ThemedText>
+            <FormCard>
+              <View style={styles.fileRow}>
+                <View style={styles.fileIconTile}>
+                  <Icon name="music-note" size={24} color={Colors.primary} />
+                </View>
+                <View style={styles.fileInfo}>
+                  <ThemedText variant="label-lg" numberOfLines={1}>
+                    {selectedFileName}
+                  </ThemedText>
+                  <ThemedText variant="mono-num" emphasis="medium">
+                    {formatDuration(MOCK_FILE_DURATION_SEC)}
+                  </ThemedText>
+                </View>
               </View>
-              <TextLinkButton label="Change" onPress={handleBrowseFile} disabled={isBusy} />
-            </View>
+              <View style={styles.waveform} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+                {WAVEFORM_BARS.map((height, index) => (
+                  <View key={index} style={[styles.waveBar, { height }]} />
+                ))}
+              </View>
+              <PressableScale accessibilityRole="button" onPress={handleBrowseFile} disabled={isBusy} style={styles.inlineAction}>
+                <Icon name="upload-file" size={18} color={Colors.primary} />
+                <ThemedText variant="label-lg" emphasis="primary">
+                  Browse File
+                </ThemedText>
+              </PressableScale>
+            </FormCard>
           ) : (
             <PillButton label="Browse File" variant="secondary" leadingIcon="folder-open" onPress={handleBrowseFile} />
           )}
         </View>
 
         <View style={styles.section}>
-          <ThemedText variant="label-md" emphasis="medium" style={styles.sectionTitle}>
-            Track Details
-          </ThemedText>
+          <ThemedText variant="headline-md">Track Details</ThemedText>
+          <TextField raised label="Track Title" placeholder="Title" value={title} onChangeText={setTitle} editable={!isBusy} />
+          <TextField
+            raised
+            label="Artist / Featured Collaborators"
+            placeholder="Optional"
+            value={collaborators}
+            onChangeText={setCollaborators}
+            editable={!isBusy}
+          />
           <View style={styles.field}>
-            <TextField placeholder="Title" value={title} onChangeText={setTitle} editable={!isBusy} />
-          </View>
-          <View style={styles.field}>
-            <TextField placeholder="Featured Collaborators (Optional)" value={collaborators} onChangeText={setCollaborators} editable={!isBusy} />
-          </View>
-          <View style={styles.chipGrid}>
-            {GENRE_OPTIONS.map((option) => (
-              <Chip key={option} label={option} selected={genre === option} disabled={isBusy} onPress={() => setGenre((g) => (g === option ? undefined : option))} />
-            ))}
+            <ThemedText variant="label-md" emphasis="primary">
+              Genre
+            </ThemedText>
+            <View style={styles.chipGrid}>
+              {GENRE_OPTIONS.map((option) => (
+                <Chip key={option} label={option} selected={genre === option} disabled={isBusy} onPress={() => setGenre((g) => (g === option ? undefined : option))} />
+              ))}
+            </View>
           </View>
         </View>
 
         <View style={styles.section}>
-          <ThemedText variant="label-md" emphasis="medium" style={styles.sectionTitle}>
-            Cover Artwork
-          </ThemedText>
-          <View style={styles.coverRow}>
-            <Artwork size={64} radius={Radii.md} uri={coverUri} />
-            <PillButton
-              label={coverUri ? 'Change Cover' : 'Choose Cover'}
-              variant="secondary"
-              onPress={() => setCoverIndex((index) => (index === null ? 0 : (index + 1) % sampleImageChoices.length))}
-              disabled={isBusy || sampleImageChoices.length === 0}
+          <ThemedText variant="headline-md">Cover Artwork</ThemedText>
+          <FormCard style={styles.coverCard}>
+            <Artwork size={112} radius={Radii.md} uri={coverUri} placeholderIcon="add-photo-alternate" />
+            <View style={styles.coverText}>
+              <ThemedText variant="body-md" emphasis="medium">
+                Add high quality artwork
+              </ThemedText>
+              <PressableScale
+                accessibilityRole="button"
+                onPress={() => setCoverIndex((index) => (index === null ? 0 : (index + 1) % sampleImageChoices.length))}
+                disabled={isBusy || sampleImageChoices.length === 0}
+                style={styles.compactButton}
+              >
+                <Icon name="image" size={18} color={Colors.text.high} />
+                <ThemedText variant="label-lg">{coverUri ? 'Change Cover' : 'Choose Cover'}</ThemedText>
+              </PressableScale>
+            </View>
+          </FormCard>
+        </View>
+
+        <View style={styles.section}>
+          <ThemedText variant="headline-md">Release Settings</ThemedText>
+          <View style={styles.field}>
+            <ThemedText variant="label-md" emphasis="primary">
+              Schedule Release
+            </ThemedText>
+            <SegmentedControl
+              accessibilityLabel="Schedule Release"
+              options={RELEASE_OPTIONS}
+              value={releaseMode}
+              onChange={(mode) => {
+                if (!isBusy) setReleaseMode(mode);
+              }}
             />
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <ThemedText variant="label-md" emphasis="medium" style={styles.sectionTitle}>
-            Release Settings
-          </ThemedText>
-          <View style={styles.chipGrid}>
-            <Chip label="Release Now" selected={releaseMode === 'now'} disabled={isBusy} onPress={() => setReleaseMode('now')} />
-            <Chip label="Schedule" selected={releaseMode === 'schedule'} disabled={isBusy} onPress={() => setReleaseMode('schedule')} />
           </View>
           {releaseMode === 'schedule' && (
             <ThemedText variant="body-sm" emphasis="medium">
               Scheduling isn&apos;t available in this preview — the track will still publish immediately when you tap Publish Track.
             </ThemedText>
           )}
-          <ToggleRow title="Explicit Content" value={explicit} onValueChange={setExplicit} disabled={isBusy} />
+          <ToggleRow title="Explicit Content" value={explicit} onValueChange={setExplicit} disabled={isBusy} style={styles.explicitRow} />
         </View>
 
         {activeEntry && (activeEntry.status === 'uploading' || activeEntry.status === 'processing') && (
-          <View style={styles.statusBanner}>
-            <Icon name="sync" size={18} color={Colors.primary} />
-            <ThemedText variant="label-md">
-              {activeEntry.status === 'uploading' ? 'Uploading…' : 'Processing…'}
-            </ThemedText>
-          </View>
+          <FormCard>
+            <View style={styles.statusRow}>
+              <Icon name="sync" size={20} color={Colors.secondary} />
+              <ThemedText variant="label-lg" style={styles.statusText}>
+                {activeEntry.status === 'uploading' ? 'Uploading…' : 'Transcoding…'}
+              </ThemedText>
+            </View>
+            <View style={styles.progressTrack}>
+              <View style={[styles.progressFill, activeEntry.status === 'processing' && styles.progressFillAdvanced]} />
+            </View>
+          </FormCard>
         )}
 
         {activeEntry?.status === 'error' && (
@@ -219,8 +269,21 @@ export default function UploadTrackScreen() {
           onPress={handlePublish}
           style={styles.cta}
         />
-        <TextLinkButton label="Save as Draft" onPress={handleSaveAsDraft} disabled={isBusy} />
-        <TextLinkButton label="Simulate publish error (demo)" onPress={handleSimulateError} disabled={isBusy || !canPublish} style={styles.demoErrorLink} />
+        <PressableScale accessibilityRole="button" onPress={handleSaveAsDraft} disabled={isBusy} style={styles.quietAction}>
+          <ThemedText variant="label-lg" emphasis="medium">
+            Save as Draft
+          </ThemedText>
+        </PressableScale>
+        <PressableScale
+          accessibilityRole="button"
+          onPress={handleSimulateError}
+          disabled={isBusy || !canPublish}
+          style={[styles.quietAction, (isBusy || !canPublish) && styles.quietDisabled]}
+        >
+          <ThemedText variant="body-sm" emphasis="low">
+            Simulate publish error (demo)
+          </ThemedText>
+        </PressableScale>
       </ScrollView>
 
       <Toast message="Saved as draft" icon="save" visible={draftSavedToastVisible} />
@@ -238,49 +301,109 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: {
     padding: Spacing.margin,
-    gap: Spacing.lg,
+    gap: Spacing.xl,
     paddingBottom: Spacing.xl * 3,
   },
   section: {
-    gap: Spacing.sm,
+    gap: Spacing.md,
   },
-  sectionTitle: {
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   field: {
-    gap: Spacing.xs,
+    gap: 6,
   },
   chipGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.xs,
+    gap: Spacing.sm,
   },
-  filePreview: {
+  fileRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.sm,
-    backgroundColor: Colors.surface.l1,
-    borderRadius: Radii.md,
-    padding: Spacing.sm,
+    gap: Spacing.md,
+  },
+  fileIconTile: {
+    width: 44,
+    height: 44,
+    borderRadius: Radii.DEFAULT,
+    backgroundColor: Colors.surface.l3,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   fileInfo: {
     flex: 1,
     minWidth: 0,
     gap: 2,
   },
-  coverRow: {
+  waveform: {
+    height: 36,
+    borderRadius: Radii.DEFAULT,
+    backgroundColor: Colors.canvas,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.md,
+  },
+  waveBar: {
+    width: 3,
+    borderRadius: 2,
+    backgroundColor: Colors.primary,
+    opacity: 0.7,
+  },
+  inlineAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    alignSelf: 'flex-end',
+  },
+  coverCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  coverText: {
+    flex: 1,
+    gap: Spacing.sm,
+    alignItems: 'flex-start',
+  },
+  compactButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    height: 40,
+    paddingHorizontal: Spacing.md,
+    borderRadius: Radii.DEFAULT,
+    backgroundColor: Colors.surface.l3,
+  },
+  explicitRow: {
+    backgroundColor: Colors.surface.l1,
+    borderRadius: Radii.md,
+    paddingHorizontal: Spacing.md,
+  },
+  statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
   },
-  statusBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
-    backgroundColor: Colors.surface.l1,
-    borderRadius: Radii.md,
-    padding: Spacing.sm,
+  statusText: {
+    color: Colors.secondary,
+  },
+  progressTrack: {
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: Colors.surface.l3,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    width: '35%',
+    height: '100%',
+    borderRadius: 2,
+    backgroundColor: Colors.secondary,
+  },
+  progressFillAdvanced: {
+    width: '70%',
   },
   errorBanner: {
     flexDirection: 'row',
@@ -294,11 +417,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   cta: {
-    marginTop: Spacing.sm,
+    height: 56,
   },
-  demoErrorLink: {
+  quietAction: {
     alignSelf: 'center',
-    marginTop: Spacing.xs,
+    paddingVertical: Spacing.xs,
+    marginTop: -Spacing.md,
+  },
+  quietDisabled: {
+    opacity: 0.4,
   },
   resultContainer: {
     flex: 1,
@@ -311,7 +438,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: Radii.full,
-    backgroundColor: 'rgba(46, 213, 115, 0.15)',
+    backgroundColor: 'rgba(245, 166, 35, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: Spacing.sm,
@@ -322,5 +449,8 @@ const styles = StyleSheet.create({
   resultButton: {
     width: '100%',
     marginTop: Spacing.md,
+  },
+  resultButtonSecondary: {
+    width: '100%',
   },
 });

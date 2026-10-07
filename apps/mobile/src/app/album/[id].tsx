@@ -2,9 +2,10 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
+import { MINI_PLAYER_OVERLAY_CLEARANCE, MiniPlayerOverlay } from '@/components/mini-player';
 import { ThemedView } from '@/components/themed-view';
 import { Artwork, CircleButton, IconButton, TrackRow } from '@/components/ui';
-import { Colors, Spacing } from '@/constants/theme';
+import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useToast } from '@/hooks/use-toast';
 import { getAlbumById, getTrackById } from '@/mocks';
 import { useLibraryStore } from '@/state/library-store';
@@ -29,7 +30,10 @@ export default function AlbumScreen() {
   const { showToast, toast } = useToast();
   const currentTrackId = usePlayerStore((s) => s.currentTrackId());
   const isPlaying = usePlayerStore((s) => s.isPlaying);
-  const isLiked = usePlayerStore((s) => s.isLiked);
+  // Subscribe to the liked set itself (not the stable `isLiked` function) so
+  // the hearts re-render when a like is toggled.
+  const likedTrackIds = usePlayerStore((s) => s.likedTrackIds);
+  const isLiked = (trackId: string) => likedTrackIds.has(trackId);
   const toggleLike = usePlayerStore((s) => s.toggleLike);
 
   if (!album) {
@@ -49,7 +53,8 @@ export default function AlbumScreen() {
     <ThemedView surface="canvas" style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.hero}>
-          <Artwork uri={album.coverUri} size={220} radius={24} />
+          <View style={styles.coverGlow} pointerEvents="none" />
+          <Artwork uri={album.coverUri} size={256} radius={Radii.md} />
           <ThemedText variant="headline-lg" style={styles.title} numberOfLines={2}>
             {album.title}
           </ThemedText>
@@ -101,10 +106,14 @@ export default function AlbumScreen() {
         </View>
 
         <View style={styles.trackList}>
+          <ThemedText variant="label-sm" emphasis="medium" style={styles.overline}>
+            Tracks
+          </ThemedText>
           {trackList.map((track, index) => (
             <TrackRow
               key={track!.id}
               index={index + 1}
+              active={currentTrackId === track!.id}
               title={track!.title}
               artist={track!.artistName}
               durationLabel={formatDuration(track!.durationSec)}
@@ -119,11 +128,17 @@ export default function AlbumScreen() {
           ))}
         </View>
 
-        <ThemedText variant="body-sm" emphasis="medium" style={styles.footer}>
-          © {album.year} {album.artistName}
-        </ThemedText>
+        <View style={styles.footerBlock}>
+          <ThemedText variant="label-sm" emphasis="medium" style={styles.overline}>
+            Released {album.year}
+          </ThemedText>
+          <ThemedText variant="body-sm" emphasis="low" style={styles.footer}>
+            ℗ {album.year} {album.artistName}
+          </ThemedText>
+        </View>
       </ScrollView>
       {toast}
+      <MiniPlayerOverlay />
     </ThemedView>
   );
 }
@@ -141,12 +156,31 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: Spacing.margin,
-    paddingBottom: Spacing.xl * 3,
+    paddingBottom: MINI_PLAYER_OVERLAY_CLEARANCE,
     gap: Spacing.lg,
   },
   hero: {
     alignItems: 'center',
     gap: 4,
+  },
+  coverGlow: {
+    position: 'absolute',
+    top: 24,
+    width: 220,
+    height: 220,
+    borderRadius: Radii.full,
+    backgroundColor: Colors.primary,
+    opacity: 0.06,
+    transform: [{ scale: 1.25 }],
+  },
+  overline: {
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: Spacing.xs,
+  },
+  footerBlock: {
+    alignItems: 'center',
+    gap: 2,
   },
   title: {
     textAlign: 'center',

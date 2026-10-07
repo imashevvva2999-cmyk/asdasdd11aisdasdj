@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { EmptyState, IconButton } from '@/components/ui';
+import { CircleButton, EmptyState, Icon, IconButton, PressableScale } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
 import { useToast } from '@/hooks/use-toast';
 import { goBack } from '@/lib/navigation';
@@ -35,6 +35,9 @@ export default function LyricsScreen() {
     return index;
   }, [lines, progressSec]);
 
+  const durationSec = track?.durationSec ?? 0;
+  const progressRatio = durationSec > 0 ? Math.min(1, progressSec / durationSec) : 0;
+
   return (
     <ThemedView surface="canvas" style={styles.flex}>
       <SafeAreaView style={styles.flex}>
@@ -43,17 +46,17 @@ export default function LyricsScreen() {
           <View style={styles.headerCenter}>
             {track && (
               <>
-                <ThemedText variant="label-lg" numberOfLines={1}>
+                <ThemedText variant="headline-sm" numberOfLines={1}>
                   {track.title}
                 </ThemedText>
-                <ThemedText variant="body-sm" emphasis="medium" numberOfLines={1}>
+                <ThemedText variant="label-md" emphasis="medium" numberOfLines={1}>
                   {track.artistName}
                 </ThemedText>
               </>
             )}
           </View>
           <IconButton
-            icon="share"
+            icon="ios-share"
             accessibilityLabel="Share"
             onPress={async () => {
               if (!track) return;
@@ -69,13 +72,21 @@ export default function LyricsScreen() {
           <ScrollView contentContainerStyle={styles.lyricsContent}>
             {lines.map((line, index) => {
               const distance = Math.abs(index - activeIndex);
-              const emphasis = distance === 0 ? 'high' : distance === 1 ? 'medium' : 'low';
+              if (distance === 0) {
+                return (
+                  <View key={line.timeMs} style={styles.activeRow}>
+                    <View style={styles.activeBar} />
+                    <ThemedText variant="display-lg-mobile" style={styles.activeLine}>
+                      {line.text}
+                    </ThemedText>
+                  </View>
+                );
+              }
               return (
                 <ThemedText
                   key={line.timeMs}
-                  variant={distance === 0 ? 'headline-sm' : 'body-lg'}
-                  emphasis={emphasis}
-                  style={[styles.line, distance === 0 && styles.activeLine]}
+                  variant={distance === 1 ? 'headline-lg' : 'headline-md'}
+                  style={{ opacity: distance === 1 ? 0.42 : distance === 2 ? 0.24 : 0.14 }}
                 >
                   {line.text}
                 </ThemedText>
@@ -85,23 +96,36 @@ export default function LyricsScreen() {
         )}
 
         {track && (
-          <View style={styles.transportRow}>
-            <IconButton icon="skip-previous" accessibilityLabel="Previous" onPress={previous} />
-            <IconButton
-              icon={isPlaying ? 'pause' : 'play-arrow'}
-              accessibilityLabel={isPlaying ? 'Pause' : 'Play'}
-              size={56}
-              onPress={togglePlayPause}
-            />
-            <IconButton icon="skip-next" accessibilityLabel="Next" onPress={next} />
+          <View style={styles.footer}>
+            <View style={styles.progressTrack} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+              <View style={[styles.progressFill, { width: `${progressRatio * 100}%` }]} />
+            </View>
+            <View style={styles.timeRow}>
+              <ThemedText variant="mono-num" emphasis="primary">
+                {formatTime(progressSec)}
+              </ThemedText>
+              <ThemedText variant="mono-num" emphasis="medium">
+                -{formatTime(Math.max(0, durationSec - progressSec))}
+              </ThemedText>
+            </View>
+            <View style={styles.transportRow}>
+              <IconButton variant="ghost" icon="skip-previous" iconSize={30} size={48} accessibilityLabel="Previous" onPress={previous} />
+              <CircleButton
+                icon={isPlaying ? 'pause' : 'play-arrow'}
+                accessibilityLabel={isPlaying ? 'Pause' : 'Play'}
+                size={64}
+                iconSize={32}
+                onPress={togglePlayPause}
+              />
+              <IconButton variant="ghost" icon="skip-next" iconSize={30} size={48} accessibilityLabel="Next" onPress={next} />
+            </View>
           </View>
         )}
 
         <View style={styles.tabRow}>
-          <ThemedText variant="label-md" emphasis="primary">
-            Lyrics
-          </ThemedText>
-          <TabLink label="Queue" onPress={() => router.push('/player/queue')} />
+          <PlayerTab label="Lyrics" icon="mic-none" active />
+          <PlayerTab label="Audio" icon="headphones" onPress={() => router.push('/profile/settings')} />
+          <PlayerTab label="Queue" icon="queue-music" onPress={() => router.push('/player/queue')} />
         </View>
       </SafeAreaView>
       {toast}
@@ -109,50 +133,110 @@ export default function LyricsScreen() {
   );
 }
 
-function TabLink({ label, onPress }: { label: string; onPress: () => void }) {
+function PlayerTab({ label, icon, active = false, onPress }: { label: string; icon: string; active?: boolean; onPress?: () => void }) {
+  const color = active ? Colors.primary : Colors.text.medium;
   return (
-    <ThemedText variant="label-md" emphasis="medium" onPress={onPress}>
-      {label}
-    </ThemedText>
+    <PressableScale
+      accessibilityRole="tab"
+      accessibilityState={{ selected: active }}
+      accessibilityLabel={label}
+      disabled={active}
+      onPress={onPress}
+      style={styles.tab}
+    >
+      <Icon name={icon} size={22} color={color} />
+      <ThemedText variant="label-sm" style={{ color }}>
+        {label}
+      </ThemedText>
+    </PressableScale>
   );
+}
+
+function formatTime(totalSeconds: number): string {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = Math.floor(totalSeconds % 60);
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   header: {
-    height: 56,
-    paddingHorizontal: Spacing.sm,
+    height: 64,
+    paddingHorizontal: Spacing.margin,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   headerCenter: {
+    flex: 1,
     alignItems: 'center',
+    paddingHorizontal: Spacing.sm,
   },
   lyricsContent: {
     flexGrow: 1,
     justifyContent: 'center',
     paddingHorizontal: Spacing.margin,
     paddingVertical: Spacing.xl,
-    gap: Spacing.md,
+    gap: Spacing.xl,
   },
-  line: {
-    textAlign: 'center',
+  activeRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 14,
+  },
+  activeBar: {
+    width: 6,
+    height: 24,
+    marginTop: 8,
+    borderRadius: 3,
+    backgroundColor: Colors.primary,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowRadius: 10,
+    shadowOpacity: 0.8,
   },
   activeLine: {
-    color: Colors.primary,
+    flex: 1,
+    fontSize: 34,
+    lineHeight: 42,
+  },
+  footer: {
+    paddingHorizontal: Spacing.margin,
+    gap: Spacing.xs,
+  },
+  progressTrack: {
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: Colors.surface.l3,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: Colors.primary,
+  },
+  timeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
   transportRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: Spacing.xl,
-    paddingVertical: Spacing.sm,
+    gap: 40,
+    paddingVertical: Spacing.md,
   },
   tabRow: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    gap: Spacing.xl,
-    paddingBottom: Spacing.md,
+    justifyContent: 'space-around',
+    marginHorizontal: Spacing.margin,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  tab: {
+    alignItems: 'center',
+    gap: 4,
+    minWidth: 64,
   },
 });

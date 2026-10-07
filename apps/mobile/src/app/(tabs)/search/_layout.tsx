@@ -14,9 +14,10 @@ export default function SearchStackLayout() {
       }}
     >
       <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Screen name="results" options={{ title: 'Search Results' }} />
-      <Stack.Screen name="all-genres" options={{ title: 'All Genres & Moods' }} />
-      <Stack.Screen name="genre/[id]" options={{ title: 'Genre' }} />
+      {/* Stitch shows only a back control on these — the heading lives in the page body. */}
+      <Stack.Screen name="results" options={{ title: 'Search Results', headerTitle: '' }} />
+      <Stack.Screen name="all-genres" options={{ title: 'All Genres & Moods', headerTitle: '' }} />
+      <Stack.Screen name="genre/[id]" options={{ title: 'Genre', headerTitle: '' }} />
     </Stack>
   );
 }

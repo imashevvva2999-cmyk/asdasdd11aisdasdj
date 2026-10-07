@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -9,6 +9,7 @@ import { ThemedView } from '@/components/themed-view';
 import { AvatarCard, Chip, CircleButton, CoverCard, Icon, IconButton, LibraryRow, PressableScale } from '@/components/ui';
 import type { LocalOrRemoteImage } from '@/constants/stitch-artwork';
 import { Colors, Radii, Spacing } from '@/constants/theme';
+import { useContentWidth } from '@/hooks/use-content-width';
 import { getAlbumById, getArtistById, type LibraryItem } from '@/mocks';
 import { useLibraryStore } from '@/state/library-store';
 import { usePlayerStore } from '@/state/player-store';
@@ -37,7 +38,7 @@ export default function LibraryScreen() {
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>('All');
   const [sortMode, setSortMode] = useState<(typeof SORT_MODES)[number]>('Recently Added');
   const [gridView, setGridView] = useState(false);
-  const windowWidth = useWindowDimensions().width;
+  const windowWidth = useContentWidth();
   const gridItemWidth = Math.floor((Math.min(windowWidth, 800) - Spacing.margin * 2 - Spacing.md) / 2);
 
   const likedTrackIds = usePlayerStore((s) => s.likedTrackIds);
@@ -244,10 +245,7 @@ function chunkPairs<T>(list: T[]): T[][] {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  headerSafeArea: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
-  },
+  headerSafeArea: {},
   headerRow: {
     minHeight: 64,
     paddingHorizontal: Spacing.margin,
@@ -262,6 +260,11 @@ const styles = StyleSheet.create({
   },
   addButton: {
     backgroundColor: Colors.primary,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 16,
+    shadowOpacity: 0.3,
+    elevation: 6,
   },
   content: {
     padding: Spacing.margin,
@@ -285,8 +288,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   likedSongsCard: {
-    borderRadius: Radii.md,
+    borderRadius: Radii.lg,
     backgroundColor: Colors.surface.l2,
+    overflow: 'hidden',
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 16 },
+    shadowRadius: 36,
+    shadowOpacity: 0.22,
     padding: Spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',

@@ -4,11 +4,11 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Icon, IconButton, PressableScale, TextField, ToggleRow, ValueRow } from '@/components/ui';
-import { Colors, Spacing } from '@/constants/theme';
+import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useToast } from '@/hooks/use-toast';
 
 type SettingsRow = { id: string; label: string; render: () => React.ReactNode };
-type SettingsSection = { id: string; title: string; rows: SettingsRow[] };
+type SettingsSection = { id: string; title: string; icon: string; rows: SettingsRow[] };
 
 /**
  * S-24 Settings — Audio & Account (docs/screens.md §3.11). Every toggle/value
@@ -40,27 +40,29 @@ export default function SettingsScreen() {
       {
         id: 'audio',
         title: 'Audio Streaming & Lossless',
+        icon: 'graphic-eq',
         rows: [
-          { id: 'lossless', label: 'Lossless', render: () => <ToggleRow title="Lossless" value={lossless} onValueChange={setLossless} /> },
+          { id: 'lossless', label: 'Lossless', render: () => <ToggleRow title="Lossless" subtitle="Stream in lossless quality" value={lossless} onValueChange={setLossless} /> },
           { id: 'wifi-quality', label: 'Wi-Fi Quality', render: () => <ValueRow title="Wi-Fi Quality" value="High" /> },
           { id: 'cellular-quality', label: 'Cellular Quality', render: () => <ValueRow title="Cellular Quality" value="Normal" /> },
-          { id: 'dolby-atmos', label: 'Dolby Atmos', render: () => <ToggleRow title="Dolby Atmos" value={dolbyAtmos} onValueChange={setDolbyAtmos} /> },
+          { id: 'dolby-atmos', label: 'Dolby Atmos', render: () => <ToggleRow title="Dolby Atmos" subtitle="Immersive spatial audio when available" value={dolbyAtmos} onValueChange={setDolbyAtmos} /> },
           {
             id: 'volume-normalization',
             label: 'Volume Normalization',
-            render: () => <ToggleRow title="Volume Normalization" value={volumeNormalization} onValueChange={setVolumeNormalization} />,
+            render: () => <ToggleRow title="Volume Normalization" subtitle="Keep playback volume consistent between tracks" value={volumeNormalization} onValueChange={setVolumeNormalization} />,
           },
         ],
       },
       {
         id: 'downloads',
         title: 'Downloads & Storage',
+        icon: 'download',
         rows: [
           { id: 'download-quality', label: 'Download Quality', render: () => <ValueRow title="Download Quality" value="High" /> },
           {
             id: 'download-cellular',
             label: 'Download over Cellular',
-            render: () => <ToggleRow title="Download over Cellular" value={downloadOverCellular} onValueChange={setDownloadOverCellular} />,
+            render: () => <ToggleRow title="Download over Cellular" subtitle="Allow offline transfers over mobile data" value={downloadOverCellular} onValueChange={setDownloadOverCellular} />,
           },
           { id: 'storage-used', label: 'Storage Used', render: () => <ValueRow title="Storage Used" value={cacheCleared ? '12.8 GB (Music 12.8 • Cache 0)' : '14.2 GB (Music 12.8 • Cache 1.4)'} /> },
           {
@@ -75,6 +77,7 @@ export default function SettingsScreen() {
       {
         id: 'playback',
         title: 'Playback & Sound Engine',
+        icon: 'tune',
         rows: [
           {
             id: 'crossfade',
@@ -104,13 +107,14 @@ export default function SettingsScreen() {
               </View>
             ),
           },
-          { id: 'gapless', label: 'Gapless', render: () => <ToggleRow title="Gapless" value={gapless} onValueChange={setGapless} /> },
+          { id: 'gapless', label: 'Gapless', render: () => <ToggleRow title="Gapless" subtitle="Seamless transitions between tracks" value={gapless} onValueChange={setGapless} /> },
           { id: 'equalizer', label: 'Equalizer', render: () => <ValueRow title="Equalizer" value="Flat" /> },
         ],
       },
       {
         id: 'account',
         title: 'Account & Payments',
+        icon: 'account-balance',
         rows: [
           {
             id: 'fast-pay',
@@ -167,10 +171,14 @@ export default function SettingsScreen() {
         ) : (
           filteredSections.map((section) => (
             <View key={section.id} style={styles.section}>
-              <ThemedText variant="label-md" emphasis="medium" style={styles.sectionTitle}>
-                {section.title}
-              </ThemedText>
-              <View style={styles.sectionRows}>{section.rows.map((row) => <View key={row.id}>{row.render()}</View>)}</View>
+              <View style={styles.sectionTitleRow}>
+                <Icon name={section.icon} size={18} color={Colors.primary} />
+                <ThemedText variant="label-sm" emphasis="primary" style={styles.sectionTitle}>
+                  {section.title}
+                </ThemedText>
+              </View>
+              {/* Stitch S-24 groups each section's rows in one card. */}
+              <View style={styles.sectionCard}>{section.rows.map((row) => <View key={row.id}>{row.render()}</View>)}</View>
             </View>
           ))
         )}
@@ -218,12 +226,21 @@ const styles = StyleSheet.create({
   section: {
     gap: Spacing.sm,
   },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.xs,
+  },
   sectionTitle: {
     textTransform: 'uppercase',
-    letterSpacing: 0.6,
+    letterSpacing: 0.8,
   },
-  sectionRows: {
-    gap: Spacing.xs,
+  sectionCard: {
+    borderRadius: Radii.lg,
+    backgroundColor: Colors.surface.l1,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
   },
   crossfadeRow: {
     flexDirection: 'row',

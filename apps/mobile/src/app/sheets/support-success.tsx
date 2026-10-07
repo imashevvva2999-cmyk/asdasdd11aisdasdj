@@ -2,8 +2,7 @@ import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Icon, PillButton, TextLinkButton } from '@/components/ui';
+import { Artwork, Icon, PillButton, SheetScreen, TextLinkButton } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { goBack } from '@/lib/navigation';
 import { getArtistById } from '@/mocks';
@@ -27,13 +26,12 @@ export default function SupportSuccessSheet() {
 
   if (!artist || !amount) {
     return (
-      <ThemedView surface="l2" style={styles.flex}>
-        <View style={styles.handle} />
+      <SheetScreen>
         <ThemedText variant="body-md" emphasis="medium" style={styles.notFound}>
           No recent support to show.
         </ThemedText>
         <TextLinkButton label="Close" onPress={() => goBack()} style={styles.notFoundLink} />
-      </ThemedView>
+      </SheetScreen>
     );
   }
 
@@ -43,34 +41,39 @@ export default function SupportSuccessSheet() {
   }
 
   return (
-    <ThemedView surface="l2" style={styles.flex}>
-      <View style={styles.handle} />
+    <SheetScreen>
       <View style={styles.content}>
-        <View style={styles.iconHalo}>
-          <Icon name="favorite" size={36} color={Colors.primary} />
+        <View style={styles.iconGlow}>
+          <View style={styles.iconCircle}>
+            <Icon name="favorite" size={32} color={Colors.primary} />
+          </View>
         </View>
-        <ThemedText variant="headline-md" style={styles.centerText}>
+        <ThemedText variant="label-md" emphasis="primary" style={styles.eyebrow}>
           Direct Patronage Complete
         </ThemedText>
-        <ThemedText variant="headline-sm" style={styles.centerText}>
+        <ThemedText variant="display-lg" style={styles.centerText}>
           Supported {amount} {currency === 'KGS' ? 'сом' : currency}
         </ThemedText>
 
         <View style={styles.artistChip}>
-          <ThemedText variant="label-md">{artist.name}</ThemedText>
-          {artist.verified && <Icon name="verified" size={14} color={Colors.secondary} />}
+          <Artwork shape="circle" size={24} radius={12} uri={artist.photoUri} placeholderIcon="person" />
+          <ThemedText variant="label-lg">{artist.name}</ThemedText>
+          {artist.verified && <Icon name="verified" size={16} color={Colors.primary} />}
         </View>
 
-        <PillButton label="Done" onPress={handleDone} style={styles.cta} />
+        <PillButton label="Done" trailingIcon="check" onPress={handleDone} style={styles.cta} />
         <TextLinkButton
+          tone="muted"
+          icon="receipt-long"
           label="View Support Receipt in History"
+          style={styles.receiptLink}
           onPress={() => {
             reset();
             router.dismissTo('/profile/support-history');
           }}
         />
       </View>
-    </ThemedView>
+    </SheetScreen>
   );
 }
 
@@ -84,28 +87,34 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginTop: Spacing.sm,
   },
-  handle: {
-    alignSelf: 'center',
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: Colors.text.low,
-    marginTop: Spacing.sm,
-  },
   content: {
     padding: Spacing.margin,
     alignItems: 'center',
     gap: Spacing.sm,
   },
-  iconHalo: {
-    width: 80,
-    height: 80,
+  iconGlow: {
+    padding: 14,
     borderRadius: Radii.full,
-    backgroundColor: 'rgba(255, 75, 75, 0.15)',
+    backgroundColor: 'rgba(255, 75, 75, 0.12)',
+    marginTop: Spacing.md,
+    marginBottom: Spacing.sm,
+  },
+  iconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: Radii.full,
+    backgroundColor: Colors.surface.l3,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: Spacing.lg,
-    marginBottom: Spacing.sm,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowRadius: 24,
+    shadowOpacity: 0.55,
+    elevation: 8,
+  },
+  eyebrow: {
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
   },
   centerText: {
     textAlign: 'center',
@@ -113,16 +122,20 @@ const styles = StyleSheet.create({
   artistChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    backgroundColor: Colors.surface.l3,
+    gap: Spacing.xs,
+    backgroundColor: Colors.surface.l2,
     borderRadius: Radii.full,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    marginTop: Spacing.md,
-    marginBottom: Spacing.md,
+    paddingLeft: 6,
+    paddingRight: Spacing.md,
+    paddingVertical: 6,
+    marginTop: Spacing.xs,
+    marginBottom: Spacing.lg,
   },
   cta: {
     width: '100%',
+    height: 52,
+  },
+  receiptLink: {
     marginTop: Spacing.sm,
   },
 });

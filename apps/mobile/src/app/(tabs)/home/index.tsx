@@ -77,7 +77,7 @@ export default function HomeScreen() {
 
         <View style={styles.section}>
           <SectionHeader title="Trending Now" actionLabel="See All" onActionPress={() => router.push('/home/see-all')} />
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.carousel}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.carouselBleed} contentContainerStyle={styles.carousel}>
             {trendingNowAlbumIds.map((albumId) => {
               const album = getAlbumById(albumId);
               if (!album) return null;
@@ -90,6 +90,7 @@ export default function HomeScreen() {
                   title={album.title}
                   subtitle={album.artistName}
                   meta={`${album.trackCount} Tracks`}
+                  metaTone="muted"
                   liked={isAlbumSaved(album.id)}
                   onPress={() => router.push({ pathname: '/album/[id]', params: { id: album.id } })}
                   onToggleLike={() => toggleSaved('album', album.id)}
@@ -101,7 +102,7 @@ export default function HomeScreen() {
 
         <View style={styles.section}>
           <SectionHeader title="New Releases" actionLabel="Explore" onActionPress={() => router.push('/home/see-all')} />
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.carousel}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.carouselBleed} contentContainerStyle={styles.carousel}>
             {newReleases.map(({ albumId, label }) => {
               const album = getAlbumById(albumId);
               if (!album) return null;
@@ -143,6 +144,7 @@ export default function HomeScreen() {
                   lossless={track.lossless}
                   explicit={track.explicit}
                   isPlaying={trackIsPlaying}
+                  active={currentTrackId === track.id}
                   onPress={() => {
                     play(track.id, jumpBackInTrackIds);
                     router.push({ pathname: '/player/now-playing', params: { trackId: track.id } });
@@ -158,20 +160,26 @@ export default function HomeScreen() {
           <View style={styles.moodHeader}>
             <ThemedText variant="headline-md">Mood & Vibe Mixes</ThemedText>
           </View>
+          {/* Explicit 2-per-row chunking: RN-web doesn't wrap `flex: 1` cards with
+              flexWrap, so all four were squeezed into one row (Stitch is 2×2). */}
           <View style={styles.moodGrid}>
-            {moodMixes.map((mix) => (
-              <MoodCard
-                key={mix.id}
-                title={mix.title}
-                subtitle={mix.subtitle}
-                trackCountLabel={`${mix.trackCount} Tracks`}
-                icon={mix.icon}
-                tint={mix.tint}
-                onPress={() => {
-                  play(mix.trackIds[0]!, mix.trackIds);
-                  router.push('/player/now-playing');
-                }}
-              />
+            {chunkPairs(moodMixes).map((row, rowIndex) => (
+              <View key={rowIndex} style={styles.moodRow}>
+                {row.map((mix) => (
+                  <MoodCard
+                    key={mix.id}
+                    title={mix.title}
+                    subtitle={mix.subtitle}
+                    trackCountLabel={`${mix.trackCount} Tracks`}
+                    icon={mix.icon}
+                    tint={mix.tint}
+                    onPress={() => {
+                      play(mix.trackIds[0]!, mix.trackIds);
+                      router.push('/player/now-playing');
+                    }}
+                  />
+                ))}
+              </View>
             ))}
           </View>
         </View>
@@ -199,6 +207,12 @@ function Header() {
       </SafeAreaView>
     </ThemedView>
   );
+}
+
+function chunkPairs<T>(items: T[]): T[][] {
+  const rows: T[][] = [];
+  for (let i = 0; i < items.length; i += 2) rows.push(items.slice(i, i + 2));
+  return rows;
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -237,7 +251,12 @@ const styles = StyleSheet.create({
   },
   carousel: {
     gap: Spacing.md,
-    paddingRight: Spacing.margin,
+    paddingHorizontal: Spacing.margin,
+  },
+  // Carousels run edge to edge (Stitch -mx-margin px-margin); only their
+  // headers keep the page margin.
+  carouselBleed: {
+    marginHorizontal: -Spacing.margin,
   },
   trackList: {
     gap: 2,
@@ -252,8 +271,10 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
   },
   moodGrid: {
+    gap: Spacing.sm,
+  },
+  moodRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: Spacing.sm,
   },
 });

@@ -10,8 +10,8 @@ export type { ArtworkProps } from './artwork';
 export { Badge } from './badge';
 export type { BadgeProps } from './badge';
 
-export { AppBottomSheet } from './bottom-sheet';
-export type { AppBottomSheetProps } from './bottom-sheet';
+export { AppBottomSheet, SheetScreen } from './bottom-sheet';
+export type { AppBottomSheetProps, SheetScreenProps } from './bottom-sheet';
 
 export { CircleButton, IconButton, PillButton, TextLinkButton } from './button';
 export type { CircleButtonProps, IconButtonProps, PillButtonProps, TextLinkButtonProps } from './button';
@@ -23,6 +23,9 @@ export { EqualizerIndicator } from './equalizer';
 
 export { Icon } from './icon';
 export type { IconProps } from './icon';
+
+export { FormCard, SegmentedControl } from './form';
+export type { FormCardProps, SegmentedControlProps } from './form';
 
 export { LibraryRow, MenuRow, PlaylistPickerRow, QueueRow, ToggleRow, TrackRow, ValueRow } from './list-row';
 export type { LibraryRowProps, MenuRowProps, PlaylistPickerRowProps, QueueRowProps, ToggleRowProps, TrackRowProps, ValueRowProps } from './list-row';

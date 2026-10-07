@@ -2,9 +2,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Artwork, IconButton, MenuRow, TextLinkButton } from '@/components/ui';
-import { Colors, Spacing } from '@/constants/theme';
+import { Artwork, IconButton, MenuRow, PillButton, SheetScreen, TextLinkButton } from '@/components/ui';
+import { Spacing } from '@/constants/theme';
 import { useToast } from '@/hooks/use-toast';
 import { goBack } from '@/lib/navigation';
 import { shareEntity } from '@/lib/share';
@@ -61,19 +60,17 @@ export default function OptionsSheet() {
 
   if (!header) {
     return (
-      <ThemedView surface="l2" style={styles.flex}>
-        <View style={styles.handle} />
+      <SheetScreen>
         <ThemedText variant="body-md" emphasis="medium" style={styles.notFound}>
           Nothing to show.
         </ThemedText>
         <TextLinkButton label="Close" onPress={() => goBack()} style={styles.cancel} />
-      </ThemedView>
+      </SheetScreen>
     );
   }
 
   return (
-    <ThemedView surface="l2" style={styles.flex}>
-      <View style={styles.handle} />
+    <SheetScreen>
       <View style={styles.header}>
         <Artwork uri={header.coverUri} size={48} radius={8} />
         <View style={styles.headerText}>
@@ -84,26 +81,28 @@ export default function OptionsSheet() {
             {header.subtitle}
           </ThemedText>
         </View>
-        <IconButton icon="close" accessibilityLabel="Close" onPress={() => goBack()} />
+        <IconButton icon="close" size={36} accessibilityLabel="Close" onPress={() => goBack()} />
       </View>
 
       <ScrollView contentContainerStyle={styles.list}>
         {kind === 'track' && track && (
           <>
             <MenuRow
+              variant="flat"
               icon="playlist-add"
               title="Add to playlist"
               onPress={() => router.replace({ pathname: '/sheets/add-to-playlist', params: { trackId: track.id } })}
             />
-            <MenuRow icon="person" title="View artist" onPress={() => goTo('/artist/[id]', track.artistId)} />
-            {album && <MenuRow icon="album" title="Go to album" onPress={() => goTo('/album/[id]', album.id)} />}
-            <MenuRow icon="share" title="Share track" onPress={handleShare} />
+            <MenuRow variant="flat" icon="person" title="View artist" onPress={() => goTo('/artist/[id]', track.artistId)} />
+            {album && <MenuRow variant="flat" icon="album" title="Go to album" onPress={() => goTo('/album/[id]', album.id)} />}
+            <MenuRow variant="flat" icon="share" title="Share track" onPress={handleShare} />
           </>
         )}
 
         {(kind === 'album' || kind === 'playlist') && (
           <>
             <MenuRow
+              variant="flat"
               icon={isSaved ? 'library-add-check' : 'library-add'}
               title={isSaved ? 'Remove from Library' : 'Save to Library'}
               onPress={() => {
@@ -112,6 +111,7 @@ export default function OptionsSheet() {
               }}
             />
             <MenuRow
+              variant="flat"
               icon={isDownloaded ? 'download-done' : 'download'}
               title={isDownloaded ? 'Remove download' : 'Download'}
               onPress={() => {
@@ -119,28 +119,20 @@ export default function OptionsSheet() {
                 showToast(isDownloaded ? 'Download removed' : 'Marked for offline (demo — no audio is stored yet)', 'download');
               }}
             />
-            {kind === 'album' && album && <MenuRow icon="person" title="View artist" onPress={() => goTo('/artist/[id]', album.artistId)} />}
-            <MenuRow icon="share" title={kind === 'album' ? 'Share album' : 'Share playlist'} onPress={handleShare} />
+            {kind === 'album' && album && <MenuRow variant="flat" icon="person" title="View artist" onPress={() => goTo('/artist/[id]', album.artistId)} />}
+            <MenuRow variant="flat" icon="share" title={kind === 'album' ? 'Share album' : 'Share playlist'} onPress={handleShare} />
           </>
         )}
       </ScrollView>
 
-      <TextLinkButton label="Cancel" onPress={() => goBack()} style={styles.cancel} />
+      <PillButton label="Cancel" variant="secondary" onPress={() => goBack()} style={styles.cancel} />
       {toast}
-    </ThemedView>
+    </SheetScreen>
   );
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  handle: {
-    alignSelf: 'center',
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: Colors.text.low,
-    marginTop: Spacing.sm,
-  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -162,7 +154,7 @@ const styles = StyleSheet.create({
     padding: Spacing.margin,
   },
   cancel: {
-    alignSelf: 'center',
-    marginVertical: Spacing.md,
+    marginHorizontal: Spacing.margin,
+    marginTop: Spacing.sm,
   },
 });

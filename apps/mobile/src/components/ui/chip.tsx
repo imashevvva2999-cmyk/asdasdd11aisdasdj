@@ -3,6 +3,7 @@ import { StyleSheet, View, type GestureResponderEvent, type ViewStyle } from 're
 
 import { Colors, Radii, Spacing } from '@/constants/theme';
 
+import { Icon } from './icon';
 import { PressableScale } from './pressable-scale';
 import { ThemedText } from '../themed-text';
 
@@ -132,50 +133,72 @@ const removableStyles = StyleSheet.create({
 });
 
 export type AmountChipProps = {
-  /** Pre-formatted amount label, e.g. "100" (currency unit shown by the caller — KGS/сом, OQ-08). */
-  amount: string;
+  /** Pre-formatted amount shown inside the circle, e.g. "100". */
+  amount?: string;
+  /** Currency unit for the caption under the circle (KGS/сом, OQ-08). */
   unit?: string;
+  /** Glyph inside the circle instead of an amount (e.g. "More"). */
+  icon?: string;
+  /** Caption under the circle; defaults to "<amount> <unit>". */
+  label?: string;
   selected?: boolean;
   onPress?: (event: GestureResponderEvent) => void;
   style?: ViewStyle;
 };
 
-/** 64px circular donation-amount chip (docs/screens.md §3.3 "Amount chip", S-19). */
-export function AmountChip({ amount, unit, selected = false, onPress, style }: AmountChipProps) {
+/** Donation-amount chip — 56px outlined circle with the amount, caption
+ * below; selected = solid coral with a glow (Stitch S-19). */
+export function AmountChip({ amount, unit, icon, label, selected = false, onPress, style }: AmountChipProps) {
+  const caption = label ?? [amount, unit].filter(Boolean).join(' ');
   return (
     <PressableScale
       accessibilityRole="button"
+      accessibilityLabel={caption}
       accessibilityState={{ selected }}
       onPress={onPress}
-      style={[amountStyles.base, selected && amountStyles.selected, style]}
+      style={[amountStyles.column, style]}
     >
-      <View style={amountStyles.inner}>
-        <ThemedText variant="label-lg" emphasis={selected ? 'high' : 'high'}>
-          {amount}
-        </ThemedText>
-        {unit && (
-          <ThemedText variant="label-sm" emphasis="medium">
-            {unit}
+      <View style={[amountStyles.circle, selected && amountStyles.selected]}>
+        {icon ? (
+          <Icon name={icon} size={22} color={Colors.text.high} />
+        ) : (
+          <ThemedText variant="body-lg" style={amountStyles.amount}>
+            {amount}
           </ThemedText>
         )}
       </View>
+      <ThemedText variant="body-sm" emphasis={selected ? 'primary' : 'medium'} numberOfLines={1}>
+        {caption}
+      </ThemedText>
     </PressableScale>
   );
 }
 
 const amountStyles = StyleSheet.create({
-  base: {
-    width: 64,
-    height: 64,
+  column: {
+    alignItems: 'center',
+    gap: 6,
+  },
+  circle: {
+    width: 56,
+    height: 56,
     borderRadius: Radii.full,
-    backgroundColor: Colors.surface.l2,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   selected: {
     backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowRadius: 16,
+    shadowOpacity: 0.5,
+    elevation: 6,
   },
-  inner: {
-    alignItems: 'center',
+  amount: {
+    fontWeight: '600',
   },
 });

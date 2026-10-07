@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Artwork, Icon, IconButton, MenuRow, StatCard } from '@/components/ui';
+import { Artwork, Icon, IconButton, MenuRow, PressableScale, StatCard } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useToast } from '@/hooks/use-toast';
 import { currentUser, getArtistById } from '@/mocks';
@@ -38,9 +38,11 @@ export default function ProfileScreen() {
     <ThemedView surface="canvas" style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.hero}>
+          <View style={[styles.heroGlow, styles.heroGlowPrimary]} pointerEvents="none" />
+          <View style={[styles.heroGlow, styles.heroGlowSecondary]} pointerEvents="none" />
           <View style={styles.avatarWrap}>
             <View style={styles.avatarGlow} />
-            <Artwork shape="circle" size={96} radius={48} uri={currentUser.photoUri} />
+            <Artwork shape="circle" size={96} radius={48} uri={currentUser.photoUri} placeholderIcon="person" />
             <IconButton
               icon="edit"
               accessibilityLabel="Edit profile photo"
@@ -65,26 +67,62 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.statsRow}>
-          <StatCard label="Saved" value={String(currentUser.savedCount)} icon="favorite" />
-          <StatCard label="Playlists" value={String(currentUser.playlistsCount)} icon="queue-music" />
-          <StatCard label="Supported" value={`${totalSupported} сом`} icon="volunteer-activism" />
+          <StatCard variant="metric" label="Saved" value={String(currentUser.savedCount)} />
+          <StatCard variant="metric" label="Playlists" value={String(currentUser.playlistsCount)} />
+          <StatCard variant="metric" label="Supported" value={String(totalSupported)} unit="сом" style={styles.supportedStat} />
         </View>
 
         {(topArtist || currentUser.topGenre || currentUser.monthlyListeningHours) && (
           <View style={styles.section}>
-            <ThemedText variant="headline-sm">Listening Pulse — This Month</ThemedText>
+            <View style={styles.sectionHeaderRow}>
+              <View style={styles.sectionTitleRow}>
+                <Icon name="insights" size={22} color={Colors.primary} />
+                <ThemedText variant="headline-md">Listening Pulse</ThemedText>
+              </View>
+              <ThemedText variant="label-sm" emphasis="medium" style={styles.upperLabel}>
+                This Month
+              </ThemedText>
+            </View>
             <View style={styles.pulseRow}>
-              {topArtist && <StatCard label="Top Artist" value={topArtist.name} icon="person" />}
-              {currentUser.monthlyListeningHours !== undefined && (
-                <StatCard label="Listened" value={`${currentUser.monthlyListeningHours} hrs`} icon="schedule" />
+              {topArtist && (
+                <View style={styles.pulseCard}>
+                  <View style={styles.pulseArtistRow}>
+                    <Artwork uri={topArtist.photoUri} size={44} radius={Radii.DEFAULT} placeholderIcon="person" />
+                    <View style={styles.pulseText}>
+                      <ThemedText variant="label-sm" emphasis="medium" style={styles.upperLabel}>
+                        Top Artist
+                      </ThemedText>
+                      <ThemedText variant="label-lg" numberOfLines={1}>
+                        {topArtist.name}
+                      </ThemedText>
+                    </View>
+                  </View>
+                  {currentUser.monthlyListeningHours !== undefined && (
+                    <View style={styles.pulseMetaRow}>
+                      <Icon name="schedule" size={16} color={Colors.primary} />
+                      <ThemedText variant="label-md" emphasis="primary">
+                        {currentUser.monthlyListeningHours} hrs listened
+                      </ThemedText>
+                    </View>
+                  )}
+                </View>
               )}
-              {currentUser.topGenre && <StatCard label="Top Genre" value={currentUser.topGenre} icon="category" />}
+              {currentUser.topGenre && (
+                <View style={styles.pulseCard}>
+                  <ThemedText variant="label-sm" emphasis="medium" style={styles.upperLabel}>
+                    Top Genre
+                  </ThemedText>
+                  <ThemedText variant="headline-sm" numberOfLines={2}>
+                    {currentUser.topGenre}
+                  </ThemedText>
+                </View>
+              )}
             </View>
           </View>
         )}
 
         <View style={styles.section}>
-          <ThemedText variant="headline-sm">Studio Sanctuary</ThemedText>
+          <ThemedText variant="headline-md">Studio Sanctuary</ThemedText>
           <View style={styles.menuList}>
             <MenuRow
               icon="volunteer-activism"
@@ -93,24 +131,28 @@ export default function ProfileScreen() {
               onPress={() => router.push('/profile/support-history')}
             />
             <MenuRow
-              icon="graphic-eq"
+              icon="high-quality"
+              tone="secondary"
               title="Audio Quality & Playback"
               onPress={() => router.push('/profile/settings')}
             />
             <MenuRow
-              icon="download-done"
+              icon="cloud-download"
+              tone="neutral"
               title="Downloads & Offline"
               subtitle="14.2 GB used • 348 songs"
               onPress={() => router.push('/profile/settings')}
             />
             <MenuRow
               icon="verified-user"
+              tone="neutral"
               title="Account & Security"
               subtitle="MBANK Connected ID"
               onPress={() => router.push('/profile/settings')}
             />
             <MenuRow
               icon="mic"
+              tone="secondary"
               title={myArtist ? 'Artist Dashboard' : 'Become an Artist'}
               subtitle={myArtist ? `Manage ${myArtist.name}'s releases` : 'Publish and monetize your tracks on Mmusic'}
               onPress={() => router.push(myArtist ? '/profile/artist/dashboard' : '/profile/artist/become-artist')}
@@ -118,7 +160,12 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        <MenuRow icon="logout" title="Log Out" onPress={handleLogOut} />
+        <PressableScale accessibilityRole="button" onPress={handleLogOut} style={styles.logOut}>
+          <Icon name="logout" size={20} color={Colors.primary} />
+          <ThemedText variant="label-lg" emphasis="primary">
+            Log Out
+          </ThemedText>
+        </PressableScale>
       </ScrollView>
 
       {toast}
@@ -136,6 +183,27 @@ const styles = StyleSheet.create({
   hero: {
     alignItems: 'center',
     gap: 4,
+    padding: Spacing.lg,
+    borderRadius: Radii.lg,
+    backgroundColor: Colors.surface.l1,
+    overflow: 'hidden',
+  },
+  heroGlow: {
+    position: 'absolute',
+    width: 220,
+    height: 220,
+    borderRadius: Radii.full,
+    opacity: 0.05,
+  },
+  heroGlowPrimary: {
+    top: -90,
+    left: -80,
+    backgroundColor: Colors.primary,
+  },
+  heroGlowSecondary: {
+    bottom: -110,
+    right: -90,
+    backgroundColor: Colors.secondary,
   },
   avatarWrap: {
     position: 'relative',
@@ -148,7 +216,7 @@ const styles = StyleSheet.create({
     bottom: -6,
     borderRadius: Radii.full,
     backgroundColor: Colors.primary,
-    opacity: 0.25,
+    opacity: 0.18,
   },
   editAvatarButton: {
     position: 'absolute',
@@ -184,11 +252,60 @@ const styles = StyleSheet.create({
   section: {
     gap: Spacing.sm,
   },
+  supportedStat: {
+    backgroundColor: 'rgba(255, 75, 75, 0.06)',
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
+  upperLabel: {
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
   pulseRow: {
     flexDirection: 'row',
     gap: Spacing.sm,
   },
+  pulseCard: {
+    flex: 1,
+    padding: Spacing.md,
+    borderRadius: Radii.lg,
+    backgroundColor: Colors.surface.l1,
+    gap: Spacing.sm,
+    justifyContent: 'space-between',
+  },
+  pulseArtistRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  pulseText: {
+    flex: 1,
+    minWidth: 0,
+  },
+  pulseMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   menuList: {
-    gap: Spacing.xs,
+    gap: Spacing.sm,
+  },
+  logOut: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    height: 52,
+    borderRadius: Radii.lg,
+    backgroundColor: Colors.surface.l1,
+    marginTop: Spacing.sm,
   },
 });

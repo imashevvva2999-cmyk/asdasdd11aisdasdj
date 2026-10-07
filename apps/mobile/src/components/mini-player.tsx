@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { usePlayerStore } from '@/state/player-store';
@@ -45,7 +46,7 @@ export function MiniPlayer() {
       </View>
       <View style={styles.row}>
         <View style={styles.leftGroup}>
-          <Artwork uri={track.coverUri} size={40} radius={Radii.DEFAULT} style={styles.iconTile} />
+          <Artwork uri={track.coverUri} size={44} radius={Radii.DEFAULT} style={styles.iconTile} />
           <View style={styles.textBlock}>
             <ThemedText variant="label-lg" numberOfLines={1}>
               {track.title}
@@ -60,14 +61,15 @@ export function MiniPlayer() {
         </View>
         <View style={styles.actions}>
           <IconButton
+            variant="ghost"
             icon="skip-next"
+            iconSize={26}
             accessibilityLabel="Next track"
             onPress={(e) => {
               e.stopPropagation();
               next();
             }}
-            size={40}
-            style={styles.transparentButton}
+            size={44}
           />
           <IconButton
             icon={isPlaying ? 'pause' : 'play-arrow'}
@@ -76,7 +78,8 @@ export function MiniPlayer() {
               e.stopPropagation();
               togglePlayPause();
             }}
-            size={40}
+            size={44}
+            iconSize={24}
             style={styles.playButton}
           />
         </View>
@@ -85,7 +88,30 @@ export function MiniPlayer() {
   );
 }
 
+/**
+ * The same mini-player for full screens outside the tab navigator (Artist,
+ * Album, Playlist — Stitch shows it there too), pinned above the bottom safe
+ * area instead of above the tab bar. Pair with `MINI_PLAYER_OVERLAY_CLEARANCE`
+ * bottom padding on the screen's scroll content.
+ */
+export function MiniPlayerOverlay() {
+  const insets = useSafeAreaInsets();
+  return (
+    <View style={[styles.overlaySlot, { bottom: insets.bottom + Spacing.sm }]} pointerEvents="box-none">
+      <MiniPlayer />
+    </View>
+  );
+}
+
+/** Scroll padding that keeps content clear of `MiniPlayerOverlay`. */
+export const MINI_PLAYER_OVERLAY_CLEARANCE = 96;
+
 const styles = StyleSheet.create({
+  overlaySlot: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+  },
   wrap: {
     position: 'absolute',
     left: Spacing.margin,
@@ -93,7 +119,11 @@ const styles = StyleSheet.create({
     bottom: 0,
     borderRadius: Radii.md,
     overflow: 'hidden',
-    backgroundColor: 'rgba(28, 28, 36, 0.92)',
+    // Near-opaque so content scrolling underneath doesn't read through (no
+    // cross-platform backdrop blur is available here).
+    backgroundColor: 'rgba(24, 24, 30, 0.97)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.4,
@@ -118,13 +148,13 @@ const styles = StyleSheet.create({
   leftGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.sm,
+    gap: Spacing.md,
     flex: 1,
     minWidth: 0,
   },
   iconTile: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: Radii.DEFAULT,
     backgroundColor: Colors.surface.l1,
     alignItems: 'center',
@@ -150,10 +180,12 @@ const styles = StyleSheet.create({
     gap: 2,
     flexShrink: 0,
   },
-  transparentButton: {
-    backgroundColor: 'transparent',
-  },
   playButton: {
     backgroundColor: Colors.primary,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 16,
+    shadowOpacity: 0.35,
+    elevation: 6,
   },
 });

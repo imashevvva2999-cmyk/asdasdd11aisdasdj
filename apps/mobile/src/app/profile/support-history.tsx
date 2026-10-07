@@ -4,8 +4,8 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Artwork, Chip, EmptyState, StatCard } from '@/components/ui';
-import { Colors, Spacing } from '@/constants/theme';
+import { Artwork, Chip, EmptyState, Icon, PressableScale } from '@/components/ui';
+import { Colors, Radii, Spacing } from '@/constants/theme';
 import { getArtistById, type SupportHistoryEntry } from '@/mocks';
 import { useSupportStore } from '@/state/support-store';
 
@@ -39,9 +39,19 @@ export default function SupportHistoryScreen() {
   return (
     <ThemedView surface="canvas" style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.statsRow}>
-          <StatCard label="Total Supported" value={`${totalSupported} сом`} icon="volunteer-activism" />
-          <StatCard label="Artists Supported" value={String(distinctArtistCount)} icon="groups" />
+        <View style={styles.heroCard}>
+          <ThemedText variant="mono-num" emphasis="medium" style={styles.upperLabel}>
+            Total Supported
+          </ThemedText>
+          <View style={styles.totalRow}>
+            <ThemedText variant="display-lg">{totalSupported}</ThemedText>
+            <ThemedText variant="headline-sm" emphasis="medium">
+              сом
+            </ThemedText>
+          </View>
+          <ThemedText variant="body-md" emphasis="medium">
+            Direct patronage to {distinctArtistCount} {distinctArtistCount === 1 ? 'creator' : 'creators'}
+          </ThemedText>
         </View>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
@@ -59,9 +69,14 @@ export default function SupportHistoryScreen() {
         ) : (
           Object.entries(grouped).map(([period, entries]) => (
             <View key={period} style={styles.group}>
-              <ThemedText variant="label-md" emphasis="medium" style={styles.groupTitle}>
-                {period}
-              </ThemedText>
+              <View style={styles.groupHeader}>
+                <ThemedText variant="label-md" emphasis="medium" style={styles.groupTitle}>
+                  {period}
+                </ThemedText>
+                <ThemedText variant="label-md" emphasis="medium">
+                  {entries.length} {entries.length === 1 ? 'Grant' : 'Grants'}
+                </ThemedText>
+              </View>
               <View style={styles.entries}>
                 {entries.map((entry) => (
                   <SupportHistoryRow key={entry.id} entry={entry} />
@@ -71,9 +86,12 @@ export default function SupportHistoryScreen() {
           ))
         )}
 
-        <ThemedText variant="body-sm" emphasis="medium" style={styles.footer}>
-          MBANK Direct Creator Network
-        </ThemedText>
+        <View style={styles.footerCard}>
+          <View style={styles.footerIcon}>
+            <Icon name="account-balance" size={20} color={Colors.text.high} />
+          </View>
+          <ThemedText variant="label-lg">MBANK Direct Creator Network</ThemedText>
+        </View>
       </ScrollView>
     </ThemedView>
   );
@@ -86,27 +104,34 @@ function SupportHistoryRow({ entry }: { entry: SupportHistoryEntry }) {
   const timeLabel = date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 
   return (
-    <View style={styles.row}>
-      <Artwork shape="circle" size={40} radius={20} uri={artist?.photoUri} />
-      <View style={styles.rowText}>
-        <ThemedText
-          variant="label-lg"
-          numberOfLines={1}
-          onPress={artist ? () => router.push({ pathname: '/artist/[id]', params: { id: artist.id } }) : undefined}
-        >
-          {artist?.name ?? 'Unknown artist'}
+    <PressableScale
+      accessibilityRole={artist ? 'button' : undefined}
+      disabled={!artist}
+      onPress={artist ? () => router.push({ pathname: '/artist/[id]', params: { id: artist.id } }) : undefined}
+      style={styles.row}
+    >
+      <View style={styles.rowTop}>
+        <Artwork shape="circle" size={48} radius={24} uri={artist?.photoUri} placeholderIcon="person" />
+        <View style={styles.rowText}>
+          <ThemedText variant="headline-sm" numberOfLines={1}>
+            {artist?.name ?? 'Unknown artist'}
+          </ThemedText>
+          <ThemedText variant="body-sm" emphasis="medium">
+            Direct Fan Patronage
+          </ThemedText>
+        </View>
+        {artist && <Icon name="chevron-right" color={Colors.text.medium} />}
+      </View>
+      <View style={styles.rowFooter}>
+        <View style={styles.statusDot} />
+        <ThemedText variant="label-md" style={styles.rowFooterText}>
+          {entry.amount} сом • Completed
         </ThemedText>
-        <ThemedText variant="body-sm" emphasis="medium">
-          Direct patronage • {dateLabel}, {timeLabel}
+        <ThemedText variant="label-md" emphasis="medium">
+          {dateLabel}, {timeLabel}
         </ThemedText>
       </View>
-      <View style={styles.rowAmount}>
-        <ThemedText variant="label-lg">{entry.amount} сом</ThemedText>
-        <ThemedText variant="body-sm" style={styles.statusLabel}>
-          Completed
-        </ThemedText>
-      </View>
-    </View>
+    </PressableScale>
   );
 }
 
@@ -138,9 +163,26 @@ const styles = StyleSheet.create({
     gap: Spacing.lg,
     paddingBottom: Spacing.xl * 3,
   },
-  statsRow: {
+  heroCard: {
+    gap: 4,
+    padding: Spacing.lg,
+    borderRadius: Radii.lg,
+    backgroundColor: Colors.surface.l1,
+  },
+  upperLabel: {
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+  },
+  totalRow: {
     flexDirection: 'row',
-    gap: Spacing.sm,
+    alignItems: 'baseline',
+    gap: 6,
+  },
+  groupHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.xs,
   },
   filterRow: {
     gap: Spacing.xs,
@@ -156,27 +198,53 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   row: {
+    backgroundColor: Colors.surface.l1,
+    borderRadius: Radii.lg,
+    padding: Spacing.md,
+    gap: Spacing.md,
+  },
+  rowTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.sm,
-    backgroundColor: Colors.surface.l1,
-    borderRadius: 16,
-    padding: Spacing.sm,
+    gap: Spacing.md,
   },
   rowText: {
     flex: 1,
     minWidth: 0,
     gap: 2,
   },
-  rowAmount: {
-    alignItems: 'flex-end',
-    gap: 2,
+  rowFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingTop: Spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(255, 255, 255, 0.08)',
   },
-  statusLabel: {
-    color: Colors.secondary,
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Colors.secondary,
   },
-  footer: {
-    textAlign: 'center',
-    marginTop: Spacing.md,
+  rowFooterText: {
+    flex: 1,
+  },
+  footerCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    padding: Spacing.md,
+    borderRadius: Radii.lg,
+    backgroundColor: Colors.surface.l1,
+    marginTop: Spacing.sm,
+  },
+  footerIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: Radii.full,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

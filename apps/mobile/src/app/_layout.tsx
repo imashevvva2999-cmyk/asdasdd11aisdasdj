@@ -4,10 +4,12 @@ import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { loadedFonts } from '@/constants/fonts';
 import { Colors } from '@/constants/theme';
+import { MAX_CONTENT_WIDTH } from '@/hooks/use-content-width';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -47,7 +49,10 @@ export default function RootLayout() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={styles.root}>
+      {/* Wide browser windows: keep the mobile/WebView presentation in a
+          centred phone-width column instead of stretching every screen. */}
+      <View style={styles.appColumn}>
       <BottomSheetModalProvider>
         <ThemeProvider value={DarkTheme}>
           <StatusBar style="light" />
@@ -55,19 +60,43 @@ export default function RootLayout() {
             screenOptions={{
               headerShown: false,
               contentStyle: { backgroundColor: Colors.canvas },
+              // Same header treatment as the tab stacks (Artist / Album / Playlist).
+              headerStyle: { backgroundColor: Colors.canvas },
+              headerTintColor: Colors.text.high,
+              headerShadowVisible: false,
             }}
           >
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="player" options={{ presentation: 'fullScreenModal' }} />
-            <Stack.Screen name="sheets" options={{ presentation: 'formSheet' }} />
+            <Stack.Screen
+              name="sheets"
+              // Transparent so the shared SheetScreen can draw its own dimmed
+              // backdrop + bottom-pinned drawer over the screen beneath.
+              options={{ presentation: 'transparentModal', animation: 'fade', contentStyle: { backgroundColor: 'transparent' } }}
+            />
             <Stack.Screen name="create-playlist" options={{ presentation: 'modal' }} />
             <Stack.Screen name="artist/[id]" options={{ headerShown: true, title: '' }} />
-            <Stack.Screen name="album/[id]" options={{ headerShown: true, title: '' }} />
-            <Stack.Screen name="playlist/[id]" options={{ headerShown: true, title: '' }} />
+            <Stack.Screen name="album/[id]" options={{ headerShown: true, title: 'Album' }} />
+            <Stack.Screen name="playlist/[id]" options={{ headerShown: true, title: 'Playlist' }} />
             <Stack.Screen name="profile" options={{ headerShown: false }} />
           </Stack>
         </ThemeProvider>
       </BottomSheetModalProvider>
+      </View>
     </GestureHandlerRootView>
   );
 }
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: Colors.canvas,
+  },
+  appColumn: {
+    flex: 1,
+    width: '100%',
+    maxWidth: MAX_CONTENT_WIDTH,
+    alignSelf: 'center',
+    overflow: 'hidden',
+  },
+});

@@ -3,8 +3,7 @@ import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Artwork, Icon, IconButton, MenuRow, PillButton, PlaylistPickerRow, TextField, Toast } from '@/components/ui';
+import { Artwork, Icon, IconButton, MenuRow, PillButton, PlaylistPickerRow, SheetScreen, TextField, Toast } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
 import { goBack } from '@/lib/navigation';
 import { getTrackById } from '@/mocks';
@@ -48,16 +47,15 @@ export default function AddToPlaylistSheet() {
   }
 
   return (
-    <ThemedView surface="l2" style={styles.flex}>
-      <View style={styles.handle} />
+    <SheetScreen>
       <View style={styles.header}>
         <View style={styles.headerText}>
-          <ThemedText variant="headline-sm">Add to Playlist</ThemedText>
+          <ThemedText variant="headline-md">Add to Playlist</ThemedText>
           <ThemedText variant="body-sm" emphasis="medium">
             Choose one or more destinations
           </ThemedText>
         </View>
-        <IconButton icon="close" accessibilityLabel="Close" onPress={() => goBack()} />
+        <IconButton icon="close" size={36} accessibilityLabel="Close" onPress={() => goBack()} />
       </View>
 
       {track && (
@@ -112,23 +110,15 @@ export default function AddToPlaylistSheet() {
         })}
       </ScrollView>
 
-      <PillButton label="Done" onPress={() => goBack()} style={styles.doneButton} />
+      <PillButton label="Done" variant="secondary" onPress={() => goBack()} style={styles.doneButton} />
 
       <Toast message={toastLabel ? `✓ ${toastLabel}` : ''} icon="check" visible={Boolean(toastLabel)} />
-    </ThemedView>
+    </SheetScreen>
   );
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  handle: {
-    alignSelf: 'center',
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: Colors.text.low,
-    marginTop: Spacing.sm,
-  },
   header: {
     flexDirection: 'row',
     alignItems: 'flex-start',

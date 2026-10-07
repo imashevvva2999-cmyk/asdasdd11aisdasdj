@@ -15,7 +15,7 @@ export type SectionHeaderProps = {
 export function SectionHeader({ title, actionLabel = 'See All', onActionPress }: SectionHeaderProps) {
   return (
     <View style={styles.row}>
-      <ThemedText variant="headline-sm">{title}</ThemedText>
+      <ThemedText variant="headline-md">{title}</ThemedText>
       {onActionPress && <TextLinkButton label={actionLabel} onPress={onActionPress} />}
     </View>
   );
@@ -26,6 +26,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.sm,
   },
 });

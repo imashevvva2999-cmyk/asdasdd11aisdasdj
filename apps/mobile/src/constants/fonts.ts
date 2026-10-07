@@ -1,3 +1,5 @@
+import { Platform } from 'react-native';
+
 import {
   PlusJakartaSans_600SemiBold,
   PlusJakartaSans_700Bold,
@@ -40,5 +42,13 @@ const familyDefaults: Record<string, { prefix: string; fallbackWeight: string }>
 export function resolveFontFamily(fontFamily: string, fontWeight: string): string {
   const { prefix, fallbackWeight } = familyDefaults[fontFamily] ?? familyDefaults.Inter;
   const key = `${prefix}-${fontWeight}`;
-  return key in loadedFonts ? key : `${prefix}-${fallbackWeight}`;
+  const resolved = key in loadedFonts ? key : `${prefix}-${fallbackWeight}`;
+  if (Platform.OS !== 'web') return resolved;
+  // Plus Jakarta Sans has no Cyrillic glyphs, so on web the browser filled
+  // "сом" etc. from its default *serif* face. Fall back to the same-weight
+  // Inter (which has Cyrillic) instead. Native already falls back to the
+  // system sans-serif font.
+  const interKey = `Inter-${Math.min(Number(fontWeight) || 400, 700)}`;
+  const interFallback = interKey in loadedFonts ? interKey : 'Inter-400';
+  return resolved === interFallback ? `"${resolved}", system-ui, sans-serif` : `"${resolved}", "${interFallback}", system-ui, sans-serif`;
 }

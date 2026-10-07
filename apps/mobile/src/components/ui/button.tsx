@@ -51,12 +51,20 @@ export function PillButton({
       style={[
         styles.base,
         isPrimary ? styles.primary : styles.secondary,
-        isDisabled && styles.disabled,
+        // Disabled: dim and drop the glow. Loading: stay fully opaque (the
+        // spinner + label read as "working", not as a broken disabled pill).
+        disabled && !loading && styles.disabled,
+        isDisabled && styles.noGlow,
         style,
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={Colors.text.high} />
+        <View style={styles.content}>
+          <ActivityIndicator size="small" color={Colors.text.high} />
+          <ThemedText variant="label-lg" emphasis="high">
+            {label}
+          </ThemedText>
+        </View>
       ) : (
         <View style={styles.content}>
           {leadingIcon && <Icon name={leadingIcon} size={18} color={Colors.text.high} />}
@@ -99,6 +107,19 @@ const styles = StyleSheet.create({
   disabled: {
     opacity: 0.4,
   },
+  noGlow: {
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  linkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  linkText: {
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
 });
 
 export type CircleButtonProps = {
@@ -139,12 +160,28 @@ export type IconButtonProps = {
   disabled?: boolean;
   size?: number;
   color?: string;
+  /** 'surface' = L2 circle (default); 'ghost' = bare glyph tap zone, as used
+   * for the player's header and secondary transport controls in Stitch. */
+  variant?: 'surface' | 'ghost';
+  /** Glyph size; defaults to 45% of `size` (surface) or 60% (ghost). */
+  iconSize?: number;
   accessibilityLabel: string;
   style?: ViewStyle;
 };
 
 /** Icon button on an L2 surface circle, 40–48px (docs/screens.md §3.3 "Icon button"). */
-export function IconButton({ icon, onPress, disabled = false, size = 44, color = Colors.text.high, accessibilityLabel, style }: IconButtonProps) {
+export function IconButton({
+  icon,
+  onPress,
+  disabled = false,
+  size = 44,
+  color = Colors.text.high,
+  variant = 'surface',
+  iconSize,
+  accessibilityLabel,
+  style,
+}: IconButtonProps) {
+  const ghost = variant === 'ghost';
   return (
     <PressableScale
       accessibilityRole="button"
@@ -153,13 +190,13 @@ export function IconButton({ icon, onPress, disabled = false, size = 44, color =
       disabled={disabled}
       onPress={onPress}
       style={[
-        circleStyles.surface,
+        ghost ? circleStyles.ghost : circleStyles.surface,
         { width: size, height: size, borderRadius: size / 2 },
         disabled && styles.disabled,
         style,
       ]}
     >
-      <Icon name={icon} size={Math.round(size * 0.45)} color={color} />
+      <Icon name={icon} size={iconSize ?? Math.round(size * (ghost ? 0.6 : 0.45))} color={color} />
     </PressableScale>
   );
 }
@@ -169,9 +206,19 @@ const circleStyles = StyleSheet.create({
     backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
+    // DESIGN.md "Primary Play Buttons": subtle optical glow.
+    shadowColor: shadow.primaryButton.color,
+    shadowOffset: { width: shadow.primaryButton.offsetX, height: shadow.primaryButton.offsetY },
+    shadowRadius: shadow.primaryButton.blurRadius,
+    shadowOpacity: 1,
+    elevation: 6,
   },
   surface: {
     backgroundColor: Colors.surface.l2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ghost: {
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -181,22 +228,34 @@ export type TextLinkButtonProps = {
   label: string;
   onPress?: PressHandler;
   disabled?: boolean;
+  /** 'primary' = coral uppercase 10px link (See All, Explore, History);
+   * 'muted' = sentence-case grey secondary action (Cancel, receipt links). */
+  tone?: 'primary' | 'muted';
+  icon?: string;
   style?: ViewStyle;
 };
 
 /** Coral uppercase text link (See All, Explore, History, Clear all). */
-export function TextLinkButton({ label, onPress, disabled = false, style }: TextLinkButtonProps) {
+export function TextLinkButton({ label, onPress, disabled = false, tone = 'primary', icon, style }: TextLinkButtonProps) {
+  const muted = tone === 'muted';
   return (
     <PressableScale
       accessibilityRole="button"
       accessibilityState={{ disabled }}
       disabled={disabled}
       onPress={onPress}
-      style={[disabled && styles.disabled, style]}
+      style={[styles.linkRow, disabled && styles.disabled, style]}
     >
-      <ThemedText variant="label-md" emphasis="primary" style={{ textTransform: 'uppercase', letterSpacing: 0.6 }}>
-        {label}
-      </ThemedText>
+      {icon && <Icon name={icon} size={16} color={muted ? Colors.text.medium : Colors.primary} />}
+      {muted ? (
+        <ThemedText variant="label-lg" emphasis="medium">
+          {label}
+        </ThemedText>
+      ) : (
+        <ThemedText variant="label-sm" emphasis="primary" style={styles.linkText}>
+          {label}
+        </ThemedText>
+      )}
     </PressableScale>
   );
 }

@@ -20,7 +20,7 @@ const expectations = [
   // Фаза 4, batch 1 — real screens, must NOT render the dev ScreenPlaceholder any more.
   { path: 'home/index.html', mustContain: ['For you', 'Trending Now', 'New Releases', 'Jump Back In', 'Vibe Mixes'], mustNotContain: ['PLACEHOLDER'], label: 'Home (S-01)' },
   { path: 'home/see-all.html', mustContain: ['This Week', 'Fresh Finds'], mustNotContain: ['PLACEHOLDER'], label: 'See All (S-02)' },
-  { path: 'search/index.html', mustContain: ['What do you want to listen to', 'RECENT SEARCHES', 'TRENDING SEARCHES', 'Browse All'], mustNotContain: ['PLACEHOLDER'], label: 'Search / Explore (S-03)' },
+  { path: 'search/index.html', mustContain: ['What do you want to listen to', 'RECENT SEARCHES', 'Trending Searches', 'Browse All'], mustNotContain: ['PLACEHOLDER'], label: 'Search / Explore (S-03)' },
   { path: 'search/results.html', mustContain: ['Search Mmusic', 'Trending right now'], mustNotContain: ['PLACEHOLDER', 'No results for'], label: 'Search Results (S-04)' },
   { path: 'search/all-genres.html', mustContain: ['Explore 24+ sonic realms', 'Curated Realms'], mustNotContain: ['PLACEHOLDER'], label: 'All Genres & Moods (S-06)' },
   { path: 'search/genre/[id].html', mustContain: ['Essential Compilations', 'Pioneering Artists'], mustNotContain: ['PLACEHOLDER'], label: 'Genre detail (S-07)' },
@@ -36,7 +36,7 @@ const expectations = [
   { path: 'library/liked-songs.html', mustContain: ['Liked Songs', 'Auto Playlist', 'saved tracks'], mustNotContain: ['PLACEHOLDER'], label: 'Liked Songs (S-13)' },
   { path: 'player/now-playing.html', mustContain: ['PLAYING FROM ALBUM', 'Lyrics', 'Queue', 'Support', 'Audio'], mustNotContain: ['PLACEHOLDER'], label: 'Now Playing (S-15)' },
   { path: 'player/lyrics.html', mustContain: ['Midnight Mirage', 'Solaris Echo', 'Lyrics'], mustNotContain: ['PLACEHOLDER'], label: 'Synchronized Lyrics (S-16)' },
-  { path: 'player/queue.html', mustContain: ['Playback Queue', 'NOW PLAYING', 'PLAYING NEXT', 'Infinity Autoplay'], mustNotContain: ['PLACEHOLDER'], label: 'Playback Queue (S-17)' },
+  { path: 'player/queue.html', mustContain: ['Playback Queue', 'NOW PLAYING', 'Playing Next', 'Infinity Autoplay'], mustNotContain: ['PLACEHOLDER'], label: 'Playback Queue (S-17)' },
   // Фаза 4, batch 3 — real screens. support.html / support-confirm.html /
   // support-success.html receive no artistId/amount (query params, not route
   // segments — generateStaticParams doesn't apply) in a cold static export, so
@@ -58,7 +58,7 @@ const expectations = [
   // (useArtistStore.artist starts undefined with no setup completed in this
   // session) — the full create-profile → dashboard → upload → publish flow
   // is exercised directly against the store in scripts/verify-artist-store.mjs.
-  { path: 'profile/artist/become-artist.html', mustContain: ['Share Your Sound with the World', 'Share Your Music', 'Fan Support', 'Artist Insights', 'Become an Artist'], mustNotContain: ['PLACEHOLDER'], label: 'Become an Artist (S-25)' },
+  { path: 'profile/artist/become-artist.html', mustContain: ['Share Your Sound with the World', 'Share Your Music', 'Fan Support', 'Artist Insights', 'BECOME AN ARTIST'], mustNotContain: ['PLACEHOLDER'], label: 'Become an Artist (S-25)' },
   { path: 'profile/artist/setup.html', mustContain: ['Primary Genre', 'Electronic', 'Create Artist Profile'], mustNotContain: ['PLACEHOLDER'], label: 'Artist Setup (S-26)' },
   { path: 'profile/artist/dashboard.html', mustContain: ['No artist profile yet', 'Set up your artist profile to start uploading tracks.'], mustNotContain: ['PLACEHOLDER'], label: 'Artist Dashboard (S-27, no local artist yet)' },
   { path: 'profile/artist/upload-track.html', mustContain: ['Upload Audio', 'Browse File', 'Track Details', 'Cover Artwork', 'Release Settings', 'Publish Track', 'Save as Draft'], mustNotContain: ['PLACEHOLDER'], label: 'Upload Track (S-28)' },

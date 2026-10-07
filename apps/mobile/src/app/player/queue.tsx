@@ -1,12 +1,12 @@
 import { router } from 'expo-router';
 import { useMemo } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { EmptyState, IconButton, QueueRow, Toggle, TrackRow } from '@/components/ui';
-import { Spacing } from '@/constants/theme';
+import { Artwork, EmptyState, EqualizerIndicator, Icon, IconButton, QueueRow, Toggle } from '@/components/ui';
+import { Colors, Radii, Spacing } from '@/constants/theme';
 import { goBack } from '@/lib/navigation';
 import { getTrackById, type Track } from '@/mocks';
 import { usePlayerStore } from '@/state/player-store';
@@ -31,7 +31,11 @@ export default function QueueScreen() {
   const autoplay = usePlayerStore((s) => s.autoplay);
   const toggleAutoplay = usePlayerStore((s) => s.toggleAutoplay);
 
+  const likedTrackIds = usePlayerStore((s) => s.likedTrackIds);
+  const toggleLike = usePlayerStore((s) => s.toggleLike);
+
   const current = queueTracks[currentIndex];
+  const currentLiked = current ? likedTrackIds.has(current.id) : false;
   const upcoming = queueTracks.slice(currentIndex + 1);
   const openCurrentOptions = () => {
     if (current) router.push({ pathname: '/sheets/options', params: { kind: 'track', id: current.id } });
@@ -41,31 +45,58 @@ export default function QueueScreen() {
     <ThemedView surface="canvas" style={styles.flex}>
       <SafeAreaView style={styles.flex}>
         <View style={styles.header}>
-          <IconButton icon="keyboard-arrow-down" accessibilityLabel="Collapse" onPress={() => goBack()} />
+          <IconButton variant="ghost" icon="keyboard-arrow-down" iconSize={28} accessibilityLabel="Collapse" onPress={() => goBack()} />
           <ThemedText variant="headline-sm">Playback Queue</ThemedText>
           {current ? (
-            <IconButton icon="more-horiz" accessibilityLabel="More options" onPress={openCurrentOptions} />
+            <IconButton variant="ghost" icon="more-horiz" iconSize={26} accessibilityLabel="More options" onPress={openCurrentOptions} />
           ) : (
             <View style={styles.headerSpacer} />
           )}
         </View>
 
-        <View style={styles.content}>
+        <ScrollView contentContainerStyle={styles.content}>
           {current && (
             <View style={styles.section}>
-              <ThemedText variant="label-sm" emphasis="medium" style={styles.eyebrow}>
-                NOW PLAYING
-              </ThemedText>
-              <TrackRow coverUri={current.coverUri} title={current.title} artist={current.artistName} isPlaying={isPlaying} onOptionsPress={openCurrentOptions} />
+              <View style={styles.eyebrowRow}>
+                <Icon name="graphic-eq" size={16} color={Colors.primary} />
+                <ThemedText variant="label-sm" emphasis="primary" style={styles.eyebrow}>
+                  NOW PLAYING
+                </ThemedText>
+              </View>
+              <View style={styles.nowPlayingCard}>
+                <View>
+                  <Artwork uri={current.coverUri} size={56} radius={Radii.DEFAULT} />
+                  {isPlaying && (
+                    <View style={styles.coverOverlay}>
+                      <EqualizerIndicator size={18} />
+                    </View>
+                  )}
+                </View>
+                <View style={styles.nowPlayingText}>
+                  <ThemedText variant="headline-sm" numberOfLines={1}>
+                    {current.title}
+                  </ThemedText>
+                  <ThemedText variant="body-md" emphasis="medium" numberOfLines={1}>
+                    {current.artistName}
+                  </ThemedText>
+                  <ThemedText variant="mono-num" emphasis="low">
+                    {formatDuration(current.durationSec)}
+                  </ThemedText>
+                </View>
+                <IconButton
+                  variant="ghost"
+                  icon={currentLiked ? 'favorite' : 'favorite-border'}
+                  iconSize={26}
+                  color={currentLiked ? Colors.primary : Colors.text.medium}
+                  accessibilityLabel={currentLiked ? 'Unlike' : 'Like'}
+                  onPress={() => toggleLike(current.id)}
+                />
+              </View>
             </View>
           )}
 
           <View style={styles.section}>
-            <View style={styles.sectionHeaderRow}>
-              <ThemedText variant="label-sm" emphasis="medium" style={styles.eyebrow}>
-                PLAYING NEXT
-              </ThemedText>
-            </View>
+            <ThemedText variant="headline-md">Playing Next</ThemedText>
 
             {upcoming.length === 0 ? (
               <EmptyState icon="queue-music" title="Queue is empty" hint="Play a track to start building your queue." />
@@ -85,6 +116,7 @@ export default function QueueScreen() {
           </View>
 
           <View style={styles.autoplayRow}>
+            <Icon name="all-inclusive" size={24} color={Colors.primary} />
             <View style={styles.autoplayText}>
               <ThemedText variant="label-lg">Infinity Autoplay</ThemedText>
               <ThemedText variant="body-sm" emphasis="medium">
@@ -93,7 +125,7 @@ export default function QueueScreen() {
             </View>
             <Toggle value={autoplay} onValueChange={toggleAutoplay} accessibilityLabel="Infinity Autoplay" />
           </View>
-        </View>
+        </ScrollView>
       </SafeAreaView>
     </ThemedView>
   );
@@ -118,29 +150,59 @@ const styles = StyleSheet.create({
     width: 44,
   },
   content: {
-    flex: 1,
     paddingHorizontal: Spacing.margin,
+    paddingTop: Spacing.sm,
+    paddingBottom: Spacing.xl,
     gap: Spacing.lg,
   },
   section: {
-    gap: Spacing.xs,
+    gap: Spacing.sm,
   },
-  sectionHeaderRow: {
+  eyebrowRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: Spacing.xs,
   },
   eyebrow: {
     letterSpacing: 1,
   },
+  nowPlayingCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    padding: Spacing.md,
+    borderRadius: Radii.md,
+    backgroundColor: Colors.surface.l1,
+  },
+  coverOverlay: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    borderRadius: Radii.DEFAULT,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  nowPlayingText: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
   queueRow: {
-    paddingVertical: Spacing.xs,
+    paddingVertical: Spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
   },
   autoplayRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: Spacing.md,
-    marginTop: 'auto',
+    gap: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radii.md,
+    backgroundColor: Colors.surface.l1,
   },
   autoplayText: {
     flex: 1,

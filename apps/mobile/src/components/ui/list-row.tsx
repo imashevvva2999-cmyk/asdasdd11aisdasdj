@@ -3,6 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, View, type GestureResponderEvent, type ViewStyle } from 'react-native';
 
 import { getFallbackGradient } from '@/constants/fallback-artwork';
+import { resolveFontFamily } from '@/constants/fonts';
 import { type LocalOrRemoteImage, toImageSource } from '@/constants/stitch-artwork';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useHydrated } from '@/hooks/use-hydrated';
@@ -49,6 +50,9 @@ export type TrackRowProps = {
   explicit?: boolean;
   lossless?: boolean;
   isPlaying?: boolean;
+  /** Current track (playing or paused): raised row + coral title, as every
+   * Stitch track list highlights it. */
+  active?: boolean;
   liked?: boolean;
   onPress?: (event: GestureResponderEvent) => void;
   onToggleLike?: () => void;
@@ -66,30 +70,49 @@ export function TrackRow({
   explicit,
   lossless,
   isPlaying = false,
+  active = false,
   liked = false,
   onPress,
   onToggleLike,
   onOptionsPress,
   style,
 }: TrackRowProps) {
+  // Index and cover can both show (Stitch Artist "Popular", Playlist, Liked
+  // Songs); while playing, the equalizer replaces the index, or overlays the
+  // cover when there is no index.
+  const showCover = coverUri !== undefined || index === undefined;
   return (
-    <PressableScale onPress={onPress} style={[styles.row, style]} accessibilityRole={onToggleLike || onOptionsPress ? undefined : 'button'}>
-      <View style={styles.leadingSlot}>
-        {isPlaying ? (
-          <EqualizerIndicator />
-        ) : index !== undefined ? (
-          <ThemedText variant="mono-num" emphasis="medium">
-            {index}
-          </ThemedText>
-        ) : (
+    <PressableScale
+      onPress={onPress}
+      style={[styles.row, active && styles.activeRow, style]}
+      accessibilityRole={onToggleLike || onOptionsPress ? undefined : 'button'}
+    >
+      {index !== undefined && (
+        <View style={showCover ? styles.indexSlot : styles.leadingSlot}>
+          {isPlaying ? (
+            <EqualizerIndicator />
+          ) : (
+            <ThemedText variant="mono-num" emphasis={active ? 'primary' : 'medium'}>
+              {index}
+            </ThemedText>
+          )}
+        </View>
+      )}
+      {showCover && (
+        <View>
           <Cover uri={coverUri} seed={title} />
-        )}
-      </View>
+          {isPlaying && index === undefined && (
+            <View style={styles.coverEqualizer} pointerEvents="none">
+              <EqualizerIndicator size={14} />
+            </View>
+          )}
+        </View>
+      )}
       <View style={styles.titleBlock}>
         <ThemedText
           variant="label-lg"
           numberOfLines={1}
-          style={isPlaying ? { color: Colors.primary } : undefined}
+          style={isPlaying || active ? { color: Colors.primary } : undefined}
         >
           {title}
         </ThemedText>
@@ -155,7 +178,7 @@ export function QueueRow({ coverUri, title, artist, durationLabel, onPress, styl
           {durationLabel}
         </ThemedText>
       )}
-      <Icon name="drag-handle" color={Colors.text.low} />
+      <Icon name="drag-handle" color={Colors.text.medium} />
     </PressableScale>
   );
 }
@@ -188,8 +211,8 @@ export function LibraryRow({
   style,
 }: LibraryRowProps) {
   return (
-    <PressableScale onPress={onPress} style={[styles.row, style]} accessibilityRole={trailing === 'more' ? undefined : 'button'}>
-      <Cover uri={coverUri} seed={title} shape={coverShape} size={56} radius={Radii.md} />
+    <PressableScale onPress={onPress} style={[styles.row, libraryRowStyles.row, style]} accessibilityRole={trailing === 'more' ? undefined : 'button'}>
+      <Cover uri={coverUri} seed={title} shape={coverShape} size={56} radius={Radii.DEFAULT} />
       <View style={styles.titleBlock}>
         <View style={libraryRowStyles.titleRow}>
           <ThemedText variant="body-lg" numberOfLines={1} style={libraryRowStyles.titleText}>
@@ -224,7 +247,7 @@ export type PlaylistPickerRowProps = {
 export function PlaylistPickerRow({ coverUri, title, trackCountLabel, selected = false, onPress, style }: PlaylistPickerRowProps) {
   return (
     <PressableScale onPress={onPress} style={[styles.row, style]} accessibilityRole="button" accessibilityState={{ selected }}>
-      <Cover uri={coverUri} seed={title} />
+      <Cover uri={coverUri} seed={title} size={48} radius={Radii.md} />
       <View style={styles.titleBlock}>
         <ThemedText variant="label-lg" numberOfLines={1}>
           {title}
@@ -242,10 +265,10 @@ export function PlaylistPickerRow({ coverUri, title, trackCountLabel, selected =
 
 const pickerStyles = StyleSheet.create({
   toggle: {
-    width: 32,
-    height: 32,
+    width: 36,
+    height: 36,
     borderRadius: Radii.full,
-    backgroundColor: Colors.surface.l2,
+    backgroundColor: Colors.surface.l3,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -259,28 +282,45 @@ export type MenuRowProps = {
   title: string;
   subtitle?: string;
   onPress?: (event: GestureResponderEvent) => void;
+  /** 'feature' = Stitch S-25 benefit card: rounded-square icon tile, 18px
+   * headline title and a wrapping subtitle. */
+  variant?: 'default' | 'feature' | 'flat';
+  /** Icon accent: coral (default), gold, or neutral grey — Stitch Profile
+   * tints each menu row's icon circle. */
+  tone?: 'primary' | 'secondary' | 'neutral';
   style?: ViewStyle;
 };
 
 /** Settings/profile menu row — icon circle → title/subtitle → chevron (docs/screens.md §3.5;
  * reused by Artist Flow's S-25 feature rows and S-23 "Studio Sanctuary" / "Become an Artist"). */
-export function MenuRow({ icon, title, subtitle, onPress, style }: MenuRowProps) {
+export function MenuRow({ icon, title, subtitle, onPress, variant = 'default', tone = 'primary', style }: MenuRowProps) {
+  const feature = variant === 'feature';
+  // 'flat' = action-sheet row (Stitch track-menu overlay): no card, icon tile, no chevron.
+  const flat = variant === 'flat';
+  const toneColor = tone === 'secondary' ? Colors.secondary : tone === 'neutral' ? Colors.text.medium : Colors.primary;
+  const toneBackground =
+    feature || tone === 'neutral' ? undefined : tone === 'secondary' ? 'rgba(245, 166, 35, 0.14)' : 'rgba(255, 75, 75, 0.14)';
   return (
-    <PressableScale onPress={onPress} disabled={!onPress} style={[menuStyles.row, style]} accessibilityRole={onPress ? 'button' : undefined}>
-      <View style={menuStyles.iconCircle}>
-        <Icon name={icon} color={Colors.primary} />
+    <PressableScale
+      onPress={onPress}
+      disabled={!onPress}
+      style={[menuStyles.row, feature && menuStyles.featureRow, flat && menuStyles.flatRow, style]}
+      accessibilityRole={onPress ? 'button' : undefined}
+    >
+      <View style={[menuStyles.iconCircle, (feature || flat) && menuStyles.iconTile, toneBackground ? { backgroundColor: toneBackground } : null]}>
+        <Icon name={icon} color={toneColor} />
       </View>
       <View style={styles.titleBlock}>
-        <ThemedText variant="label-lg" numberOfLines={1}>
+        <ThemedText variant={feature ? 'headline-sm' : 'label-lg'} numberOfLines={1}>
           {title}
         </ThemedText>
         {subtitle && (
-          <ThemedText variant="body-sm" emphasis="medium" numberOfLines={1}>
+          <ThemedText variant={feature ? 'body-md' : 'body-sm'} emphasis="medium" numberOfLines={feature ? 2 : 1}>
             {subtitle}
           </ThemedText>
         )}
       </View>
-      {onPress && <Icon name="chevron-right" color={Colors.text.medium} />}
+      {onPress && !flat && <Icon name="chevron-right" color={Colors.text.medium} />}
     </PressableScale>
   );
 }
@@ -339,6 +379,11 @@ export function ValueRow({ title, value, onPress, style }: ValueRowProps) {
 }
 
 const libraryRowStyles = StyleSheet.create({
+  // Stitch S-12 rows: 8px inset with a 12px radius (76px pitch with a 56px cover).
+  row: {
+    padding: Spacing.sm,
+    borderRadius: Radii.md,
+  },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -346,6 +391,9 @@ const libraryRowStyles = StyleSheet.create({
   },
   titleText: {
     flexShrink: 1,
+    // Semibold 16px (Stitch S-12): select the 600 face explicitly — custom
+    // fonts don't synthesize weight on native.
+    fontFamily: resolveFontFamily('Inter', '600'),
   },
 });
 
@@ -367,6 +415,19 @@ const menuStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  featureRow: {
+    padding: Spacing.md,
+    borderRadius: Radii.md,
+  },
+  iconTile: {
+    borderRadius: Radii.DEFAULT,
+  },
+  flatRow: {
+    backgroundColor: 'transparent',
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.xs,
+    borderRadius: Radii.DEFAULT,
+  },
 });
 
 const styles = StyleSheet.create({
@@ -379,6 +440,26 @@ const styles = StyleSheet.create({
   leadingSlot: {
     width: 40,
     alignItems: 'center',
+  },
+  indexSlot: {
+    width: 20,
+    alignItems: 'center',
+  },
+  activeRow: {
+    backgroundColor: 'rgba(40, 40, 52, 0.6)',
+    borderRadius: Radii.md,
+    paddingHorizontal: Spacing.sm,
+  },
+  coverEqualizer: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    borderRadius: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   coverPlaceholder: {
     backgroundColor: Colors.surface.l3,

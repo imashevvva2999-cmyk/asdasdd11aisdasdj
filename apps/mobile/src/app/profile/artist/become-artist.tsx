@@ -29,23 +29,27 @@ export default function BecomeArtistScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.hero}>
           <View style={styles.iconHalo}>
-            <Icon name="graphic-eq" size={36} color={Colors.primary} />
+            <Icon name="graphic-eq" size={44} color={Colors.primary} />
+            <View style={styles.iconBadge}>
+              <Icon name="graphic-eq" size={14} color={Colors.text.high} />
+            </View>
           </View>
-          <ThemedText variant="headline-lg" style={styles.centerText}>
+          <ThemedText variant="display-lg-mobile" style={styles.centerText}>
             Share Your Sound with the World
           </ThemedText>
-          <ThemedText variant="body-md" emphasis="medium" style={styles.centerText}>
-            Set up an artist profile to publish tracks and connect with listeners on Mmusic.
+          <ThemedText variant="body-lg" emphasis="medium" style={styles.centerText}>
+            Share your music, connect with listeners and receive support directly through Mmusic.
           </ThemedText>
         </View>
 
         <View style={styles.menuList}>
-          <MenuRow icon="library-music" title="Share Your Music" subtitle="Publish tracks straight to your own public artist profile" />
-          <MenuRow icon="volunteer-activism" title="Fan Support" subtitle="Receive direct patronage from listeners who support your work" />
-          <MenuRow icon="insights" title="Artist Insights" subtitle="See how your releases are landing with listeners" />
+          <MenuRow variant="feature" icon="cloud-upload" title="Share Your Music" subtitle="Upload and publish your tracks." />
+          <MenuRow variant="feature" icon="volunteer-activism" title="Fan Support" subtitle="Receive support directly from listeners." />
+          <MenuRow variant="feature" icon="insights" title="Artist Insights" subtitle="See how listeners engage with your music." />
         </View>
 
-        <PillButton label="Become an Artist" trailingIcon="arrow-forward" onPress={handleBecomeArtist} style={styles.cta} />
+        <View style={styles.spacer} />
+        <PillButton label="BECOME AN ARTIST" trailingIcon="arrow-forward" onPress={handleBecomeArtist} style={styles.cta} />
       </ScrollView>
 
       <Toast message="Initializing Artist Studio setup…" icon="sync" visible={initializingToastVisible} />
@@ -56,30 +60,47 @@ export default function BecomeArtistScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: {
+    flexGrow: 1,
     padding: Spacing.margin,
     gap: Spacing.xl,
-    paddingBottom: Spacing.xl * 3,
+    paddingBottom: Spacing.xl,
   },
   hero: {
     alignItems: 'center',
     gap: Spacing.sm,
   },
   iconHalo: {
-    width: 80,
-    height: 80,
+    width: 96,
+    height: 96,
     borderRadius: Radii.full,
-    backgroundColor: 'rgba(255, 75, 75, 0.15)',
+    backgroundColor: Colors.surface.l3,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 75, 75, 0.18)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Spacing.xs,
+    marginBottom: Spacing.sm,
+  },
+  iconBadge: {
+    position: 'absolute',
+    right: -4,
+    bottom: -4,
+    width: 28,
+    height: 28,
+    borderRadius: Radii.full,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   centerText: {
     textAlign: 'center',
   },
   menuList: {
-    gap: Spacing.xs,
+    gap: Spacing.md,
+  },
+  spacer: {
+    flex: 1,
   },
   cta: {
-    marginTop: Spacing.sm,
+    height: 56,
   },
 });

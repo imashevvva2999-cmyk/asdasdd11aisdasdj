@@ -3,8 +3,9 @@ import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
+import { MINI_PLAYER_OVERLAY_CLEARANCE, MiniPlayerOverlay } from '@/components/mini-player';
 import { ThemedView } from '@/components/themed-view';
-import { Artwork, CircleButton, IconButton, TrackRow } from '@/components/ui';
+import { Artwork, IconButton, PillButton, TrackRow } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
 import { useToast } from '@/hooks/use-toast';
 import { nextSortMode, sortTracks, type TrackSortMode } from '@/lib/sort-tracks';
@@ -32,7 +33,10 @@ export default function PlaylistScreen() {
   const playShuffled = usePlayerStore((s) => s.playShuffled);
   const currentTrackId = usePlayerStore((s) => s.currentTrackId());
   const isPlaying = usePlayerStore((s) => s.isPlaying);
-  const isLiked = usePlayerStore((s) => s.isLiked);
+  // Subscribe to the liked set itself (not the stable `isLiked` function) so
+  // the hearts re-render when a like is toggled.
+  const likedTrackIds = usePlayerStore((s) => s.likedTrackIds);
+  const isLiked = (trackId: string) => likedTrackIds.has(trackId);
   const toggleLike = usePlayerStore((s) => s.toggleLike);
   const isSaved = useLibraryStore((s) => s.isSaved('playlist', id));
   const isDownloaded = useLibraryStore((s) => s.isDownloaded(id));
@@ -63,7 +67,12 @@ export default function PlaylistScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.hero}>
           <Artwork uri={playlist.coverUri} size={220} radius={24} />
-          <ThemedText variant="headline-lg" style={styles.title} numberOfLines={2}>
+          {playlist.editorial && (
+            <ThemedText variant="label-sm" emphasis="primary" style={styles.eyebrow}>
+              Editorial Playlist
+            </ThemedText>
+          )}
+          <ThemedText variant="display-lg-mobile" style={styles.title} numberOfLines={2}>
             {playlist.title}
           </ThemedText>
           {playlist.description && (
@@ -72,11 +81,7 @@ export default function PlaylistScreen() {
             </ThemedText>
           )}
           <ThemedText variant="body-sm" emphasis="medium">
-            {playlist.editorial
-              ? `Editorial Playlist${playlist.curator ? ` · ${playlist.curator}` : ''}`
-              : playlist.curator
-                ? `Curated by · ${playlist.curator}`
-                : 'Your playlist'}
+            {playlist.curator ? `Curated by ${playlist.curator}` : playlist.editorial ? 'Mmusic Editorial' : 'Your playlist'}
           </ThemedText>
           <ThemedText variant="body-sm" emphasis="medium">
             {formatTrackCount(trackList.length || playlist.trackCount)}
@@ -117,11 +122,10 @@ export default function PlaylistScreen() {
               accessibilityLabel="Shuffle"
               onPress={() => playShuffled(trackIdsForPlayback)}
             />
-            <CircleButton
-              icon="play-arrow"
-              accessibilityLabel="Play all"
-              size={56}
-              iconSize={26}
+            <PillButton
+              label="Play All"
+              leadingIcon="play-arrow"
+              disabled={trackIdsForPlayback.length === 0}
               onPress={() => trackIdsForPlayback.length > 0 && play(trackIdsForPlayback[0]!, trackIdsForPlayback)}
             />
           </View>
@@ -137,6 +141,8 @@ export default function PlaylistScreen() {
             <TrackRow
               key={track.id}
               index={index + 1}
+              coverUri={track.coverUri}
+              active={currentTrackId === track.id}
               title={track.title}
               artist={track.artistName}
               durationLabel={formatDuration(track.durationSec)}
@@ -152,6 +158,7 @@ export default function PlaylistScreen() {
         </View>
       </ScrollView>
       {toast}
+      <MiniPlayerOverlay />
     </ThemedView>
   );
 }
@@ -173,12 +180,17 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: Spacing.margin,
-    paddingBottom: Spacing.xl * 3,
+    paddingBottom: MINI_PLAYER_OVERLAY_CLEARANCE,
     gap: Spacing.lg,
   },
   hero: {
     alignItems: 'center',
     gap: 4,
+  },
+  eyebrow: {
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginTop: Spacing.md,
   },
   title: {
     textAlign: 'center',

@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Artwork, Icon, IconButton, PillButton, PressableScale, TextField, ToggleRow } from '@/components/ui';
+import { Artwork, Icon, PillButton, PressableScale, TextField, ToggleRow } from '@/components/ui';
 import { sampleImageChoices } from '@/constants/stitch-artwork';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useToast } from '@/hooks/use-toast';
@@ -62,7 +62,7 @@ export default function CreatePlaylistScreen() {
   return (
     <ThemedView surface="canvas" style={styles.flex}>
       <View style={styles.header}>
-        <ThemedText variant="label-lg" emphasis="primary" accessibilityRole="button" onPress={() => goBack()}>
+        <ThemedText variant="label-lg" emphasis="medium" accessibilityRole="button" onPress={() => goBack()}>
           Cancel
         </ThemedText>
         <ThemedText variant="headline-sm">Create Playlist</ThemedText>
@@ -85,11 +85,13 @@ export default function CreatePlaylistScreen() {
             onPress={() => pickNextCover('Sample cover selected (demo — no photo picker yet)')}
           >
             {coverUri ? (
-              <Artwork uri={coverUri} size={160} radius={Radii.lg} />
+              <Artwork uri={coverUri} size={192} radius={20} />
             ) : (
               <View style={styles.coverPlaceholder}>
-                <Icon name="add-photo-alternate" size={28} color={Colors.text.medium} />
-                <ThemedText variant="body-sm" emphasis="medium" style={styles.coverHint}>
+                <View style={styles.coverIconCircle}>
+                  <Icon name="add-photo-alternate" size={24} color={Colors.primary} />
+                </View>
+                <ThemedText variant="label-md" style={styles.coverHint}>
                   Add Cover
                 </ThemedText>
                 <ThemedText variant="body-sm" emphasis="medium">
@@ -99,32 +101,40 @@ export default function CreatePlaylistScreen() {
             )}
           </PressableScale>
           <View style={styles.coverActions}>
-            <IconButton
+            <CoverActionChip
               icon="auto-awesome"
-              accessibilityLabel="AI Generate cover"
+              label="AI Generate"
               onPress={() => showToast("AI-generated covers aren't available yet", 'auto-awesome')}
             />
-            <IconButton icon="gradient" accessibilityLabel="Color Wave cover" onPress={() => pickNextCover('Color Wave cover applied')} />
+            <CoverActionChip icon="gradient" label="Color Wave" onPress={() => pickNextCover('Color Wave cover applied')} />
           </View>
         </View>
 
         <View style={styles.field}>
+          <View style={styles.labelRow}>
+            <ThemedText variant="label-md" emphasis="primary">
+              Name
+            </ThemedText>
+            <ThemedText variant="mono-num" emphasis="medium">
+              {name.length}/{NAME_MAX_LENGTH}
+            </ThemedText>
+          </View>
           <TextField
-            placeholder="Name"
+            accessibilityLabel="Name"
+            placeholder="Give your playlist a name…"
             value={name}
             onChangeText={(text) => setName(text.slice(0, NAME_MAX_LENGTH))}
             maxLength={NAME_MAX_LENGTH}
-            rightAccessory={
-              <ThemedText variant="mono-num" emphasis="medium">
-                {name.length}/{NAME_MAX_LENGTH}
-              </ThemedText>
-            }
           />
         </View>
 
         <View style={styles.field}>
+          <ThemedText variant="label-md" emphasis="primary">
+            Description <ThemedText variant="label-md" emphasis="medium">(Optional)</ThemedText>
+          </ThemedText>
           <TextField
-            placeholder="Description (Optional)"
+            accessibilityLabel="Description (Optional)"
+            placeholder="What's the vibe?"
             value={description}
             onChangeText={setDescription}
             multiline
@@ -132,13 +142,44 @@ export default function CreatePlaylistScreen() {
           />
         </View>
 
-        <ToggleRow title="Public Playlist" value={isPublic} onValueChange={setIsPublic} />
-        <ToggleRow title="Collaborative" value={isCollaborative} onValueChange={setIsCollaborative} />
+        <View style={styles.toggleCard}>
+          <View style={styles.toggleIcon}>
+            <Icon name="public" size={20} color={Colors.primary} />
+          </View>
+          <ToggleRow
+            title="Public Playlist"
+            subtitle="Anyone can find and listen"
+            value={isPublic}
+            onValueChange={setIsPublic}
+            style={styles.toggleRow}
+          />
+        </View>
+        <View style={styles.toggleCard}>
+          <View style={[styles.toggleIcon, styles.toggleIconSecondary]}>
+            <Icon name="group-add" size={20} color={Colors.secondary} />
+          </View>
+          <ToggleRow
+            title="Collaborative"
+            subtitle="Invite friends to add tracks"
+            value={isCollaborative}
+            onValueChange={setIsCollaborative}
+            style={styles.toggleRow}
+          />
+        </View>
 
         <PillButton label="Create Playlist" disabled={!canCreate} onPress={handleCreate} style={styles.cta} />
       </ScrollView>
       {toast}
     </ThemedView>
+  );
+}
+
+function CoverActionChip({ icon, label, onPress }: { icon: string; label: string; onPress: () => void }) {
+  return (
+    <PressableScale accessibilityRole="button" accessibilityLabel={`${label} cover`} onPress={onPress} style={styles.coverChip}>
+      <Icon name={icon} size={14} color={Colors.primary} />
+      <ThemedText variant="label-sm">{label}</ThemedText>
+    </PressableScale>
   );
 }
 
@@ -161,23 +202,68 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   coverPlaceholder: {
-    width: 160,
-    height: 160,
-    borderRadius: Radii.lg,
+    width: 192,
+    height: 192,
+    borderRadius: 20,
     backgroundColor: Colors.surface.l2,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 2,
   },
+  coverIconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: Radii.full,
+    backgroundColor: 'rgba(255, 75, 75, 0.14)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   coverHint: {
-    marginTop: Spacing.xs,
+    marginTop: Spacing.sm,
+  },
+  coverChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 6,
+    borderRadius: Radii.full,
+    backgroundColor: Colors.surface.l2,
+  },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  toggleCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    paddingLeft: Spacing.md,
+    borderRadius: Radii.md,
+    backgroundColor: Colors.surface.l1,
+  },
+  toggleIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: Radii.full,
+    backgroundColor: 'rgba(255, 75, 75, 0.14)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  toggleIconSecondary: {
+    backgroundColor: 'rgba(245, 166, 35, 0.14)',
+  },
+  toggleRow: {
+    flex: 1,
+    paddingRight: Spacing.md,
   },
   coverActions: {
     flexDirection: 'row',
     gap: Spacing.sm,
   },
   field: {
-    gap: Spacing.xs,
+    gap: 6,
   },
   cta: {
     marginTop: Spacing.sm,

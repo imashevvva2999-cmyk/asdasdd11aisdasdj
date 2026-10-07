@@ -4,19 +4,30 @@ import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 import { resolveFontFamily } from '@/constants/fonts';
 import { Colors, Radii, Spacing, TypeScale } from '@/constants/theme';
 
+import { ThemedText } from '../themed-text';
+
 export type TextFieldProps = TextInputProps & {
   /** Rendered left of the input text (e.g. a search or location Icon). */
   leftAccessory?: React.ReactNode;
   rightAccessory?: React.ReactNode;
+  /** Coral field label rendered above the input (Stitch Artist Setup / Upload
+   * Track forms). When set it also becomes the accessibility label. */
+  label?: string;
+  /** Use the Surface Level 2 fill — for fields placed inside a Surface Level 1
+   * card, where the default L1 fill would disappear (DESIGN.md: L2 is the
+   * "input text backgrounds" layer). */
+  raised?: boolean;
+  /** 'search' = full pill, 48px (Stitch Search / Search Results fields). */
+  variant?: 'default' | 'search';
 };
 
 /** Single-line input — 44px, focus-halo border (DESIGN.md "Inputs & Search"). */
-export function TextField({ style, leftAccessory, rightAccessory, onFocus, onBlur, ...rest }: TextFieldProps) {
+export function TextField({ style, leftAccessory, rightAccessory, label, raised = false, variant = 'default', onFocus, onBlur, ...rest }: TextFieldProps) {
   const [focused, setFocused] = useState(false);
   const bodyToken = TypeScale['body-md'];
 
-  return (
-    <View style={[styles.container, rest.multiline && styles.containerMultiline, focused && styles.focused]}>
+  const field = (
+    <View style={[styles.container, variant === 'search' && styles.search, raised && styles.raised, rest.multiline && styles.containerMultiline, focused && styles.focused]}>
       {leftAccessory}
       <TextInput
         style={[
@@ -29,6 +40,7 @@ export function TextField({ style, leftAccessory, rightAccessory, onFocus, onBlu
           style,
         ]}
         placeholderTextColor={Colors.text.low}
+        accessibilityLabel={rest.accessibilityLabel ?? label}
         onFocus={(e) => {
           setFocused(true);
           onFocus?.(e);
@@ -40,6 +52,16 @@ export function TextField({ style, leftAccessory, rightAccessory, onFocus, onBlu
         {...rest}
       />
       {rightAccessory}
+    </View>
+  );
+
+  if (!label) return field;
+  return (
+    <View style={styles.labelled}>
+      <ThemedText variant="label-md" emphasis="primary">
+        {label}
+      </ThemedText>
+      {field}
     </View>
   );
 }
@@ -55,6 +77,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: Spacing.md,
     gap: Spacing.sm,
+  },
+  search: {
+    height: 48,
+    borderRadius: Radii.full,
+    paddingHorizontal: Spacing.md,
+  },
+  raised: {
+    backgroundColor: Colors.surface.l2,
+    borderColor: 'transparent',
+  },
+  labelled: {
+    gap: 6,
   },
   containerMultiline: {
     height: undefined,

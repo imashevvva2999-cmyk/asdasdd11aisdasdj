@@ -1,10 +1,13 @@
 import { router, useLocalSearchParams } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
+import { MINI_PLAYER_OVERLAY_CLEARANCE, MiniPlayerOverlay } from '@/components/mini-player';
 import { ThemedView } from '@/components/themed-view';
-import { Artwork, AvatarCard, CoverCard, IconButton, Icon, PillButton, SectionHeader, TrackRow } from '@/components/ui';
-import { Colors, Spacing } from '@/constants/theme';
+import { Artwork, AvatarCard, CircleButton, CoverCard, Icon, IconButton, PillButton, SectionHeader, TrackRow } from '@/components/ui';
+import { Colors, Radii, Spacing } from '@/constants/theme';
+import { useContentWidth } from '@/hooks/use-content-width';
 import { getAlbumById, getArtistById, getTrackById } from '@/mocks';
 import { useLibraryStore } from '@/state/library-store';
 import { usePlayerStore } from '@/state/player-store';
@@ -24,13 +27,18 @@ export default function ArtistProfileScreen() {
   const { id = '' } = useLocalSearchParams<{ id: string }>();
   const artist = getArtistById(id);
   const isFollowing = useLibraryStore((s) => s.isSaved('artist', id));
+  const heroWidth = useContentWidth() - Spacing.margin * 2;
+  const heroHeight = Math.min(360, Math.round(heroWidth * 1.05));
   const toggleSaved = useLibraryStore((s) => s.toggleSaved);
 
   const play = usePlayerStore((s) => s.play);
   const playShuffled = usePlayerStore((s) => s.playShuffled);
   const currentTrackId = usePlayerStore((s) => s.currentTrackId());
   const isPlaying = usePlayerStore((s) => s.isPlaying);
-  const isLiked = usePlayerStore((s) => s.isLiked);
+  // Subscribe to the liked set itself (not the stable `isLiked` function) so
+  // the hearts re-render when a like is toggled.
+  const likedTrackIds = usePlayerStore((s) => s.likedTrackIds);
+  const isLiked = (trackId: string) => likedTrackIds.has(trackId);
   const toggleLike = usePlayerStore((s) => s.toggleLike);
 
   if (!artist) {
@@ -51,36 +59,62 @@ export default function ArtistProfileScreen() {
   return (
     <ThemedView surface="canvas" style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.hero}>
-          <Artwork shape="circle" size={140} radius={70} uri={artist.photoUri} />
-          <View style={styles.nameRow}>
-            <ThemedText variant="headline-lg" numberOfLines={1}>
-              {artist.name}
-            </ThemedText>
-            {artist.verified && <Icon name="verified" size={20} color={Colors.secondary} />}
+        {/* Stitch S-08: full-width photo card with the name overlaid. */}
+        <View style={[styles.hero, { height: heroHeight }]}>
+          <Artwork uri={artist.photoUri} size={heroWidth} aspectRatio={heroWidth / heroHeight} radius={Radii.xl} placeholderIcon="person" style={StyleSheet.absoluteFill} />
+          <LinearGradient
+            colors={['transparent', 'rgba(10, 10, 12, 0.55)', 'rgba(10, 10, 12, 0.92)']}
+            locations={[0.45, 0.75, 1]}
+            style={StyleSheet.absoluteFill}
+          />
+          <View style={styles.heroBody}>
+            <View style={styles.nameRow}>
+              <ThemedText variant="display-lg-mobile" numberOfLines={1} style={styles.name}>
+                {artist.name}
+              </ThemedText>
+              {artist.verified && <Icon name="verified" size={20} color={Colors.primary} />}
+            </View>
+            <View style={styles.metaRow}>
+              <View style={styles.metaDot} />
+              <ThemedText variant="label-md" emphasis="medium">
+                {artist.monthlyListeners !== undefined ? `${formatListeners(artist.monthlyListeners)} monthly listeners` : null}
+                {artist.location ? ` • ${artist.location}` : ''}
+              </ThemedText>
+            </View>
           </View>
-          <ThemedText variant="body-sm" emphasis="medium">
-            {artist.monthlyListeners !== undefined ? `${formatListeners(artist.monthlyListeners)} monthly listeners` : null}
-            {artist.location ? ` • ${artist.location}` : ''}
-          </ThemedText>
+        </View>
 
-          <View style={styles.actionsRow}>
-            <PillButton
-              label={isFollowing ? 'Following' : 'Follow'}
-              variant={isFollowing ? 'secondary' : 'primary'}
-              onPress={() => toggleSaved('artist', artist.id)}
-              style={styles.flexButton}
-            />
-            <IconButton icon="shuffle" accessibilityLabel="Shuffle popular tracks" onPress={() => playShuffled(popularTrackIds)} />
-            <IconButton
+        <View style={styles.actionsRow}>
+          <PillButton
+            label={isFollowing ? 'Following' : 'Follow'}
+            variant="secondary"
+            leadingIcon={isFollowing ? 'check' : 'add'}
+            onPress={() => toggleSaved('artist', artist.id)}
+            style={styles.smallPill}
+          />
+          <PillButton
+            label="Support"
+            variant="secondary"
+            leadingIcon="volunteer-activism"
+            onPress={() => router.push({ pathname: '/sheets/support', params: { artistId: artist.id } })}
+            style={styles.smallPill}
+          />
+          <View style={styles.spacer} />
+          <View>
+            <CircleButton
               icon="play-arrow"
+              size={56}
+              iconSize={30}
               accessibilityLabel="Play popular tracks"
               onPress={() => popularTrackIds.length > 0 && play(popularTrackIds[0]!, popularTrackIds)}
             />
             <IconButton
-              icon="volunteer-activism"
-              accessibilityLabel="Support artist"
-              onPress={() => router.push({ pathname: '/sheets/support', params: { artistId: artist.id } })}
+              icon="shuffle"
+              size={26}
+              iconSize={14}
+              accessibilityLabel="Shuffle popular tracks"
+              onPress={() => playShuffled(popularTrackIds)}
+              style={styles.shuffleBadge}
             />
           </View>
         </View>
@@ -93,6 +127,8 @@ export default function ArtistProfileScreen() {
                 <TrackRow
                   key={track!.id}
                   index={index + 1}
+                  coverUri={track!.coverUri}
+                  active={currentTrackId === track!.id}
                   title={track!.title}
                   artist={track!.artistName}
                   durationLabel={formatDuration(track!.durationSec)}
@@ -118,9 +154,9 @@ export default function ArtistProfileScreen() {
                   key={album!.id}
                   coverUri={album!.coverUri}
                   title={album!.title}
-                  subtitle={String(album!.year)}
+                  subtitle={`${album!.type === 'ep' ? 'EP' : album!.type === 'single' ? 'Single' : 'Album'} • ${album!.year}`}
                   layout="below"
-                  width={140}
+                  width={144}
                   onPress={() => router.push({ pathname: '/album/[id]', params: { id: album!.id } })}
                 />
               ))}
@@ -138,6 +174,9 @@ export default function ArtistProfileScreen() {
                   photoUri={other!.photoUri}
                   name={other!.name}
                   verified={other!.verified}
+                  metaLabel="Artist"
+                  size={64}
+                  style={styles.fanCard}
                   onPress={() => router.push({ pathname: '/artist/[id]', params: { id: other!.id } })}
                 />
               ))}
@@ -148,12 +187,20 @@ export default function ArtistProfileScreen() {
         {artist.bio && (
           <View style={styles.section}>
             <SectionHeader title="About" />
-            <ThemedText variant="body-md" emphasis="medium">
-              {artist.bio}
-            </ThemedText>
+            <View style={styles.aboutCard}>
+              {(artist.location || artist.genres?.length) && (
+                <ThemedText variant="label-md" emphasis="primary">
+                  {[artist.location, artist.genres?.join(' · ')].filter(Boolean).join(' • ')}
+                </ThemedText>
+              )}
+              <ThemedText variant="body-md" emphasis="medium">
+                {artist.bio}
+              </ThemedText>
+            </View>
           </View>
         )}
       </ScrollView>
+      <MiniPlayerOverlay />
     </ThemedView>
   );
 }
@@ -177,28 +224,58 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: Spacing.margin,
-    paddingBottom: Spacing.xl * 3,
+    paddingBottom: MINI_PLAYER_OVERLAY_CLEARANCE,
     gap: Spacing.xl,
   },
   hero: {
-    alignItems: 'center',
+    borderRadius: Radii.xl,
+    overflow: 'hidden',
+    justifyContent: 'flex-end',
+    backgroundColor: Colors.surface.l1,
+  },
+  heroBody: {
+    padding: Spacing.lg,
     gap: 4,
   },
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginTop: Spacing.md,
+  },
+  name: {
+    flexShrink: 1,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  metaDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Colors.secondary,
   },
   actionsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    marginTop: Spacing.md,
-    width: '100%',
+    marginTop: -Spacing.md,
   },
-  flexButton: {
+  smallPill: {
+    height: 40,
+    paddingHorizontal: Spacing.md,
+  },
+  spacer: {
     flex: 1,
+  },
+  shuffleBadge: {
+    position: 'absolute',
+    right: -4,
+    bottom: -4,
+    backgroundColor: Colors.surface.l3,
+    borderWidth: 2,
+    borderColor: Colors.canvas,
   },
   section: {
     gap: Spacing.sm,
@@ -207,6 +284,15 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   hScroll: {
-    gap: Spacing.sm,
+    gap: Spacing.md,
+  },
+  fanCard: {
+    width: 96,
+  },
+  aboutCard: {
+    gap: Spacing.xs,
+    padding: Spacing.md,
+    borderRadius: Radii.lg,
+    backgroundColor: Colors.surface.l1,
   },
 });

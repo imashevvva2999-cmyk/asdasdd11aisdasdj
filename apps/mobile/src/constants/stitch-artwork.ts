@@ -83,6 +83,8 @@ export const stitchArtworkByAlbumId: Record<string, LocalOrRemoteImage | undefin
   'refraction-horizon': safeRequire(() => require('../../assets/artwork/albums/refraction-horizon.jpg')),
   'resonant-field': safeRequire(() => require('../../assets/artwork/albums/resonant-field.jpg')),
   'solitary-echo': safeRequire(() => require('../../assets/artwork/albums/solitary-echo.jpg')),
+  // Cropped from the approved album_horizon_deluxe/screen.png cover (the
+  // previous file was an accidental design-spec screenshot with UI chrome).
   'horizon-deluxe': safeRequire(() => require('../../assets/artwork/albums/horizon-deluxe.jpg')),
   'neo-classical-horizons': safeRequire(() => require('../../assets/artwork/albums/neo-classical-horizons.jpg')),
 };

@@ -1,11 +1,10 @@
-import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { CircleButton, EmptyState, Icon, IconButton, TrackRow } from '@/components/ui';
+import { EmptyState, Icon, IconButton, PillButton, TrackRow } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useToast } from '@/hooks/use-toast';
 import { nextSortMode, sortTracks, type TrackSortMode } from '@/lib/sort-tracks';
@@ -48,51 +47,56 @@ export default function LikedSongsScreen() {
   return (
     <ThemedView surface="canvas" style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
+        {/* Stitch S-13: badge left, text right, then Play All + shuffle on the
+            left and the quieter download / sort controls on the right. */}
         <View style={styles.hero}>
-          <LinearGradient
-            colors={[Colors.primary, Colors.tertiary, Colors.secondary]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.heroIcon}
-          >
-            <Icon name="favorite" size={56} color={Colors.text.high} />
-          </LinearGradient>
-          <ThemedText variant="headline-lg" style={styles.title}>
-            Liked Songs
-          </ThemedText>
-          <ThemedText variant="body-sm" emphasis="medium">
-            Auto Playlist • {likedTracks.length} saved tracks
-          </ThemedText>
-
-          <View style={styles.actionsRow}>
-            <IconButton
-              icon={isDownloaded ? 'download-done' : 'download'}
-              color={isDownloaded ? Colors.secondary : undefined}
-              accessibilityLabel={isDownloaded ? 'Remove download' : 'Download offline'}
-              onPress={() => {
-                toggleDownloaded(LIKED_SONGS_ID);
-                showToast(isDownloaded ? 'Download removed' : 'Marked for offline (demo — no audio is stored yet)', 'download');
-              }}
-            />
-            <IconButton
-              icon="sort"
-              accessibilityLabel={`Sort: ${sortMode}`}
-              onPress={() => {
-                const next = nextSortMode(sortMode);
-                setSortMode(next);
-                showToast(`Sorted by ${next}`, 'sort');
-              }}
-            />
-            <View style={styles.spacer} />
-            <IconButton icon="shuffle" accessibilityLabel="Shuffle" onPress={() => playShuffled(likedTrackIdsOrdered)} />
-            <CircleButton
-              icon="play-arrow"
-              accessibilityLabel="Play all"
-              size={56}
-              iconSize={26}
-              onPress={() => likedTrackIdsOrdered.length > 0 && play(likedTrackIdsOrdered[0]!, likedTrackIdsOrdered)}
-            />
+          <View style={styles.heroBadge}>
+            <Icon name="favorite" size={40} color={Colors.primary} />
           </View>
+          <View style={styles.heroText}>
+            <ThemedText variant="label-sm" emphasis="primary" style={styles.eyebrow}>
+              Auto Playlist
+            </ThemedText>
+            <ThemedText variant="display-lg-mobile">Liked Songs</ThemedText>
+            <ThemedText variant="body-sm" emphasis="medium">
+              {likedTracks.length} {likedTracks.length === 1 ? 'saved track' : 'saved tracks'}
+            </ThemedText>
+          </View>
+        </View>
+
+        <View style={styles.actionsRow}>
+          <PillButton
+            label="Play All"
+            leadingIcon="play-arrow"
+            disabled={likedTrackIdsOrdered.length === 0}
+            onPress={() => likedTrackIdsOrdered.length > 0 && play(likedTrackIdsOrdered[0]!, likedTrackIdsOrdered)}
+            style={styles.playAll}
+          />
+          <IconButton icon="shuffle" size={48} accessibilityLabel="Shuffle" onPress={() => playShuffled(likedTrackIdsOrdered)} />
+          <View style={styles.spacer} />
+          <IconButton
+            variant="ghost"
+            size={40}
+            icon={isDownloaded ? 'download-done' : 'download'}
+            color={isDownloaded ? Colors.secondary : Colors.text.medium}
+            accessibilityLabel={isDownloaded ? 'Remove download' : 'Download offline'}
+            onPress={() => {
+              toggleDownloaded(LIKED_SONGS_ID);
+              showToast(isDownloaded ? 'Download removed' : 'Marked for offline (demo — no audio is stored yet)', 'download');
+            }}
+          />
+          <IconButton
+            variant="ghost"
+            size={40}
+            icon="swap-vert"
+            color={Colors.text.medium}
+            accessibilityLabel={`Sort: ${sortMode}`}
+            onPress={() => {
+              const next = nextSortMode(sortMode);
+              setSortMode(next);
+              showToast(`Sorted by ${next}`, 'sort');
+            }}
+          />
         </View>
 
         {likedTracks.length === 0 ? (
@@ -103,6 +107,8 @@ export default function LikedSongsScreen() {
               <TrackRow
                 key={track.id}
                 index={index + 1}
+                coverUri={track.coverUri}
+                active={currentTrackId === track.id}
                 title={track.title}
                 artist={track.artistName}
                 durationLabel={formatDuration(track.durationSec)}
@@ -137,25 +143,37 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.miniPlayerClearance,
   },
   hero: {
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: Spacing.lg,
+    paddingTop: Spacing.sm,
   },
-  heroIcon: {
-    width: 160,
-    height: 160,
-    borderRadius: Radii.xl,
+  heroBadge: {
+    width: 96,
+    height: 96,
+    borderRadius: Radii.md,
+    backgroundColor: Colors.surface.l2,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 75, 75, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  title: {
-    marginTop: Spacing.md,
+  heroText: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  eyebrow: {
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
   },
   actionsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    marginTop: Spacing.md,
-    width: '100%',
+  },
+  playAll: {
+    paddingHorizontal: Spacing.lg,
   },
   spacer: {
     flex: 1,

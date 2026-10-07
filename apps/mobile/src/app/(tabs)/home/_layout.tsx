@@ -14,7 +14,7 @@ export default function HomeStackLayout() {
       }}
     >
       <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Screen name="see-all" options={{ title: 'See All' }} />
+      <Stack.Screen name="see-all" options={{ title: 'See All', headerTitleAlign: 'center' }} />
     </Stack>
   );
 }

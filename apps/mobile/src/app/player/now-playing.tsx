@@ -6,7 +6,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Artwork, CircleButton, Icon, IconButton, PressableScale } from '@/components/ui';
-import { Colors, Spacing } from '@/constants/theme';
+import { Colors, Radii, Spacing } from '@/constants/theme';
+import { useContentWidth } from '@/hooks/use-content-width';
 import { goBack } from '@/lib/navigation';
 import { getAlbumById } from '@/mocks';
 import { usePlayerStore } from '@/state/player-store';
@@ -30,6 +31,7 @@ export default function NowPlayingScreen() {
   const toggleLike = usePlayerStore((s) => s.toggleLike);
   const liked = usePlayerStore((s) => (track ? s.isLiked(track.id) : false));
   const [scrubberWidth, setScrubberWidth] = useState(0);
+  const windowWidth = useContentWidth();
 
   useEffect(() => {
     if (trackId && trackId !== currentTrackId) {
@@ -53,12 +55,14 @@ export default function NowPlayingScreen() {
   const album = track.albumId ? getAlbumById(track.albumId) : undefined;
   const remainingSec = Math.max(0, track.durationSec - progressSec);
   const progressRatio = track.durationSec > 0 ? progressSec / track.durationSec : 0;
+  // Stitch: artwork spans the content width (20px margins), capped at 340.
+  const artworkSize = Math.min(340, windowWidth - Spacing.margin * 2);
 
   return (
     <ThemedView surface="canvas" style={styles.flex}>
       <SafeAreaView style={styles.flex}>
         <View style={styles.header}>
-          <IconButton icon="keyboard-arrow-down" accessibilityLabel="Collapse player" onPress={() => goBack()} />
+          <IconButton variant="ghost" icon="keyboard-arrow-down" iconSize={28} accessibilityLabel="Collapse player" onPress={() => goBack()} />
           <View style={styles.headerCenter}>
             <ThemedText variant="label-sm" emphasis="medium" style={styles.headerEyebrow}>
               {album ? 'PLAYING FROM ALBUM' : 'PLAYING'}
@@ -68,14 +72,17 @@ export default function NowPlayingScreen() {
             </ThemedText>
           </View>
           <IconButton
+            variant="ghost"
             icon="more-horiz"
+            iconSize={26}
             accessibilityLabel="More options"
             onPress={() => router.push({ pathname: '/sheets/options', params: { kind: 'track', id: track.id } })}
           />
         </View>
 
         <View style={styles.artworkWrap}>
-          <Artwork uri={track.coverUri} size={320} radius={32} />
+          <View style={styles.artworkGlow} pointerEvents="none" />
+          <Artwork uri={track.coverUri} size={artworkSize} radius={32} />
         </View>
 
         <View style={styles.titleRow}>
@@ -121,6 +128,7 @@ export default function NowPlayingScreen() {
             <View style={styles.scrubberTrack}>
               <View style={[styles.scrubberProgress, { width: `${progressRatio * 100}%` }]} />
             </View>
+            <View pointerEvents="none" style={[styles.scrubberThumb, { left: `${progressRatio * 100}%` }]} />
           </Pressable>
           <View style={styles.timeRow}>
             <ThemedText variant="mono-num" emphasis="medium">
@@ -134,12 +142,14 @@ export default function NowPlayingScreen() {
 
         <View style={styles.transportRow}>
           <IconButton
+            variant="ghost"
             icon="shuffle"
+            iconSize={26}
             accessibilityLabel="Shuffle"
             color={shuffle ? Colors.primary : Colors.text.medium}
             onPress={toggleShuffle}
           />
-          <IconButton icon="skip-previous" accessibilityLabel="Previous track" size={48} onPress={previous} />
+          <IconButton variant="ghost" icon="skip-previous" iconSize={38} accessibilityLabel="Previous track" size={52} onPress={previous} />
           <CircleButton
             icon={isPlaying ? 'pause' : 'play-arrow'}
             accessibilityLabel={isPlaying ? 'Pause' : 'Play'}
@@ -147,8 +157,10 @@ export default function NowPlayingScreen() {
             iconSize={36}
             onPress={togglePlayPause}
           />
-          <IconButton icon="skip-next" accessibilityLabel="Next track" size={48} onPress={next} />
+          <IconButton variant="ghost" icon="skip-next" iconSize={38} accessibilityLabel="Next track" size={52} onPress={next} />
           <IconButton
+            variant="ghost"
+            iconSize={26}
             icon="repeat"
             accessibilityLabel="Repeat"
             color={repeat !== 'off' ? Colors.primary : Colors.text.medium}
@@ -182,14 +194,15 @@ function PressableLink({ label, onPress }: { label: string; onPress: () => void 
   );
 }
 
-function PlayerTabButton({ label, icon, onPress, active }: { label: string; icon: string; onPress: () => void; active?: boolean }) {
+/** Horizontal icon + label pill in the player's bottom action bar (Stitch S-15). */
+function PlayerTabButton({ label, icon, onPress }: { label: string; icon: string; onPress: () => void }) {
   return (
-    <View style={styles.playerTabButton}>
-      <IconButton icon={icon} accessibilityLabel={label} onPress={onPress} color={active ? Colors.primary : Colors.text.medium} size={32} />
-      <ThemedText variant="label-sm" style={active ? { color: Colors.primary } : undefined}>
+    <PressableScale accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={styles.playerTabButton}>
+      <Icon name={icon} size={18} color={Colors.text.medium} />
+      <ThemedText variant="label-md" emphasis="medium">
         {label}
       </ThemedText>
-    </View>
+    </PressableScale>
   );
 }
 
@@ -221,13 +234,23 @@ const styles = StyleSheet.create({
   },
   artworkWrap: {
     alignItems: 'center',
-    marginTop: Spacing.sm,
-    marginBottom: Spacing.lg,
+    justifyContent: 'center',
+    marginTop: Spacing.md,
+    marginBottom: Spacing.xl,
+  },
+  artworkGlow: {
+    position: 'absolute',
+    width: '70%',
+    height: '70%',
+    borderRadius: Radii.full,
+    backgroundColor: Colors.primary,
+    opacity: 0.12,
+    transform: [{ scale: 1.2 }],
   },
   titleRow: {
     paddingHorizontal: Spacing.margin,
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'space-between',
   },
   titleBlock: {
@@ -248,10 +271,23 @@ const styles = StyleSheet.create({
   },
   scrubberHitArea: {
     paddingVertical: Spacing.sm,
+    justifyContent: 'center',
+  },
+  scrubberThumb: {
+    position: 'absolute',
+    width: 16,
+    height: 16,
+    marginLeft: -8,
+    borderRadius: Radii.full,
+    backgroundColor: Colors.primary,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowRadius: 12,
+    shadowOpacity: 0.8,
   },
   scrubberTrack: {
-    height: 6,
-    borderRadius: 3,
+    height: 4,
+    borderRadius: 2,
     backgroundColor: Colors.surface.l3,
     overflow: 'hidden',
   },
@@ -269,20 +305,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.margin,
-    marginTop: Spacing.lg,
+    marginTop: Spacing.xl,
   },
   actionBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
     marginHorizontal: Spacing.margin,
     marginTop: Spacing.xl,
-    paddingVertical: Spacing.sm,
+    padding: Spacing.xs,
     borderRadius: 20,
     backgroundColor: Colors.surface.l1,
   },
   playerTabButton: {
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
+    gap: 6,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 10,
+    borderRadius: Radii.full,
   },
 });
