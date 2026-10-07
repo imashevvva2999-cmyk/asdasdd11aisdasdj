@@ -176,7 +176,7 @@ export default function NowPlayingScreen() {
             icon="volunteer-activism"
             onPress={() => router.push({ pathname: '/sheets/support', params: { artistId: track.artistId } })}
           />
-          <PlayerTabButton label="Audio" icon="headphones" onPress={() => router.push('/profile/settings')} />
+          <PlayerTabButton label="Audio" icon="headphones" onPress={() => router.push('/profile/audio-quality')} />
         </View>
       </SafeAreaView>
     </ThemedView>

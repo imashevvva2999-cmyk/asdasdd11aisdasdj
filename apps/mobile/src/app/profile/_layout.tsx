@@ -20,6 +20,9 @@ export default function ProfileStackLayout() {
     >
       <Stack.Screen name="index" options={{ title: 'Profile' }} />
       <Stack.Screen name="settings" options={{ title: 'Settings' }} />
+      <Stack.Screen name="audio-quality" options={{ title: 'Audio Quality & Playback' }} />
+      <Stack.Screen name="downloads" options={{ title: 'Downloads & Offline' }} />
+      <Stack.Screen name="account" options={{ title: 'Account & Security' }} />
       <Stack.Screen name="support-history" options={{ title: 'Support History' }} />
       <Stack.Screen name="artist/become-artist" options={{ title: 'Become An Artist' }} />
       <Stack.Screen name="artist/setup" options={{ title: 'Artist Setup' }} />

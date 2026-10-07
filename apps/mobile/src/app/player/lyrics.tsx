@@ -124,7 +124,7 @@ export default function LyricsScreen() {
 
         <View style={styles.tabRow}>
           <PlayerTab label="Lyrics" icon="mic-none" active />
-          <PlayerTab label="Audio" icon="headphones" onPress={() => router.push('/profile/settings')} />
+          <PlayerTab label="Audio" icon="headphones" onPress={() => router.push('/profile/audio-quality')} />
           <PlayerTab label="Queue" icon="queue-music" onPress={() => router.push('/player/queue')} />
         </View>
       </SafeAreaView>

@@ -8,6 +8,8 @@ import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useToast } from '@/hooks/use-toast';
 import { currentUser, getArtistById } from '@/mocks';
 import { useArtistStore } from '@/state/artist-store';
+import { useLibraryStore } from '@/state/library-store';
+import { useSettingsStore } from '@/state/settings-store';
 import { useSupportStore } from '@/state/support-store';
 
 /**
@@ -22,6 +24,9 @@ import { useSupportStore } from '@/state/support-store';
 export default function ProfileScreen() {
   const history = useSupportStore((s) => s.history);
   const myArtist = useArtistStore((s) => s.artist);
+  const musicStorageGb = useSettingsStore((s) => s.musicStorageGb);
+  const cacheGb = useSettingsStore((s) => s.cacheGb);
+  const downloadedCount = useLibraryStore((s) => s.downloadedIds.size);
   const { showToast, toast } = useToast();
 
   const totalSupported = history.reduce((sum, entry) => sum + entry.amount, 0);
@@ -134,21 +139,21 @@ export default function ProfileScreen() {
               icon="high-quality"
               tone="secondary"
               title="Audio Quality & Playback"
-              onPress={() => router.push('/profile/settings')}
+              onPress={() => router.push('/profile/audio-quality')}
             />
             <MenuRow
               icon="cloud-download"
               tone="neutral"
               title="Downloads & Offline"
-              subtitle="14.2 GB used • 348 songs"
-              onPress={() => router.push('/profile/settings')}
+              subtitle={`${(musicStorageGb + cacheGb).toFixed(1)} GB used • ${downloadedCount} downloaded`}
+              onPress={() => router.push('/profile/downloads')}
             />
             <MenuRow
               icon="verified-user"
               tone="neutral"
               title="Account & Security"
               subtitle="MBANK Connected ID"
-              onPress={() => router.push('/profile/settings')}
+              onPress={() => router.push('/profile/account')}
             />
             <MenuRow
               icon="mic"
