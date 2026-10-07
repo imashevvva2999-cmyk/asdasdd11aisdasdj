@@ -1,9 +1,10 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Artwork, CircleButton, EmptyState, IconButton, TrackRow } from '@/components/ui';
-import { Spacing } from '@/constants/theme';
+import { CircleButton, EmptyState, Icon, IconButton, TrackRow } from '@/components/ui';
+import { Colors, Radii, Spacing } from '@/constants/theme';
 import { getTrackById } from '@/mocks';
 import { usePlayerStore } from '@/state/player-store';
 
@@ -28,7 +29,14 @@ export default function LikedSongsScreen() {
     <ThemedView surface="canvas" style={styles.flex}>
       <View style={styles.content}>
         <View style={styles.hero}>
-          <Artwork size={160} radius={24} />
+          <LinearGradient
+            colors={[Colors.primary, Colors.tertiary, Colors.secondary]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.heroIcon}
+          >
+            <Icon name="favorite" size={56} color={Colors.text.high} />
+          </LinearGradient>
           <ThemedText variant="headline-lg" style={styles.title}>
             Liked Songs
           </ThemedText>
@@ -101,6 +109,13 @@ const styles = StyleSheet.create({
   hero: {
     alignItems: 'center',
     gap: 4,
+  },
+  heroIcon: {
+    width: 160,
+    height: 160,
+    borderRadius: Radii.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   title: {
     marginTop: Spacing.md,

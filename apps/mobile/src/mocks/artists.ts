@@ -1,4 +1,4 @@
-import { stitchArtworkByArtistId } from '@/constants/stitch-artwork';
+import { generatedArtworkByArtistId, stitchArtworkByArtistId } from '@/constants/stitch-artwork';
 
 import type { Artist } from './types';
 
@@ -28,8 +28,10 @@ export const artists: Artist[] = [
 
 // Fill in recovered Stitch artwork (Фаза 4 restoration pass) — a plain id
 // lookup, not a require() of its own; see src/constants/stitch-artwork.ts.
+// Falls back to a procedurally generated abstract avatar (frontend-wide
+// artwork audit pass) only for artists with no recovered Stitch photo.
 for (const artist of artists) {
-  const photoUri = stitchArtworkByArtistId[artist.id];
+  const photoUri = stitchArtworkByArtistId[artist.id] ?? generatedArtworkByArtistId[artist.id];
   if (photoUri) artist.photoUri = photoUri;
 }
 

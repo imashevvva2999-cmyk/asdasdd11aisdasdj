@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -6,11 +7,23 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { EmptyState, IconButton, QueueRow, Toggle, TrackRow } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
+import { getTrackById, type Track } from '@/mocks';
 import { usePlayerStore } from '@/state/player-store';
 
-/** S-17 Playback Queue (docs/screens.md §3.9). */
+/**
+ * S-17 Playback Queue (docs/screens.md §3.9). Derives the track list locally
+ * from the store's stable `queue` id array instead of calling the store's
+ * own `queueTracks()` selector directly — that function allocates a new
+ * array on every call, which breaks React's snapshot-stability check
+ * (`useSyncExternalStore`) and crashes this screen with "Maximum update
+ * depth exceeded".
+ */
 export default function QueueScreen() {
-  const queueTracks = usePlayerStore((s) => s.queueTracks());
+  const queue = usePlayerStore((s) => s.queue);
+  const queueTracks = useMemo(
+    () => queue.map((id) => getTrackById(id)).filter((t): t is Track => Boolean(t)),
+    [queue],
+  );
   const currentIndex = usePlayerStore((s) => s.currentIndex);
   const removeFromQueue = usePlayerStore((s) => s.removeFromQueue);
   const playFromQueueIndex = usePlayerStore((s) => s.playFromQueueIndex);
@@ -34,7 +47,7 @@ export default function QueueScreen() {
               <ThemedText variant="label-sm" emphasis="medium" style={styles.eyebrow}>
                 NOW PLAYING
               </ThemedText>
-              <TrackRow title={current.title} artist={current.artistName} isPlaying={isPlaying} onOptionsPress={() => {}} />
+              <TrackRow coverUri={current.coverUri} title={current.title} artist={current.artistName} isPlaying={isPlaying} onOptionsPress={() => {}} />
             </View>
           )}
 
@@ -51,6 +64,7 @@ export default function QueueScreen() {
               upcoming.map((track, offset) => (
                 <QueueRow
                   key={`${track.id}-${offset}`}
+                  coverUri={track.coverUri}
                   title={track.title}
                   artist={track.artistName}
                   durationLabel={formatDuration(track.durationSec)}

@@ -53,6 +53,7 @@ export default function SeeAllScreen() {
                 key={album.id}
                 layout="below"
                 width={160}
+                coverUri={album.coverUri}
                 title={album.title}
                 subtitle={album.artistName}
                 onPress={() => router.push({ pathname: '/album/[id]', params: { id: album.id } })}

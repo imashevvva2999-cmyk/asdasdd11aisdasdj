@@ -30,6 +30,7 @@ export default function AllGenresScreen() {
         <FeaturedBanner
           title={featuredGenre.title}
           subtitle={featuredGenre.subtitle}
+          coverUri={featuredGenre.coverUri}
           height={144}
           onPress={() => router.push({ pathname: '/search/genre/[id]', params: { id: featuredGenre.id } })}
         />

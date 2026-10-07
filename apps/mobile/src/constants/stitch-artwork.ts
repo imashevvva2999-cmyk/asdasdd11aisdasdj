@@ -117,3 +117,32 @@ export const generatedArtworkByTrackId: Record<string, LocalOrRemoteImage | unde
   'ember-tide': safeRequire(() => require('../../assets/artwork/generated/ember-tide.jpg')),
   'resonant-field-reprise': safeRequire(() => require('../../assets/artwork/generated/resonant-field-reprise.jpg')),
 };
+
+/**
+ * Procedurally generated local abstract artwork (frontend-wide artwork audit
+ * pass) for the one playlist with no recovered Stitch design asset — "This is
+ * Solaris Echo". Same technique and provenance rules as
+ * `generatedArtworkByTrackId` above.
+ */
+export const generatedArtworkByPlaylistId: Record<string, LocalOrRemoteImage | undefined> = {
+  'this-is-solaris-echo': safeRequire(() => require('../../assets/artwork/generated/this-is-solaris-echo.jpg')),
+};
+
+/**
+ * Procedurally generated local abstract AVATAR artwork (frontend-wide
+ * artwork audit pass) for the eight artists with no recovered Stitch photo.
+ * Deliberately abstract gradient/glow compositions, genre-themed (never a
+ * photorealistic human face — this never presents a synthetic "photo" of a
+ * nonexistent person). Same build technique and provenance rules as
+ * `generatedArtworkByTrackId` above.
+ */
+export const generatedArtworkByArtistId: Record<string, LocalOrRemoteImage | undefined> = {
+  arlo: safeRequire(() => require('../../assets/artwork/generated/arlo.jpg')),
+  'maya-lin': safeRequire(() => require('../../assets/artwork/generated/maya-lin.jpg')),
+  'tate-vane': safeRequire(() => require('../../assets/artwork/generated/tate-vane.jpg')),
+  'clover-and-the-pulse': safeRequire(() => require('../../assets/artwork/generated/clover-and-the-pulse.jpg')),
+  'sable-duo': safeRequire(() => require('../../assets/artwork/generated/sable-duo.jpg')),
+  'yuki-tanaka': safeRequire(() => require('../../assets/artwork/generated/yuki-tanaka.jpg')),
+  'elena-rostova': safeRequire(() => require('../../assets/artwork/generated/elena-rostova.jpg')),
+  'nils-frahm': safeRequire(() => require('../../assets/artwork/generated/nils-frahm.jpg')),
+};

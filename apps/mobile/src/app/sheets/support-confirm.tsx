@@ -43,7 +43,7 @@ export default function SupportConfirmSheet() {
     <ThemedView surface="l2" style={styles.flex}>
       <View style={styles.handle} />
       <View style={styles.content}>
-        <Artwork shape="circle" size={72} radius={36} />
+        <Artwork shape="circle" size={72} radius={36} uri={artist.photoUri} />
         <View style={styles.nameRow}>
           <ThemedText variant="headline-sm">Support {artist.name}</ThemedText>
           {artist.verified && <Icon name="verified" size={16} color={Colors.secondary} />}

@@ -47,6 +47,7 @@ export default function GenreDetailScreen() {
                 key={album.id}
                 layout="below"
                 width={150}
+                coverUri={album.coverUri}
                 title={album.title}
                 subtitle={`${album.trackCount} tracks`}
                 onPress={() => router.push({ pathname: '/album/[id]', params: { id: album.id } })}
@@ -61,6 +62,7 @@ export default function GenreDetailScreen() {
             {pioneeringArtists.map((artist) => (
               <AvatarCard
                 key={artist.id}
+                photoUri={artist.photoUri}
                 name={artist.name}
                 verified={artist.verified}
                 metaLabel={artist.monthlyListeners ? `${(artist.monthlyListeners / 1_000_000).toFixed(1)}M fans` : undefined}
@@ -98,6 +100,7 @@ export default function GenreDetailScreen() {
                 key={album.id}
                 layout="below"
                 width={150}
+                coverUri={album.coverUri}
                 title={album.title}
                 subtitle={album.artistName}
                 onPress={() => router.push({ pathname: '/album/[id]', params: { id: album.id } })}

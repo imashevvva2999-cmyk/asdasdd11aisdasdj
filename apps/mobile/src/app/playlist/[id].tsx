@@ -46,7 +46,7 @@ export default function PlaylistScreen() {
     <ThemedView surface="canvas" style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.hero}>
-          <Artwork size={220} radius={24} />
+          <Artwork uri={playlist.coverUri} size={220} radius={24} />
           <ThemedText variant="headline-lg" style={styles.title} numberOfLines={2}>
             {playlist.title}
           </ThemedText>

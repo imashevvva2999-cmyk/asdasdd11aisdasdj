@@ -1,5 +1,6 @@
 import { generatedArtworkByTrackId, stitchArtworkByTrackId } from '@/constants/stitch-artwork';
 
+import { albums } from './albums';
 import type { Track } from './types';
 
 export const tracks: Track[] = [
@@ -25,8 +26,14 @@ export const tracks: Track[] = [
 // Falls back to procedurally generated local artwork (Search Results visual
 // cleanup pass) only for the handful of tracks with no recovered Stitch
 // asset, so every screen reading `track.coverUri` picks it up consistently.
+// A track with neither reuses its own album's cover when it has one and the
+// album has real artwork (frontend-wide artwork audit pass) — e.g. the
+// 'Nebula Dreams' track reuses the 'Nebula Dreams' album's cover, instead of
+// generating a redundant second image for the same concept.
 for (const track of tracks) {
-  const coverUri = stitchArtworkByTrackId[track.id] ?? generatedArtworkByTrackId[track.id];
+  const ownCoverUri = stitchArtworkByTrackId[track.id] ?? generatedArtworkByTrackId[track.id];
+  const albumCoverUri = track.albumId ? albums.find((album) => album.id === track.albumId)?.coverUri : undefined;
+  const coverUri = ownCoverUri ?? albumCoverUri;
   if (coverUri) track.coverUri = coverUri;
 }
 

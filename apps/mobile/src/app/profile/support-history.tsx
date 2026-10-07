@@ -87,7 +87,7 @@ function SupportHistoryRow({ entry }: { entry: SupportHistoryEntry }) {
 
   return (
     <View style={styles.row}>
-      <Artwork shape="circle" size={40} radius={20} />
+      <Artwork shape="circle" size={40} radius={20} uri={artist?.photoUri} />
       <View style={styles.rowText}>
         <ThemedText
           variant="label-lg"

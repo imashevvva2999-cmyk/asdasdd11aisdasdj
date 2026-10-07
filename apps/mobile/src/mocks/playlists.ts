@@ -1,4 +1,4 @@
-import { stitchArtworkByPlaylistId } from '@/constants/stitch-artwork';
+import { generatedArtworkByPlaylistId, stitchArtworkByPlaylistId } from '@/constants/stitch-artwork';
 
 import type { Playlist } from './types';
 
@@ -23,8 +23,10 @@ export const playlists: Playlist[] = [
 
 // Fill in recovered Stitch artwork (Фаза 4 restoration pass) — a plain id
 // lookup, not a require() of its own; see src/constants/stitch-artwork.ts.
+// Falls back to a procedurally generated cover (frontend-wide artwork audit
+// pass) only for playlists with no recovered Stitch asset.
 for (const playlist of playlists) {
-  const coverUri = stitchArtworkByPlaylistId[playlist.id];
+  const coverUri = stitchArtworkByPlaylistId[playlist.id] ?? generatedArtworkByPlaylistId[playlist.id];
   if (coverUri) playlist.coverUri = coverUri;
 }
 

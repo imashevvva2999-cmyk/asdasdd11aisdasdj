@@ -50,7 +50,7 @@ export default function ArtistProfileScreen() {
     <ThemedView surface="canvas" style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.hero}>
-          <Artwork shape="circle" size={140} radius={70} />
+          <Artwork shape="circle" size={140} radius={70} uri={artist.photoUri} />
           <View style={styles.nameRow}>
             <ThemedText variant="headline-lg" numberOfLines={1}>
               {artist.name}
@@ -136,6 +136,7 @@ export default function ArtistProfileScreen() {
               {fansAlsoLike.map((other) => (
                 <AvatarCard
                   key={other!.id}
+                  photoUri={other!.photoUri}
                   name={other!.name}
                   verified={other!.verified}
                   onPress={() => router.push({ pathname: '/artist/[id]', params: { id: other!.id } })}
