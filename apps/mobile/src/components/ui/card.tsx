@@ -2,11 +2,27 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, View, type GestureResponderEvent, type ViewStyle } from 'react-native';
 
+import { getFallbackGradient } from '@/constants/fallback-artwork';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 
 import { Icon } from './icon';
 import { PressableScale } from './pressable-scale';
 import { ThemedText } from '../themed-text';
+
+/** Shared "no real cover" fallback — a deterministic tinted-glass gradient tile
+ * plus a faint music-note glyph, instead of a flat grey box (Фаза 4 visual QA
+ * pass). `seed` is usually the card's title so the same entity always renders
+ * the same tile. */
+function CoverFallback({ seed, iconSize = 28 }: { seed: string; iconSize?: number }) {
+  return (
+    <>
+      <LinearGradient colors={getFallbackGradient(seed) as [string, string]} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
+      <View style={cardStyles.fallbackIconWrap} pointerEvents="none">
+        <Icon name="music-note" size={iconSize} color="rgba(255,255,255,0.28)" />
+      </View>
+    </>
+  );
+}
 
 export type CoverCardProps = {
   coverUri?: string;
@@ -58,7 +74,7 @@ export function CoverCard({
 
   const cover = (
     <View style={[cardStyles.coverBase, { width, height: coverHeight }, layout === 'overlay' && cardStyles.justifyEnd]}>
-      {coverUri && <Image source={{ uri: coverUri }} style={StyleSheet.absoluteFill} contentFit="cover" />}
+      {coverUri ? <Image source={{ uri: coverUri }} style={StyleSheet.absoluteFill} contentFit="cover" /> : <CoverFallback seed={title} />}
       {layout === 'overlay' && (
         <>
           <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={StyleSheet.absoluteFill} />
@@ -98,7 +114,7 @@ export function CoverCard({
     return (
       <PressableScale
         onPress={onPress}
-        accessibilityRole="button"
+        accessibilityRole={onToggleLike ? undefined : 'button'}
         style={[{ width }, surfaced && cardStyles.surfacedWrapper, style]}
       >
         {cover}
@@ -133,17 +149,58 @@ export type FeaturedBannerProps = {
   title: string;
   subtitle?: string;
   height?: number;
+  /** 'overlay' (default) = title/subtitle on a bottom gradient over the image,
+   * the whole card is one tap target (Search's Kyrgyz Music banner). 'footer' =
+   * fixed-height image on top, title/subtitle + a circular play button in a
+   * solid footer below it — the Home hero ("Late Night Flow") treatment, which
+   * Stitch renders as two stacked parts rather than text-on-image. */
+  layout?: 'overlay' | 'footer';
+  /** 'footer' layout only — shows a circular play button, kept outside the
+   * outer card's own button role so the two don't nest as DOM buttons. */
+  onPlayPress?: () => void;
   onPress?: (event: GestureResponderEvent) => void;
   style?: ViewStyle;
 };
 
 /** Hero banner (DESIGN.md "Album & Playlist Cards"; docs/screens.md §3.4). Defaults
  * to 16:9; pass `height` for the fixed-height heroes used on Home/Search/Genre. */
-export function FeaturedBanner({ coverUri, title, subtitle, height, onPress, style }: FeaturedBannerProps) {
+export function FeaturedBanner({ coverUri, title, subtitle, height, layout = 'overlay', onPlayPress, onPress, style }: FeaturedBannerProps) {
+  if (layout === 'footer') {
+    return (
+      <PressableScale onPress={onPress} style={[cardStyles.footerBannerWrap, style]} accessibilityRole={onPlayPress ? undefined : 'button'}>
+        <View style={[cardStyles.footerBannerImage, { height: height ?? 224 }]}>
+          {coverUri ? <Image source={{ uri: coverUri }} style={StyleSheet.absoluteFill} contentFit="cover" /> : <CoverFallback seed={title} iconSize={40} />}
+        </View>
+        <View style={cardStyles.footerBannerFooter}>
+          <View style={cardStyles.footerBannerText}>
+            <ThemedText variant="headline-lg" numberOfLines={1}>
+              {title}
+            </ThemedText>
+            {subtitle && (
+              <ThemedText variant="body-md" emphasis="medium" numberOfLines={1}>
+                {subtitle}
+              </ThemedText>
+            )}
+          </View>
+          {onPlayPress && (
+            <PressableScale
+              accessibilityRole="button"
+              accessibilityLabel={`Play ${title}`}
+              onPress={onPlayPress}
+              style={cardStyles.footerBannerPlayButton}
+            >
+              <Icon name="play-arrow" size={28} color={Colors.text.high} />
+            </PressableScale>
+          )}
+        </View>
+      </PressableScale>
+    );
+  }
+
   return (
     <PressableScale onPress={onPress} style={style} accessibilityRole="button">
       <View style={[cardStyles.banner, height !== undefined && { aspectRatio: undefined, height }]}>
-        {coverUri && <Image source={{ uri: coverUri }} style={StyleSheet.absoluteFill} contentFit="cover" />}
+        {coverUri ? <Image source={{ uri: coverUri }} style={StyleSheet.absoluteFill} contentFit="cover" /> : <CoverFallback seed={title} iconSize={36} />}
         <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={StyleSheet.absoluteFill} />
         <View style={cardStyles.coverTextOverlay}>
           <ThemedText variant="headline-md" numberOfLines={1}>
@@ -235,8 +292,10 @@ export type QuickTileProps = {
  * play button (docs/screens.md §3.4 "Quick tile"; Home S-01). */
 export function QuickTile({ coverUri, title, onPress, onPlayPress, style }: QuickTileProps) {
   return (
-    <PressableScale onPress={onPress} accessibilityRole="button" style={[quickTileStyles.row, style]}>
-      <View style={quickTileStyles.cover}>{coverUri && <Image source={{ uri: coverUri }} style={StyleSheet.absoluteFill} contentFit="cover" />}</View>
+    <PressableScale onPress={onPress} accessibilityRole={onPlayPress ? undefined : 'button'} style={[quickTileStyles.row, style]}>
+      <View style={quickTileStyles.cover}>
+        {coverUri ? <Image source={{ uri: coverUri }} style={StyleSheet.absoluteFill} contentFit="cover" /> : <CoverFallback seed={title} iconSize={18} />}
+      </View>
       <ThemedText variant="label-md" numberOfLines={1} style={quickTileStyles.title}>
         {title}
       </ThemedText>
@@ -265,8 +324,9 @@ export function MoodCard({ title, subtitle, trackCountLabel, icon, tint = 'prima
 
   return (
     <PressableScale onPress={onPress} accessibilityRole="button" style={[moodStyles.card, style]}>
+      <View style={[moodStyles.glow, { backgroundColor: tintColor }]} pointerEvents="none" />
       <View style={moodStyles.topRow}>
-        <Icon name={icon} size={22} color={tintColor} />
+        <Icon name={icon} size={24} color={tintColor} />
         <ThemedText variant="mono-num" emphasis="medium">
           {trackCountLabel}
         </ThemedText>
@@ -312,12 +372,21 @@ export function RankedTile({ rank, title, subtitle, onPress, style }: RankedTile
 
 const cardStyles = StyleSheet.create({
   coverBase: {
-    borderRadius: Radii.lg,
+    borderRadius: Radii.md,
     overflow: 'hidden',
     backgroundColor: Colors.surface.l3,
   },
   justifyEnd: {
     justifyContent: 'flex-end',
+  },
+  fallbackIconWrap: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   banner: {
     aspectRatio: 16 / 9,
@@ -325,6 +394,36 @@ const cardStyles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: Colors.surface.l3,
     justifyContent: 'flex-end',
+  },
+  footerBannerWrap: {
+    borderRadius: Radii.lg,
+    overflow: 'hidden',
+    backgroundColor: Colors.surface.l1,
+  },
+  footerBannerImage: {
+    width: '100%',
+    backgroundColor: Colors.surface.l3,
+  },
+  footerBannerFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: Spacing.lg,
+    gap: Spacing.md,
+  },
+  footerBannerText: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  footerBannerPlayButton: {
+    width: 56,
+    height: 56,
+    borderRadius: Radii.full,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
   },
   coverTextOverlay: {
     padding: Spacing.sm,
@@ -347,7 +446,7 @@ const cardStyles = StyleSheet.create({
   },
   surfacedWrapper: {
     backgroundColor: Colors.surface.l1,
-    borderRadius: Radii.lg,
+    borderRadius: Radii.md,
     padding: Spacing.sm,
   },
   belowText: {
@@ -403,7 +502,7 @@ const quickTileStyles = StyleSheet.create({
   cover: {
     width: 48,
     height: 48,
-    backgroundColor: Colors.surface.l3,
+    overflow: 'hidden',
     flexShrink: 0,
   },
   title: {
@@ -426,10 +525,20 @@ const moodStyles = StyleSheet.create({
   card: {
     flex: 1,
     height: 96,
-    borderRadius: Radii.lg,
+    borderRadius: Radii.md,
     backgroundColor: Colors.surface.l2,
     padding: Spacing.sm,
     justifyContent: 'space-between',
+    overflow: 'hidden',
+  },
+  glow: {
+    position: 'absolute',
+    right: -16,
+    bottom: -16,
+    width: 80,
+    height: 80,
+    borderRadius: Radii.full,
+    opacity: 0.18,
   },
   topRow: {
     flexDirection: 'row',
@@ -445,7 +554,7 @@ const rankedStyles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.sm,
     backgroundColor: Colors.surface.l2,
-    borderRadius: Radii.lg,
+    borderRadius: Radii.md,
     padding: Spacing.sm,
   },
   textBlock: {

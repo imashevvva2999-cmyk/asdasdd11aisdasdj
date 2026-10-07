@@ -1,6 +1,8 @@
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, View, type GestureResponderEvent, type ViewStyle } from 'react-native';
 
+import { getFallbackGradient } from '@/constants/fallback-artwork';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 
 import { Badge } from './badge';
@@ -13,20 +15,22 @@ import { ThemedText } from '../themed-text';
 
 const ROW_HEIGHT = 56;
 
-function Cover({ uri, size = 40, radius = 8, shape = 'square' }: { uri?: string; size?: number; radius?: number; shape?: 'square' | 'circle' }) {
+/** `seed` (usually the row's title) picks a deterministic fallback gradient
+ * instead of a flat grey box when there's no real cover (Фаза 4 visual QA
+ * pass — see src/constants/fallback-artwork.ts). */
+function Cover({ uri, seed, size = 40, radius = 8, shape = 'square' }: { uri?: string; seed?: string; size?: number; radius?: number; shape?: 'square' | 'circle' }) {
+  const borderRadius = shape === 'circle' ? size / 2 : radius;
   return (
-    <View
-      style={[
-        styles.coverPlaceholder,
-        { width: size, height: size, borderRadius: shape === 'circle' ? size / 2 : radius },
-      ]}
-    >
-      {uri && (
-        <Image
-          source={{ uri }}
-          style={{ width: size, height: size, borderRadius: shape === 'circle' ? size / 2 : radius }}
-          contentFit="cover"
-        />
+    <View style={[styles.coverPlaceholder, { width: size, height: size, borderRadius }]}>
+      {uri ? (
+        <Image source={{ uri }} style={{ width: size, height: size, borderRadius }} contentFit="cover" />
+      ) : (
+        <>
+          <LinearGradient colors={getFallbackGradient(seed ?? '') as [string, string]} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
+          <View style={styles.coverFallbackIcon} pointerEvents="none">
+            <Icon name="music-note" size={Math.max(12, size * 0.4)} color="rgba(255,255,255,0.28)" />
+          </View>
+        </>
       )}
     </View>
   );
@@ -66,17 +70,17 @@ export function TrackRow({
   style,
 }: TrackRowProps) {
   return (
-    <PressableScale onPress={onPress} style={[styles.row, style]} accessibilityRole="button">
+    <PressableScale onPress={onPress} style={[styles.row, style]} accessibilityRole={onToggleLike || onOptionsPress ? undefined : 'button'}>
       <View style={styles.leadingSlot}>
         {isPlaying ? (
           <EqualizerIndicator />
-        ) : coverUri ? (
-          <Cover uri={coverUri} />
         ) : index !== undefined ? (
           <ThemedText variant="mono-num" emphasis="medium">
             {index}
           </ThemedText>
-        ) : null}
+        ) : (
+          <Cover uri={coverUri} seed={title} />
+        )}
       </View>
       <View style={styles.titleBlock}>
         <ThemedText
@@ -135,7 +139,7 @@ export type QueueRowProps = {
 export function QueueRow({ coverUri, title, artist, durationLabel, onPress, style }: QueueRowProps) {
   return (
     <PressableScale onPress={onPress} style={[styles.row, style]} accessibilityRole="button">
-      <Cover uri={coverUri} />
+      <Cover uri={coverUri} seed={title} />
       <View style={styles.titleBlock}>
         <ThemedText variant="label-lg" numberOfLines={1}>
           {title}
@@ -183,8 +187,8 @@ export function LibraryRow({
   style,
 }: LibraryRowProps) {
   return (
-    <PressableScale onPress={onPress} style={[styles.row, style]} accessibilityRole="button">
-      <Cover uri={coverUri} shape={coverShape} size={56} radius={Radii.md} />
+    <PressableScale onPress={onPress} style={[styles.row, style]} accessibilityRole={trailing === 'more' ? undefined : 'button'}>
+      <Cover uri={coverUri} seed={title} shape={coverShape} size={56} radius={Radii.md} />
       <View style={styles.titleBlock}>
         <View style={libraryRowStyles.titleRow}>
           <ThemedText variant="body-lg" numberOfLines={1} style={libraryRowStyles.titleText}>
@@ -220,7 +224,7 @@ export type PlaylistPickerRowProps = {
 export function PlaylistPickerRow({ coverUri, title, trackCountLabel, selected = false, onPress, style }: PlaylistPickerRowProps) {
   return (
     <PressableScale onPress={onPress} style={[styles.row, style]} accessibilityRole="button" accessibilityState={{ selected }}>
-      <Cover uri={coverUri} />
+      <Cover uri={coverUri} seed={title} />
       <View style={styles.titleBlock}>
         <ThemedText variant="label-lg" numberOfLines={1}>
           {title}
@@ -379,6 +383,15 @@ const styles = StyleSheet.create({
   coverPlaceholder: {
     backgroundColor: Colors.surface.l3,
     overflow: 'hidden',
+  },
+  coverFallbackIcon: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   titleBlock: {
     flex: 1,

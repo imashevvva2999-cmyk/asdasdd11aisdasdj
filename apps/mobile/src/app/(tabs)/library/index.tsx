@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -37,7 +38,7 @@ export default function LibraryScreen() {
               onPress={() => router.push('/create-playlist')}
               size={40}
               style={styles.addButton}
-              color={Colors.canvas}
+              color={Colors.text.high}
             />
             {/* Interim OQ-17 entry point (docs/open-questions.md): avatar in Home/Library
              * header, per the documented [П] proposal — final treatment is Фаза 4+ content. */}
@@ -53,16 +54,35 @@ export default function LibraryScreen() {
           ))}
         </ScrollView>
 
+        <View style={styles.sortRow}>
+          <View style={styles.sortTrigger}>
+            <Icon name="swap-vert" size={18} color={Colors.text.medium} />
+            <ThemedText variant="label-md" emphasis="medium">
+              Recently Added
+            </ThemedText>
+            <Icon name="expand-more" size={16} color={Colors.text.low} />
+          </View>
+          <IconButton icon="view-agenda" accessibilityLabel="Toggle view" onPress={() => {}} size={32} style={styles.transparentButton} />
+        </View>
+
         <View style={styles.likedSongsCard}>
           <View style={styles.likedSongsInfo}>
-            <View style={styles.likedSongsIcon}>
+            <LinearGradient
+              colors={[Colors.primary, Colors.tertiary, Colors.secondary]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.likedSongsIcon}
+            >
               <Icon name="favorite" size={28} color={Colors.text.high} />
-            </View>
+            </LinearGradient>
             <View style={styles.likedSongsText}>
               <ThemedText variant="headline-md">Liked Songs</ThemedText>
-              <ThemedText variant="body-sm" emphasis="medium">
-                {likedSongsCount} tracks
-              </ThemedText>
+              <View style={styles.likedSongsMetaRow}>
+                <Icon name="check-circle" size={14} color={Colors.secondary} />
+                <ThemedText variant="body-sm" emphasis="medium">
+                  {likedSongsCount} tracks
+                </ThemedText>
+              </View>
             </View>
           </View>
           <CircleButton
@@ -150,13 +170,26 @@ const styles = StyleSheet.create({
   content: {
     padding: Spacing.margin,
     gap: Spacing.lg,
-    paddingBottom: Spacing.xl * 3,
+    paddingBottom: Spacing.miniPlayerClearance,
   },
   filterRow: {
     gap: Spacing.xs,
   },
+  sortRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  sortTrigger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  transparentButton: {
+    backgroundColor: 'transparent',
+  },
   likedSongsCard: {
-    borderRadius: Radii.lg,
+    borderRadius: Radii.md,
     backgroundColor: Colors.surface.l2,
     padding: Spacing.lg,
     flexDirection: 'row',
@@ -173,8 +206,7 @@ const styles = StyleSheet.create({
   likedSongsIcon: {
     width: 64,
     height: 64,
-    borderRadius: Radii.lg,
-    backgroundColor: Colors.primary,
+    borderRadius: Radii.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -182,6 +214,11 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     gap: 2,
+  },
+  likedSongsMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   list: {
     gap: Spacing.xs,

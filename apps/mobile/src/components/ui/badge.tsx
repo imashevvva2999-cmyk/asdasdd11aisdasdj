@@ -26,7 +26,7 @@ export function Badge({ label, variant = 'neutral', style }: BadgeProps) {
 
   if (variant === 'lossless') {
     return (
-      <ThemedText variant="label-sm" emphasis="primary" style={[{ color: Colors.secondary, letterSpacing: 0.6 }, style]}>
+      <ThemedText variant="label-sm" emphasis="primary" style={{ color: Colors.secondary, letterSpacing: 0.6 }}>
         {label}
       </ThemedText>
     );

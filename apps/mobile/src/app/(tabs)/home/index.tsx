@@ -4,8 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { CoverCard, FeaturedBanner, IconButton, MoodCard, QuickTile, SectionHeader, TrackRow } from '@/components/ui';
-import { Colors, Spacing } from '@/constants/theme';
+import { CoverCard, EqualizerIndicator, FeaturedBanner, IconButton, MoodCard, QuickTile, SectionHeader, TrackRow } from '@/components/ui';
+import { Colors, Radii, Spacing } from '@/constants/theme';
 import {
   forYouTiles,
   getAlbumById,
@@ -17,10 +17,16 @@ import {
   newReleases,
   trendingNowAlbumIds,
 } from '@/mocks';
+import { usePlayerStore } from '@/state/player-store';
 
 /** S-01 Home — tab root (docs/screens.md §3.1). */
 export default function HomeScreen() {
   const hero = getPlaylistById(heroPlaylistId);
+  const play = usePlayerStore((s) => s.play);
+  const currentTrackId = usePlayerStore((s) => s.currentTrackId());
+  const isPlaying = usePlayerStore((s) => s.isPlaying);
+  const isLiked = usePlayerStore((s) => s.isLiked);
+  const toggleLike = usePlayerStore((s) => s.toggleLike);
 
   return (
     <ThemedView surface="canvas" style={styles.flex}>
@@ -43,10 +49,15 @@ export default function HomeScreen() {
         {hero && (
           <View style={styles.section}>
             <FeaturedBanner
+              layout="footer"
               title={hero.title}
               subtitle={hero.curator}
               height={224}
               onPress={() => router.push({ pathname: '/playlist/[id]', params: { id: hero.id } })}
+              onPlayPress={() => {
+                const trackIds = hero.trackIds;
+                if (trackIds && trackIds.length > 0) play(trackIds[0]!, trackIds);
+              }}
             />
           </View>
         )}
@@ -57,6 +68,7 @@ export default function HomeScreen() {
             {trendingNowAlbumIds.map((albumId) => {
               const album = getAlbumById(albumId);
               if (!album) return null;
+              const firstTrackId = album.trackIds?.[0];
               return (
                 <CoverCard
                   key={album.id}
@@ -64,8 +76,10 @@ export default function HomeScreen() {
                   width={160}
                   title={album.title}
                   subtitle={album.artistName}
+                  meta={`${album.trackCount} Tracks`}
+                  liked={firstTrackId ? isLiked(firstTrackId) : false}
                   onPress={() => router.push({ pathname: '/album/[id]', params: { id: album.id } })}
-                  onToggleLike={() => {}}
+                  onToggleLike={firstTrackId ? () => toggleLike(firstTrackId) : undefined}
                 />
               );
             })}
@@ -98,18 +112,22 @@ export default function HomeScreen() {
         <View style={styles.section}>
           <SectionHeader title="Jump Back In" actionLabel="History" onActionPress={() => {}} />
           <View style={styles.trackList}>
-            {jumpBackInTrackIds.map((trackId, index) => {
+            {jumpBackInTrackIds.map((trackId) => {
               const track = getTrackById(trackId);
               if (!track) return null;
+              const trackIsPlaying = currentTrackId === track.id && isPlaying;
               return (
                 <TrackRow
                   key={track.id}
                   title={track.title}
                   artist={track.artistName}
-                  lossless={index === 0 ? track.lossless : undefined}
+                  lossless={track.lossless}
                   explicit={track.explicit}
-                  isPlaying={index === 0}
-                  onPress={() => router.push({ pathname: '/player/now-playing', params: { trackId: track.id } })}
+                  isPlaying={trackIsPlaying}
+                  onPress={() => {
+                    play(track.id, jumpBackInTrackIds);
+                    router.push({ pathname: '/player/now-playing', params: { trackId: track.id } });
+                  }}
                   onOptionsPress={() => {}}
                 />
               );
@@ -149,8 +167,8 @@ function Header() {
       <SafeAreaView edges={['top']}>
         <View style={headerStyles.row}>
           <View style={headerStyles.brand}>
-            <View style={headerStyles.logo} />
             <ThemedText variant="headline-md">Mmusic</ThemedText>
+            <EqualizerIndicator size={14} />
           </View>
           <IconButton
             icon="person"
@@ -177,7 +195,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: {
-    paddingBottom: Spacing.xl * 3,
+    paddingBottom: Spacing.miniPlayerClearance,
   },
   section: {
     marginBottom: Spacing.lg,
@@ -203,6 +221,9 @@ const styles = StyleSheet.create({
   },
   trackList: {
     gap: 2,
+    backgroundColor: Colors.surface.l1,
+    borderRadius: Radii.md,
+    padding: Spacing.xs,
   },
   moodHeader: {
     flexDirection: 'row',
@@ -236,11 +257,5 @@ const headerStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-  },
-  logo: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: Colors.primary,
   },
 });

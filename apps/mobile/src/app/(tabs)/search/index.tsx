@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -12,6 +12,13 @@ import { featuredGenre, genres, initialRecentSearches, trendingSearches } from '
 /** S-03 Search / Explore — tab root (docs/screens.md §3.2). */
 export default function SearchScreen() {
   const [recentSearches, setRecentSearches] = useState(initialRecentSearches);
+  const windowWidth = useWindowDimensions().width;
+  const genreTileWidth = Math.floor((windowWidth - Spacing.margin * 2 - Spacing.md) / 2);
+  // Explicit 2-per-row chunking instead of `flexWrap: 'wrap'`: react-native-web's
+  // flex-gap polyfill does not reliably wrap fixed-width flex items here (every
+  // tile rendered at the same x position stacked vertically) — Фаза 4 visual QA
+  // pass finding, verified directly in Chrome DevTools.
+  const genreRows = chunkPairs(genres);
 
   return (
     <ThemedView surface="canvas" style={styles.flex}>
@@ -88,21 +95,32 @@ export default function SearchScreen() {
         </View>
 
         <View style={styles.genreGrid}>
-          {genres.map((genre) => (
-            <CoverCard
-              key={genre.id}
-              layout="overlay"
-              width={168}
-              height={84}
-              title={genre.title}
-              onPress={() => router.push({ pathname: '/search/genre/[id]', params: { id: genre.id } })}
-              style={styles.genreItem}
-            />
+          {genreRows.map((row, rowIndex) => (
+            <View key={rowIndex} style={styles.genreRow}>
+              {row.map((genre) => (
+                <CoverCard
+                  key={genre.id}
+                  layout="overlay"
+                  width={genreTileWidth}
+                  height={84}
+                  title={genre.title}
+                  onPress={() => router.push({ pathname: '/search/genre/[id]', params: { id: genre.id } })}
+                />
+              ))}
+            </View>
           ))}
         </View>
       </ScrollView>
     </ThemedView>
   );
+}
+
+function chunkPairs<T>(items: T[]): T[][] {
+  const rows: T[][] = [];
+  for (let i = 0; i < items.length; i += 2) {
+    rows.push(items.slice(i, i + 2));
+  }
+  return rows;
 }
 
 const styles = StyleSheet.create({
@@ -130,7 +148,7 @@ const styles = StyleSheet.create({
   content: {
     padding: Spacing.margin,
     gap: Spacing.lg,
-    paddingBottom: Spacing.xl * 3,
+    paddingBottom: Spacing.miniPlayerClearance,
   },
   section: {
     gap: Spacing.sm,
@@ -158,12 +176,11 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xs,
   },
   genreGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.sm,
+    gap: Spacing.md,
     paddingHorizontal: Spacing.margin,
   },
-  genreItem: {
-    flexGrow: 1,
+  genreRow: {
+    flexDirection: 'row',
+    gap: Spacing.md,
   },
 });

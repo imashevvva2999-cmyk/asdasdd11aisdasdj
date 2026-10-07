@@ -96,7 +96,7 @@ export type RemovableChipProps = {
 /** Recent-search style chip with an inline remove (×) button (docs/screens.md §3.2 S-03). */
 export function RemovableChip({ label, onPress, onRemove, style }: RemovableChipProps) {
   return (
-    <PressableScale onPress={onPress} accessibilityRole="button" style={[removableStyles.base, style]}>
+    <PressableScale onPress={onPress} accessibilityRole={onRemove ? undefined : 'button'} style={[removableStyles.base, style]}>
       <ThemedText variant="label-md" emphasis="medium">
         {label}
       </ThemedText>
