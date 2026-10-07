@@ -4,9 +4,9 @@ import { StyleSheet, View } from 'react-native';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { usePlayerStore } from '@/state/player-store';
 
+import { Artwork } from './ui/artwork';
 import { ThemedText } from './themed-text';
 import { EqualizerIndicator } from './ui/equalizer';
-import { Icon } from './ui/icon';
 import { IconButton } from './ui/button';
 import { PressableScale } from './ui/pressable-scale';
 
@@ -45,9 +45,7 @@ export function MiniPlayer() {
       </View>
       <View style={styles.row}>
         <View style={styles.leftGroup}>
-          <View style={styles.iconTile}>
-            <Icon name="album" size={22} color={Colors.primary} />
-          </View>
+          <Artwork uri={track.coverUri} size={40} radius={Radii.DEFAULT} style={styles.iconTile} />
           <View style={styles.textBlock}>
             <ThemedText variant="label-lg" numberOfLines={1}>
               {track.title}

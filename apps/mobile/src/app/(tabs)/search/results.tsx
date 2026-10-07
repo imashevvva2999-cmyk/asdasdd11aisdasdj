@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { AvatarCard, Chip, CircleButton, CoverCard, EmptyState, Icon, LibraryRow, TextField, TrackRow } from '@/components/ui';
+import { Artwork, AvatarCard, Chip, CircleButton, CoverCard, EmptyState, Icon, LibraryRow, TextField, TrackRow } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
 import { albums, artists, playlists, tracks, trendingSearches } from '@/mocks';
 
@@ -78,7 +78,7 @@ export default function SearchResultsScreen() {
               <ThemedText variant="headline-sm">Top Result</ThemedText>
               <View style={styles.topResultCard}>
                 <View style={styles.topResultInfo}>
-                  <View style={styles.topResultAvatarCircle} />
+                  <Artwork shape="circle" size={56} uri={topResult.photoUri} />
                   <View style={styles.topResultText}>
                     <View style={styles.topResultNameRow}>
                       <ThemedText variant="headline-sm" numberOfLines={1}>
@@ -109,6 +109,7 @@ export default function SearchResultsScreen() {
                 {matchedTracks.map((track) => (
                   <TrackRow
                     key={track.id}
+                    coverUri={track.coverUri}
                     title={track.title}
                     artist={track.artistName}
                     durationLabel={formatDuration(track.durationSec)}
@@ -130,6 +131,7 @@ export default function SearchResultsScreen() {
                 {matchedArtists.map((artist) => (
                   <AvatarCard
                     key={artist.id}
+                    photoUri={artist.photoUri}
                     name={artist.name}
                     verified={artist.verified}
                     metaLabel="Artist"
@@ -147,6 +149,7 @@ export default function SearchResultsScreen() {
                 {matchedAlbums.map((album) => (
                   <CoverCard
                     key={album.id}
+                    coverUri={album.coverUri}
                     layout="below"
                     width={150}
                     title={album.title}
@@ -164,6 +167,7 @@ export default function SearchResultsScreen() {
               {matchedPlaylists.map((playlist) => (
                 <LibraryRow
                   key={playlist.id}
+                  coverUri={playlist.coverUri}
                   title={playlist.title}
                   subtitle={`Playlist • ${playlist.trackCount} songs${playlist.durationLabel ? ` • ${playlist.durationLabel}` : ''}`}
                   trailing="chevron"
@@ -222,12 +226,6 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
     flex: 1,
     minWidth: 0,
-  },
-  topResultAvatarCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: Colors.surface.l3,
   },
   topResultText: {
     flex: 1,
