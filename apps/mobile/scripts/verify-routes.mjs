@@ -25,16 +25,21 @@ const expectations = [
   { path: 'search/all-genres.html', mustContain: ['Explore 24+ sonic realms', 'Curated Realms'], mustNotContain: ['PLACEHOLDER'], label: 'All Genres & Moods (S-06)' },
   { path: 'search/genre/[id].html', mustContain: ['Essential Compilations', 'Pioneering Artists'], mustNotContain: ['PLACEHOLDER'], label: 'Genre detail (S-07)' },
   { path: 'library/index.html', mustContain: ['Your Library', 'Liked Songs'], mustNotContain: ['PLACEHOLDER'], label: 'Library (S-12)' },
+  // Фаза 4, batch 2 — real screens. Dynamic routes use `generateStaticParams` to
+  // pre-render one real id (artist/solaris-echo, album/horizon-deluxe,
+  // playlist/late-night-flow) so the static export has real content to assert on;
+  // the paramless `[id].html` fallback still exists and correctly renders a
+  // "not found" state, which is not asserted here.
+  { path: 'artist/solaris-echo.html', mustContain: ['Solaris Echo', 'Popular', 'Releases', 'Fans Also Like', 'About'], mustNotContain: ['PLACEHOLDER'], label: 'Artist Profile (S-08)' },
+  { path: 'album/horizon-deluxe.html', mustContain: ['Horizon (Deluxe)', 'Solaris Echo'], mustNotContain: ['PLACEHOLDER'], label: 'Album (S-09)' },
+  { path: 'playlist/late-night-flow.html', mustContain: ['Late Night Flow', 'Editorial Playlist', 'Slow-burning'], mustNotContain: ['PLACEHOLDER'], label: 'Playlist (S-10/S-11)' },
+  { path: 'library/liked-songs.html', mustContain: ['Liked Songs', 'Auto Playlist', 'saved tracks'], mustNotContain: ['PLACEHOLDER'], label: 'Liked Songs (S-13)' },
+  { path: 'player/now-playing.html', mustContain: ['PLAYING FROM ALBUM', 'Lyrics', 'Queue', 'Support', 'Audio'], mustNotContain: ['PLACEHOLDER'], label: 'Now Playing (S-15)' },
+  { path: 'player/lyrics.html', mustContain: ['Midnight Mirage', 'Solaris Echo', 'Lyrics'], mustNotContain: ['PLACEHOLDER'], label: 'Synchronized Lyrics (S-16)' },
+  { path: 'player/queue.html', mustContain: ['Playback Queue', 'NOW PLAYING', 'PLAYING NEXT', 'Infinity Autoplay'], mustNotContain: ['PLACEHOLDER'], label: 'Playback Queue (S-17)' },
   // Still placeholders — later Фаза 4 batches.
-  { path: 'library/liked-songs.html', mustContain: ['S-13'], label: 'Liked Songs' },
-  { path: 'artist/[id].html', mustContain: ['S-08'], label: 'Artist Profile (shared route)' },
-  { path: 'album/[id].html', mustContain: ['S-09'], label: 'Album (shared route)' },
-  { path: 'playlist/[id].html', mustContain: ['S-10'], label: 'Playlist (shared route)' },
   { path: 'create-playlist.html', mustContain: ['S-14'], label: 'Create Playlist (shared route)' },
   { path: 'track/[id].html', mustContain: [], label: 'Track deep-link redirect' },
-  { path: 'player/now-playing.html', mustContain: ['S-15'], label: 'Now Playing (player modal)' },
-  { path: 'player/lyrics.html', mustContain: ['S-16'], label: 'Lyrics' },
-  { path: 'player/queue.html', mustContain: ['S-17'], label: 'Playback Queue' },
   { path: 'sheets/add-to-playlist.html', mustContain: ['S-18'], label: 'Add to Playlist sheet' },
   { path: 'sheets/support.html', mustContain: ['S-19'], label: 'Support sheet' },
   { path: 'sheets/support-confirm.html', mustContain: ['S-20'], label: 'Support Confirm sheet' },

@@ -7,4 +7,6 @@ export { genres, featuredGenre, getGenreById, genreDetails } from './genres';
 export { moodMixes } from './moods';
 export { forYouTiles, heroPlaylistId, trendingNowAlbumIds, newReleases, jumpBackInTrackIds } from './home';
 export { initialRecentSearches, trendingSearches } from './search';
-export { libraryItems, likedSongsCount } from './library';
+export { libraryItems } from './library';
+export { lyricsByTrackId, getLyricsForTrack } from './lyrics';
+export type { LyricLine } from './lyrics';

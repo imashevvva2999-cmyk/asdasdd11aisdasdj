@@ -11,5 +11,3 @@ export const libraryItems: LibraryItem[] = [
   { id: 'li-6', kind: 'artist', refId: 'kaelen', addedAt: '2026-08-29' },
   { id: 'li-7', kind: 'album', refId: 'neo-classical-horizons', downloaded: true, addedAt: '2026-08-20' },
 ];
-
-export const likedSongsCount = 842;

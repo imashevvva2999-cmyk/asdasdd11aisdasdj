@@ -7,13 +7,15 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Chip, CircleButton, Icon, IconButton, LibraryRow } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
-import { getAlbumById, getArtistById, getPlaylistById, libraryItems, likedSongsCount } from '@/mocks';
+import { getAlbumById, getArtistById, getPlaylistById, libraryItems } from '@/mocks';
+import { usePlayerStore } from '@/state/player-store';
 
 const FILTERS = ['All', 'Playlists', 'Artists', 'Albums', 'Downloaded'] as const;
 
 /** S-12 Your Library — tab root (docs/screens.md §3.10). */
 export default function LibraryScreen() {
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>('All');
+  const likedSongsCount = usePlayerStore((s) => s.likedTrackIds.size);
 
   const visibleItems = useMemo(() => {
     if (filter === 'All') return libraryItems;

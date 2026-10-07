@@ -1,7 +1,18 @@
 import type { Artist } from './types';
 
 export const artists: Artist[] = [
-  { id: 'solaris-echo', name: 'Solaris Echo', verified: true, monthlyListeners: 3_200_000, genres: ['Electronic', 'Ambient'] },
+  {
+    id: 'solaris-echo',
+    name: 'Solaris Echo',
+    verified: true,
+    monthlyListeners: 3_200_000,
+    genres: ['Electronic', 'Ambient'],
+    location: 'Bishkek, Kyrgyzstan',
+    bio: 'Blending analog synths with mountainous ambient echoes from Central Asia. Solaris Echo has spent the last decade building a sound that sits between late-night club records and quiet-room listening.',
+    popularTrackIds: ['midnight-mirage', 'horizon', 'obsidian-frequencies', 'ember-tide', 'resonant-field-reprise'],
+    releaseAlbumIds: ['horizon-deluxe'],
+    fansAlsoLikeIds: ['kaelen', 'arlo', 'maya-lin'],
+  },
   { id: 'kaelen', name: 'Kaelen', monthlyListeners: 1_800_000, genres: ['Electronic'] },
   { id: 'arlo', name: 'Arlo', monthlyListeners: 540_000, genres: ['Ambient'] },
   { id: 'maya-lin', name: 'Maya Lin', monthlyListeners: 2_100_000, genres: ['Synthwave'] },

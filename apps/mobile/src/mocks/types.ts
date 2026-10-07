@@ -39,6 +39,14 @@ export type Artist = {
   monthlyListeners?: number;
   photoUri?: string;
   genres?: string[];
+  bio?: string;
+  location?: string;
+  /** Track IDs for the "Popular" section (docs/screens.md §3.3 S-08). */
+  popularTrackIds?: TrackId[];
+  /** Album IDs for the "Releases" section. */
+  releaseAlbumIds?: AlbumId[];
+  /** Artist IDs for "Fans Also Like". */
+  fansAlsoLikeIds?: ArtistId[];
 };
 
 export type Album = {
@@ -50,16 +58,22 @@ export type Album = {
   year: number;
   trackCount: number;
   coverUri?: string;
+  /** Real track references for the album's listing — falls back to `trackCount`
+   * (no detailed listing) when omitted, rather than inventing filler rows. */
+  trackIds?: TrackId[];
 };
 
 export type Playlist = {
   id: PlaylistId;
   title: string;
+  description?: string;
   curator?: string;
   editorial?: boolean;
   trackCount: number;
   durationLabel?: string;
   coverUri?: string;
+  /** Real track references — same policy as Album.trackIds. */
+  trackIds?: TrackId[];
 };
 
 export type Genre = {

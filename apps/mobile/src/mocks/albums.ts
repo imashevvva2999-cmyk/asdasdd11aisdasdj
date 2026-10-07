@@ -8,7 +8,16 @@ export const albums: Album[] = [
   { id: 'refraction-horizon', title: 'Refraction Horizon', artistId: 'clover-and-the-pulse', artistName: 'Clover & The Pulse', type: 'single', year: 2026, trackCount: 1 },
   { id: 'resonant-field', title: 'Resonant Field', artistId: 'sable-duo', artistName: 'Sable Duo', type: 'ep', year: 2026, trackCount: 5 },
   { id: 'solitary-echo', title: 'Solitary Echo', artistId: 'yuki-tanaka', artistName: 'Yuki Tanaka', type: 'album', year: 2025, trackCount: 11 },
-  { id: 'horizon-deluxe', title: 'Horizon (Deluxe)', artistId: 'solaris-echo', artistName: 'Solaris Echo', type: 'album', year: 2024, trackCount: 14 },
+  {
+    id: 'horizon-deluxe',
+    title: 'Horizon (Deluxe)',
+    artistId: 'solaris-echo',
+    artistName: 'Solaris Echo',
+    type: 'album',
+    year: 2024,
+    trackCount: 6,
+    trackIds: ['midnight-mirage', 'horizon', 'obsidian-frequencies', 'ember-tide', 'resonant-field-reprise', 'abyssal-bloom-feat'],
+  },
   { id: 'neo-classical-horizons', title: 'Neo-Classical Horizons', artistId: 'nils-frahm', artistName: 'Nils Frahm', type: 'album', year: 2022, trackCount: 9 },
 ];
 
