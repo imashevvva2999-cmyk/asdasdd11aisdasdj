@@ -1,13 +1,201 @@
-import { ScreenPlaceholder } from '@/components/dev/screen-placeholder';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
-/** S-19 Support Artist — quick donation sheet. UI flow only — no real payment (scope update 2026-10-06). */
+import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
+import { AmountChip, Icon, IconButton, PillButton, TextField } from '@/components/ui';
+import { Colors, Spacing } from '@/constants/theme';
+import { getArtistById, quickDonationAmountsKgs } from '@/mocks';
+import { useSupportStore } from '@/state/support-store';
+
+/**
+ * S-19 Support Artist — quick donation sheet (docs/screens.md §3.12). UI/state
+ * only: no real MBANK payment, balance check, or bank auth (OQ-10 unresolved).
+ */
 export default function SupportSheet() {
+  const { artistId } = useLocalSearchParams<{ artistId?: string }>();
+  const artist = getArtistById(artistId ?? '');
+
+  const storeArtistId = useSupportStore((s) => s.artistId);
+  const amount = useSupportStore((s) => s.amount);
+  const startSupport = useSupportStore((s) => s.startSupport);
+  const selectAmount = useSupportStore((s) => s.selectAmount);
+  const goToConfirm = useSupportStore((s) => s.goToConfirm);
+
+  const [customAmountText, setCustomAmountText] = useState('');
+  const [showCustomInput, setShowCustomInput] = useState(false);
+
+  useEffect(() => {
+    if (artistId && artistId !== storeArtistId) {
+      startSupport(artistId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [artistId]);
+
+  if (!artist) {
+    return (
+      <ThemedView surface="l2" style={styles.flex}>
+        <ThemedText variant="body-md" emphasis="medium" style={styles.notFound}>
+          Artist not found.
+        </ThemedText>
+      </ThemedView>
+    );
+  }
+
+  const customAmount = Number(customAmountText);
+  const isCustomValid = customAmountText.trim().length > 0 && Number.isFinite(customAmount) && customAmount > 0;
+
+  function handleSelectPreset(preset: number) {
+    setShowCustomInput(false);
+    selectAmount(preset);
+  }
+
+  function handleMorePress() {
+    setShowCustomInput(true);
+    if (isCustomValid) {
+      selectAmount(Math.round(customAmount));
+    } else {
+      selectAmount(undefined as unknown as number);
+    }
+  }
+
+  function handleCustomAmountChange(text: string) {
+    setCustomAmountText(text);
+    const parsed = Number(text);
+    if (text.trim().length > 0 && Number.isFinite(parsed) && parsed > 0) {
+      selectAmount(Math.round(parsed));
+    }
+  }
+
+  function handleContinue() {
+    if (!amount) return;
+    goToConfirm();
+    router.replace('/sheets/support-confirm');
+  }
+
   return (
-    <ScreenPlaceholder
-      screenId="S-19"
-      title="Support Artist"
-      note="Amount chips (10/50/100/500 сом) + More, Support CTA — docs/screens.md §3.12 (Фаза 9, UI-only per current scope)."
-      links={[{ label: 'Confirm (S-20)', href: '/sheets/support-confirm' }]}
-    />
+    <ThemedView surface="l2" style={styles.flex}>
+      <View style={styles.handle} />
+      <View style={styles.header}>
+        <View style={styles.headerText}>
+          <ThemedText variant="headline-sm">Support Artist</ThemedText>
+          <ThemedText variant="body-sm" emphasis="medium">
+            Direct artist patronage for {artist.name}
+          </ThemedText>
+        </View>
+        <IconButton icon="close" accessibilityLabel="Close" onPress={() => router.back()} />
+      </View>
+
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.amountGrid}>
+          {quickDonationAmountsKgs.map((preset) => (
+            <AmountChip
+              key={preset}
+              amount={String(preset)}
+              unit="сом"
+              selected={!showCustomInput && amount === preset}
+              onPress={() => handleSelectPreset(preset)}
+            />
+          ))}
+          <AmountChip
+            amount=""
+            unit="More"
+            selected={showCustomInput}
+            onPress={handleMorePress}
+            style={styles.moreChip}
+          />
+        </View>
+
+        {showCustomInput && (
+          <View style={styles.customAmountBlock}>
+            <TextField
+              placeholder="Custom amount"
+              keyboardType="number-pad"
+              value={customAmountText}
+              onChangeText={handleCustomAmountChange}
+              rightAccessory={
+                <ThemedText variant="label-md" emphasis="medium">
+                  сом
+                </ThemedText>
+              }
+            />
+            {!isCustomValid && customAmountText.trim().length > 0 && (
+              <ThemedText variant="body-sm" style={styles.validationError}>
+                Enter an amount greater than 0.
+              </ThemedText>
+            )}
+          </View>
+        )}
+
+        <PillButton
+          label={amount ? `Support with ${amount} сом` : 'Select an amount'}
+          disabled={!amount}
+          onPress={handleContinue}
+          style={styles.cta}
+        />
+
+        <View style={styles.footerNote}>
+          <Icon name="lock" size={14} color={Colors.text.low} />
+          <ThemedText variant="body-sm" emphasis="medium">
+            Direct payout to artist
+          </ThemedText>
+        </View>
+      </ScrollView>
+    </ThemedView>
   );
 }
+
+const styles = StyleSheet.create({
+  flex: { flex: 1 },
+  notFound: {
+    padding: Spacing.margin,
+  },
+  handle: {
+    alignSelf: 'center',
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: Colors.text.low,
+    marginTop: Spacing.sm,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.margin,
+    paddingTop: Spacing.md,
+  },
+  headerText: {
+    flex: 1,
+    gap: 2,
+  },
+  content: {
+    padding: Spacing.margin,
+    gap: Spacing.lg,
+  },
+  amountGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+    justifyContent: 'center',
+  },
+  moreChip: {
+    backgroundColor: Colors.surface.l3,
+  },
+  customAmountBlock: {
+    gap: Spacing.xs,
+  },
+  validationError: {
+    color: Colors.error,
+  },
+  cta: {
+    marginTop: Spacing.sm,
+  },
+  footerNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.xs,
+  },
+});

@@ -37,16 +37,23 @@ const expectations = [
   { path: 'player/now-playing.html', mustContain: ['PLAYING FROM ALBUM', 'Lyrics', 'Queue', 'Support', 'Audio'], mustNotContain: ['PLACEHOLDER'], label: 'Now Playing (S-15)' },
   { path: 'player/lyrics.html', mustContain: ['Midnight Mirage', 'Solaris Echo', 'Lyrics'], mustNotContain: ['PLACEHOLDER'], label: 'Synchronized Lyrics (S-16)' },
   { path: 'player/queue.html', mustContain: ['Playback Queue', 'NOW PLAYING', 'PLAYING NEXT', 'Infinity Autoplay'], mustNotContain: ['PLACEHOLDER'], label: 'Playback Queue (S-17)' },
-  // Still placeholders — later Фаза 4 batches.
-  { path: 'create-playlist.html', mustContain: ['S-14'], label: 'Create Playlist (shared route)' },
+  // Фаза 4, batch 3 — real screens. support.html / support-confirm.html /
+  // support-success.html receive no artistId/amount (query params, not route
+  // segments — generateStaticParams doesn't apply) in a cold static export, so
+  // they correctly render their real "nothing selected yet" fallback state
+  // instead of the full designed flow; that fallback text is asserted here.
+  // The full flow is exercised directly against the store in
+  // scripts/verify-support-store.mjs instead.
+  { path: 'create-playlist.html', mustContain: ['Create Playlist', 'Add Cover', 'Public Playlist', 'Collaborative'], mustNotContain: ['PLACEHOLDER'], label: 'Create Playlist (S-14)' },
   { path: 'track/[id].html', mustContain: [], label: 'Track deep-link redirect' },
-  { path: 'sheets/add-to-playlist.html', mustContain: ['S-18'], label: 'Add to Playlist sheet' },
-  { path: 'sheets/support.html', mustContain: ['S-19'], label: 'Support sheet' },
-  { path: 'sheets/support-confirm.html', mustContain: ['S-20'], label: 'Support Confirm sheet' },
-  { path: 'sheets/support-success.html', mustContain: ['S-21'], label: 'Support Success sheet' },
-  { path: 'profile/index.html', mustContain: ['S-23'], label: 'Profile Hub' },
-  { path: 'profile/settings.html', mustContain: ['S-24'], label: 'Settings' },
-  { path: 'profile/support-history.html', mustContain: ['S-22'], label: 'Support History' },
+  { path: 'sheets/add-to-playlist.html', mustContain: ['Add to Playlist', 'Choose one or more destinations', 'New Playlist', 'Late Night Flow'], mustNotContain: ['PLACEHOLDER'], label: 'Add to Playlist (S-18)' },
+  { path: 'sheets/support.html', mustContain: ['Artist not found.'], mustNotContain: ['PLACEHOLDER'], label: 'Support Artist (S-19, no artist selected yet)' },
+  { path: 'sheets/support-confirm.html', mustContain: ['Nothing to confirm'], mustNotContain: ['PLACEHOLDER'], label: 'Donation Confirmation (S-20, nothing to confirm yet)' },
+  { path: 'sheets/support-success.html', mustContain: ['No recent support to show.'], mustNotContain: ['PLACEHOLDER'], label: 'Support Success (S-21, no recent donation yet)' },
+  { path: 'profile/index.html', mustContain: ['Alex Rivera', 'Studio Sanctuary', 'Become an Artist', 'Supported'], mustNotContain: ['PLACEHOLDER'], label: 'Profile Hub (S-23)' },
+  { path: 'profile/settings.html', mustContain: ['Audio Streaming', 'Downloads &amp; Storage', 'Playback &amp; Sound Engine', 'Account &amp; Payments'], mustNotContain: ['PLACEHOLDER'], label: 'Settings (S-24)' },
+  { path: 'profile/support-history.html', mustContain: ['Support History', 'Total Supported', 'MBANK Direct Creator Network'], mustNotContain: ['PLACEHOLDER'], label: 'Support History (S-22)' },
+  // Still placeholders — later Фаза 4 batches.
   { path: 'profile/artist/become-artist.html', mustContain: ['S-25'], label: 'Become an Artist (UF-14)' },
   { path: 'profile/artist/setup.html', mustContain: ['S-26'], label: 'Artist Setup (UF-14)' },
   { path: 'profile/artist/dashboard.html', mustContain: ['S-27'], label: 'Artist Dashboard (UF-14)' },

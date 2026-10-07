@@ -82,7 +82,7 @@ export default function ArtistProfileScreen() {
             <IconButton
               icon="volunteer-activism"
               accessibilityLabel="Support artist"
-              onPress={() => router.push('/sheets/support')}
+              onPress={() => router.push({ pathname: '/sheets/support', params: { artistId: artist.id } })}
             />
           </View>
         </View>

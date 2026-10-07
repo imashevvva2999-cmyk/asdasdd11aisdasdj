@@ -8,6 +8,7 @@ import { EqualizerIndicator } from './equalizer';
 import { Icon } from './icon';
 import { IconButton } from './button';
 import { PressableScale } from './pressable-scale';
+import { Toggle } from './toggle';
 import { ThemedText } from '../themed-text';
 
 const ROW_HEIGHT = 56;
@@ -276,6 +277,59 @@ export function MenuRow({ icon, title, subtitle, onPress, style }: MenuRowProps)
         )}
       </View>
       <Icon name="chevron-right" color={Colors.text.medium} />
+    </PressableScale>
+  );
+}
+
+export type ToggleRowProps = {
+  title: string;
+  subtitle?: string;
+  value: boolean;
+  onValueChange: (value: boolean) => void;
+  disabled?: boolean;
+  style?: ViewStyle;
+};
+
+/** Settings-style row — title/subtitle → Toggle (docs/screens.md §3.6 Public/
+ * Collaborative on S-14; §3.11 all of S-24's switches). */
+export function ToggleRow({ title, subtitle, value, onValueChange, disabled, style }: ToggleRowProps) {
+  return (
+    <View style={[styles.row, style]}>
+      <View style={styles.titleBlock}>
+        <ThemedText variant="label-lg" numberOfLines={1}>
+          {title}
+        </ThemedText>
+        {subtitle && (
+          <ThemedText variant="body-sm" emphasis="medium" numberOfLines={1}>
+            {subtitle}
+          </ThemedText>
+        )}
+      </View>
+      <Toggle value={value} onValueChange={onValueChange} disabled={disabled} accessibilityLabel={title} />
+    </View>
+  );
+}
+
+export type ValueRowProps = {
+  title: string;
+  value: string;
+  onPress?: (event: GestureResponderEvent) => void;
+  style?: ViewStyle;
+};
+
+/** Settings-style row — title → static value + chevron, for options whose own
+ * picker screen is undesigned (docs/screens.md §3.11 S-24 "не задизайнены [Т]":
+ * Wi-Fi/Cellular/Download Quality). Tapping is inert unless `onPress` is given. */
+export function ValueRow({ title, value, onPress, style }: ValueRowProps) {
+  return (
+    <PressableScale onPress={onPress} disabled={!onPress} accessibilityRole={onPress ? 'button' : undefined} style={[styles.row, style]}>
+      <ThemedText variant="label-lg" style={styles.titleBlock} numberOfLines={1}>
+        {title}
+      </ThemedText>
+      <ThemedText variant="body-md" emphasis="medium">
+        {value}
+      </ThemedText>
+      {onPress && <Icon name="chevron-right" color={Colors.text.medium} />}
     </PressableScale>
   );
 }

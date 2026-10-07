@@ -24,8 +24,8 @@ export { EqualizerIndicator } from './equalizer';
 export { Icon } from './icon';
 export type { IconProps } from './icon';
 
-export { LibraryRow, MenuRow, PlaylistPickerRow, QueueRow, TrackRow } from './list-row';
-export type { LibraryRowProps, MenuRowProps, PlaylistPickerRowProps, QueueRowProps, TrackRowProps } from './list-row';
+export { LibraryRow, MenuRow, PlaylistPickerRow, QueueRow, ToggleRow, TrackRow, ValueRow } from './list-row';
+export type { LibraryRowProps, MenuRowProps, PlaylistPickerRowProps, QueueRowProps, ToggleRowProps, TrackRowProps, ValueRowProps } from './list-row';
 
 export { PressableScale } from './pressable-scale';
 export type { PressableScaleProps } from './pressable-scale';

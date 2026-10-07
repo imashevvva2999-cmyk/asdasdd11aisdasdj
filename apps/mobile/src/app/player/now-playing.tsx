@@ -65,7 +65,11 @@ export default function NowPlayingScreen() {
               {album?.title ?? track.title}
             </ThemedText>
           </View>
-          <IconButton icon="more-horiz" accessibilityLabel="More options" onPress={() => {}} />
+          <IconButton
+            icon="more-horiz"
+            accessibilityLabel="More options"
+            onPress={() => router.push({ pathname: '/sheets/add-to-playlist', params: { trackId: track.id } })}
+          />
         </View>
 
         <View style={styles.artworkWrap}>
@@ -132,7 +136,11 @@ export default function NowPlayingScreen() {
         <View style={styles.actionBar}>
           <PlayerTabButton label="Lyrics" icon="lyrics" onPress={() => router.push('/player/lyrics')} />
           <PlayerTabButton label="Queue" icon="queue-music" onPress={() => router.push('/player/queue')} />
-          <PlayerTabButton label="Support" icon="volunteer-activism" onPress={() => router.push('/sheets/support')} />
+          <PlayerTabButton
+            label="Support"
+            icon="volunteer-activism"
+            onPress={() => router.push({ pathname: '/sheets/support', params: { artistId: track.artistId } })}
+          />
           <PlayerTabButton label="Audio" icon="headphones" onPress={() => {}} active />
         </View>
       </SafeAreaView>

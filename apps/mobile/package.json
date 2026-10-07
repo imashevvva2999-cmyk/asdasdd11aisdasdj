@@ -51,8 +51,9 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
-    "test": "node scripts/verify-routes.mjs && tsx scripts/verify-player-store.mjs",
+    "test": "node scripts/verify-routes.mjs && tsx scripts/verify-player-store.mjs && tsx scripts/verify-support-store.mjs",
     "verify:routes": "node scripts/verify-routes.mjs",
-    "verify:player-store": "tsx scripts/verify-player-store.mjs"
+    "verify:player-store": "tsx scripts/verify-player-store.mjs",
+    "verify:support-store": "tsx scripts/verify-support-store.mjs"
   }
 }

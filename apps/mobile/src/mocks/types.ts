@@ -74,6 +74,11 @@ export type Playlist = {
   coverUri?: string;
   /** Real track references — same policy as Album.trackIds. */
   trackIds?: TrackId[];
+  /** "Updated 2h ago" style label for the Add to Playlist picker (docs/screens.md §3.7 S-18). */
+  updatedLabel?: string;
+  /** Public/Collaborative toggles from Create Playlist (S-14) — local state only. */
+  isPublic?: boolean;
+  isCollaborative?: boolean;
 };
 
 export type Genre = {
@@ -101,4 +106,33 @@ export type LibraryItem = {
   refId: string;
   downloaded?: boolean;
   addedAt: string;
+};
+
+/**
+ * A completed local donation (Фаза 4, Batch 3 — docs/screens.md §3.12 S-19…S-22).
+ * `status` is only ever `'completed'` here: Pending/Failed/Refunded are documented
+ * as undesigned, open states (OQ-16) and are not simulated. No real MBANK
+ * transaction occurs — this records the local UI flow's outcome only.
+ */
+export type SupportHistoryEntry = {
+  id: string;
+  artistId: ArtistId;
+  amount: number;
+  currency: 'KGS';
+  status: 'completed';
+  createdAt: string;
+};
+
+/** Current (mock, local-only) signed-in user for Profile Hub (S-23). No real auth. */
+export type CurrentUser = {
+  name: string;
+  username: string;
+  verified?: boolean;
+  memberSinceYear: number;
+  photoUri?: string;
+  savedCount: number;
+  playlistsCount: number;
+  topArtistId?: ArtistId;
+  topGenre?: string;
+  monthlyListeningHours?: number;
 };

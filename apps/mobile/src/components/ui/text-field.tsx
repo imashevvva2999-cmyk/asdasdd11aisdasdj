@@ -16,7 +16,7 @@ export function TextField({ style, leftAccessory, rightAccessory, onFocus, onBlu
   const bodyToken = TypeScale['body-md'];
 
   return (
-    <View style={[styles.container, focused && styles.focused]}>
+    <View style={[styles.container, rest.multiline && styles.containerMultiline, focused && styles.focused]}>
       {leftAccessory}
       <TextInput
         style={[
@@ -25,6 +25,7 @@ export function TextField({ style, leftAccessory, rightAccessory, onFocus, onBlu
             fontFamily: resolveFontFamily(bodyToken.fontFamily, bodyToken.fontWeight),
             fontSize: bodyToken.fontSize,
           },
+          rest.multiline && styles.inputMultiline,
           style,
         ]}
         placeholderTextColor={Colors.text.low}
@@ -55,6 +56,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     gap: Spacing.sm,
   },
+  containerMultiline: {
+    height: undefined,
+    minHeight: 88,
+    alignItems: 'flex-start',
+    paddingVertical: Spacing.sm,
+  },
   focused: {
     borderColor: 'rgba(255, 75, 75, 0.5)',
   },
@@ -62,5 +69,9 @@ const styles = StyleSheet.create({
     flex: 1,
     color: Colors.text.high,
     height: '100%',
+  },
+  inputMultiline: {
+    height: undefined,
+    textAlignVertical: 'top',
   },
 });
