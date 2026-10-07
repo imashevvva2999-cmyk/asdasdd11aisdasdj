@@ -1,4 +1,4 @@
-import { generatedArtworkByTrackId, stitchArtworkByTrackId } from '@/constants/stitch-artwork';
+import { generatedArtworkByTrackId, resolveArtwork, stitchArtworkByTrackId } from '@/constants/stitch-artwork';
 
 import { albums } from './albums';
 import type { Track } from './types';
@@ -31,9 +31,8 @@ export const tracks: Track[] = [
 // 'Nebula Dreams' track reuses the 'Nebula Dreams' album's cover, instead of
 // generating a redundant second image for the same concept.
 for (const track of tracks) {
-  const ownCoverUri = stitchArtworkByTrackId[track.id] ?? generatedArtworkByTrackId[track.id];
   const albumCoverUri = track.albumId ? albums.find((album) => album.id === track.albumId)?.coverUri : undefined;
-  const coverUri = ownCoverUri ?? albumCoverUri;
+  const coverUri = resolveArtwork(stitchArtworkByTrackId[track.id], generatedArtworkByTrackId[track.id], albumCoverUri);
   if (coverUri) track.coverUri = coverUri;
 }
 

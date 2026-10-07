@@ -51,6 +51,30 @@ function safeRequire(loadModule: () => LocalOrRemoteImage): LocalOrRemoteImage |
   }
 }
 
+/**
+ * The ONE place that implements "what artwork does this entity actually
+ * use" fallback logic (frontend-wide artwork audit pass) — mock files call
+ * this instead of each repeating an inline `a ?? b ?? c` chain
+ * independently, so every entity resolves through the same priority order:
+ * real recovered Stitch artwork first, then procedurally generated local
+ * artwork, then (for tracks only) a related entity's own artwork (e.g. a
+ * track reusing its album's cover). Returns `undefined` only when none of
+ * the given sources have a value — at that point, and ONLY then, the UI's
+ * own last-resort gradient+icon placeholder takes over
+ * (components/ui/artwork.tsx, card.tsx, list-row.tsx). That placeholder is
+ * reserved for genuinely unknown future/dynamic data (e.g. a track a user
+ * creates at runtime via the Upload Track flow with a title no art could
+ * have been pre-generated for) — every known catalog entity must resolve to
+ * a real value through this function, which scripts/verify-artwork-
+ * coverage.mjs checks automatically.
+ */
+export function resolveArtwork(...sources: (LocalOrRemoteImage | undefined)[]): LocalOrRemoteImage | undefined {
+  for (const value of sources) {
+    if (value) return value;
+  }
+  return undefined;
+}
+
 export const stitchArtworkByAlbumId: Record<string, LocalOrRemoteImage | undefined> = {
   'nebula-dreams': safeRequire(() => require('../../assets/artwork/albums/nebula-dreams.jpg')),
   'lost-frequencies': safeRequire(() => require('../../assets/artwork/albums/lost-frequencies.jpg')),
@@ -159,4 +183,28 @@ export const generatedArtworkByAlbumId: Record<string, LocalOrRemoteImage | unde
   afterimage: safeRequire(() => require('../../assets/artwork/generated/afterimage.jpg')),
   'still-water': safeRequire(() => require('../../assets/artwork/generated/still-water.jpg')),
   'night-signal': safeRequire(() => require('../../assets/artwork/generated/night-signal.jpg')),
+};
+
+/**
+ * Procedurally generated local abstract artwork (complete frontend-wide
+ * artwork audit pass) for the 12 "Curated Realms" genre/mood category tiles
+ * (Browse All grid on Search / All Genres & Moods) — previously rendered
+ * with no artwork at all (always the generic music-note placeholder).
+ * Deliberately abstract, genre-themed compositions (never literal imagery).
+ * Same build technique and provenance rules as `generatedArtworkByTrackId`
+ * above.
+ */
+export const generatedArtworkByGenreId: Record<string, LocalOrRemoteImage | undefined> = {
+  'made-for-you': safeRequire(() => require('../../assets/artwork/generated/made-for-you.jpg')),
+  'charts-viral': safeRequire(() => require('../../assets/artwork/generated/charts-viral.jpg')),
+  pop: safeRequire(() => require('../../assets/artwork/generated/pop.jpg')),
+  'hip-hop-rnb': safeRequire(() => require('../../assets/artwork/generated/hip-hop-rnb.jpg')),
+  'electronic-dance': safeRequire(() => require('../../assets/artwork/generated/electronic-dance.jpg')),
+  'rock-indie': safeRequire(() => require('../../assets/artwork/generated/rock-indie.jpg')),
+  'jazz-soul': safeRequire(() => require('../../assets/artwork/generated/jazz-soul.jpg')),
+  'chill-lofi': safeRequire(() => require('../../assets/artwork/generated/chill-lofi.jpg')),
+  'deep-focus-ambient': safeRequire(() => require('../../assets/artwork/generated/deep-focus-ambient.jpg')),
+  'workout-high-energy': safeRequire(() => require('../../assets/artwork/generated/workout-high-energy.jpg')),
+  'classical-film': safeRequire(() => require('../../assets/artwork/generated/classical-film.jpg')),
+  'fresh-finds': safeRequire(() => require('../../assets/artwork/generated/fresh-finds.jpg')),
 };

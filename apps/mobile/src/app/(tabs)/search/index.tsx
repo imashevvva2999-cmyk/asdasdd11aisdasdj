@@ -104,6 +104,7 @@ export default function SearchScreen() {
                   layout="overlay"
                   width={genreTileWidth}
                   height={84}
+                  coverUri={genre.coverUri}
                   title={genre.title}
                   onPress={() => router.push({ pathname: '/search/genre/[id]', params: { id: genre.id } })}
                 />

@@ -1,4 +1,4 @@
-import { generatedArtworkByAlbumId, stitchArtworkByAlbumId } from '@/constants/stitch-artwork';
+import { generatedArtworkByAlbumId, resolveArtwork, stitchArtworkByAlbumId } from '@/constants/stitch-artwork';
 
 import type { Album } from './types';
 
@@ -32,7 +32,7 @@ export const albums: Album[] = [
 // Falls back to a procedurally generated cover (frontend-wide artwork audit
 // pass) only for albums/singles with no recovered Stitch asset.
 for (const album of albums) {
-  const coverUri = stitchArtworkByAlbumId[album.id] ?? generatedArtworkByAlbumId[album.id];
+  const coverUri = resolveArtwork(stitchArtworkByAlbumId[album.id], generatedArtworkByAlbumId[album.id]);
   if (coverUri) album.coverUri = coverUri;
 }
 

@@ -1,4 +1,4 @@
-import { generatedArtworkByPlaylistId, stitchArtworkByPlaylistId } from '@/constants/stitch-artwork';
+import { generatedArtworkByPlaylistId, resolveArtwork, stitchArtworkByPlaylistId } from '@/constants/stitch-artwork';
 
 import type { Playlist } from './types';
 
@@ -26,7 +26,7 @@ export const playlists: Playlist[] = [
 // Falls back to a procedurally generated cover (frontend-wide artwork audit
 // pass) only for playlists with no recovered Stitch asset.
 for (const playlist of playlists) {
-  const coverUri = stitchArtworkByPlaylistId[playlist.id] ?? generatedArtworkByPlaylistId[playlist.id];
+  const coverUri = resolveArtwork(stitchArtworkByPlaylistId[playlist.id], generatedArtworkByPlaylistId[playlist.id]);
   if (coverUri) playlist.coverUri = coverUri;
 }
 

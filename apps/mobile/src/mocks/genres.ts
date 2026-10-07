@@ -1,4 +1,4 @@
-import { stitchArtworkByGenreId } from '@/constants/stitch-artwork';
+import { generatedArtworkByGenreId, resolveArtwork, stitchArtworkByGenreId } from '@/constants/stitch-artwork';
 
 import type { Genre } from './types';
 
@@ -11,7 +11,7 @@ export const featuredGenre: Genre = {
   id: 'kyrgyz-music',
   title: 'Kyrgyz Music',
   subtitle: 'Ethno-synth & Komuz beats',
-  coverUri: stitchArtworkByGenreId['kyrgyz-music'],
+  coverUri: resolveArtwork(stitchArtworkByGenreId['kyrgyz-music']),
 };
 
 /** "Curated Realms" / Browse All grid (12 categories, docs/screens.md §3.2 S-06). */
@@ -29,6 +29,15 @@ export const genres: Genre[] = [
   { id: 'classical-film', title: 'Classical & Film', number: 11 },
   { id: 'fresh-finds', title: 'Fresh Finds', number: 12 },
 ];
+
+// Procedurally generated local abstract cover per category (complete
+// frontend-wide artwork audit pass) — see generatedArtworkByGenreId in
+// src/constants/stitch-artwork.ts. These 12 tiles previously had no artwork
+// field at all, always rendering the generic music-note placeholder.
+for (const genre of genres) {
+  const coverUri = resolveArtwork(generatedArtworkByGenreId[genre.id]);
+  if (coverUri) genre.coverUri = coverUri;
+}
 
 export function getGenreById(id: string): Genre | undefined {
   if (id === featuredGenre.id) return featuredGenre;

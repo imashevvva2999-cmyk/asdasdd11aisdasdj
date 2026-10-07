@@ -45,6 +45,7 @@ export default function AllGenresScreen() {
               layout="overlay"
               width={168}
               height={128}
+              coverUri={genre.coverUri}
               number={genre.number}
               title={genre.title}
               onPress={() => router.push({ pathname: '/search/genre/[id]', params: { id: genre.id } })}

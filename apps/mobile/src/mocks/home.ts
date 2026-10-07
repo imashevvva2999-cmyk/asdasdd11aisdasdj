@@ -1,4 +1,4 @@
-import { stitchArtworkByForYouTileId } from '@/constants/stitch-artwork';
+import { resolveArtwork, stitchArtworkByForYouTileId } from '@/constants/stitch-artwork';
 
 import { albums } from './albums';
 import { playlists } from './playlists';
@@ -7,12 +7,12 @@ import { tracks } from './tracks';
 /** "For you" quick-tile grid — 6 recently played items (docs/screens.md §3.1 S-01).
  * Covers recovered from the Stitch export (Фаза 4 restoration pass). */
 export const forYouTiles = [
-  { id: 'after-hours', title: 'After Hours', coverUri: stitchArtworkByForYouTileId['after-hours'] },
-  { id: 'synthetic-waves', title: 'Synthetic Waves', coverUri: stitchArtworkByForYouTileId['synthetic-waves'] },
-  { id: 'deep-focus', title: 'Deep Focus', coverUri: stitchArtworkByForYouTileId['deep-focus'] },
-  { id: 'solaris-echo-radio', title: 'Solaris Echo', coverUri: stitchArtworkByForYouTileId['solaris-echo-radio'] },
-  { id: 'chill-electronic', title: 'Chill Electronic', coverUri: stitchArtworkByForYouTileId['chill-electronic'] },
-  { id: 'neo-soul', title: 'Neo Soul', coverUri: stitchArtworkByForYouTileId['neo-soul'] },
+  { id: 'after-hours', title: 'After Hours', coverUri: resolveArtwork(stitchArtworkByForYouTileId['after-hours']) },
+  { id: 'synthetic-waves', title: 'Synthetic Waves', coverUri: resolveArtwork(stitchArtworkByForYouTileId['synthetic-waves']) },
+  { id: 'deep-focus', title: 'Deep Focus', coverUri: resolveArtwork(stitchArtworkByForYouTileId['deep-focus']) },
+  { id: 'solaris-echo-radio', title: 'Solaris Echo', coverUri: resolveArtwork(stitchArtworkByForYouTileId['solaris-echo-radio']) },
+  { id: 'chill-electronic', title: 'Chill Electronic', coverUri: resolveArtwork(stitchArtworkByForYouTileId['chill-electronic']) },
+  { id: 'neo-soul', title: 'Neo Soul', coverUri: resolveArtwork(stitchArtworkByForYouTileId['neo-soul']) },
 ];
 
 /** Hero spotlight banner — reuses the Late Night Flow editorial playlist. */
