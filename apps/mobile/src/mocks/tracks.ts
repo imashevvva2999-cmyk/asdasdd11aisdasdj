@@ -1,4 +1,4 @@
-import { stitchArtworkByTrackId } from '@/constants/stitch-artwork';
+import { generatedArtworkByTrackId, stitchArtworkByTrackId } from '@/constants/stitch-artwork';
 
 import type { Track } from './types';
 
@@ -22,8 +22,11 @@ export const tracks: Track[] = [
 
 // Fill in recovered Stitch artwork (Фаза 4 restoration pass) — a plain id
 // lookup, not a require() of its own; see src/constants/stitch-artwork.ts.
+// Falls back to procedurally generated local artwork (Search Results visual
+// cleanup pass) only for the handful of tracks with no recovered Stitch
+// asset, so every screen reading `track.coverUri` picks it up consistently.
 for (const track of tracks) {
-  const coverUri = stitchArtworkByTrackId[track.id];
+  const coverUri = stitchArtworkByTrackId[track.id] ?? generatedArtworkByTrackId[track.id];
   if (coverUri) track.coverUri = coverUri;
 }
 

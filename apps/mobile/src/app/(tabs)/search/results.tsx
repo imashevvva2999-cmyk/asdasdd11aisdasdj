@@ -112,7 +112,6 @@ export default function SearchResultsScreen() {
                     coverUri={track.coverUri}
                     title={track.title}
                     artist={track.artistName}
-                    durationLabel={formatDuration(track.durationSec)}
                     lossless={track.lossless}
                     explicit={track.explicit}
                     onPress={() => router.push({ pathname: '/player/now-playing', params: { trackId: track.id } })}
@@ -180,12 +179,6 @@ export default function SearchResultsScreen() {
       )}
     </ThemedView>
   );
-}
-
-function formatDuration(totalSeconds: number): string {
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${minutes}:${String(seconds).padStart(2, '0')}`;
 }
 
 const styles = StyleSheet.create({

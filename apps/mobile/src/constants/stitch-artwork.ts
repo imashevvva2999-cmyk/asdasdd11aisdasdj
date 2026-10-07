@@ -96,3 +96,24 @@ export const stitchArtworkByForYouTileId: Record<string, LocalOrRemoteImage | un
   'chill-electronic': safeRequire(() => require('../../assets/artwork/foryou/chill-electronic.jpg')),
   'neo-soul': safeRequire(() => require('../../assets/artwork/foryou/neo-soul.jpg')),
 };
+
+/**
+ * Procedurally generated local abstract artwork (Search Results visual
+ * cleanup pass) for the four Solaris Echo tracks that have no recovered
+ * Stitch design asset — Horizon, Abyssal Bloom (feat.), Ember Tide, and
+ * Resonant Field (Reprise), all distinct from same-titled/related entities
+ * that DO have real recovered art (the plain 'abyssal-bloom' track, the
+ * 'horizon-deluxe' and 'resonant-field' albums). Explicitly NOT Stitch
+ * output — kept in a separate `generated/` asset folder and a separate map
+ * so provenance stays clear in the codebase — built with pure PIL (gradients
+ * + radial glows), no AI image model, no network call, no external API.
+ * `mocks/tracks.ts` falls back to this map only when `stitchArtworkByTrackId`
+ * has no entry for a given track id, so every screen that already reads
+ * `track.coverUri` picks these up automatically and consistently.
+ */
+export const generatedArtworkByTrackId: Record<string, LocalOrRemoteImage | undefined> = {
+  horizon: safeRequire(() => require('../../assets/artwork/generated/horizon.jpg')),
+  'abyssal-bloom-feat': safeRequire(() => require('../../assets/artwork/generated/abyssal-bloom-feat.jpg')),
+  'ember-tide': safeRequire(() => require('../../assets/artwork/generated/ember-tide.jpg')),
+  'resonant-field-reprise': safeRequire(() => require('../../assets/artwork/generated/resonant-field-reprise.jpg')),
+};
