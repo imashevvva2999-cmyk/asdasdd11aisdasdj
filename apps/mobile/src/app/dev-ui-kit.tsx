@@ -93,7 +93,6 @@ export default function DevUiKitScreen() {
           <Section title="Badges & equalizer">
             <Row>
               <Badge label="E" variant="explicit" />
-              <Badge label="LOSSLESS" variant="lossless" />
               <Badge label="Editorial" variant="editorial" />
               <EqualizerIndicator />
             </Row>
@@ -119,7 +118,6 @@ export default function DevUiKitScreen() {
               title="Midnight Mirage"
               artist="Solaris Echo"
               durationLabel="4:18"
-              lossless
               liked={liked}
               onToggleLike={() => setLiked((v) => !v)}
               onOptionsPress={() => {}}

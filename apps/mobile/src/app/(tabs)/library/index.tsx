@@ -31,7 +31,6 @@ export default function LibraryScreen() {
         <View style={styles.headerRow}>
           <ThemedText variant="display-lg-mobile">Your Library</ThemedText>
           <View style={styles.headerActions}>
-            <IconButton icon="search" accessibilityLabel="Search in Library" onPress={() => {}} size={40} />
             <IconButton
               icon="add"
               accessibilityLabel="Create Playlist"
@@ -78,7 +77,6 @@ export default function LibraryScreen() {
             <View style={styles.likedSongsText}>
               <ThemedText variant="headline-md">Liked Songs</ThemedText>
               <View style={styles.likedSongsMetaRow}>
-                <Icon name="check-circle" size={14} color={Colors.secondary} />
                 <ThemedText variant="body-sm" emphasis="medium">
                   {likedSongsCount} tracks
                 </ThemedText>

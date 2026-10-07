@@ -98,7 +98,6 @@ export function TrackRow({
             {artist}
           </ThemedText>
           {explicit && <Badge label="E" variant="explicit" />}
-          {lossless && <Badge label="LOSSLESS" variant="lossless" />}
         </View>
       </View>
       {onToggleLike && (
@@ -175,15 +174,14 @@ export type LibraryRowProps = {
   style?: ViewStyle;
 };
 
-/** Library list row — cover/avatar → title (+verified) → type•meta → downloaded
- * badge → trailing affordance (docs/screens.md §3.10 S-12). */
+/** Library list row — cover/avatar → title (+verified) → type•meta →
+ * trailing affordance (docs/screens.md §3.10 S-12). */
 export function LibraryRow({
   coverUri,
   coverShape = 'square',
   title,
   subtitle,
   verified,
-  downloaded,
   trailing = 'chevron',
   onPress,
   onOptionsPress,
@@ -205,7 +203,6 @@ export function LibraryRow({
           </ThemedText>
         )}
       </View>
-      {downloaded && <Icon name="download-done" size={18} color={Colors.secondary} />}
       {trailing === 'chevron' && <Icon name="chevron-right" color={Colors.text.medium} />}
       {trailing === 'more' && (
         <IconButton icon="more-vert" accessibilityLabel="Options" size={36} onPress={onOptionsPress} style={styles.transparentIconButton} />
