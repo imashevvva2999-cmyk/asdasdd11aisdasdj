@@ -83,17 +83,22 @@ export const stitchArtworkByAlbumId: Record<string, LocalOrRemoteImage | undefin
   'lost-frequencies': safeRequire(() => require('../../assets/artwork/albums/lost-frequencies.jpg')),
   'velvet-skyline': safeRequire(() => require('../../assets/artwork/albums/velvet-skyline.jpg')),
   'chronos-echoes': safeRequire(() => require('../../assets/artwork/albums/chronos-echoes.jpg')),
+  // Cropped to the inner art (the export was a framed card).
   'refraction-horizon': safeRequire(() => require('../../assets/artwork/albums/refraction-horizon.jpg')),
   'resonant-field': safeRequire(() => require('../../assets/artwork/albums/resonant-field.jpg')),
+  // Generated (the Stitch frame credited a different release); see generatedArtworkByTrackId.
   'solitary-echo': safeRequire(() => require('../../assets/artwork/albums/solitary-echo.jpg')),
   // Cropped from the approved album_horizon_deluxe/screen.png cover (the
   // previous file was an accidental design-spec screenshot with UI chrome).
   'horizon-deluxe': safeRequire(() => require('../../assets/artwork/albums/horizon-deluxe.jpg')),
+  // Generated replacement (the export showed a piano brand name).
   'neo-classical-horizons': safeRequire(() => require('../../assets/artwork/albums/neo-classical-horizons.jpg')),
 };
 
 export const stitchArtworkByTrackId: Record<string, LocalOrRemoteImage | undefined> = {
   'midnight-mirage': safeRequire(() => require('../../assets/artwork/tracks/midnight-mirage.jpg')),
+  // vapor-trails, abyssal-bloom, obsidian-frequencies: generated replacements for
+  // captured UI frames (see generatedArtworkByTrackId for provenance).
   'vapor-trails': safeRequire(() => require('../../assets/artwork/tracks/vapor-trails.jpg')),
   'abyssal-bloom': safeRequire(() => require('../../assets/artwork/tracks/abyssal-bloom.jpg')),
   'tape-saturation-4': safeRequire(() => require('../../assets/artwork/tracks/tape-saturation-4.jpg')),
@@ -102,7 +107,9 @@ export const stitchArtworkByTrackId: Record<string, LocalOrRemoteImage | undefin
 
 export const stitchArtworkByPlaylistId: Record<string, LocalOrRemoteImage | undefined> = {
   'late-night-flow': safeRequire(() => require('../../assets/artwork/playlists/late-night-flow.jpg')),
+  // Generated replacement (the export showed a car badge and dashboard UI).
   'late-night-driving': safeRequire(() => require('../../assets/artwork/playlists/late-night-driving.jpg')),
+  // Generated replacement (the export had an app window baked in).
   'lofi-beats-to-code': safeRequire(() => require('../../assets/artwork/playlists/lofi-beats-to-code.jpg')),
   'electronic-essentials': safeRequire(() => require('../../assets/artwork/playlists/electronic-essentials.jpg')),
 };
@@ -118,27 +125,32 @@ export const stitchArtworkByGenreId: Record<string, LocalOrRemoteImage | undefin
 
 /** Keyed by `forYouTiles[].id` (docs/screens.md §3.1 S-01 "For you"). */
 export const stitchArtworkByForYouTileId: Record<string, LocalOrRemoteImage | undefined> = {
+  // after-hours, chill-electronic, deep-focus, synthetic-waves: generated
+  // replacements for captured UI frames (see generatedArtworkByTrackId).
   'after-hours': safeRequire(() => require('../../assets/artwork/foryou/after-hours.jpg')),
   'synthetic-waves': safeRequire(() => require('../../assets/artwork/foryou/synthetic-waves.jpg')),
   'deep-focus': safeRequire(() => require('../../assets/artwork/foryou/deep-focus.jpg')),
-  'solaris-echo-radio': safeRequire(() => require('../../assets/artwork/foryou/solaris-echo-radio.jpg')),
+  // The Solaris Echo radio tile opens the artist, so it shows the artist's own
+  // photo (the old tile image was a captured phone-UI frame).
+  'solaris-echo-radio': safeRequire(() => require('../../assets/artwork/artists/solaris-echo.jpg')),
   'chill-electronic': safeRequire(() => require('../../assets/artwork/foryou/chill-electronic.jpg')),
+  // Generated replacement (the export showed a brand logo and spec captions).
   'neo-soul': safeRequire(() => require('../../assets/artwork/foryou/neo-soul.jpg')),
 };
 
 /**
- * Procedurally generated local abstract artwork (Search Results visual
- * cleanup pass) for the four Solaris Echo tracks that have no recovered
- * Stitch design asset — Horizon, Abyssal Bloom (feat.), Ember Tide, and
- * Resonant Field (Reprise), all distinct from same-titled/related entities
- * that DO have real recovered art (the plain 'abyssal-bloom' track, the
- * 'horizon-deluxe' and 'resonant-field' albums). Explicitly NOT Stitch
- * output — kept in a separate `generated/` asset folder and a separate map
- * so provenance stays clear in the codebase — built with pure PIL (gradients
- * + radial glows), no AI image model, no network call, no external API.
- * `mocks/tracks.ts` falls back to this map only when `stitchArtworkByTrackId`
- * has no entry for a given track id, so every screen that already reads
- * `track.coverUri` picks these up automatically and consistently.
+ * Generated artwork for entities with no clean recovered Stitch asset, kept in
+ * the separate `generated/` folder and maps so provenance stays clear. These
+ * are AI-generated images (Higgsfield `z_image`, prompted per entity from its
+ * title, artist, genre and mood; downloaded and stored locally — the app never
+ * calls an image API at runtime). They replaced earlier procedural gradient
+ * placeholders. Rules for every image: no text, UI, logos, frames or
+ * watermarks (titles that a model rendered anyway were cropped out).
+ *
+ * This map covers the four Solaris Echo tracks without their own Stitch art —
+ * Horizon, Abyssal Bloom (feat.), Ember Tide and Resonant Field (Reprise).
+ * `mocks/tracks.ts` falls back to it only when `stitchArtworkByTrackId` has no
+ * entry, so every screen reading `track.coverUri` stays consistent.
  */
 export const generatedArtworkByTrackId: Record<string, LocalOrRemoteImage | undefined> = {
   horizon: safeRequire(() => require('../../assets/artwork/generated/horizon.jpg')),
@@ -148,22 +160,19 @@ export const generatedArtworkByTrackId: Record<string, LocalOrRemoteImage | unde
 };
 
 /**
- * Procedurally generated local abstract artwork (frontend-wide artwork audit
- * pass) for the one playlist with no recovered Stitch design asset — "This is
- * Solaris Echo". Same technique and provenance rules as
- * `generatedArtworkByTrackId` above.
+ * Generated cover for the one playlist with no recovered Stitch asset — "This
+ * is Solaris Echo". Same provenance rules as `generatedArtworkByTrackId`.
  */
 export const generatedArtworkByPlaylistId: Record<string, LocalOrRemoteImage | undefined> = {
   'this-is-solaris-echo': safeRequire(() => require('../../assets/artwork/generated/this-is-solaris-echo.jpg')),
 };
 
 /**
- * Procedurally generated local abstract AVATAR artwork (frontend-wide
- * artwork audit pass) for the eight artists with no recovered Stitch photo.
- * Deliberately abstract gradient/glow compositions, genre-themed (never a
- * photorealistic human face — this never presents a synthetic "photo" of a
- * nonexistent person). Same build technique and provenance rules as
- * `generatedArtworkByTrackId` above.
+ * Generated avatars for the eight mock artists with no recovered Stitch
+ * photo. The seven fictional artists get genre-matched editorial portraits;
+ * 'nils-frahm' names a real musician, so his image is deliberately an
+ * instrument still life with no person — never a likeness of a real person.
+ * Same provenance rules as `generatedArtworkByTrackId`.
  */
 export const generatedArtworkByArtistId: Record<string, LocalOrRemoteImage | undefined> = {
   arlo: safeRequire(() => require('../../assets/artwork/generated/arlo.jpg')),
@@ -177,12 +186,9 @@ export const generatedArtworkByArtistId: Record<string, LocalOrRemoteImage | und
 };
 
 /**
- * Procedurally generated local abstract artwork (Home See All filter-
- * behavior pass) for 3 new mock singles — Afterimage (Tate Vane), Still
- * Water (Elena Rostova), Night Signal (Sable Duo) — added because only one
- * single ('refraction-horizon') existed in the catalog before this pass,
- * too thin to demonstrate a working "Singles" filter. Same build technique
- * and provenance rules as `generatedArtworkByTrackId` above.
+ * Generated covers for the 3 mock singles added for the See All "Singles"
+ * filter — Afterimage (Tate Vane), Still Water (Elena Rostova), Night Signal
+ * (Sable Duo). Same provenance rules as `generatedArtworkByTrackId`.
  */
 export const generatedArtworkByAlbumId: Record<string, LocalOrRemoteImage | undefined> = {
   afterimage: safeRequire(() => require('../../assets/artwork/generated/afterimage.jpg')),
@@ -191,13 +197,11 @@ export const generatedArtworkByAlbumId: Record<string, LocalOrRemoteImage | unde
 };
 
 /**
- * Procedurally generated local abstract artwork (complete frontend-wide
- * artwork audit pass) for the 12 "Curated Realms" genre/mood category tiles
- * (Browse All grid on Search / All Genres & Moods) — previously rendered
- * with no artwork at all (always the generic music-note placeholder).
- * Deliberately abstract, genre-themed compositions (never literal imagery).
- * Same build technique and provenance rules as `generatedArtworkByTrackId`
- * above.
+ * Generated photographic artwork for the 12 "Curated Realms" genre/mood tiles
+ * (Search → Browse All and All Genres & Moods), one scene per category mood
+ * (4:3, lower-left kept dark so the overlaid title stays readable). Replaced
+ * the earlier blurred procedural placeholders. Same provenance rules as
+ * `generatedArtworkByTrackId`.
  */
 export const generatedArtworkByGenreId: Record<string, LocalOrRemoteImage | undefined> = {
   'made-for-you': safeRequire(() => require('../../assets/artwork/generated/made-for-you.jpg')),

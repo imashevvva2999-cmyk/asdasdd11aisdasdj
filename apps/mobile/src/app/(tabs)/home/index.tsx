@@ -2,9 +2,10 @@ import { router } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { MmusicBrand } from '@/components/mmusic-brand';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { CoverCard, EqualizerIndicator, FeaturedBanner, IconButton, MoodCard, QuickTile, SectionHeader, TrackRow } from '@/components/ui';
+import { CoverCard, FeaturedBanner, IconButton, MoodCard, QuickTile, SectionHeader, TrackRow } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -194,10 +195,7 @@ function Header() {
     <ThemedView surface="canvas" style={headerStyles.header}>
       <SafeAreaView edges={['top']}>
         <View style={headerStyles.row}>
-          <View style={headerStyles.brand}>
-            <ThemedText variant="headline-md">Mmusic</ThemedText>
-            <EqualizerIndicator size={14} />
-          </View>
+          <MmusicBrand />
           <IconButton
             icon="person"
             accessibilityLabel="Profile"
@@ -290,10 +288,5 @@ const headerStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  brand: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
   },
 });

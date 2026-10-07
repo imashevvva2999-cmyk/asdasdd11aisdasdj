@@ -65,7 +65,11 @@ export default function LibraryScreen() {
     <ThemedView surface="canvas" style={styles.flex}>
       <SafeAreaView edges={['top']} style={styles.headerSafeArea}>
         <View style={styles.headerRow}>
-          <ThemedText variant="display-lg-mobile">Your Library</ThemedText>
+          {/* Page title: 28px at the heading weight (700), not the 800-weight
+              display style, so it reads as a page title rather than a hero. */}
+          <ThemedText variant="headline-lg" style={styles.pageTitle}>
+            Your Library
+          </ThemedText>
           <View style={styles.headerActions}>
             <IconButton
               icon="add"
@@ -253,6 +257,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  pageTitle: {
+    fontSize: 28,
+    lineHeight: 34,
   },
   headerActions: {
     flexDirection: 'row',

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { MmusicBrand } from '@/components/mmusic-brand';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { CoverCard, FeaturedBanner, Icon, IconButton, RankedTile, RemovableChip, TextField, TextLinkButton } from '@/components/ui';
@@ -29,10 +30,7 @@ export default function SearchScreen() {
     <ThemedView surface="canvas" style={styles.flex}>
       <SafeAreaView edges={['top']} style={styles.headerSafeArea}>
         <View style={styles.headerRow}>
-          <View style={styles.brandRow}>
-            <ThemedText variant="headline-md">Mmusic</ThemedText>
-            <Icon name="graphic-eq" size={16} color={Colors.primary} />
-          </View>
+          <MmusicBrand />
           <View style={styles.headerActions}>
             <IconButton
               icon="cast"
@@ -163,11 +161,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  brandRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
   },
   headerActions: {
     flexDirection: 'row',
