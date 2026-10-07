@@ -27,3 +27,20 @@ export const artists: Artist[] = [
 export function getArtistById(id: string): Artist | undefined {
   return artists.find((artist) => artist.id === id);
 }
+
+/**
+ * Upsert into the same shared `artists` array `getArtistById` reads from
+ * (Фаза 4, Batch 4 — docs/screens.md S-25…S-27). Used by the Artist frontend
+ * store so a locally created/updated artist profile is immediately visible
+ * to both the owner Dashboard (S-27) and the public Artist Profile (S-08) —
+ * the same entity, not a duplicate model. Session-local only; nothing here
+ * is persisted to a backend.
+ */
+export function addMockArtist(artist: Artist): void {
+  const index = artists.findIndex((existing) => existing.id === artist.id);
+  if (index >= 0) {
+    artists[index] = artist;
+  } else {
+    artists.push(artist);
+  }
+}

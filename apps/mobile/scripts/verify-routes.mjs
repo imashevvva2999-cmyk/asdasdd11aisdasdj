@@ -53,11 +53,15 @@ const expectations = [
   { path: 'profile/index.html', mustContain: ['Alex Rivera', 'Studio Sanctuary', 'Become an Artist', 'Supported'], mustNotContain: ['PLACEHOLDER'], label: 'Profile Hub (S-23)' },
   { path: 'profile/settings.html', mustContain: ['Audio Streaming', 'Downloads &amp; Storage', 'Playback &amp; Sound Engine', 'Account &amp; Payments'], mustNotContain: ['PLACEHOLDER'], label: 'Settings (S-24)' },
   { path: 'profile/support-history.html', mustContain: ['Support History', 'Total Supported', 'MBANK Direct Creator Network'], mustNotContain: ['PLACEHOLDER'], label: 'Support History (S-22)' },
-  // Still placeholders — later Фаза 4 batches.
-  { path: 'profile/artist/become-artist.html', mustContain: ['S-25'], label: 'Become an Artist (UF-14)' },
-  { path: 'profile/artist/setup.html', mustContain: ['S-26'], label: 'Artist Setup (UF-14)' },
-  { path: 'profile/artist/dashboard.html', mustContain: ['S-27'], label: 'Artist Dashboard (UF-14)' },
-  { path: 'profile/artist/upload-track.html', mustContain: ['S-28'], label: 'Upload Track (UF-14)' },
+  // Фаза 4, batch 4 — real screens (Artist Flow, UF-14). Dashboard renders
+  // its real "no artist profile yet" empty state in a cold static export
+  // (useArtistStore.artist starts undefined with no setup completed in this
+  // session) — the full create-profile → dashboard → upload → publish flow
+  // is exercised directly against the store in scripts/verify-artist-store.mjs.
+  { path: 'profile/artist/become-artist.html', mustContain: ['Share Your Sound with the World', 'Share Your Music', 'Fan Support', 'Artist Insights', 'Become an Artist'], mustNotContain: ['PLACEHOLDER'], label: 'Become an Artist (S-25)' },
+  { path: 'profile/artist/setup.html', mustContain: ['Primary Genre', 'Electronic', 'Create Artist Profile'], mustNotContain: ['PLACEHOLDER'], label: 'Artist Setup (S-26)' },
+  { path: 'profile/artist/dashboard.html', mustContain: ['No artist profile yet', 'Set up your artist profile to start uploading tracks.'], mustNotContain: ['PLACEHOLDER'], label: 'Artist Dashboard (S-27, no local artist yet)' },
+  { path: 'profile/artist/upload-track.html', mustContain: ['Upload Audio', 'Browse File', 'Track Details', 'Cover Artwork', 'Release Settings', 'Publish Track', 'Save as Draft'], mustNotContain: ['PLACEHOLDER'], label: 'Upload Track (S-28)' },
   { path: 'dev-ui-kit.html', mustContain: ['Play All'], label: 'Фаза 2 UI kit gallery (regression check)' },
 ];
 

@@ -7,18 +7,21 @@ import { ThemedView } from '@/components/themed-view';
 import { Artwork, Icon, IconButton, MenuRow, StatCard, Toast } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
 import { currentUser, getArtistById } from '@/mocks';
+import { useArtistStore } from '@/state/artist-store';
 import { useSupportStore } from '@/state/support-store';
 
 /**
  * S-23 Profile Hub (docs/screens.md §3.11). Mock/local auth state only — no
- * real account. "Become an Artist" always links to S-25 (the [Доп] note
- * about conditionally showing "Artist Dashboard" instead for existing
- * artists is not implemented — there is no artist-status tracking yet).
- * The global entry point into this screen remains open (OQ-17) — this
- * screen itself is unaffected by that and is fully implemented regardless.
+ * real account. "Become an Artist" conditionally becomes "Artist Dashboard"
+ * once the local user has completed Artist Setup (docs/screens.md §S-23
+ * [Доп] note) — this is frontend/session state only (useArtistStore.artist),
+ * not a real role/account change. The global entry point into this screen
+ * remains open (OQ-17) — this screen itself is unaffected by that and is
+ * fully implemented regardless.
  */
 export default function ProfileScreen() {
   const history = useSupportStore((s) => s.history);
+  const myArtist = useArtistStore((s) => s.artist);
   const [loggedOutToastVisible, setLoggedOutToastVisible] = useState(false);
 
   const totalSupported = history.reduce((sum, entry) => sum + entry.amount, 0);
@@ -94,9 +97,9 @@ export default function ProfileScreen() {
             />
             <MenuRow
               icon="mic"
-              title="Become an Artist"
-              subtitle="Publish and monetize your tracks on Mmusic"
-              onPress={() => router.push('/profile/artist/become-artist')}
+              title={myArtist ? 'Artist Dashboard' : 'Become an Artist'}
+              subtitle={myArtist ? `Manage ${myArtist.name}'s releases` : 'Publish and monetize your tracks on Mmusic'}
+              onPress={() => router.push(myArtist ? '/profile/artist/dashboard' : '/profile/artist/become-artist')}
             />
           </View>
         </View>

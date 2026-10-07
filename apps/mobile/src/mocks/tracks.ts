@@ -21,3 +21,17 @@ export const tracks: Track[] = [
 export function getTrackById(id: string): Track | undefined {
   return tracks.find((track) => track.id === id);
 }
+
+/**
+ * Insert into the same shared `tracks` array `getTrackById` reads from
+ * (Фаза 4, Batch 4 — docs/screens.md S-28). Called by the Artist frontend
+ * store only once a locally uploaded track reaches the `'published'` state —
+ * this is what makes it resolvable (and playable via the shared player
+ * store) by the exact same lookup every other screen already uses, instead
+ * of a separate "artist track" model. Session-local only; nothing here is
+ * persisted to a backend, transcoded, or uploaded anywhere.
+ */
+export function addMockTrack(track: Track): void {
+  if (tracks.some((existing) => existing.id === track.id)) return;
+  tracks.push(track);
+}
