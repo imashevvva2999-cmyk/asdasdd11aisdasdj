@@ -77,6 +77,9 @@ export function resolveArtwork(...sources: (LocalOrRemoteImage | undefined)[]): 
 
 export const stitchArtworkByAlbumId: Record<string, LocalOrRemoteImage | undefined> = {
   'nebula-dreams': safeRequire(() => require('../../assets/artwork/albums/nebula-dreams.jpg')),
+  // lost-frequencies, velvet-skyline, chronos-echoes and resonant-field (and
+  // the kaelen avatar below) are the clean artwork cropped out of what were
+  // captured UI/design frames (status bars, cards, captions with other names).
   'lost-frequencies': safeRequire(() => require('../../assets/artwork/albums/lost-frequencies.jpg')),
   'velvet-skyline': safeRequire(() => require('../../assets/artwork/albums/velvet-skyline.jpg')),
   'chronos-echoes': safeRequire(() => require('../../assets/artwork/albums/chronos-echoes.jpg')),
