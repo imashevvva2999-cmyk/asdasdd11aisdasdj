@@ -14,10 +14,24 @@ SplashScreen.preventAutoHideAsync();
 /**
  * Mmusic is dark-first / dark-only (DESIGN.md; OQ-34). Always use expo-router's
  * DarkTheme regardless of system color scheme — do not branch on useColorScheme().
- * Real tab/stack navigation (таб-бар Home/Search/Library, player modal stack)
- * lands in Фаза 3 (docs/development-plan.md). GestureHandlerRootView +
- * BottomSheetModalProvider are wired here so any screen can use AppBottomSheet
- * (src/components/ui/bottom-sheet.tsx) without repeating this setup.
+ * GestureHandlerRootView + BottomSheetModalProvider are wired here so any screen
+ * can use AppBottomSheet (src/components/ui/bottom-sheet.tsx) without repeating
+ * this setup.
+ *
+ * Фаза 3 navigation architecture (docs/screens.md §1, docs/user-flow.md):
+ * - (tabs) — Home/Search/Library bottom nav, each with its own nested stack.
+ * - player — full-screen player modal (Now Playing/Lyrics/Queue), no tab bar.
+ * - sheets — bottom-sheet-style screens (Track options/Add to Playlist/Support/
+ *   Confirm/Success), formSheet presentation.
+ * - artist/[id], album/[id], playlist/[id], create-playlist — shared cross-tab
+ *   destinations living once at root instead of being duplicated per tab.
+ * - profile — Profile Hub, Settings, Support History, and the approved Artist
+ *   Flow (S-25…S-28, UF-14) as plain stack screens (no separate Studio tab bar).
+ * - track/[id] — deep-link redirect target (mmusic://track/{id}) into the player.
+ *
+ * This single root Stack is also what keeps the app WebView-safe (OQ-53): there
+ * is no native-only navigation primitive here that a RN-Web/WebView surface
+ * can't render — route structure is identical for both targets.
  */
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(loadedFonts);
@@ -42,7 +56,16 @@ export default function RootLayout() {
               headerShown: false,
               contentStyle: { backgroundColor: Colors.canvas },
             }}
-          />
+          >
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="player" options={{ presentation: 'fullScreenModal' }} />
+            <Stack.Screen name="sheets" options={{ presentation: 'formSheet' }} />
+            <Stack.Screen name="create-playlist" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="artist/[id]" options={{ headerShown: true, title: '' }} />
+            <Stack.Screen name="album/[id]" options={{ headerShown: true, title: '' }} />
+            <Stack.Screen name="playlist/[id]" options={{ headerShown: true, title: '' }} />
+            <Stack.Screen name="profile" options={{ headerShown: false }} />
+          </Stack>
         </ThemeProvider>
       </BottomSheetModalProvider>
     </GestureHandlerRootView>

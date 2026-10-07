@@ -1,5 +1,6 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import type { ColorValue } from 'react-native';
 
 import { Colors } from '@/constants/theme';
 
@@ -11,7 +12,9 @@ export type IconProps = {
   name: string;
   set?: 'material' | 'community';
   size?: number;
-  color?: string;
+  /** `ColorValue` (not just `string`) so this can take a React Navigation
+   * `tabBarIcon`/`headerTintColor` color directly without a cast at the call site. */
+  color?: ColorValue;
 };
 
 export function Icon({ name, set = 'material', size = 20, color = Colors.text.high }: IconProps) {
