@@ -37,7 +37,7 @@ const expectations = [
   { path: 'library/liked-songs.html', mustContain: ['Liked Songs', 'Auto Playlist', 'saved tracks'], mustNotContain: ['PLACEHOLDER'], label: 'Liked Songs (S-13)' },
   { path: 'player/now-playing.html', mustContain: ['PLAYING FROM ALBUM', 'Lyrics', 'Queue', 'Support', 'Audio'], mustNotContain: ['PLACEHOLDER'], label: 'Now Playing (S-15)' },
   { path: 'player/lyrics.html', mustContain: ['Midnight Mirage', 'Solaris Echo', 'Lyrics'], mustNotContain: ['PLACEHOLDER'], label: 'Synchronized Lyrics (S-16)' },
-  { path: 'player/queue.html', mustContain: ['Playback Queue', 'NOW PLAYING', 'Playing Next', 'Infinity Autoplay'], mustNotContain: ['PLACEHOLDER'], label: 'Playback Queue (S-17)' },
+  { path: 'player/queue.html', mustContain: ['Lyrics', 'Queue', 'NOW PLAYING', 'Playing Next', 'Infinity Autoplay'], mustNotContain: ['PLACEHOLDER'], label: 'Playback Queue (S-17)' },
   // Фаза 4, batch 3 — real screens. support.html / support-confirm.html /
   // support-success.html receive no artistId/amount (query params, not route
   // segments — generateStaticParams doesn't apply) in a cold static export, so
