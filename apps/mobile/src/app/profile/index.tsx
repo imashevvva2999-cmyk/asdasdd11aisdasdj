@@ -155,6 +155,14 @@ export default function ProfileScreen() {
               subtitle="MBANK Connected ID"
               onPress={() => router.push('/profile/account')}
             />
+            {/* S-24 in full: every preference on one screen (the rows above open its parts). */}
+            <MenuRow
+              icon="settings"
+              tone="neutral"
+              title="All Settings"
+              subtitle="Every preference in one place"
+              onPress={() => router.push('/profile/settings')}
+            />
             <MenuRow
               icon="mic"
               tone="secondary"
