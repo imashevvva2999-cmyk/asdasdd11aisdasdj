@@ -1,14 +1,16 @@
 import { router } from 'expo-router';
 import { useCallback, useRef } from 'react';
 import { Platform, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
+import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 
 import { ArtworkCarousel } from '@/components/player/artwork-carousel';
 import { SeekBar } from '@/components/player/seek-bar';
 import { ThemedText } from '@/components/themed-text';
 import { CircleButton, Icon, IconButton, PressableScale } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
+import { homeChromeOffset, homeChromeOpacity } from '@/lib/stage-math';
 import { usePlayerStore, type PlaybackState } from '@/state/player-store';
-import { stageCoverRect } from '@/state/player-surface';
+import { expandOrigin, expandProgress, stageCoverRect } from '@/state/player-surface';
 
 /** The cover on the Home stage (iphone/home.png); it grows into Now Playing's. */
 export const STAGE_COVER_SIZE = 256;
@@ -37,6 +39,12 @@ export function HomeStage({ onLayout }: { onLayout?: (event: LayoutChangeEvent) 
   const toggleLike = usePlayerStore((s) => s.toggleLike);
   const liked = usePlayerStore((s) => (track ? s.isLiked(track.id) : false));
   const coverRef = useRef<View>(null);
+  // Growing into Now Playing: everything under the cover slides down and fades first.
+  const chromeStyle = useAnimatedStyle(() => {
+    if (expandOrigin.value !== 'stage') return { opacity: 1, transform: [{ translateY: 0 }] };
+    const p = expandProgress.value;
+    return { opacity: homeChromeOpacity(p), transform: [{ translateY: homeChromeOffset(p) }] };
+  });
 
   const openPlayer = useCallback(() => {
     openPlayerFromStage(coverRef.current);
@@ -55,6 +63,7 @@ export function HomeStage({ onLayout }: { onLayout?: (event: LayoutChangeEvent) 
         <ArtworkCarousel size={STAGE_COVER_SIZE} paused={!isPlaying} onPress={openPlayer} insideScroll />
       </View>
 
+      <Animated.View style={chromeStyle}>
       <View style={styles.titleBlock}>
         <ThemedText variant="display-lg-mobile" numberOfLines={1} style={styles.center}>
           {track.title}
@@ -100,6 +109,7 @@ export function HomeStage({ onLayout }: { onLayout?: (event: LayoutChangeEvent) 
         <QuietAction icon="lyrics" label="Lyrics" onPress={() => router.push('/player/lyrics')} />
         <QuietAction icon="queue-music" label="Up next" onPress={() => router.push('/player/queue')} />
       </View>
+      </Animated.View>
     </View>
   );
 }
@@ -122,11 +132,15 @@ export function openPlayerFromStage(cover: View | null) {
     router.push({ pathname: '/player/now-playing', params: { trackId: usePlayerStore.getState().currentTrackId() } });
   if (!cover) {
     stageCoverRect.value = null;
+    expandOrigin.value = 'mini';
     open();
     return;
   }
   cover.measureInWindow((x, y, width, height) => {
-    stageCoverRect.value = width > 0 ? { x, y, width, height } : null;
+    const known = width > 0;
+    stageCoverRect.value = known ? { x, y, width, height } : null;
+    // Unknown place: fall back to the classic slide-up from the capsule.
+    expandOrigin.value = known ? 'stage' : 'mini';
     open();
   });
 }

@@ -12,12 +12,19 @@ import { Platform } from 'react-native';
  * the first paint identical to the server markup (showing the existing
  * fallback placeholder), then swaps in the real artwork a tick after
  * hydration — invisible to a user, native unaffected.
+ *
+ * Only the page's first render is hydrated: components mounted later (a cover
+ * opening Now Playing, a new list row) render the real image straight away
+ * instead of flashing the placeholder for a frame (W3 Этап 1).
  */
+let pageHydrated = false;
+
 export function useHydrated(): boolean {
-  const [hydrated, setHydrated] = useState(Platform.OS !== 'web');
+  const [hydrated, setHydrated] = useState(Platform.OS !== 'web' || pageHydrated);
 
   useEffect(() => {
     if (Platform.OS === 'web') {
+      pageHydrated = true;
       setHydrated(true);
     }
   }, []);

@@ -40,11 +40,14 @@ export function ArtworkCarousel({
   size,
   paused,
   onPress,
+  onCoverLoad,
   insideScroll = false,
 }: {
   size: number;
   paused: boolean;
   onPress?: () => void;
+  /** The current cover's image has loaded. */
+  onCoverLoad?: () => void;
   /** The cover sits in a vertically scrolling page (Home stage): on touch web
    * a vertical swipe that starts on it must scroll the page, so only the
    * horizontal axis is claimed (`touch-action: pan-y`). In Now Playing the
@@ -169,7 +172,9 @@ export function ArtworkCarousel({
             strip ignores pointers and the gesture container receives them. */}
         <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, stripStyle]}>
           {slots.map(({ id, at }) =>
-            id ? <Slot key={`slot-${at}`} trackId={id} at={at} size={size} step={step} /> : null,
+            id ? (
+              <Slot key={`slot-${at}`} trackId={id} at={at} size={size} step={step} onLoad={at === pos ? onCoverLoad : undefined} />
+            ) : null,
           )}
         </Animated.View>
       </Animated.View>
@@ -180,13 +185,13 @@ export function ArtworkCarousel({
 /** A press that moves further than this is a drag, not a tap. */
 const TAP_MAX_DISTANCE = 8;
 
-function Slot({ trackId, at, size, step }: { trackId: TrackId; at: number; size: number; step: number }) {
+function Slot({ trackId, at, size, step, onLoad }: { trackId: TrackId; at: number; size: number; step: number; onLoad?: () => void }) {
   const track = getTrackById(trackId);
   // Visible only near the carousel position: neighbours appear while dragging.
   const style = useAnimatedStyle(() => ({ opacity: fade(carouselPos, at) }));
   return (
     <Animated.View style={[styles.slot, { width: size, height: size, left: at * step }, style]} testID={`carousel-slot-${trackId}`}>
-      <Artwork uri={track?.coverUri} size={size} radius={Radii.lg} />
+      <Artwork uri={track?.coverUri} size={size} radius={Radii.lg} onLoad={onLoad} />
     </Animated.View>
   );
 }

@@ -27,7 +27,7 @@ import {
 import { clamp01 } from '@/lib/stage-math';
 import { useLibraryStore } from '@/state/library-store';
 import { usePlayerStore } from '@/state/player-store';
-import { stageVisible } from '@/state/player-surface';
+import { expandOrigin, stageVisible } from '@/state/player-surface';
 
 /** The stage counts as gone (capsule appears) once this little of it is left on screen. */
 const STAGE_EXIT_OFFSET = 80;
@@ -85,8 +85,10 @@ export default function HomeScreen() {
       stageVisible.value = hasStage.value && stageOnScreen(scrollY.value, stageHeight.value);
       return () => {
         focused.value = false;
-        // Other tabs have no stage: the capsule is the player there.
-        stageVisible.value = false;
+        // Other tabs have no stage: the capsule is the player there. Opening the
+        // player from the stage keeps it "on screen" (it grows into the player
+        // and comes back on close), so the capsule never flashes in between.
+        if (expandOrigin.value !== 'stage') stageVisible.value = false;
       };
     }, [focused, hasStage, scrollY, stageHeight]),
   );

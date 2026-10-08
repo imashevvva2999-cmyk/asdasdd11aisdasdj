@@ -18,6 +18,8 @@ export type ArtworkProps = {
    * 'add-a-photo' for a photo picker, instead of the default music note. */
   placeholderIcon?: string;
   style?: ViewStyle;
+  /** The real image has loaded (e.g. to reveal a cover only once it can paint). */
+  onLoad?: () => void;
 };
 
 /**
@@ -31,7 +33,7 @@ export type ArtworkProps = {
  * plain surface-colored box with a music-note glyph — a clearly-identified
  * placeholder, not invented artwork.
  */
-export function Artwork({ uri, size = 160, aspectRatio, radius = Radii.lg, shape = 'square', placeholderIcon = 'music-note', style }: ArtworkProps) {
+export function Artwork({ uri, size = 160, aspectRatio, radius = Radii.lg, shape = 'square', placeholderIcon = 'music-note', style, onLoad }: ArtworkProps) {
   const height = aspectRatio ? size / aspectRatio : size;
   const hydrated = useHydrated();
 
@@ -48,7 +50,7 @@ export function Artwork({ uri, size = 160, aspectRatio, radius = Radii.lg, shape
       ]}
     >
       {uri && hydrated ? (
-        <Image source={toImageSource(uri)} style={StyleSheet.absoluteFill} contentFit="cover" />
+        <Image source={toImageSource(uri)} style={StyleSheet.absoluteFill} contentFit="cover" onLoad={onLoad} />
       ) : (
         <View style={styles.placeholderIcon}>
           <Icon name={placeholderIcon} size={Math.max(20, Math.min(size, height) * 0.35)} color={Colors.text.low} />

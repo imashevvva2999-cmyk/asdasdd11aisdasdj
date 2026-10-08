@@ -35,6 +35,21 @@ export const stageVisible = makeMutable(false);
 /** Where the Home stage's cover was (window coordinates) when it opened the
  * player — the cover grows from there into Now Playing. Null when unknown. */
 export const stageCoverRect = makeMutable<Rect | null>(null);
+/** Where Now Playing is opening from: the capsule/mini-player (slides up) or the
+ * Home stage (the stage grows into the player, W3 spec §4 Этап 1 п. 8). */
+export const expandOrigin = makeMutable<'mini' | 'stage'>('mini');
+
+/** Now Playing's cover in window coordinates — the same geometry the expand
+ * layer draws, so every way into the player lands the cover in one place. */
+export function playerCoverRect(windowWidth: number, contentWidth: number, windowHeight: number, insetTop: number): Rect {
+  const size = fitArtworkSize(contentWidth, windowHeight);
+  return {
+    x: (windowWidth - contentWidth) / 2 + (contentWidth - size) / 2,
+    y: insetTop + PLAYER_HEADER_HEIGHT + PLAYER_ARTWORK_TOP_GAP,
+    width: size,
+    height: size,
+  };
+}
 /** Play-order length and repeat-all, mirrored for the UI-thread swipe gestures. */
 export const orderLength = makeMutable(0);
 export const repeatAll = makeMutable(false);

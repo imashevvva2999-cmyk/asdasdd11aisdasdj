@@ -50,7 +50,7 @@ export default function NowPlayingScreen() {
   const windowWidth = useContentWidth();
   const { height: windowHeight } = useWindowSize();
   // Expand/collapse sheet (mini-player ↔ full player), Back/Escape handling.
-  const { collapse, sheetStyle, chromeStyle, artStyle } = usePlayerSheet();
+  const { collapse, sheetStyle, backgroundStyle, chromeStyle, artStyle, markArtReady } = usePlayerSheet();
 
   // Hooks stay above the empty-state return below.
   // The engine's real duration once loaded; the catalog value until then.
@@ -88,8 +88,11 @@ export default function NowPlayingScreen() {
   return (
     <GestureDetector gesture={collapse}>
       <Animated.View style={[styles.sheet, sheetStyle]} testID="now-playing-sheet">
-      {/* Dynamic Premium: the cover's palette, following the carousel. */}
-      <PlayerBackground />
+      {/* Dynamic Premium: the cover's palette, following the carousel; from the
+          Home stage it fills in over the stage as the player grows. */}
+      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, backgroundStyle]}>
+        <PlayerBackground />
+      </Animated.View>
       <SafeAreaView style={styles.flex}>
         <Animated.View style={[styles.header, chromeStyle]}>
           <IconButton variant="ghost" icon="keyboard-arrow-down" iconSize={28} accessibilityLabel="Collapse player" onPress={() => goBack()} />
@@ -112,7 +115,7 @@ export default function NowPlayingScreen() {
 
         <Animated.View style={[styles.artworkWrap, artStyle]}>
           {/* Swipe left/right to change track (the real playing track). */}
-          <ArtworkCarousel size={artworkSize} paused={!isPlaying} />
+          <ArtworkCarousel size={artworkSize} paused={!isPlaying} onCoverLoad={markArtReady} />
         </Animated.View>
 
         <Animated.View style={[styles.chrome, chromeStyle]}>

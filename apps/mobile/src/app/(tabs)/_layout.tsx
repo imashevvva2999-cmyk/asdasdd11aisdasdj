@@ -55,7 +55,7 @@ export default function TabsLayout() {
         style={[styles.miniPlayerSlot, { bottom: insets.bottom + PILL_BOTTOM_GAP + PILL_HEIGHT + CAPSULE_GAP }]}
         pointerEvents="box-none"
       >
-        <MiniPlayer />
+        <MiniPlayer respectStage />
       </View>
     </View>
   );

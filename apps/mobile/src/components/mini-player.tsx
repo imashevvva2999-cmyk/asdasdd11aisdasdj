@@ -31,6 +31,7 @@ import {
   canStep,
   carouselPos,
   carouselTarget,
+  expandOrigin,
   expandPreview,
   expandProgress,
   paletteColor,
@@ -57,15 +58,17 @@ import { PressableScale } from './ui/pressable-scale';
  * undefined on a cold load), matching Stitch's assumption that a track is
  * already queued.
  */
-export function MiniPlayer() {
+export function MiniPlayer({ respectStage = false }: { respectStage?: boolean }) {
   const track = usePlayerStore((s) => s.currentTrack());
   if (!track) {
     return null;
   }
-  return <MiniPlayerBody track={track} />;
+  return <MiniPlayerBody track={track} respectStage={respectStage} />;
 }
 
-function MiniPlayerBody({ track }: { track: Track }) {
+/** `respectStage`: the tabs' capsule steps aside for the Home stage; the
+ * overlay on Artist / Album / Playlist has no stage to defer to. */
+function MiniPlayerBody({ track, respectStage }: { track: Track; respectStage: boolean }) {
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const playback = usePlayerStore((s) => s.playback);
   const progressSec = usePlayerStore((s) => s.progressSec);
@@ -104,11 +107,11 @@ function MiniPlayerBody({ track }: { track: Track }) {
   }, [track.id, reduceMotion, trackFade]);
   // Steps aside while the Home stage shows the same track (W3: never shown twice).
   const stageHide = useDerivedValue(() =>
-    withTiming(stageVisible.value ? 0 : 1, { duration: reduceMotion ? 0 : STAGE_SWAP_MS }),
+    withTiming(respectStage && stageVisible.value ? 0 : 1, { duration: reduceMotion ? 0 : STAGE_SWAP_MS }),
   );
   const [behindStage, setBehindStage] = useState(false);
   useAnimatedReaction(
-    () => stageVisible.value,
+    () => respectStage && stageVisible.value,
     (visible, previous) => {
       if (visible !== previous) scheduleOnRN(setBehindStage, visible);
     },
@@ -124,6 +127,7 @@ function MiniPlayerBody({ track }: { track: Track }) {
     // Web: the pressed mini-player keeps focus while the player hides it from
     // assistive tech (aria-hidden); release focus first.
     if (Platform.OS === 'web') (document.activeElement as HTMLElement | null)?.blur?.();
+    expandOrigin.value = 'mini';
     router.push({ pathname: '/player/now-playing', params: { trackId: usePlayerStore.getState().currentTrackId() } });
   }, []);
 
@@ -167,6 +171,7 @@ function MiniPlayerBody({ track }: { track: Track }) {
               // Only an upward drag expands; a downward one is ignored.
               axis.value = e.translationY < 0 ? 'y' : 'none';
               if (axis.value === 'y') {
+                expandOrigin.value = 'mini';
                 cancelAnimation(expandProgress);
                 expandProgress.value = 0;
                 expandPreview.value = true;
