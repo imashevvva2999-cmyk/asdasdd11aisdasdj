@@ -8,7 +8,7 @@ import { Artwork, AvatarCard, CoverCard, PillButton, TrackRow } from '@/componen
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useContentWidth } from '@/hooks/use-content-width';
 import { useToast } from '@/hooks/use-toast';
-import { albums, artists, genreDetails, genres, getGenreById, tracks } from '@/mocks';
+import { albums, artists, featuredGenre, genreDetails, genres, getGenreById, tracks } from '@/mocks';
 import { useLibraryStore } from '@/state/library-store';
 import { usePlayerStore } from '@/state/player-store';
 
@@ -16,10 +16,10 @@ import { usePlayerStore } from '@/state/player-store';
  * comfortably over the artwork on a 390px-wide phone. */
 const HERO_HEIGHT = 280;
 
-/** Pre-renders every catalog genre for the static website (direct links and
- * refresh serve the genre's own HTML, React #418). */
+/** Pre-renders every catalog genre — and the featured one Search links to — for
+ * the static website (direct links and refresh serve the genre's own HTML, React #418). */
 export function generateStaticParams() {
-  return genres.map((genre) => ({ id: genre.id }));
+  return [featuredGenre, ...genres].map((genre) => ({ id: genre.id }));
 }
 
 /** S-07 Genre / Category detail (docs/screens.md §3.2). */

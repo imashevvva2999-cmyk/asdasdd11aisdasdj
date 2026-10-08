@@ -11,7 +11,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { albums, artists, genres, playlists } from '../src/mocks/index.ts';
+import { albums, artists, featuredGenre, genres, playlists } from '../src/mocks/index.ts';
 
 const dist = join(import.meta.dirname, '..', 'dist');
 
@@ -34,7 +34,8 @@ const families = [
   { route: 'artist', items: artists.map((a) => ({ id: a.id, title: a.name })) },
   { route: 'album', items: albums.map((a) => ({ id: a.id, title: a.title })) },
   { route: 'playlist', items: playlists.map((p) => ({ id: p.id, title: p.title })) },
-  { route: 'search/genre', items: genres.map((g) => ({ id: g.id, title: g.title })) },
+  // The featured genre (Kyrgyz Music) is linked from Search and All Genres too.
+  { route: 'search/genre', items: [featuredGenre, ...genres].map((g) => ({ id: g.id, title: g.title })) },
 ];
 
 for (const { route, items } of families) {
