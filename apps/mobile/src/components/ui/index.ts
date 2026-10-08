@@ -27,6 +27,10 @@ export type { IconProps } from './icon';
 export { FormCard, SegmentedControl } from './form';
 export type { FormCardProps, SegmentedControlProps } from './form';
 
+export { LivingArtwork } from './living-artwork';
+export { MoodVisual } from './mood-visual';
+export type { MoodVisualKind } from './mood-visual';
+
 export { LibraryRow, MenuRow, PlaylistPickerRow, QueueRow, ToggleRow, TrackRow, ValueRow } from './list-row';
 export type { LibraryRowProps, MenuRowProps, PlaylistPickerRowProps, QueueRowProps, ToggleRowProps, TrackRowProps, ValueRowProps } from './list-row';
 

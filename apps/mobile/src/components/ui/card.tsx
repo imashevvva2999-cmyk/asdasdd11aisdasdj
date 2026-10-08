@@ -8,6 +8,8 @@ import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useHydrated } from '@/hooks/use-hydrated';
 
 import { Icon } from './icon';
+import { LivingArtwork } from './living-artwork';
+import { MoodVisual, type MoodVisualKind } from './mood-visual';
 import { PressableScale } from './pressable-scale';
 import { ThemedText } from '../themed-text';
 
@@ -173,19 +175,29 @@ export type FeaturedBannerProps = {
    * outer card's own button role so the two don't nest as DOM buttons. */
   onPlayPress?: () => void;
   onPress?: (event: GestureResponderEvent) => void;
+  /** 'footer' layout only — gently animate the artwork (Home hero waveform). */
+  animated?: boolean;
   style?: ViewStyle;
 };
 
 /** Hero banner (DESIGN.md "Album & Playlist Cards"; docs/screens.md §3.4). Defaults
  * to 16:9; pass `height` for the fixed-height heroes used on Home/Search/Genre. */
-export function FeaturedBanner({ coverUri, title, subtitle, height, layout = 'overlay', onPlayPress, onPress, style }: FeaturedBannerProps) {
+export function FeaturedBanner({ coverUri, title, subtitle, height, layout = 'overlay', onPlayPress, onPress, animated = false, style }: FeaturedBannerProps) {
   const hydrated = useHydrated();
 
   if (layout === 'footer') {
     return (
       <PressableScale onPress={onPress} style={[cardStyles.footerBannerWrap, style]} accessibilityRole={onPlayPress ? undefined : 'button'}>
         <View style={[cardStyles.footerBannerImage, { height: height ?? 224 }]}>
-          {coverUri && hydrated ? <Image source={toImageSource(coverUri)} style={StyleSheet.absoluteFill} contentFit="cover" /> : <CoverFallback seed={title} iconSize={40} />}
+          {coverUri && hydrated ? (
+            animated ? (
+              <LivingArtwork uri={coverUri} />
+            ) : (
+              <Image source={toImageSource(coverUri)} style={StyleSheet.absoluteFill} contentFit="cover" />
+            )
+          ) : (
+            <CoverFallback seed={title} iconSize={40} />
+          )}
           {/* Stitch blends the image into the footer instead of a hard seam. */}
           <LinearGradient colors={['transparent', 'rgba(20, 20, 24, 0.4)', Colors.surface.l1]} locations={[0.4, 0.7, 1]} style={StyleSheet.absoluteFill} />
         </View>
@@ -380,16 +392,18 @@ export type MoodCardProps = {
   icon: string;
   tint?: 'primary' | 'secondary' | 'tertiary';
   onPress?: (event: GestureResponderEvent) => void;
+  /** Mood motif in the lower-right corner (see MoodVisual). */
+  visual?: MoodVisualKind;
   style?: ViewStyle;
 };
 
 /** Mood & Vibe Mixes 2×2 grid card (docs/screens.md §3.1 S-01, §3.4 "Mood card"). */
-export function MoodCard({ title, subtitle, trackCountLabel, icon, tint = 'primary', onPress, style }: MoodCardProps) {
+export function MoodCard({ title, subtitle, trackCountLabel, icon, tint = 'primary', visual, onPress, style }: MoodCardProps) {
   const tintColor = tint === 'primary' ? Colors.primary : tint === 'secondary' ? Colors.secondary : Colors.tertiary;
 
   return (
     <PressableScale onPress={onPress} accessibilityRole="button" style={[moodStyles.card, style]}>
-      <View style={[moodStyles.glow, { backgroundColor: tintColor }]} pointerEvents="none" />
+      {visual && <MoodVisual kind={visual} color={tintColor} />}
       <View style={moodStyles.topRow}>
         <Icon name={icon} size={24} color={tintColor} />
         <ThemedText variant="mono-num" emphasis="medium">
@@ -631,15 +645,6 @@ const moodStyles = StyleSheet.create({
     padding: Spacing.sm,
     justifyContent: 'space-between',
     overflow: 'hidden',
-  },
-  glow: {
-    position: 'absolute',
-    right: -16,
-    bottom: -16,
-    width: 80,
-    height: 80,
-    borderRadius: Radii.full,
-    opacity: 0.18,
   },
   topRow: {
     flexDirection: 'row',

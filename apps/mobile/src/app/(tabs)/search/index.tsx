@@ -11,6 +11,7 @@ import { Colors, Spacing } from '@/constants/theme';
 import { useContentWidth } from '@/hooks/use-content-width';
 import { useToast } from '@/hooks/use-toast';
 import { featuredGenre, genres, initialRecentSearches, trendingSearches } from '@/mocks';
+import { countUnread, useNotificationsStore } from '@/state/notifications-store';
 
 /** S-03 Search / Explore — tab root (docs/screens.md §3.2). */
 export default function SearchScreen() {
@@ -23,6 +24,7 @@ export default function SearchScreen() {
   // pass finding, verified directly in Chrome DevTools.
   const genreRows = chunkPairs(genres);
   const { showToast, toast } = useToast();
+  const unreadCount = useNotificationsStore((st) => countUnread(st.items));
   const openResults = (query?: string) =>
     router.push(query ? { pathname: '/search/results', params: { q: query } } : '/search/results');
 
@@ -32,18 +34,22 @@ export default function SearchScreen() {
         <View style={styles.headerRow}>
           <MmusicBrand />
           <View style={styles.headerActions}>
+            {/* No casting support (OQ-28): say so rather than fake a device picker. */}
             <IconButton
               icon="cast"
               accessibilityLabel="Cast"
-              onPress={() => showToast("Casting to other devices isn't available yet", 'cast')}
-              size={36}
+              onPress={() => showToast('Casting is not available in this preview', 'cast')}
+              size={40}
             />
-            <IconButton
-              icon="notifications"
-              accessibilityLabel="Notifications"
-              onPress={() => showToast("Notifications aren't available yet", 'notifications')}
-              size={36}
-            />
+            <View>
+              <IconButton
+                icon={unreadCount > 0 ? 'notifications-active' : 'notifications'}
+                accessibilityLabel={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
+                onPress={() => router.push('/sheets/notifications')}
+                size={40}
+              />
+              {unreadCount > 0 && <View style={styles.unreadDot} pointerEvents="none" />}
+            </View>
           </View>
         </View>
       </SafeAreaView>
@@ -56,10 +62,10 @@ export default function SearchScreen() {
           rightAccessory={
             <IconButton
               icon="mic"
-              size={32}
+              size={36}
               color={Colors.text.medium}
               accessibilityLabel="Voice search"
-              onPress={() => showToast("Voice search isn't available yet", 'mic')}
+              onPress={() => showToast('Voice Search is coming soon', 'mic')}
             />
           }
           onFocus={() => openResults()}
@@ -165,6 +171,17 @@ const styles = StyleSheet.create({
   headerActions: {
     flexDirection: 'row',
     gap: Spacing.xs,
+  },
+  unreadDot: {
+    position: 'absolute',
+    top: 8,
+    right: 9,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.primary,
+    borderWidth: 1.5,
+    borderColor: Colors.surface.l2,
   },
   content: {
     padding: Spacing.margin,

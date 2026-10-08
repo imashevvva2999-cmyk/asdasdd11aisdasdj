@@ -1,0 +1,168 @@
+import { router } from 'expo-router';
+import { ScrollView, StyleSheet, View } from 'react-native';
+
+import { ThemedText } from '@/components/themed-text';
+import { EmptyState, Icon, IconButton, PressableScale, SheetScreen, TextLinkButton } from '@/components/ui';
+import { Colors, Radii, Spacing } from '@/constants/theme';
+import { goBack } from '@/lib/navigation';
+import { countUnread, useNotificationsStore, type DemoNotification } from '@/state/notifications-store';
+
+/**
+ * Notifications drawer opened from the Search header bell. Frontend demo only
+ * (OQ-27): a fixed local list labelled "Demo", no push notifications or
+ * backend. Tapping an item marks it read and opens what it refers to.
+ */
+export default function NotificationsSheet() {
+  const items = useNotificationsStore((s) => s.items);
+  const markRead = useNotificationsStore((s) => s.markRead);
+  const markAllRead = useNotificationsStore((s) => s.markAllRead);
+  const clearAll = useNotificationsStore((s) => s.clearAll);
+  const unread = countUnread(items);
+
+  function open(item: DemoNotification) {
+    markRead(item.id);
+    goBack();
+    const { target } = item;
+    if (target.kind === 'support-history') router.push('/profile/support-history');
+    else if (target.kind === 'album') router.push({ pathname: '/album/[id]', params: { id: target.id } });
+    else if (target.kind === 'artist') router.push({ pathname: '/artist/[id]', params: { id: target.id } });
+    else router.push({ pathname: '/playlist/[id]', params: { id: target.id } });
+  }
+
+  return (
+    <SheetScreen>
+      <View style={styles.header}>
+        <View style={styles.headerText}>
+          <View style={styles.titleRow}>
+            <ThemedText variant="headline-md">Notifications</ThemedText>
+            <View style={styles.demoPill}>
+              <ThemedText variant="label-sm" emphasis="medium">
+                DEMO
+              </ThemedText>
+            </View>
+          </View>
+          <ThemedText variant="body-sm" emphasis="medium">
+            {unread > 0 ? `${unread} unread` : 'All caught up'}
+          </ThemedText>
+        </View>
+        <IconButton icon="close" size={36} accessibilityLabel="Close" onPress={() => goBack()} />
+      </View>
+
+      {items.length === 0 ? (
+        <EmptyState icon="notifications-none" title="No notifications" hint="New releases and support receipts will show up here." />
+      ) : (
+        <>
+          <View style={styles.actions}>
+            <TextLinkButton label="Mark all read" tone="muted" onPress={markAllRead} disabled={unread === 0} />
+            <TextLinkButton label="Clear all" tone="muted" onPress={clearAll} />
+          </View>
+          <ScrollView contentContainerStyle={styles.list}>
+            {items.map((item) => (
+              <PressableScale
+                key={item.id}
+                accessibilityRole="button"
+                accessibilityLabel={`${item.read ? '' : 'Unread. '}${item.title}. ${item.body}`}
+                onPress={() => open(item)}
+                style={[styles.row, !item.read && styles.rowUnread]}
+              >
+                <View style={styles.iconTile}>
+                  <Icon name={item.icon} size={20} color={Colors.primary} />
+                </View>
+                <View style={styles.rowText}>
+                  <View style={styles.rowTitle}>
+                    <ThemedText variant="label-lg" numberOfLines={1} style={styles.flexText}>
+                      {item.title}
+                    </ThemedText>
+                    <ThemedText variant="body-sm" emphasis="low">
+                      {item.timeLabel}
+                    </ThemedText>
+                  </View>
+                  <ThemedText variant="body-sm" emphasis="medium" numberOfLines={2}>
+                    {item.body}
+                  </ThemedText>
+                </View>
+                {!item.read && <View style={styles.unreadDot} />}
+              </PressableScale>
+            ))}
+          </ScrollView>
+        </>
+      )}
+    </SheetScreen>
+  );
+}
+
+const styles = StyleSheet.create({
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.margin,
+    paddingTop: Spacing.sm,
+  },
+  headerText: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  demoPill: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+    borderRadius: Radii.full,
+    backgroundColor: Colors.surface.l3,
+  },
+  actions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: Spacing.lg,
+    paddingHorizontal: Spacing.margin,
+    paddingTop: Spacing.md,
+  },
+  list: {
+    paddingHorizontal: Spacing.margin,
+    paddingTop: Spacing.sm,
+    paddingBottom: Spacing.md,
+    gap: Spacing.xs,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    padding: Spacing.sm,
+    borderRadius: Radii.md,
+  },
+  rowUnread: {
+    backgroundColor: Colors.surface.l2,
+  },
+  iconTile: {
+    width: 40,
+    height: 40,
+    borderRadius: Radii.DEFAULT,
+    backgroundColor: 'rgba(255, 75, 75, 0.14)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rowText: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  rowTitle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  flexText: {
+    flex: 1,
+  },
+  unreadDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.primary,
+  },
+});

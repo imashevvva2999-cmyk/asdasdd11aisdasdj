@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MmusicBrand } from '@/components/mmusic-brand';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { CoverCard, FeaturedBanner, IconButton, MoodCard, QuickTile, SectionHeader, TrackRow } from '@/components/ui';
+import { CoverCard, FeaturedBanner, IconButton, MoodCard, QuickTile, SectionHeader, TrackRow, type MoodVisualKind } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -21,6 +21,14 @@ import {
 } from '@/mocks';
 import { useLibraryStore } from '@/state/library-store';
 import { usePlayerStore } from '@/state/player-store';
+
+/** Mood motif per mix (presentation only — the mix data stays unchanged). */
+const MOOD_VISUALS: Record<string, MoodVisualKind> = {
+  'late-night': 'moon',
+  melancholy: 'rain',
+  'high-energy': 'energy',
+  'flow-state': 'flow',
+};
 
 /** S-01 Home — tab root (docs/screens.md §3.1). */
 export default function HomeScreen() {
@@ -63,6 +71,7 @@ export default function HomeScreen() {
           <View style={styles.section}>
             <FeaturedBanner
               layout="footer"
+              animated
               title={hero.title}
               subtitle={hero.curator}
               coverUri={hero.coverUri}
@@ -174,6 +183,7 @@ export default function HomeScreen() {
                     trackCountLabel={`${mix.trackCount} Tracks`}
                     icon={mix.icon}
                     tint={mix.tint}
+                    visual={MOOD_VISUALS[mix.id]}
                     onPress={() => {
                       play(mix.trackIds[0]!, mix.trackIds);
                       router.push('/player/now-playing');
