@@ -1,6 +1,10 @@
-import { Stack } from 'expo-router';
+import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
 
 import { Colors } from '@/constants/theme';
+
+/** The stack's cards take the theme background; transparent here so the screen
+ * beneath shows while Now Playing slides (Lyrics/Queue keep their opaque content). */
+const PLAYER_THEME = { ...DarkTheme, colors: { ...DarkTheme.colors, background: 'transparent' } };
 
 /**
  * Full-screen player modal stack (DESIGN.md "Floating Mini-Player" opens this;
@@ -11,16 +15,18 @@ import { Colors } from '@/constants/theme';
  */
 export default function PlayerStackLayout() {
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-        contentStyle: { backgroundColor: Colors.canvas },
-      }}
-    >
-      {/* Transparent: Now Playing slides over the screen beneath (its own sheet + background). */}
-      <Stack.Screen name="now-playing" options={{ contentStyle: { backgroundColor: 'transparent' } }} />
-      <Stack.Screen name="lyrics" />
-      <Stack.Screen name="queue" />
-    </Stack>
+    <ThemeProvider value={PLAYER_THEME}>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: Colors.canvas },
+        }}
+      >
+        {/* Transparent: Now Playing slides over the screen beneath (its own sheet + background). */}
+        <Stack.Screen name="now-playing" options={{ contentStyle: { backgroundColor: 'transparent' } }} />
+        <Stack.Screen name="lyrics" />
+        <Stack.Screen name="queue" />
+      </Stack>
+    </ThemeProvider>
   );
 }
