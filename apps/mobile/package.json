@@ -52,7 +52,7 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
-    "test": "node scripts/verify-routes.mjs && tsx scripts/verify-player-store.mjs && tsx scripts/verify-support-store.mjs && tsx scripts/verify-artist-store.mjs && tsx scripts/verify-library-store.mjs && tsx scripts/verify-search-match.mjs && tsx scripts/verify-artwork-coverage.mjs",
+    "test": "node scripts/verify-routes.mjs && tsx scripts/verify-player-store.mjs && tsx scripts/verify-support-store.mjs && tsx scripts/verify-artist-store.mjs && tsx scripts/verify-library-store.mjs && tsx scripts/verify-search-match.mjs && tsx scripts/verify-palettes.mjs && tsx scripts/verify-artwork-coverage.mjs",
     "verify:routes": "node scripts/verify-routes.mjs",
     "verify:player-store": "tsx scripts/verify-player-store.mjs",
     "verify:support-store": "tsx scripts/verify-support-store.mjs",
