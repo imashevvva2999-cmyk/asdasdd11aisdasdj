@@ -5,6 +5,7 @@ import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, w
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
+import { hasDemoAudio } from '@/audio/demo-audio';
 import { ThemedView } from '@/components/themed-view';
 import { Artwork, CircleButton, Icon, IconButton, PressableScale } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
@@ -23,7 +24,9 @@ export default function NowPlayingScreen() {
   const currentTrackId = usePlayerStore((s) => s.currentTrackId());
   const track = usePlayerStore((s) => s.currentTrack());
   const isPlaying = usePlayerStore((s) => s.isPlaying);
+  const playback = usePlayerStore((s) => s.playback);
   const progressSec = usePlayerStore((s) => s.progressSec);
+  const engineDurationSec = usePlayerStore((s) => s.durationSec);
   const shuffle = usePlayerStore((s) => s.shuffle);
   const repeat = usePlayerStore((s) => s.repeat);
   const togglePlayPause = usePlayerStore((s) => s.togglePlayPause);
@@ -39,7 +42,9 @@ export default function NowPlayingScreen() {
   const reduceMotion = useReducedMotion();
 
   // Hooks stay above the empty-state return below.
-  const ratio = track && track.durationSec > 0 ? Math.min(1, progressSec / track.durationSec) : 0;
+  // The engine's real duration once loaded; the catalog value until then.
+  const durationSec = engineDurationSec ?? track?.durationSec ?? 0;
+  const ratio = durationSec > 0 ? Math.min(1, progressSec / durationSec) : 0;
   const progress = useSmoothProgress(ratio);
   const progressFillStyle = useAnimatedStyle(() => ({ width: `${progress.value * 100}%` }));
   const thumbStyle = useAnimatedStyle(() => ({ left: `${progress.value * 100}%` }));
@@ -84,7 +89,10 @@ export default function NowPlayingScreen() {
   }
 
   const album = track.albumId ? getAlbumById(track.albumId) : undefined;
-  const remainingSec = Math.max(0, track.durationSec - progressSec);
+  const remainingSec = Math.max(0, durationSec - progressSec);
+  const unavailable = playback === 'unavailable';
+  const failed = playback === 'error';
+  const demoAudio = hasDemoAudio(track.id);
   // Stitch: artwork spans the content width (20px margins), capped at 340.
   const artworkSize = Math.min(340, windowWidth - Spacing.margin * 2);
 
@@ -123,10 +131,26 @@ export default function NowPlayingScreen() {
             <ThemedText variant="headline-lg" numberOfLines={1}>
               {track.title}
             </ThemedText>
-            <PressableLink
-              label={track.artistName}
-              onPress={() => router.push({ pathname: '/artist/[id]', params: { id: track.artistId } })}
-            />
+            {/* Inline with the artist so the title block keeps one height for every track. */}
+            <View style={styles.artistRow}>
+              <PressableLink
+                label={track.artistName}
+                onPress={() => router.push({ pathname: '/artist/[id]', params: { id: track.artistId } })}
+              />
+              {demoAudio && (
+                <PressableScale
+                  accessibilityRole="button"
+                  accessibilityLabel="Demo audio. View credits"
+                  onPress={() => router.push('/sheets/demo-audio')}
+                  style={styles.demoPill}
+                >
+                  <Icon name="info-outline" size={14} color={Colors.text.medium} />
+                  <ThemedText variant="label-sm" emphasis="medium">
+                    Demo audio
+                  </ThemedText>
+                </PressableScale>
+              )}
+            </View>
           </View>
           <IconButton
             icon={liked ? 'favorite' : 'favorite-border'}
@@ -141,10 +165,12 @@ export default function NowPlayingScreen() {
           <Pressable
             accessibilityRole="adjustable"
             accessibilityLabel="Seek"
+            accessibilityState={{ disabled: unavailable }}
+            disabled={unavailable}
             aria-valuemin={0}
-            aria-valuemax={track.durationSec}
+            aria-valuemax={Math.round(durationSec)}
             aria-valuenow={Math.floor(progressSec)}
-            aria-valuetext={`${formatTime(progressSec)} of ${formatTime(track.durationSec)}`}
+            aria-valuetext={`${formatTime(progressSec)} of ${formatTime(durationSec)}`}
             onLayout={(event) => setScrubberWidth(event.nativeEvent.layout.width)}
             onPress={(event) => {
               if (scrubberWidth <= 0) return;
@@ -154,22 +180,31 @@ export default function NowPlayingScreen() {
               const x = Number.isFinite(native.locationX) ? native.locationX : native.offsetX;
               if (x === undefined || !Number.isFinite(x)) return;
               const ratio = Math.min(1, Math.max(0, x / scrubberWidth));
-              seekTo(Math.round(ratio * track.durationSec));
+              seekTo(Math.round(ratio * durationSec));
             }}
             style={styles.scrubberHitArea}
           >
             <View style={styles.scrubberTrack}>
               <Animated.View style={[styles.scrubberProgress, progressFillStyle]} />
             </View>
-            <Animated.View pointerEvents="none" style={[styles.scrubberThumb, thumbStyle]} />
+            {!unavailable && <Animated.View pointerEvents="none" style={[styles.scrubberThumb, thumbStyle]} />}
           </Pressable>
+          {/* Same row height in every state, so nothing shifts. */}
           <View style={styles.timeRow}>
-            <ThemedText variant="mono-num" emphasis="medium">
-              {formatTime(progressSec)}
-            </ThemedText>
-            <ThemedText variant="mono-num" emphasis="medium">
-              -{formatTime(remainingSec)}
-            </ThemedText>
+            {unavailable || failed ? (
+              <ThemedText variant="body-sm" emphasis="medium" accessibilityRole="alert">
+                {unavailable ? 'No audio in this preview' : "Couldn't play this track. Tap play to retry."}
+              </ThemedText>
+            ) : (
+              <>
+                <ThemedText variant="mono-num" emphasis="medium">
+                  {formatTime(progressSec)}
+                </ThemedText>
+                <ThemedText variant="mono-num" emphasis="medium">
+                  -{formatTime(remainingSec)}
+                </ThemedText>
+              </>
+            )}
           </View>
         </View>
 
@@ -185,9 +220,11 @@ export default function NowPlayingScreen() {
           <IconButton variant="ghost" icon="skip-previous" iconSize={38} accessibilityLabel="Previous track" size={52} onPress={previous} />
           <CircleButton
             icon={isPlaying ? 'pause' : 'play-arrow'}
-            accessibilityLabel={isPlaying ? 'Pause' : 'Play'}
+            accessibilityLabel={unavailable ? 'Play (no audio in this preview)' : playback === 'loading' ? 'Loading. Pause' : isPlaying ? 'Pause' : 'Play'}
             size={72}
             iconSize={36}
+            disabled={unavailable}
+            loading={playback === 'loading'}
             onPress={togglePlayPause}
           />
           <IconButton variant="ghost" icon="skip-next" iconSize={38} accessibilityLabel="Next track" size={52} onPress={next} />
@@ -295,6 +332,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 2,
     alignSelf: 'flex-start',
+    flexShrink: 1,
+  },
+  artistRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
   },
   scrubberBlock: {
     paddingHorizontal: Spacing.margin,
@@ -331,6 +374,16 @@ const styles = StyleSheet.create({
   timeRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    minHeight: 20,
+  },
+  demoPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+    borderRadius: Radii.full,
+    backgroundColor: Colors.surface.l2,
   },
   transportRow: {
     flexDirection: 'row',

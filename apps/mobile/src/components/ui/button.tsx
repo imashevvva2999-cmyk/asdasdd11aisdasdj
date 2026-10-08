@@ -127,6 +127,8 @@ export type CircleButtonProps = {
   icon: string;
   onPress?: PressHandler;
   disabled?: boolean;
+  /** Shows a spinner in place of the glyph (same size) — e.g. audio loading. Still pressable. */
+  loading?: boolean;
   /** 64px main transport control (Play/Pause) vs 40/48px secondary controls. */
   size?: number;
   iconSize?: number;
@@ -135,12 +137,12 @@ export type CircleButtonProps = {
 };
 
 /** Primary circle button — 48–64px coral circle (DESIGN.md "Tactile Playback Controls"). */
-export function CircleButton({ icon, onPress, disabled = false, size = 64, iconSize = 28, style, accessibilityLabel }: CircleButtonProps) {
+export function CircleButton({ icon, onPress, disabled = false, loading = false, size = 64, iconSize = 28, style, accessibilityLabel }: CircleButtonProps) {
   return (
     <PressableScale
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
-      accessibilityState={{ disabled }}
+      accessibilityState={{ disabled, busy: loading }}
       disabled={disabled}
       onPress={onPress}
       style={[
@@ -150,7 +152,11 @@ export function CircleButton({ icon, onPress, disabled = false, size = 64, iconS
         style,
       ]}
     >
-      <AnimatedIcon name={icon} size={iconSize} color={Colors.text.high} />
+      {loading ? (
+        <ActivityIndicator size={iconSize > 28 ? 'large' : 'small'} color={Colors.text.high} />
+      ) : (
+        <AnimatedIcon name={icon} size={iconSize} color={Colors.text.high} />
+      )}
     </PressableScale>
   );
 }
@@ -166,6 +172,8 @@ export type IconButtonProps = {
   variant?: 'surface' | 'ghost';
   /** Glyph size; defaults to 45% of `size` (surface) or 60% (ghost). */
   iconSize?: number;
+  /** Shows a spinner in place of the glyph (same size) — e.g. audio loading. Still pressable. */
+  loading?: boolean;
   accessibilityLabel: string;
   style?: ViewStyle;
 };
@@ -179,6 +187,7 @@ export function IconButton({
   color = Colors.text.high,
   variant = 'surface',
   iconSize,
+  loading = false,
   accessibilityLabel,
   style,
 }: IconButtonProps) {
@@ -187,7 +196,7 @@ export function IconButton({
     <PressableScale
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
-      accessibilityState={{ disabled }}
+      accessibilityState={{ disabled, busy: loading }}
       disabled={disabled}
       onPress={onPress}
       style={[
@@ -197,7 +206,11 @@ export function IconButton({
         style,
       ]}
     >
-      <AnimatedIcon name={icon} size={iconSize ?? Math.round(size * (ghost ? 0.6 : 0.45))} color={color} />
+      {loading ? (
+        <ActivityIndicator size="small" color={color} />
+      ) : (
+        <AnimatedIcon name={icon} size={iconSize ?? Math.round(size * (ghost ? 0.6 : 0.45))} color={color} />
+      )}
     </PressableScale>
   );
 }

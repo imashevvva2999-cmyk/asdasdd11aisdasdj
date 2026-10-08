@@ -1,14 +1,17 @@
 #!/usr/bin/env node
 /**
- * Фаза 4, Batch 2 — frontend test for the shared `usePlayerStore` Zustand store
- * (src/state/player-store.ts). No Jest/RNTL is configured in this environment, so
- * this exercises the real store module directly (via `tsx`, which resolves the
- * `@/*` tsconfig path alias) and asserts on its public API — the same practical
- * approach as scripts/verify-routes.mjs for navigation.
+ * Tests for the shared `usePlayerStore` (src/state/player-store.ts) driving a
+ * real audio engine (Фаза 2 — docs/superpowers/specs/2026-10-08-phase2-real-audio-design.md).
+ * No Jest/RNTL is configured, so this exercises the real store module via `tsx`
+ * and asserts on its public API. The store talks to audio through the small
+ * `AudioEngine` interface; here a test engine records the commands it receives
+ * and lets the test push playback-status updates, exactly as expo-audio does.
  *
- * Usage: npx tsx scripts/verify-player-store.mjs (or `pnpm run verify:player-store`)
+ * Usage: npx tsx scripts/verify-player-store.mjs
  */
-import { usePlayerStore, stopPlayerTicking } from '../src/state/player-store.ts';
+import { hasDemoAudio } from '../src/audio/demo-audio.ts';
+import { getTrackById } from '../src/mocks/index.ts';
+import { bindAudioEngine, usePlayerStore } from '../src/state/player-store.ts';
 
 let failures = 0;
 
@@ -21,91 +24,223 @@ function check(label, condition) {
   }
 }
 
-// play() sets current track and queue, starts playing.
-usePlayerStore.getState().play('horizon', ['midnight-mirage', 'horizon', 'obsidian-frequencies']);
-check('play() sets currentTrackId to the requested track', usePlayerStore.getState().currentTrackId() === 'horizon');
-check('play() sets isPlaying to true', usePlayerStore.getState().isPlaying === true);
-check('play() adopts the provided queue', usePlayerStore.getState().queue.join(',') === 'midnight-mirage,horizon,obsidian-frequencies');
+function createTestEngine() {
+  const calls = [];
+  let listener = null;
+  return {
+    calls,
+    load: (trackId) => calls.push(['load', trackId]),
+    play: () => calls.push(['play']),
+    pause: () => calls.push(['pause']),
+    seekTo: (sec) => calls.push(['seekTo', sec]),
+    setLoop: (on) => calls.push(['setLoop', on]),
+    onStatus: (cb) => {
+      listener = cb;
+      return () => {
+        listener = null;
+      };
+    },
+    emit: (status) =>
+      listener?.({ currentTime: 0, duration: 0, playing: false, isBuffering: false, isLoaded: true, didJustFinish: false, error: null, ...status }),
+    reset: () => {
+      calls.length = 0;
+    },
+    called: (name, arg) => calls.some((c) => c[0] === name && (arg === undefined || c[1] === arg)),
+  };
+}
 
-// togglePlayPause() / pause().
-usePlayerStore.getState().togglePlayPause();
-check('togglePlayPause() pauses when playing', usePlayerStore.getState().isPlaying === false);
-usePlayerStore.getState().togglePlayPause();
-check('togglePlayPause() resumes when paused', usePlayerStore.getState().isPlaying === true);
-usePlayerStore.getState().pause();
-check('pause() stops playback', usePlayerStore.getState().isPlaying === false);
+const engine = createTestEngine();
+bindAudioEngine(engine);
+const store = () => usePlayerStore.getState();
+const QUEUE = ['midnight-mirage', 'horizon', 'obsidian-frequencies'];
 
-// next() / previous() move through the queue.
-usePlayerStore.getState().next();
-check('next() advances to the following track in queue', usePlayerStore.getState().currentTrackId() === 'obsidian-frequencies');
-usePlayerStore.getState().previous();
-check('previous() moves back to the prior track (progress was 0)', usePlayerStore.getState().currentTrackId() === 'horizon');
+// Demo audio mapping (approved: Midnight Mirage + Horizon only).
+check('Midnight Mirage has demo audio', hasDemoAudio('midnight-mirage'));
+check('Horizon has demo audio', hasDemoAudio('horizon'));
+check('Obsidian Frequencies has no audio', !hasDemoAudio('obsidian-frequencies'));
+check('catalog duration of Midnight Mirage matches its audio (4:00)', getTrackById('midnight-mirage')?.durationSec === 240);
+check('catalog duration of Horizon matches its audio (3:04)', getTrackById('horizon')?.durationSec === 184);
 
-// next() at end of queue without repeat stops playback.
-usePlayerStore.getState().play('obsidian-frequencies', ['midnight-mirage', 'horizon', 'obsidian-frequencies']);
-usePlayerStore.getState().next();
-check('next() at end of queue (repeat off) stops playback', usePlayerStore.getState().isPlaying === false);
-check('next() at end of queue (repeat off) keeps the last track current', usePlayerStore.getState().currentTrackId() === 'obsidian-frequencies');
+// Initial state: nothing is playing, nothing pretends to.
+check('starts idle and not playing', store().playback === 'idle' && store().isPlaying === false);
 
-// repeat 'all' wraps to the start of the queue instead of stopping.
-usePlayerStore.getState().cycleRepeat(); // off -> all
-check('cycleRepeat() moves off -> all', usePlayerStore.getState().repeat === 'all');
-usePlayerStore.getState().play('obsidian-frequencies', ['midnight-mirage', 'horizon', 'obsidian-frequencies']);
-usePlayerStore.getState().next();
-check('next() with repeat=all wraps to the first track', usePlayerStore.getState().currentTrackId() === 'midnight-mirage');
-usePlayerStore.getState().cycleRepeat(); // all -> one
-usePlayerStore.getState().cycleRepeat(); // one -> off
-check('cycleRepeat() wraps one -> off', usePlayerStore.getState().repeat === 'off');
+// play() a track with audio: loads it into the engine and starts it.
+engine.reset();
+store().play('horizon', QUEUE);
+check('play() sets currentTrackId to the requested track', store().currentTrackId() === 'horizon');
+check('play() adopts the provided queue', store().queue.join(',') === QUEUE.join(','));
+check('play() loads that track into the engine', engine.called('load', 'horizon'));
+check('play() starts the engine', engine.called('play'));
+check('play() is "loading" until the engine reports playing', store().playback === 'loading' && store().isPlaying === false);
 
-// seekTo() clamps to the track duration.
-usePlayerStore.getState().play('midnight-mirage');
-const duration = usePlayerStore.getState().currentTrack()?.durationSec ?? 0;
-usePlayerStore.getState().seekTo(duration + 999);
-check('seekTo() clamps progress to the track duration', usePlayerStore.getState().progressSec === duration);
-usePlayerStore.getState().seekTo(-50);
-check('seekTo() clamps negative values to 0', usePlayerStore.getState().progressSec === 0);
+// Status while still loading (playing=false) keeps "loading" but takes the real duration.
+engine.emit({ playing: false, duration: 184.2 });
+check('a not-yet-playing status keeps "loading"', store().playback === 'loading');
+check('duration comes from the engine', store().durationSec === 184.2);
 
-// shuffle toggles.
-usePlayerStore.getState().toggleShuffle();
-check('toggleShuffle() enables shuffle', usePlayerStore.getState().shuffle === true);
-usePlayerStore.getState().toggleShuffle();
-check('toggleShuffle() disables shuffle', usePlayerStore.getState().shuffle === false);
+// Engine reports playing: progress follows the engine.
+engine.emit({ playing: true, currentTime: 1.5, duration: 184.2 });
+check('engine "playing" status → playback "playing"', store().playback === 'playing' && store().isPlaying === true);
+check('progressSec follows the engine position', store().progressSec === 1.5);
 
-// like/unlike — demonstrates the cross-screen shared state (e.g. Now Playing <-> Liked Songs).
+// Pause / resume.
+engine.reset();
+store().togglePlayPause();
+check('togglePlayPause() while playing pauses the engine', engine.called('pause'));
+check('togglePlayPause() while playing → "paused"', store().playback === 'paused' && store().isPlaying === false);
+engine.emit({ playing: false, currentTime: 2 });
+check('paused status keeps "paused" and updates position', store().playback === 'paused' && store().progressSec === 2);
+engine.reset();
+store().togglePlayPause();
+check('resume plays the already-loaded track without reloading', engine.called('play') && !engine.called('load'));
+check('resume → "playing"', store().playback === 'playing');
+engine.reset();
+store().pause();
+check('pause() pauses the engine', engine.called('pause') && store().playback === 'paused');
+
+// External pause (e.g. an interruption) is reflected.
+store().togglePlayPause();
+engine.emit({ playing: true, currentTime: 3 });
+engine.emit({ playing: false, currentTime: 3 });
+check('an engine-side pause shows as "paused"', store().playback === 'paused');
+
+// Seeking.
+engine.reset();
+store().seekTo(42);
+check('seekTo() seeks the engine', engine.called('seekTo', 42));
+check('seekTo() moves progress right away', store().progressSec === 42);
+store().seekTo(9999);
+check('seekTo() clamps to the duration', store().progressSec === 184.2);
+store().seekTo(-50);
+check('seekTo() clamps negative values to 0', store().progressSec === 0);
+
+// A track without audio: no simulated playback.
+engine.reset();
+store().play('obsidian-frequencies', QUEUE);
+check('track without audio → "unavailable"', store().playback === 'unavailable');
+check('track without audio is not loaded into the engine', !engine.called('load'));
+check('track without audio stops the engine', engine.called('pause'));
+check('track without audio is not "playing" and has no progress', store().isPlaying === false && store().progressSec === 0);
+engine.emit({ playing: true, currentTime: 5 });
+check('stale engine status cannot make it look like it plays', store().playback === 'unavailable' && store().progressSec === 0);
+engine.reset();
+store().togglePlayPause();
+check('Play does nothing on a track without audio', !engine.called('play') && store().playback === 'unavailable');
+store().seekTo(10);
+check('seek does nothing on a track without audio', !engine.called('seekTo') && store().progressSec === 0);
+
+// Next / Previous between the two demo tracks, then onto a track without audio (no auto-skip).
+engine.reset();
+store().play('midnight-mirage', QUEUE);
+engine.emit({ playing: true, currentTime: 1 });
+engine.reset();
+store().next();
+check('next() moves to the following track', store().currentTrackId() === 'horizon');
+check('next() loads and plays it', engine.called('load', 'horizon') && engine.called('play'));
+engine.emit({ playing: true, currentTime: 1 });
+engine.reset();
+store().next();
+check('next() onto a track without audio stops there (no auto-skip)', store().currentTrackId() === 'obsidian-frequencies' && store().playback === 'unavailable');
+check('next() onto a track without audio stops the sound', engine.called('pause') && !engine.called('play'));
+engine.reset();
+store().previous();
+check('previous() from it goes back and plays Horizon', store().currentTrackId() === 'horizon' && engine.called('load', 'horizon'));
+engine.emit({ playing: true, currentTime: 10 });
+engine.reset();
+store().previous();
+check('previous() after 3 s restarts the same track', store().currentTrackId() === 'horizon' && engine.called('seekTo', 0) && !engine.called('load'));
+engine.emit({ playing: true, currentTime: 1 });
+engine.reset();
+store().previous();
+check('previous() within 3 s goes to the previous track', store().currentTrackId() === 'midnight-mirage' && engine.called('load', 'midnight-mirage'));
+
+// Track end → next track.
+store().play('midnight-mirage', ['midnight-mirage', 'horizon']);
+engine.emit({ playing: true, currentTime: 239 });
+engine.reset();
+engine.emit({ playing: false, currentTime: 240, didJustFinish: true });
+check('track end advances to the next track', store().currentTrackId() === 'horizon' && engine.called('load', 'horizon'));
+
+// A duplicate "finished" report for the same ending must not skip another track.
+store().play('midnight-mirage', ['midnight-mirage', 'horizon', 'obsidian-frequencies']);
+engine.emit({ playing: true, currentTime: 239 });
+engine.emit({ playing: false, currentTime: 240, didJustFinish: true });
+engine.emit({ playing: false, currentTime: 240, didJustFinish: true });
+check('a repeated "finished" status advances only once', store().currentTrackId() === 'horizon');
+store().play('horizon', ['midnight-mirage', 'horizon']);
+
+// End of queue with repeat off: stop on the last track.
+engine.emit({ playing: true, currentTime: 183 });
+engine.reset();
+engine.emit({ playing: false, currentTime: 184, didJustFinish: true });
+check('end of queue (repeat off) stops on the last track', store().currentTrackId() === 'horizon' && store().playback === 'paused');
+
+// Repeat one: the engine loops; finishing never advances.
+engine.reset();
+store().cycleRepeat(); // off -> all
+check('cycleRepeat() moves off -> all', store().repeat === 'all' && engine.called('setLoop', false));
+store().cycleRepeat(); // all -> one
+check('repeat one turns engine looping on', store().repeat === 'one' && engine.called('setLoop', true));
+store().play('midnight-mirage', ['midnight-mirage', 'horizon']);
+engine.emit({ playing: true, currentTime: 239 });
+engine.reset();
+engine.emit({ playing: false, currentTime: 240, didJustFinish: true });
+check('repeat one: track end restarts the same track', store().currentTrackId() === 'midnight-mirage' && engine.called('seekTo', 0) && engine.called('play'));
+store().cycleRepeat(); // one -> off
+check('cycleRepeat() wraps one -> off and stops looping', store().repeat === 'off' && engine.called('setLoop', false));
+
+// Repeat all wraps to the start of the queue.
+store().cycleRepeat(); // off -> all
+store().play('horizon', ['midnight-mirage', 'horizon']);
+engine.reset();
+store().next();
+check('next() with repeat=all wraps to the first track', store().currentTrackId() === 'midnight-mirage' && engine.called('load', 'midnight-mirage'));
+store().cycleRepeat(); // all -> one
+store().cycleRepeat(); // one -> off
+
+// Load / playback error.
+store().play('horizon', QUEUE);
+engine.emit({ isLoaded: false, error: 'Playback error (code 4)' });
+check('engine error → "error" and not playing', store().playback === 'error' && store().isPlaying === false);
+engine.reset();
+store().togglePlayPause();
+check('Play after an error retries by reloading the track', engine.called('load', 'horizon') && engine.called('play') && store().playback === 'loading');
+
+// Shuffle.
+store().toggleShuffle();
+check('toggleShuffle() enables shuffle', store().shuffle === true);
+store().toggleShuffle();
+check('toggleShuffle() disables shuffle', store().shuffle === false);
+const shuffleQueue = ['midnight-mirage', 'horizon'];
+store().playShuffled(shuffleQueue);
+check('playShuffled() enables shuffle mode', store().shuffle === true);
+check('playShuffled() plays a track from the given list', shuffleQueue.includes(store().currentTrackId()));
+check('playShuffled() starts the engine', store().playback === 'loading');
+store().toggleShuffle();
+
+// Likes — shared across screens.
 const notLikedId = 'ember-tide';
-check('a fresh track starts unliked', usePlayerStore.getState().isLiked(notLikedId) === false);
-usePlayerStore.getState().toggleLike(notLikedId);
-check('toggleLike() likes an unliked track', usePlayerStore.getState().isLiked(notLikedId) === true);
-usePlayerStore.getState().toggleLike(notLikedId);
-check('toggleLike() unlikes a liked track', usePlayerStore.getState().isLiked(notLikedId) === false);
+check('a fresh track starts unliked', store().isLiked(notLikedId) === false);
+store().toggleLike(notLikedId);
+check('toggleLike() likes an unliked track', store().isLiked(notLikedId) === true);
+store().toggleLike(notLikedId);
+check('toggleLike() unlikes a liked track', store().isLiked(notLikedId) === false);
 
-// queue management — setQueue / removeFromQueue / playFromQueueIndex.
-usePlayerStore.getState().setQueue(['midnight-mirage', 'horizon', 'ember-tide'], 0);
-check('setQueue() replaces the queue', usePlayerStore.getState().queue.join(',') === 'midnight-mirage,horizon,ember-tide');
-usePlayerStore.getState().removeFromQueue('ember-tide');
-check('removeFromQueue() removes a non-current upcoming track', usePlayerStore.getState().queue.join(',') === 'midnight-mirage,horizon');
-usePlayerStore.getState().playFromQueueIndex(1);
-check('playFromQueueIndex() jumps to and plays the given position', usePlayerStore.getState().currentTrackId() === 'horizon' && usePlayerStore.getState().isPlaying === true);
+// Queue management.
+store().setQueue(['midnight-mirage', 'horizon', 'ember-tide'], 0);
+check('setQueue() replaces the queue', store().queue.join(',') === 'midnight-mirage,horizon,ember-tide');
+store().removeFromQueue('ember-tide');
+check('removeFromQueue() removes a non-current upcoming track', store().queue.join(',') === 'midnight-mirage,horizon');
+engine.reset();
+store().playFromQueueIndex(1);
+check('playFromQueueIndex() jumps to and plays the given position', store().currentTrackId() === 'horizon' && engine.called('load', 'horizon'));
 
 // Autoplay preference (Queue "Infinity Autoplay" toggle).
-check('autoplay is off by default', usePlayerStore.getState().autoplay === false);
-usePlayerStore.getState().toggleAutoplay();
-check('toggleAutoplay() turns it on', usePlayerStore.getState().autoplay === true);
-usePlayerStore.getState().toggleAutoplay();
-check('toggleAutoplay() again turns it off', usePlayerStore.getState().autoplay === false);
-
-// playShuffled() (Shuffle buttons on Playlist / Album / Artist / Liked Songs).
-const shuffleQueue = ['midnight-mirage', 'horizon', 'ember-tide', 'obsidian-frequencies'];
-usePlayerStore.getState().playShuffled(shuffleQueue);
-check('playShuffled() starts playback', usePlayerStore.getState().isPlaying === true);
-check('playShuffled() enables shuffle mode', usePlayerStore.getState().shuffle === true);
-check('playShuffled() plays a track from the given list', shuffleQueue.includes(usePlayerStore.getState().currentTrackId()));
-
-// seekTo() (Now Playing scrubber tap-to-seek).
-usePlayerStore.getState().seekTo(42);
-check('seekTo() moves progress to the requested second', Math.floor(usePlayerStore.getState().progressSec) === 42);
-
-stopPlayerTicking();
+check('autoplay is off by default', store().autoplay === false);
+store().toggleAutoplay();
+check('toggleAutoplay() turns it on', store().autoplay === true);
+store().toggleAutoplay();
+check('toggleAutoplay() again turns it off', store().autoplay === false);
 
 if (failures > 0) {
   console.error(`\n${failures} player-store check(s) failed.`);

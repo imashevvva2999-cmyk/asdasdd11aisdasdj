@@ -48,6 +48,7 @@ const expectations = [
   { path: 'track/[id].html', mustContain: [], label: 'Track deep-link redirect' },
   { path: 'sheets/add-to-playlist.html', mustContain: ['Add to Playlist', 'Choose one or more destinations', 'New Playlist', 'Late Night Flow'], mustNotContain: ['PLACEHOLDER'], label: 'Add to Playlist (S-18)' },
   { path: 'sheets/notifications.html', mustContain: ['Notifications', 'DEMO', 'New release'], mustNotContain: ['PLACEHOLDER'], label: 'Notifications (demo drawer)' },
+  { path: 'sheets/demo-audio.html', mustContain: ['Demo audio', 'Chill Wave', 'Floating Cities', 'Kevin MacLeod', 'Creative Commons'], mustNotContain: ['PLACEHOLDER'], label: 'Demo audio credits (CC BY 4.0)' },
   { path: 'sheets/support.html', mustContain: ['Artist not found.'], mustNotContain: ['PLACEHOLDER'], label: 'Support Artist (S-19, no artist selected yet)' },
   { path: 'sheets/support-confirm.html', mustContain: ['Nothing to confirm'], mustNotContain: ['PLACEHOLDER'], label: 'Donation Confirmation (S-20, nothing to confirm yet)' },
   { path: 'sheets/support-success.html', mustContain: ['No recent support to show.'], mustNotContain: ['PLACEHOLDER'], label: 'Support Success (S-21, no recent donation yet)' },

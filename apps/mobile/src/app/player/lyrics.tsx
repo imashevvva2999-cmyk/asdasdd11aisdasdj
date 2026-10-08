@@ -20,6 +20,7 @@ export default function LyricsScreen() {
   const track = usePlayerStore((s) => s.currentTrack());
   const progressSec = usePlayerStore((s) => s.progressSec);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
+  const playback = usePlayerStore((s) => s.playback);
   const togglePlayPause = usePlayerStore((s) => s.togglePlayPause);
   const next = usePlayerStore((s) => s.next);
   const previous = usePlayerStore((s) => s.previous);
@@ -37,7 +38,9 @@ export default function LyricsScreen() {
     return index;
   }, [lines, progressSec]);
 
-  const durationSec = track?.durationSec ?? 0;
+  // The engine's real duration once loaded; the catalog value until then.
+  const engineDurationSec = usePlayerStore((s) => s.durationSec);
+  const durationSec = engineDurationSec ?? track?.durationSec ?? 0;
   const progressRatio = durationSec > 0 ? Math.min(1, progressSec / durationSec) : 0;
   const progress = useSmoothProgress(progressRatio);
   const progressFillStyle = useAnimatedStyle(() => ({ width: `${progress.value * 100}%` }));
@@ -105,20 +108,32 @@ export default function LyricsScreen() {
               <Animated.View style={[styles.progressFill, progressFillStyle]} />
             </View>
             <View style={styles.timeRow}>
-              <ThemedText variant="mono-num" emphasis="primary">
-                {formatTime(progressSec)}
-              </ThemedText>
-              <ThemedText variant="mono-num" emphasis="medium">
-                -{formatTime(Math.max(0, durationSec - progressSec))}
-              </ThemedText>
+              {playback === 'unavailable' || playback === 'error' ? (
+                <ThemedText variant="body-sm" emphasis="medium" accessibilityRole="alert">
+                  {playback === 'unavailable' ? 'No audio in this preview' : "Couldn't play this track. Tap play to retry."}
+                </ThemedText>
+              ) : (
+                <>
+                  <ThemedText variant="mono-num" emphasis="primary">
+                    {formatTime(progressSec)}
+                  </ThemedText>
+                  <ThemedText variant="mono-num" emphasis="medium">
+                    -{formatTime(Math.max(0, durationSec - progressSec))}
+                  </ThemedText>
+                </>
+              )}
             </View>
             <View style={styles.transportRow}>
               <IconButton variant="ghost" icon="skip-previous" iconSize={30} size={48} accessibilityLabel="Previous" onPress={previous} />
               <CircleButton
                 icon={isPlaying ? 'pause' : 'play-arrow'}
-                accessibilityLabel={isPlaying ? 'Pause' : 'Play'}
+                accessibilityLabel={
+                  playback === 'unavailable' ? 'Play (no audio in this preview)' : playback === 'loading' ? 'Loading. Pause' : isPlaying ? 'Pause' : 'Play'
+                }
                 size={64}
                 iconSize={32}
+                disabled={playback === 'unavailable'}
+                loading={playback === 'loading'}
                 onPress={togglePlayPause}
               />
               <IconButton variant="ghost" icon="skip-next" iconSize={30} size={48} accessibilityLabel="Next" onPress={next} />
@@ -221,6 +236,7 @@ const styles = StyleSheet.create({
   timeRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    minHeight: 20,
   },
   transportRow: {
     flexDirection: 'row',

@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+import { startAudio } from '@/audio/expo-audio-engine';
 import { loadedFonts } from '@/constants/fonts';
 import { Colors } from '@/constants/theme';
 import { MAX_CONTENT_WIDTH } from '@/hooks/use-content-width';
@@ -43,6 +44,11 @@ export default function RootLayout() {
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded, fontError]);
+
+  // Real audio (Фаза 2): created on the client only — static web rendering has no audio.
+  useEffect(() => {
+    startAudio();
+  }, []);
 
   if (!fontsLoaded && !fontError) {
     return null;

@@ -37,12 +37,16 @@ export function MiniPlayer() {
 
 function MiniPlayerBody({ track }: { track: Track }) {
   const isPlaying = usePlayerStore((s) => s.isPlaying);
+  const playback = usePlayerStore((s) => s.playback);
   const progressSec = usePlayerStore((s) => s.progressSec);
+  const engineDurationSec = usePlayerStore((s) => s.durationSec);
   const togglePlayPause = usePlayerStore((s) => s.togglePlayPause);
   const next = usePlayerStore((s) => s.next);
   const reduceMotion = useReducedMotion();
 
-  const progressRatio = track.durationSec > 0 ? Math.min(1, progressSec / track.durationSec) : 0;
+  const durationSec = engineDurationSec ?? track.durationSec;
+  const progressRatio = durationSec > 0 ? Math.min(1, progressSec / durationSec) : 0;
+  const unavailable = playback === 'unavailable';
   const progress = useSmoothProgress(progressRatio);
   const progressStyle = useAnimatedStyle(() => ({ width: `${progress.value * 100}%` }));
 
@@ -100,7 +104,9 @@ function MiniPlayerBody({ track }: { track: Track }) {
             />
             <IconButton
               icon={isPlaying ? 'pause' : 'play-arrow'}
-              accessibilityLabel={isPlaying ? 'Pause' : 'Play'}
+              accessibilityLabel={unavailable ? 'Play (no audio in this preview)' : playback === 'loading' ? 'Loading. Pause' : isPlaying ? 'Pause' : 'Play'}
+              disabled={unavailable}
+              loading={playback === 'loading'}
               onPress={(e) => {
                 e.stopPropagation();
                 togglePlayPause();
