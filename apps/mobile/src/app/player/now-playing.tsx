@@ -1,18 +1,18 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { useEffect } from 'react';
+import { Platform, StyleSheet, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { hasDemoAudio } from '@/audio/demo-audio';
 import { ArtworkCarousel } from '@/components/player/artwork-carousel';
 import { PlayerBackground } from '@/components/player/player-background';
+import { SeekBar } from '@/components/player/seek-bar';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { CircleButton, Icon, IconButton, PressableScale } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useContentWidth } from '@/hooks/use-content-width';
-import { useSmoothProgress } from '@/hooks/use-smooth-progress';
 import { goBack } from '@/lib/navigation';
 import { getAlbumById } from '@/mocks';
 import { usePlayerStore } from '@/state/player-store';
@@ -40,18 +40,12 @@ export default function NowPlayingScreen() {
   const cycleRepeat = usePlayerStore((s) => s.cycleRepeat);
   const toggleLike = usePlayerStore((s) => s.toggleLike);
   const liked = usePlayerStore((s) => (track ? s.isLiked(track.id) : false));
-  const [scrubberWidth, setScrubberWidth] = useState(0);
   const windowWidth = useContentWidth();
   const reduceMotion = useReducedMotion();
 
   // Hooks stay above the empty-state return below.
   // The engine's real duration once loaded; the catalog value until then.
   const durationSec = engineDurationSec ?? track?.durationSec ?? 0;
-  const ratio = durationSec > 0 ? Math.min(1, progressSec / durationSec) : 0;
-  const progress = useSmoothProgress(ratio);
-  const progressFillStyle = useAnimatedStyle(() => ({ width: `${progress.value * 100}%` }));
-  const thumbStyle = useAnimatedStyle(() => ({ left: `${progress.value * 100}%` }));
-
 
   // Web has no native modal transition, so the screen rises in on open.
   const enter = useSharedValue(Platform.OS === 'web' && !reduceMotion ? 0 : 1);
@@ -80,7 +74,6 @@ export default function NowPlayingScreen() {
   }
 
   const album = track.albumId ? getAlbumById(track.albumId) : undefined;
-  const remainingSec = Math.max(0, durationSec - progressSec);
   const unavailable = playback === 'unavailable';
   const failed = playback === 'error';
   const demoAudio = hasDemoAudio(track.id);
@@ -152,52 +145,14 @@ export default function NowPlayingScreen() {
           />
         </View>
 
-        <View style={styles.scrubberBlock}>
-          <Pressable
-            accessibilityRole="adjustable"
-            accessibilityLabel="Seek"
-            accessibilityState={{ disabled: unavailable }}
-            disabled={unavailable}
-            aria-valuemin={0}
-            aria-valuemax={Math.round(durationSec)}
-            aria-valuenow={Math.floor(progressSec)}
-            aria-valuetext={`${formatTime(progressSec)} of ${formatTime(durationSec)}`}
-            onLayout={(event) => setScrubberWidth(event.nativeEvent.layout.width)}
-            onPress={(event) => {
-              if (scrubberWidth <= 0) return;
-              // react-native-web press events may omit `locationX`; fall back to
-              // the DOM `offsetX` (same left edge — the bar spans the full width).
-              const native = event.nativeEvent as { locationX?: number; offsetX?: number };
-              const x = Number.isFinite(native.locationX) ? native.locationX : native.offsetX;
-              if (x === undefined || !Number.isFinite(x)) return;
-              const ratio = Math.min(1, Math.max(0, x / scrubberWidth));
-              seekTo(Math.round(ratio * durationSec));
-            }}
-            style={styles.scrubberHitArea}
-          >
-            <View style={styles.scrubberTrack}>
-              <Animated.View style={[styles.scrubberProgress, progressFillStyle]} />
-            </View>
-            {!unavailable && <Animated.View pointerEvents="none" style={[styles.scrubberThumb, thumbStyle]} />}
-          </Pressable>
-          {/* Same row height in every state, so nothing shifts. */}
-          <View style={styles.timeRow}>
-            {unavailable || failed ? (
-              <ThemedText variant="body-sm" style={styles.onColorMedium} accessibilityRole="alert">
-                {unavailable ? 'No audio in this preview' : "Couldn't play this track. Tap play to retry."}
-              </ThemedText>
-            ) : (
-              <>
-                <ThemedText variant="mono-num" style={styles.onColorMedium}>
-                  {formatTime(progressSec)}
-                </ThemedText>
-                <ThemedText variant="mono-num" style={styles.onColorMedium}>
-                  -{formatTime(remainingSec)}
-                </ThemedText>
-              </>
-            )}
-          </View>
-        </View>
+        <SeekBar
+          progressSec={progressSec}
+          durationSec={durationSec}
+          disabled={unavailable}
+          message={unavailable ? 'No audio in this preview' : failed ? "Couldn't play this track. Tap play to retry." : undefined}
+          onSeek={seekTo}
+          labelStyle={styles.onColorMedium}
+        />
 
         <View style={styles.transportRow}>
           <IconButton
@@ -268,12 +223,6 @@ function PlayerTabButton({ label, icon, onPress }: { label: string; icon: string
   );
 }
 
-function formatTime(totalSeconds: number): string {
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = Math.floor(totalSeconds % 60);
-  return `${minutes}:${String(seconds).padStart(2, '0')}`;
-}
-
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   emptyState: {
@@ -325,43 +274,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-  },
-  scrubberBlock: {
-    paddingHorizontal: Spacing.margin,
-    marginTop: Spacing.lg,
-    gap: Spacing.xs,
-  },
-  scrubberHitArea: {
-    paddingVertical: Spacing.sm,
-    justifyContent: 'center',
-  },
-  scrubberThumb: {
-    position: 'absolute',
-    width: 16,
-    height: 16,
-    marginLeft: -8,
-    borderRadius: Radii.full,
-    backgroundColor: Colors.text.high,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 4,
-    shadowOpacity: 0.3,
-  },
-  scrubberTrack: {
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(255, 255, 255, 0.24)',
-    overflow: 'hidden',
-  },
-  scrubberProgress: {
-    height: '100%',
-    backgroundColor: Colors.text.high,
-    borderRadius: 3,
-  },
-  timeRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    minHeight: 20,
   },
   demoPill: {
     flexDirection: 'row',

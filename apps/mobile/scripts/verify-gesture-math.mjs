@@ -15,6 +15,7 @@ import {
   resolveExpand,
   resolveSwipe,
   rubberBand,
+  scrubRatio,
 } from '../src/lib/gesture-math.ts';
 
 let failures = 0;
@@ -59,6 +60,11 @@ check('expand: short and slow → close (cancel)', resolveExpand(0.15, -100) ===
 check('collapse: pulled below 75% → close', resolveCollapse(0.7, 0) === 'close');
 check('collapse: short but fast downward flick → close', resolveCollapse(0.9, 900) === 'close');
 check('collapse: short and slow → stays open', resolveCollapse(0.9, 100) === 'open');
+
+// Drag-to-seek: finger x on the bar → share of the track, clamped.
+check('scrub: middle of the bar → 0.5', scrubRatio(150, 300) === 0.5);
+check('scrub: finger past either end is clamped 0…1', scrubRatio(-40, 300) === 0 && scrubRatio(360, 300) === 1);
+check('scrub: unknown bar width → 0 (no NaN seek)', scrubRatio(100, 0) === 0);
 
 if (failures > 0) {
   console.error(`\n${failures} gesture-math check(s) failed.`);

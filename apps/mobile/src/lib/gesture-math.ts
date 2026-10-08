@@ -54,6 +54,12 @@ function clamp01(value: number): number {
   return Math.min(1, Math.max(0, value));
 }
 
+/** Drag-to-seek: the finger's x on the bar as a share of the track (0…1). */
+export function scrubRatio(x: number, width: number): number {
+  'worklet';
+  return width > 0 ? clamp01(x / width) : 0;
+}
+
 /** Expand progress (0 = mini, 1 = full) from an upward drag `dy` (< 0). */
 export function expandProgress(dy: number, screenHeight: number): number {
   'worklet';
