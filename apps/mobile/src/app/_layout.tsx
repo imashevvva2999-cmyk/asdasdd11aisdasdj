@@ -9,6 +9,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { startAudio } from '@/audio/platform-audio';
 import { PlayerExpandPreview } from '@/components/player/expand-preview';
+import { RouteTitle } from '@/components/web/route-title';
 import { PlayerSurfaceSync } from '@/state/player-surface';
 import { loadedFonts } from '@/constants/fonts';
 import { Colors } from '@/constants/theme';
@@ -66,6 +67,9 @@ export default function RootLayout() {
           <StatusBar style="light" />
           {/* Keeps the shared carousel position (artwork, colours, mini-player) in step with the store. */}
           <PlayerSurfaceSync />
+          {/* Website: per-page <title> (browser tabs, history, shared links).
+              Before the stack, so a screen's own <Head> (e.g. 404) wins. */}
+          <RouteTitle />
           <Stack
             screenOptions={{
               headerShown: false,

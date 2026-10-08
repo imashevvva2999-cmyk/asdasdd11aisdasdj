@@ -67,11 +67,13 @@ const expectations = [
   { path: 'profile/artist/setup.html', mustContain: ['Primary Genre', 'Electronic', 'Create Artist Profile'], mustNotContain: ['PLACEHOLDER'], label: 'Artist Setup (S-26)' },
   { path: 'profile/artist/dashboard.html', mustContain: ['No artist profile yet', 'Set up your artist profile to start uploading tracks.'], mustNotContain: ['PLACEHOLDER'], label: 'Artist Dashboard (S-27, no local artist yet)' },
   { path: 'profile/artist/upload-track.html', mustContain: ['Upload Audio', 'Browse File', 'Track Details', 'Cover Artwork', 'Release Settings', 'Publish Track', 'Save as Draft'], mustNotContain: ['PLACEHOLDER'], label: 'Upload Track (S-28)' },
-  { path: 'dev-ui-kit.html', mustContain: ['Play All'], label: 'Фаза 2 UI kit gallery (regression check)' },
+  // W1 — the website's own 404 page (served by the host for unknown URLs).
+  { path: '+not-found.html', mustContain: ['Page not found', 'Go to Home'], mustNotContain: ['PLACEHOLDER'], label: '404 page (W1)' },
 ];
 
-console.log('Running `expo export --platform web`…');
+console.log('Running the production web build (expo export + post-export)…');
 execSync('npx expo export --platform web', { cwd: root, stdio: 'inherit' });
+execSync('node scripts/web-postexport.mjs dist', { cwd: root, stdio: 'inherit' });
 
 let failures = 0;
 
@@ -97,6 +99,67 @@ for (const { path, mustContain, mustNotContain = [], label } of expectations) {
   } else {
     console.log(`✓ OK       ${label}`);
   }
+}
+
+// W1 — website basics on every page: metadata, safe areas (iPhone), manifest.
+const HEAD_MARKERS = [' lang="en"', 'viewport-fit=cover', '<meta name="description"', '<meta name="theme-color"', 'rel="manifest"', 'property="og:title"'];
+let headFailures = 0;
+for (const { path } of expectations) {
+  const filePath = join(distDir, path);
+  if (!existsSync(filePath)) continue;
+  const html = readFileSync(filePath, 'utf8');
+  const missing = HEAD_MARKERS.filter((marker) => !html.includes(marker));
+  const title = /<title[^>]*>([^<]*)<\/title>/.exec(html)?.[1] ?? '';
+  if (missing.length > 0 || !title.includes('Mmusic')) {
+    console.error(`✗ FAIL     website head — ${path}`);
+    if (missing.length > 0) console.error(`    missing: ${missing.join(', ')}`);
+    if (!title.includes('Mmusic')) console.error(`    title: "${title}"`);
+    failures += 1;
+    headFailures += 1;
+  }
+}
+if (headFailures === 0) console.log('✓ OK       website head (metadata, viewport-fit, manifest, title) on every page');
+
+// W1 — page titles follow the content.
+const TITLES = [
+  ['home/index.html', 'Mmusic'],
+  ['search/index.html', 'Search – Mmusic'],
+  ['library/index.html', 'Your Library – Mmusic'],
+  ['artist/solaris-echo.html', 'Solaris Echo – Mmusic'],
+  ['album/horizon-deluxe.html', 'Horizon (Deluxe) – Mmusic'],
+  ['player/now-playing.html', 'Midnight Mirage by Solaris Echo – Mmusic'],
+  ['+not-found.html', 'Page not found – Mmusic'],
+];
+for (const [path, expected] of TITLES) {
+  const html = existsSync(join(distDir, path)) ? readFileSync(join(distDir, path), 'utf8') : '';
+  const title = (/<title[^>]*>([^<]*)<\/title>/.exec(html)?.[1] ?? '').replace(/&amp;/g, '&');
+  if (title === expected) {
+    console.log(`✓ OK       title "${expected}"`);
+  } else {
+    console.error(`✗ FAIL     title for ${path}: expected "${expected}", got "${title}"`);
+    failures += 1;
+  }
+}
+
+// W1 — development-only pages are not part of the public website.
+for (const path of ['dev-ui-kit.html', '_sitemap.html']) {
+  if (existsSync(join(distDir, path))) {
+    console.error(`✗ FAIL     development page published: ${path}`);
+    failures += 1;
+  } else {
+    console.log(`✓ OK       not published: ${path}`);
+  }
+}
+
+// W1 — installable web app manifest with icons.
+const manifestPath = join(distDir, 'manifest.webmanifest');
+const manifest = existsSync(manifestPath) ? JSON.parse(readFileSync(manifestPath, 'utf8')) : null;
+const iconsOk = manifest?.icons?.length >= 2 && manifest.icons.every((icon) => existsSync(join(distDir, icon.src.replace(/^\//, ''))));
+if (manifest?.name === 'Mmusic' && manifest.display === 'standalone' && iconsOk) {
+  console.log('✓ OK       web app manifest and icons');
+} else {
+  console.error('✗ FAIL     web app manifest missing or incomplete');
+  failures += 1;
 }
 
 rmSync(distDir, { recursive: true, force: true });

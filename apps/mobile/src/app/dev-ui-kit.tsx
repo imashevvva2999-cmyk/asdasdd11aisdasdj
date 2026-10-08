@@ -5,6 +5,8 @@ import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+
+import NotFoundScreen from './+not-found';
 import {
   AmountChip,
   AppBottomSheet,
@@ -35,11 +37,15 @@ import { Spacing } from '@/constants/theme';
 
 /**
  * DEV-ONLY component gallery (Фаза 2 — docs/development-plan.md "Витрина
- * компонентов"). Not linked from any real navigation; exists purely so the
- * Core UI kit can be visually/structurally verified via `expo export`. Remove
- * or gate behind __DEV__ before Фаза 11 release prep.
+ * компонентов"). Not linked from any real navigation. Development builds only:
+ * on the public website it is a 404 (W1), and the exported page is removed
+ * (scripts/web-postexport.mjs).
  */
 export default function DevUiKitScreen() {
+  return __DEV__ ? <DevUiKitGallery /> : <NotFoundScreen />;
+}
+
+function DevUiKitGallery() {
   const [chipSelected, setChipSelected] = useState(true);
   const [toggleOn, setToggleOn] = useState(true);
   const [liked, setLiked] = useState(false);
