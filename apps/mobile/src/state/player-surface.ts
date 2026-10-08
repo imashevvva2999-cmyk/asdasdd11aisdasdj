@@ -6,7 +6,7 @@ import { Spacing } from '@/constants/theme';
 import { paletteForTrack, type ArtworkPalette } from '@/lib/palette';
 import { getTrackById } from '@/mocks';
 
-import { usePlayerStore } from './player-store';
+import { playPosition, usePlayerStore } from './player-store';
 
 /**
  * Shared animation state for the Dynamic Premium player
@@ -49,15 +49,16 @@ export function playerArtworkSize(contentWidth: number): number {
 /** Whether a swipe from play position `base` in direction `dir` has a track to land on. */
 export function canStep(base: number, dir: 1 | -1): boolean {
   'worklet';
-  if (repeatAll.value && orderLength.value > 1) return true;
-  return dir > 0 ? base < orderLength.value - 1 : base > 0;
+  const length = orderLength.value;
+  if (repeatAll.value && length > 1) return true;
+  // Positions keep counting across repeat-all laps; the edges repeat every `length`.
+  const index = ((base % length) + length) % length;
+  return dir > 0 ? index < length - 1 : index > 0;
 }
 
-/** Index of the current track in play order. */
+/** The current track's carousel position: play order index, continuous across repeat-all laps. */
 export function usePlayPosition(): number {
-  const order = usePlayerStore((s) => s.order);
-  const currentIndex = usePlayerStore((s) => s.currentIndex);
-  return order.indexOf(currentIndex);
+  return usePlayerStore(playPosition);
 }
 
 /**
@@ -93,8 +94,8 @@ export function PlayerSurfaceSync() {
       if (carouselTarget.value === pos) return;
       let start: number;
       if (carouselTarget.value !== lastPos) {
-        // A gesture committed towards a neighbour but the store landed on another
-        // position (repeat-all wrap): keep the visual offset relative to the target.
+        // A gesture committed towards one position but the store landed on
+        // another: keep the visual offset relative to the target.
         start = pos + (carouselPos.value - carouselTarget.value);
       } else {
         const delta = pos - lastPos;
@@ -122,18 +123,19 @@ export function useNeighborPalettes(): NeighborPalettes {
   const order = usePlayerStore((s) => s.order);
   const currentIndex = usePlayerStore((s) => s.currentIndex);
   const repeat = usePlayerStore((s) => s.repeat);
+  const pos = usePlayPosition();
   return useMemo(() => {
     const { prevId, nextId } = usePlayerStore.getState().peekNeighbors();
     const current = paletteForTrack(getTrackById(queue[currentIndex] ?? ''));
     return {
-      pos: order.indexOf(currentIndex),
+      pos,
       prev: prevId ? paletteForTrack(getTrackById(prevId)) : current,
       current,
       next: nextId ? paletteForTrack(getTrackById(nextId)) : current,
     };
     // repeat changes which neighbours exist at the queue edges.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [queue, order, currentIndex, repeat]);
+  }, [queue, order, currentIndex, repeat, pos]);
 }
 
 /** Colour between the neighbours' palettes for the carousel position `p`. */

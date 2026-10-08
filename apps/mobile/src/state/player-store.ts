@@ -34,6 +34,10 @@ type PlayerState = {
    * (current track first) so the next/previous track is known in advance —
    * the artwork carousel shows exactly what will play. */
   order: number[];
+  /** Times the play order has wrapped (repeat all) since it was built: +1 past
+   * the end, −1 before the start. Lets the carousel position keep counting
+   * (see `playPosition`) instead of jumping back to 0. */
+  laps: number;
   playback: PlaybackState;
   /** `playback === 'playing'` — kept as its own field for the many readers. */
   isPlaying: boolean;
@@ -113,6 +117,15 @@ function buildOrder(length: number, current: number, shuffle: boolean): number[]
   return shuffle ? shuffledOrder(length, current) : identityOrder(length);
 }
 
+/**
+ * The current track's position in play order, continuous across repeat-all
+ * wraps (last → first goes 3 → 4, not 3 → 0). Drives the artwork carousel and
+ * the adaptive colours, so a wrap moves on by one slot like any other swipe.
+ */
+export function playPosition(state: Pick<PlayerState, 'order' | 'currentIndex' | 'laps'>): number {
+  return state.order.indexOf(state.currentIndex) + state.laps * state.order.length;
+}
+
 export const usePlayerStore = create<PlayerState>((set, get) => {
   /**
    * Starts the current track from the top: real audio, or honestly
@@ -146,12 +159,17 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
 
   /** Queue index of the adjacent track in play order (wraps with repeat all). */
   function neighborIndex(dir: 1 | -1): number | undefined {
+    return neighborStep(dir)?.index;
+  }
+
+  /** The adjacent track and the lap change it takes (±1 when it wraps). */
+  function neighborStep(dir: 1 | -1): { index: number; lapDelta: number } | undefined {
     const { order, currentIndex, repeat } = get();
     const pos = order.indexOf(currentIndex);
     if (pos === -1) return undefined;
     const target = pos + dir;
-    if (target >= 0 && target < order.length) return order[target];
-    if (repeat === 'all' && order.length > 1) return order[(target + order.length) % order.length];
+    if (target >= 0 && target < order.length) return { index: order[target]!, lapDelta: 0 };
+    if (repeat === 'all' && order.length > 1) return { index: order[(target + order.length) % order.length]!, lapDelta: dir };
     return undefined;
   }
 
@@ -165,6 +183,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
     queue: ['midnight-mirage', 'horizon', 'obsidian-frequencies', 'ember-tide'],
     currentIndex: 0,
     order: identityOrder(4),
+    laps: 0,
     playback: 'idle',
     isPlaying: false,
     progressSec: 0,
@@ -197,14 +216,18 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
       const nextQueue = queue ?? (get().queue.includes(trackId) ? get().queue : [trackId]);
       const index = Math.max(0, nextQueue.indexOf(trackId));
       const sameQueue = nextQueue === get().queue;
-      set({ queue: nextQueue, currentIndex: index, order: sameQueue ? get().order : buildOrder(nextQueue.length, index, get().shuffle) });
+      set(
+        sameQueue
+          ? { queue: nextQueue, currentIndex: index }
+          : { queue: nextQueue, currentIndex: index, order: buildOrder(nextQueue.length, index, get().shuffle), laps: 0 },
+      );
       startCurrent();
     },
 
     playShuffled: (queue) => {
       if (queue.length === 0) return;
       const startIndex = Math.floor(Math.random() * queue.length);
-      set({ queue, currentIndex: startIndex, shuffle: true, order: shuffledOrder(queue.length, startIndex) });
+      set({ queue, currentIndex: startIndex, shuffle: true, order: shuffledOrder(queue.length, startIndex), laps: 0 });
       startCurrent();
     },
 
@@ -233,12 +256,12 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
 
     next: () => {
       if (get().queue.length === 0) return;
-      const nextIndex = neighborIndex(1);
-      if (nextIndex === undefined) {
+      const step = neighborStep(1);
+      if (step === undefined) {
         stopAtEnd();
         return;
       }
-      set({ currentIndex: nextIndex });
+      set({ currentIndex: step.index, laps: get().laps + step.lapDelta });
       startCurrent();
     },
 
@@ -256,9 +279,9 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
     },
 
     swipeTo: (dir) => {
-      const target = neighborIndex(dir);
-      if (target === undefined) return;
-      set({ currentIndex: target });
+      const step = neighborStep(dir);
+      if (step === undefined) return;
+      set({ currentIndex: step.index, laps: get().laps + step.lapDelta });
       startCurrent(SWIPE_AUDIO_DELAY_MS);
     },
 
@@ -274,7 +297,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
 
     toggleShuffle: () => {
       const shuffle = !get().shuffle;
-      set({ shuffle, order: buildOrder(get().queue.length, get().currentIndex, shuffle) });
+      set({ shuffle, order: buildOrder(get().queue.length, get().currentIndex, shuffle), laps: 0 });
     },
 
     toggleAutoplay: () => set({ autoplay: !get().autoplay }),
@@ -300,7 +323,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
 
     setQueue: (ids, startIndex = 0) => {
       const currentIndex = Math.min(startIndex, Math.max(ids.length - 1, 0));
-      set({ queue: ids, currentIndex, order: buildOrder(ids.length, currentIndex, get().shuffle) });
+      set({ queue: ids, currentIndex, order: buildOrder(ids.length, currentIndex, get().shuffle), laps: 0 });
     },
 
     removeFromQueue: (trackId) => {
@@ -312,7 +335,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
       const order = get()
         .order.filter((i) => i !== removeIndex)
         .map((i) => (i > removeIndex ? i - 1 : i));
-      set({ queue: nextQueue, currentIndex: nextIndex, order });
+      set({ queue: nextQueue, currentIndex: nextIndex, order, laps: 0 });
     },
 
     playFromQueueIndex: (index) => {

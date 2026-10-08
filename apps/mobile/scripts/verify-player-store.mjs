@@ -11,7 +11,7 @@
  */
 import { hasDemoAudio } from '../src/audio/demo-audio.ts';
 import { getTrackById } from '../src/mocks/index.ts';
-import { bindAudioEngine, usePlayerStore } from '../src/state/player-store.ts';
+import { bindAudioEngine, playPosition, usePlayerStore } from '../src/state/player-store.ts';
 
 let failures = 0;
 
@@ -312,6 +312,24 @@ check('swipe at the start of the queue (repeat off) does nothing', store().curre
 store().play('midnight-mirage', ['midnight-mirage', 'horizon', 'ember-tide']);
 store().removeFromQueue('horizon');
 check('removeFromQueue() keeps play order valid', store().order.join(',') === '0,1' && store().peekNeighbors().nextId === 'ember-tide');
+
+// ---- Repeat-all wrap keeps the carousel position continuous (no 3 → 0 jump,
+// which re-placed the covers a frame before the animation caught up).
+store().play('midnight-mirage', ['midnight-mirage', 'horizon', 'ember-tide']);
+check('play position starts at the track index', playPosition(store()) === 0);
+store().cycleRepeat(); // off -> all
+store().swipeTo(-1);
+check('repeat all: swiping back past the start continues to -1', store().currentTrackId() === 'ember-tide' && playPosition(store()) === -1);
+for (let i = 0; i < 4; i += 1) store().swipeTo(1); // -1 → 0 → 1 → 2 → past the end
+check('repeat all: swiping on past the end continues (3, not 0)', store().currentTrackId() === 'midnight-mirage' && playPosition(store()) === 3);
+store().next();
+check('repeat all: next() also continues the position', store().currentTrackId() === 'horizon' && playPosition(store()) === 4);
+store().toggleShuffle();
+check('a new play order resets the position to the real index', playPosition(store()) === store().order.indexOf(store().currentIndex));
+store().toggleShuffle();
+store().cycleRepeat(); // all -> one
+store().cycleRepeat(); // one -> off
+await wait(260);
 
 if (failures > 0) {
   console.error(`\n${failures} player-store check(s) failed.`);
