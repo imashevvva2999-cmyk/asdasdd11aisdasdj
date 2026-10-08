@@ -1,9 +1,10 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { router } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Artwork, IconButton, MenuRow, PillButton, SheetScreen, TextLinkButton } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
+import { useHydratedSearchParams } from '@/hooks/use-hydrated-search-params';
 import { useToast } from '@/hooks/use-toast';
 import { goBack } from '@/lib/navigation';
 import { shareEntity } from '@/lib/share';
@@ -23,7 +24,13 @@ type OptionsKind = 'track' | 'album' | 'playlist';
  * inventing new ones.
  */
 export default function OptionsSheet() {
-  const { kind = 'track', id = '' } = useLocalSearchParams<{ kind?: OptionsKind; id?: string }>();
+  const params = useHydratedSearchParams<{ kind: OptionsKind; id: string }>();
+  // Static HTML / hydration: which item is not known yet — an empty sheet, not "Nothing to show." (#418).
+  if (!params) return <SheetScreen>{null}</SheetScreen>;
+  return <OptionsSheetContent kind={params.kind ?? 'track'} id={params.id ?? ''} />;
+}
+
+function OptionsSheetContent({ kind, id }: { kind: OptionsKind; id: string }) {
   const playlist = usePlaylistsStore((s) => (kind === 'playlist' ? s.getPlaylistById(id) : undefined));
   const isSaved = useLibraryStore((s) => (kind === 'album' || kind === 'playlist' ? s.isSaved(kind, id) : false));
   const isDownloaded = useLibraryStore((s) => s.isDownloaded(id));

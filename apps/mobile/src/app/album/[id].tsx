@@ -7,14 +7,15 @@ import { ThemedView } from '@/components/themed-view';
 import { Artwork, CircleButton, IconButton, TrackRow } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useToast } from '@/hooks/use-toast';
-import { getAlbumById, getTrackById } from '@/mocks';
+import { albums, getAlbumById, getTrackById } from '@/mocks';
 import { useLibraryStore } from '@/state/library-store';
 import { usePlayerStore } from '@/state/player-store';
 
-/** Pre-renders `horizon-deluxe` (the album with a full `trackIds` listing) for
- * static web export (verify-routes.mjs); other album IDs still resolve at runtime. */
+/** Pre-renders every catalog album for the static website, so a direct link or
+ * refresh serves that album's own HTML (React #418: the shared `[id]` shell said
+ * "not found" before the browser rendered the album). */
 export function generateStaticParams() {
-  return [{ id: 'horizon-deluxe' }];
+  return albums.map((album) => ({ id: album.id }));
 }
 
 /** S-09 Album (docs/screens.md §3.4). */

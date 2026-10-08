@@ -1,10 +1,11 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { AmountChip, Icon, IconButton, PillButton, SheetScreen, TextField } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
+import { useHydratedSearchParams } from '@/hooks/use-hydrated-search-params';
 import { goBack } from '@/lib/navigation';
 import { getArtistById, quickDonationAmountsKgs } from '@/mocks';
 import { useSupportStore } from '@/state/support-store';
@@ -14,7 +15,13 @@ import { useSupportStore } from '@/state/support-store';
  * only: no real MBANK payment, balance check, or bank auth (OQ-10 unresolved).
  */
 export default function SupportSheet() {
-  const { artistId } = useLocalSearchParams<{ artistId?: string }>();
+  const params = useHydratedSearchParams<{ artistId: string }>();
+  // Static HTML / hydration: the artist is not known yet — an empty sheet, not "Artist not found." (#418).
+  if (!params) return <SheetScreen>{null}</SheetScreen>;
+  return <SupportSheetContent artistId={params.artistId} />;
+}
+
+function SupportSheetContent({ artistId }: { artistId: string | undefined }) {
   const artist = getArtistById(artistId ?? '');
 
   const storeArtistId = useSupportStore((s) => s.artistId);

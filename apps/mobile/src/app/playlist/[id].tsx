@@ -9,15 +9,17 @@ import { Artwork, IconButton, PillButton, TrackRow } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
 import { useToast } from '@/hooks/use-toast';
 import { nextSortMode, sortTracks, type TrackSortMode } from '@/lib/sort-tracks';
-import { getTrackById, type Track } from '@/mocks';
+import { getTrackById, playlists, type Track } from '@/mocks';
 import { useLibraryStore } from '@/state/library-store';
 import { usePlayerStore } from '@/state/player-store';
 import { usePlaylistsStore } from '@/state/playlists-store';
 
-/** Pre-renders `late-night-flow` (the playlist with a full `trackIds` listing) for
- * static web export (verify-routes.mjs); other playlist IDs still resolve at runtime. */
+/** Pre-renders every catalog playlist for the static website, so a direct link
+ * or refresh serves that playlist's own HTML (React #418: the shared `[id]`
+ * shell said "not found" before the browser rendered the playlist). Playlists
+ * the listener creates live only in memory and resolve client-side. */
 export function generateStaticParams() {
-  return [{ id: 'late-night-flow' }];
+  return playlists.map((playlist) => ({ id: playlist.id }));
 }
 
 /**

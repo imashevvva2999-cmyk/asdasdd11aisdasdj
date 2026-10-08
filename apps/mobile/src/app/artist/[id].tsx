@@ -8,14 +8,16 @@ import { ThemedView } from '@/components/themed-view';
 import { Artwork, AvatarCard, CircleButton, CoverCard, Icon, IconButton, PillButton, SectionHeader, TrackRow } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useContentWidth } from '@/hooks/use-content-width';
-import { getAlbumById, getArtistById, getTrackById } from '@/mocks';
+import { artists, getAlbumById, getArtistById, getTrackById } from '@/mocks';
 import { useLibraryStore } from '@/state/library-store';
 import { usePlayerStore } from '@/state/player-store';
 
-/** Pre-renders the enriched `solaris-echo` artist for static web export (verify-routes.mjs);
- * other artist IDs still resolve at runtime via client-side navigation. */
+/** Pre-renders every catalog artist for the static website, so a direct link or
+ * refresh serves that artist's own HTML (React #418: the shared `[id]` shell
+ * said "not found" before the browser rendered the artist). Artists created at
+ * runtime (Artist flow) still resolve through client-side navigation. */
 export function generateStaticParams() {
-  return [{ id: 'solaris-echo' }];
+  return artists.map((artist) => ({ id: artist.id }));
 }
 
 /**

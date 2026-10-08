@@ -8,13 +8,19 @@ import { Artwork, AvatarCard, CoverCard, PillButton, TrackRow } from '@/componen
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useContentWidth } from '@/hooks/use-content-width';
 import { useToast } from '@/hooks/use-toast';
-import { albums, artists, genreDetails, getGenreById, tracks } from '@/mocks';
+import { albums, artists, genreDetails, genres, getGenreById, tracks } from '@/mocks';
 import { useLibraryStore } from '@/state/library-store';
 import { usePlayerStore } from '@/state/player-store';
 
 /** Compact enough that title, two lines of description and the actions sit
  * comfortably over the artwork on a 390px-wide phone. */
 const HERO_HEIGHT = 280;
+
+/** Pre-renders every catalog genre for the static website (direct links and
+ * refresh serve the genre's own HTML, React #418). */
+export function generateStaticParams() {
+  return genres.map((genre) => ({ id: genre.id }));
+}
 
 /** S-07 Genre / Category detail (docs/screens.md §3.2). */
 export default function GenreDetailScreen() {

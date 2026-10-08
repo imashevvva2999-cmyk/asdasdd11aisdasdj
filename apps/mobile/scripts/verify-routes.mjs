@@ -22,7 +22,11 @@ const expectations = [
   { path: 'home/index.html', mustContain: ['For you', 'Trending Now', 'New Releases', 'Jump Back In', 'Vibe Mixes'], mustNotContain: ['PLACEHOLDER'], label: 'Home (S-01)' },
   { path: 'home/see-all.html', mustContain: ['This Week', 'Fresh Finds'], mustNotContain: ['PLACEHOLDER'], label: 'See All (S-02)' },
   { path: 'search/index.html', mustContain: ['What do you want to listen to', 'RECENT SEARCHES', 'Trending Searches', 'Browse All'], mustNotContain: ['PLACEHOLDER'], label: 'Search / Explore (S-03)' },
-  { path: 'search/results.html', mustContain: ['Search Mmusic', 'Trending right now'], mustNotContain: ['PLACEHOLDER', 'No results for'], label: 'Search Results (S-04)' },
+  // Query-parameter routes (#418): the static HTML cannot know `?q=` / `?id=`,
+  // so it is a neutral shell — never another state's content ("Trending",
+  // "Nothing to show.", "Artist not found.") that the client would replace.
+  { path: 'search/results.html', mustContain: [], mustNotContain: ['PLACEHOLDER', 'No results for', 'Trending right now'], label: 'Search Results (S-04, neutral shell until ?q= is known)' },
+  { path: 'sheets/options.html', mustContain: [], mustNotContain: ['PLACEHOLDER', 'Nothing to show.'], label: 'Track options (neutral shell until ?kind=&id= are known)' },
   { path: 'search/all-genres.html', mustContain: ['Explore 24+ sonic realms', 'Curated Realms'], mustNotContain: ['PLACEHOLDER'], label: 'All Genres & Moods (S-06)' },
   { path: 'search/genre/[id].html', mustContain: ['Essential Compilations', 'Pioneering Artists'], mustNotContain: ['PLACEHOLDER'], label: 'Genre detail (S-07)' },
   { path: 'library/index.html', mustContain: ['Your Library', 'Liked Songs'], mustNotContain: ['PLACEHOLDER'], label: 'Library (S-12)' },
@@ -47,10 +51,10 @@ const expectations = [
   // scripts/verify-support-store.mjs instead.
   { path: 'create-playlist.html', mustContain: ['Create Playlist', 'Add Cover', 'Public Playlist', 'Collaborative'], mustNotContain: ['PLACEHOLDER'], label: 'Create Playlist (S-14)' },
   { path: 'track/[id].html', mustContain: [], label: 'Track deep-link redirect' },
-  { path: 'sheets/add-to-playlist.html', mustContain: ['Add to Playlist', 'Choose one or more destinations', 'New Playlist', 'Late Night Flow'], mustNotContain: ['PLACEHOLDER'], label: 'Add to Playlist (S-18)' },
+  { path: 'sheets/add-to-playlist.html', mustContain: [], mustNotContain: ['PLACEHOLDER', 'Choose one or more destinations'], label: 'Add to Playlist (S-18, neutral shell until ?trackId= is known)' },
   { path: 'sheets/notifications.html', mustContain: ['Notifications', 'DEMO', 'New release'], mustNotContain: ['PLACEHOLDER'], label: 'Notifications (demo drawer)' },
   { path: 'sheets/demo-audio.html', mustContain: ['Demo audio', 'Chill Wave', 'Floating Cities', 'Kevin MacLeod', 'Creative Commons'], mustNotContain: ['PLACEHOLDER'], label: 'Demo audio credits (CC BY 4.0)' },
-  { path: 'sheets/support.html', mustContain: ['Artist not found.'], mustNotContain: ['PLACEHOLDER'], label: 'Support Artist (S-19, no artist selected yet)' },
+  { path: 'sheets/support.html', mustContain: [], mustNotContain: ['PLACEHOLDER', 'Artist not found.'], label: 'Support Artist (S-19, neutral shell until ?artistId= is known)' },
   { path: 'sheets/support-confirm.html', mustContain: ['Nothing to confirm'], mustNotContain: ['PLACEHOLDER'], label: 'Donation Confirmation (S-20, nothing to confirm yet)' },
   { path: 'sheets/support-success.html', mustContain: ['No recent support to show.'], mustNotContain: ['PLACEHOLDER'], label: 'Support Success (S-21, no recent donation yet)' },
   { path: 'profile/index.html', mustContain: ['Alex Rivers', 'Studio Sanctuary', 'Become an Artist', 'Supported'], mustNotContain: ['PLACEHOLDER'], label: 'Profile Hub (S-23)' },
@@ -176,6 +180,15 @@ if (manifest?.name === 'Mmusic' && manifest.display === 'standalone' && iconsOk)
   console.log('✓ OK       web app manifest and icons');
 } else {
   console.error('✗ FAIL     web app manifest missing or incomplete');
+  failures += 1;
+}
+
+// #418 class B — every catalog id has its own pre-rendered page (needs this
+// export's dist/, so it runs here, before the clean-up below).
+try {
+  execSync('npx tsx scripts/verify-static-pages.mjs', { cwd: root, stdio: 'inherit' });
+} catch {
+  console.error('✗ FAIL     catalog pages are not all pre-rendered (scripts/verify-static-pages.mjs)');
   failures += 1;
 }
 

@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
@@ -7,6 +7,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Artwork, AvatarCard, Chip, CircleButton, CoverCard, EmptyState, Icon, IconButton, LibraryRow, PressableScale, TextField, TrackRow } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useContentWidth } from '@/hooks/use-content-width';
+import { useHydratedSearchParams } from '@/hooks/use-hydrated-search-params';
 import { matchesQuery, normalizeQuery } from '@/lib/search-match';
 import { albums, artists, tracks, trendingSearches } from '@/mocks';
 import { usePlayerStore } from '@/state/player-store';
@@ -21,9 +22,17 @@ const FILTERS = ['All', 'Songs', 'Artists', 'Albums', 'Playlists'] as const;
  * decision (docs/screens.md §2 Artist Flow notes apply the same principle here).
  */
 export default function SearchResultsScreen() {
-  const params = useLocalSearchParams<{ q?: string }>();
-  const columnWidth = Math.floor((useContentWidth() - Spacing.margin * 2 - Spacing.md) / 2);
+  const params = useHydratedSearchParams<{ q: string }>();
+  // Static HTML / hydration: the query is not known yet — a blank page, not the
+  // "Trending" state that ?q= would replace (#418). The key starts the screen
+  // fresh for each query it is opened with.
+  if (!params) return <ThemedView surface="canvas" style={styles.flex} />;
   const initialQuery = typeof params.q === 'string' ? params.q : '';
+  return <SearchResultsContent key={initialQuery} initialQuery={initialQuery} />;
+}
+
+function SearchResultsContent({ initialQuery }: { initialQuery: string }) {
+  const columnWidth = Math.floor((useContentWidth() - Spacing.margin * 2 - Spacing.md) / 2);
   const [query, setQuery] = useState(initialQuery);
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>('All');
   const playlists = usePlaylistsStore((s) => s.playlists);

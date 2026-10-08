@@ -1,10 +1,11 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Artwork, Icon, IconButton, MenuRow, PillButton, PlaylistPickerRow, SheetScreen, TextField, Toast } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
+import { useHydratedSearchParams } from '@/hooks/use-hydrated-search-params';
 import { goBack } from '@/lib/navigation';
 import { getTrackById } from '@/mocks';
 import { usePlaylistsStore } from '@/state/playlists-store';
@@ -17,7 +18,13 @@ import { usePlayerStore } from '@/state/player-store';
  * batch's scope, so this is wired as the direct entry point).
  */
 export default function AddToPlaylistSheet() {
-  const { trackId: trackIdParam } = useLocalSearchParams<{ trackId?: string }>();
+  const params = useHydratedSearchParams<{ trackId: string }>();
+  // Static HTML / hydration: the track is not known yet — an empty sheet, not another track's card (#418).
+  if (!params) return <SheetScreen>{null}</SheetScreen>;
+  return <AddToPlaylistContent trackIdParam={params.trackId} />;
+}
+
+function AddToPlaylistContent({ trackIdParam }: { trackIdParam: string | undefined }) {
   const playerCurrentTrackId = usePlayerStore((s) => s.currentTrackId());
   const trackId = trackIdParam ?? playerCurrentTrackId;
   const track = trackId ? getTrackById(trackId) : undefined;
