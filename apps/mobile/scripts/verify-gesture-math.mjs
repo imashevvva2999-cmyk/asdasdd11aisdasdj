@@ -8,6 +8,11 @@
  * Usage: npx tsx scripts/verify-gesture-math.mjs
  */
 import {
+  CAROUSEL_ACTIVE_OFFSET_X,
+  CAROUSEL_FAIL_OFFSET_Y,
+  TAP_MAX_DISTANCE,
+  arbitrateCarouselDrag,
+  carouselTouchAction,
   collapseProgress,
   expandProgress,
   lockAxis,
@@ -66,6 +71,18 @@ check('collapse: short and slow → stays open', resolveCollapse(0.9, 100) === '
 check('scrub: middle of the bar → 0.5', scrubRatio(150, 300) === 0.5);
 check('scrub: finger past either end is clamped 0…1', scrubRatio(-40, 300) === 0 && scrubRatio(360, 300) === 1);
 check('scrub: unknown bar width → 0 (no NaN seek)', scrubRatio(100, 0) === 0);
+
+// Carousel arbitration on the Home stage (W3 Этап 1, Review Focus 1): the same
+// thresholds the carousel's RNGH gestures use, walked along the finger's path.
+check('tap slop is below both pan thresholds (a tap never starts a swipe)', TAP_MAX_DISTANCE < CAROUSEL_FAIL_OFFSET_Y && TAP_MAX_DISTANCE < CAROUSEL_ACTIVE_OFFSET_X);
+check('a still press is a tap', arbitrateCarouselDrag(3, 2) === 'tap');
+check('a horizontal drag is a swipe', arbitrateCarouselDrag(-60, 4) === 'swipe');
+check('a vertical drag scrolls the page', arbitrateCarouselDrag(4, -60) === 'scroll');
+check('a mostly-vertical diagonal scrolls', arbitrateCarouselDrag(20, -40) === 'scroll');
+check('a mostly-horizontal diagonal swipes', arbitrateCarouselDrag(-40, 20) === 'swipe');
+check('a short wobble that is not a tap claims nothing', arbitrateCarouselDrag(9, 0) === 'none');
+check('Home cover lets the page scroll vertically (touch-action pan-y)', carouselTouchAction(true) === 'pan-y');
+check('Now Playing cover keeps vertical drags for collapse', carouselTouchAction(false) === undefined);
 
 if (failures > 0) {
   console.error(`\n${failures} gesture-math check(s) failed.`);

@@ -18,7 +18,7 @@ import {
   playerChromeOffset,
   playerChromeOpacity,
 } from '../src/lib/stage-math.ts';
-import { hasStartedPlayback, stageOnScreen } from '../src/lib/stage-rules.ts';
+import { createTapGuard, hasStartedPlayback, pillSinkOffset, stageOnScreen, subHeaderBackLabel } from '../src/lib/stage-rules.ts';
 
 let failures = 0;
 function check(label, condition) {
@@ -67,6 +67,26 @@ check(
 );
 check('stage not measured yet → treated as on screen', stageOnScreen(500, 0) === true);
 check('stage counts as on screen until 80 px are left', stageOnScreen(519, 600) === true && stageOnScreen(520, 600) === false);
+
+// Double tap on the stage cover opens the player once.
+let now = 0;
+const guard = createTapGuard(800, () => now);
+check('first tap opens the player', guard.tryAcquire() === true);
+now = 120;
+check('a second tap while it opens is ignored', guard.tryAcquire() === false);
+guard.release();
+check('once Home is back, a tap opens it again', guard.tryAcquire() === true);
+now = 2000;
+check('a guard never stays stuck: it frees itself after the cooldown', guard.tryAcquire() === true);
+
+// The nav pill sinks only for the stage opening, and never under reduced motion.
+check('pill sinks with the stage opening', pillSinkOffset(0.5, 'stage', false, 100) === 50);
+check('pill stays put for the capsule opening', pillSinkOffset(0.5, 'mini', false, 100) === 0);
+check('pill stays put under reduced motion', pillSinkOffset(0.5, 'stage', true, 100) === 0);
+
+// ⌄ on Lyrics / Queue says where it goes.
+check('opened from Now Playing → "Back to player"', subHeaderBackLabel('now-playing') === 'Back to player');
+check('opened straight from Home → "Close"', subHeaderBackLabel(undefined) === 'Close' && subHeaderBackLabel('lyrics') === 'Close');
 
 if (failures > 0) {
   console.error(`\n${failures} stage-math check(s) failed.`);

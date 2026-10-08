@@ -120,6 +120,17 @@ function MiniPlayerBody({ track, respectStage }: { track: Track; respectStage: b
       if (visible !== previous) scheduleOnRN(setBehindStage, visible);
     },
   );
+  // Web: while the stage stands in for the capsule, its buttons must not be
+  // reachable with Tab or a screen reader either — `inert` takes the whole
+  // subtree out of focus and the accessibility tree (aria-hidden alone does not).
+  const contentRef = useRef<View>(null);
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const node = contentRef.current as unknown as HTMLElement | null;
+    if (!node) return;
+    if (behindStage) node.setAttribute('inert', '');
+    else node.removeAttribute('inert');
+  }, [behindStage]);
   // Hidden under the full player while it expands/collapses (no double cover).
   const wrapStyle = useAnimatedStyle(() => {
     const underPlayer = playerFocused.value || expandPreview.value;
@@ -236,6 +247,7 @@ function MiniPlayerBody({ track, respectStage }: { track: Track; respectStage: b
       importantForAccessibility={behindStage ? 'no-hide-descendants' : 'auto'}
       testID="mini-player"
     >
+      <View ref={contentRef}>
       <PressableScale
         // No button role: it contains real buttons (nested <button> is invalid on web).
         accessibilityLabel={`Now playing: ${track.title} by ${track.artistName}. Open player`}
@@ -292,6 +304,7 @@ function MiniPlayerBody({ track, respectStage }: { track: Track; respectStage: b
           <Animated.View style={[styles.progressFill, progressStyle]} />
         </View>
       </PressableScale>
+      </View>
     </Animated.View>
     </GestureDetector>
   );

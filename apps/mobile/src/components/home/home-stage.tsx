@@ -9,12 +9,14 @@ import { ThemedText } from '@/components/themed-text';
 import { CircleButton, Icon, IconButton, PressableScale } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { homeChromeOffset, homeChromeOpacity } from '@/lib/stage-math';
-import { hasStartedPlayback } from '@/lib/stage-rules';
+import { createTapGuard, hasStartedPlayback } from '@/lib/stage-rules';
 import { usePlayerStore } from '@/state/player-store';
 import { expandOrigin, expandProgress, stageCoverRect } from '@/state/player-surface';
 
 /** The cover on the Home stage (iphone/home.png); it grows into Now Playing's. */
 export const STAGE_COVER_SIZE = 256;
+/** A lost release (e.g. navigation refused) frees the stage after this long. */
+const STAGE_OPEN_COOLDOWN_MS = 1500;
 
 const ON_COLOR_MEDIUM = 'rgba(255, 255, 255, 0.74)';
 
@@ -122,8 +124,17 @@ export function HomeStage({ onLayout }: { onLayout?: (event: LayoutChangeEvent) 
   );
 }
 
+/** A double tap on the cover or title opens the player once (released when Home is back). */
+const openGuard = createTapGuard(STAGE_OPEN_COOLDOWN_MS);
+
+/** Home is focused again (the player closed): the stage may open it again. */
+export function releaseStageOpen() {
+  openGuard.release();
+}
+
 /** Opens Now Playing from the stage, noting where the cover is so it can grow from there. */
 export function openPlayerFromStage(cover: View | null) {
+  if (!openGuard.tryAcquire()) return;
   // Web: the pressed cover keeps focus while the player hides Home from
   // assistive tech (aria-hidden); release focus first.
   if (Platform.OS === 'web') (document.activeElement as HTMLElement | null)?.blur?.();

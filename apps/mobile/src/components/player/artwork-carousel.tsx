@@ -15,7 +15,14 @@ import { scheduleOnRN } from 'react-native-worklets';
 
 import { Artwork } from '@/components/ui';
 import { Radii } from '@/constants/theme';
-import { resolveSwipe, rubberBand } from '@/lib/gesture-math';
+import {
+  CAROUSEL_ACTIVE_OFFSET_X,
+  CAROUSEL_FAIL_OFFSET_Y,
+  TAP_MAX_DISTANCE,
+  carouselTouchAction,
+  resolveSwipe,
+  rubberBand,
+} from '@/lib/gesture-math';
 import { getTrackById, type TrackId } from '@/mocks';
 import { usePlayerStore } from '@/state/player-store';
 import { CAROUSEL_SPRING, REDUCED_SETTLE_MS, canStep, carouselPos, carouselTarget, usePlayPosition } from '@/state/player-surface';
@@ -80,8 +87,9 @@ export function ArtworkCarousel({
   const pan = useMemo(
     () =>
       Gesture.Pan()
-        .activeOffsetX([-12, 12])
-        .failOffsetY([-10, 10])
+        // Thresholds shared with arbitrateCarouselDrag (scripts/verify-gesture-math.mjs).
+        .activeOffsetX([-CAROUSEL_ACTIVE_OFFSET_X, CAROUSEL_ACTIVE_OFFSET_X])
+        .failOffsetY([-CAROUSEL_FAIL_OFFSET_Y, CAROUSEL_FAIL_OFFSET_Y])
         .onStart(() => {
           cancelAnimation(carouselPos);
           dragStart.value = carouselPos.value;
@@ -149,7 +157,7 @@ export function ArtworkCarousel({
   ];
 
   return (
-    <GestureDetector gesture={gesture} touchAction={insideScroll ? 'pan-y' : undefined}>
+    <GestureDetector gesture={gesture} touchAction={carouselTouchAction(insideScroll)}>
       <Animated.View
         style={[{ width: size, height: size }, styles.shadow, scaleStyle]}
         accessible
@@ -182,8 +190,6 @@ export function ArtworkCarousel({
   );
 }
 
-/** A press that moves further than this is a drag, not a tap. */
-const TAP_MAX_DISTANCE = 8;
 
 function Slot({ trackId, at, size, step, onLoad }: { trackId: TrackId; at: number; size: number; step: number; onLoad?: () => void }) {
   const track = getTrackById(trackId);

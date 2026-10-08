@@ -30,6 +30,18 @@ export function lyricsStateFor(trackId: TrackId | undefined): LyricsState {
   return hasDemoAudio(trackId) ? { kind: 'demo-instrumental' } : { kind: 'none' };
 }
 
+/**
+ * The single lyric line under Now Playing's controls: only real lyrics data,
+ * labelled by source, and nothing before the first line's timestamp (a line is
+ * never shown ahead of its time).
+ */
+export function lyricPreview(state: LyricsState, progressMs: number): { label: string; text: string } | undefined {
+  if (state.kind !== 'synced') return undefined;
+  const index = activeLineIndex(state.lines, progressMs);
+  if (index < 0) return undefined;
+  return { label: state.source === 'sample' ? SAMPLE_LYRICS_NOTE.label : 'Lyrics', text: state.lines[index].text };
+}
+
 /** The line whose timestamp was passed last; -1 before the first one. */
 export function activeLineIndex(lines: LyricLine[], progressMs: number): number {
   let index = -1;

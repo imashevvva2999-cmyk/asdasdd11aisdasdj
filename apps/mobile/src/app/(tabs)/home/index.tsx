@@ -5,7 +5,7 @@ import { ScrollView, StyleSheet, View, type LayoutChangeEvent, type ViewStyle } 
 import Animated, { useAnimatedScrollHandler, useAnimatedStyle, useSharedValue, type AnimatedStyle } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { HomeStage } from '@/components/home/home-stage';
+import { HomeStage, releaseStageOpen } from '@/components/home/home-stage';
 import { MmusicBrand } from '@/components/mmusic-brand';
 import { PlayerBackground } from '@/components/player/player-background';
 import { ThemedText } from '@/components/themed-text';
@@ -73,6 +73,10 @@ export default function HomeScreen() {
   useFocusEffect(
     useCallback(() => {
       focused.value = true;
+      // Home is in front again, so no player is open: a stale "opening from the
+      // stage" (e.g. a double tap the router deduped) must not linger.
+      releaseStageOpen();
+      expandOrigin.value = 'mini';
       stageVisible.value = hasStage.value && stageOnScreen(scrollY.value, stageHeight.value);
       return () => {
         focused.value = false;

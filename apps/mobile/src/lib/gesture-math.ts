@@ -22,6 +22,42 @@ export const VERTICAL_FLICK_VELOCITY = 700;
 export const EXPAND_COMMIT = 0.3;
 export const COLLAPSE_KEEP_OPEN = 0.75;
 
+/** The artwork carousel claims a horizontal drag after this many points… */
+export const CAROUSEL_ACTIVE_OFFSET_X = 12;
+/** …and gives it up (the page scrolls, or the player collapses) once the
+ * finger has moved this far vertically first. */
+export const CAROUSEL_FAIL_OFFSET_Y = 10;
+/** A press that moves further than this is a drag, not a tap. */
+export const TAP_MAX_DISTANCE = 8;
+
+export type CarouselClaim = 'tap' | 'swipe' | 'scroll' | 'none';
+
+/**
+ * Which gesture wins a drag of (dx, dy) on the carousel, walking the finger's
+ * path the way the RNGH thresholds above see it (W3 Этап 1, Review Focus 1):
+ * a still press is a tap, the first threshold crossed decides between swipe
+ * (track change) and scroll (the page / the collapse gesture keeps it).
+ */
+export function arbitrateCarouselDrag(dx: number, dy: number): CarouselClaim {
+  const length = Math.hypot(dx, dy);
+  if (length <= TAP_MAX_DISTANCE) return 'tap';
+  const steps = Math.ceil(length);
+  for (let i = 1; i <= steps; i += 1) {
+    if (Math.abs((dy * i) / steps) > CAROUSEL_FAIL_OFFSET_Y) return 'scroll';
+    if (Math.abs((dx * i) / steps) > CAROUSEL_ACTIVE_OFFSET_X) return 'swipe';
+  }
+  return 'none';
+}
+
+/**
+ * Web `touch-action` for the carousel: inside a vertically scrolling page the
+ * browser keeps vertical pans (the page scrolls); in Now Playing RNGH's default
+ * (`none`) keeps them for the collapse gesture.
+ */
+export function carouselTouchAction(insideScroll: boolean): 'pan-y' | undefined {
+  return insideScroll ? 'pan-y' : undefined;
+}
+
 export type SwipeResult = 'next' | 'prev' | 'cancel';
 
 /**

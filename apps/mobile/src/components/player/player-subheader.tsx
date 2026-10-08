@@ -1,10 +1,11 @@
-import { router } from 'expo-router';
+import { router, useNavigation } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Artwork, IconButton, PressableScale } from '@/components/ui';
 import { Radii, Spacing } from '@/constants/theme';
 import { goBack } from '@/lib/navigation';
+import { subHeaderBackLabel } from '@/lib/stage-rules';
 import { usePlayerStore } from '@/state/player-store';
 
 const ON_COLOR_MEDIUM = 'rgba(255, 255, 255, 0.74)';
@@ -19,6 +20,9 @@ type PlayerView = 'lyrics' | 'queue';
  */
 export function PlayerSubHeader({ active }: { active: PlayerView }) {
   const track = usePlayerStore((s) => s.currentTrack());
+  // Opened from Now Playing, ⌄ goes back to it; opened straight from Home, it closes.
+  const stack = useNavigation().getState();
+  const backLabel = subHeaderBackLabel(stack ? stack.routes[stack.index - 1]?.name : undefined);
 
   return (
     <View style={styles.wrap}>
@@ -36,7 +40,7 @@ export function PlayerSubHeader({ active }: { active: PlayerView }) {
             </>
           )}
         </View>
-        <IconButton variant="ghost" icon="keyboard-arrow-down" iconSize={26} accessibilityLabel="Back to player" onPress={() => goBack()} />
+        <IconButton variant="ghost" icon="keyboard-arrow-down" iconSize={26} accessibilityLabel={backLabel} onPress={() => goBack()} />
       </View>
 
       <View style={styles.switch} accessibilityRole="tablist">

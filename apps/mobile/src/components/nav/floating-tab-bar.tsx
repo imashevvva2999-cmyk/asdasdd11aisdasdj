@@ -1,12 +1,13 @@
 import type { Tabs } from 'expo-router';
 import type { ComponentProps } from 'react';
 import { StyleSheet, View } from 'react-native';
-import Animated, { useAnimatedStyle } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { PressableScale } from '@/components/ui/pressable-scale';
 import { Colors, Radii, Spacing } from '@/constants/theme';
+import { pillSinkOffset } from '@/lib/stage-rules';
 import { expandOrigin, expandProgress } from '@/state/player-surface';
 
 /** The props expo-router's Tabs passes to a custom tab bar (no direct
@@ -30,10 +31,10 @@ const TAB_ICON_SIZE = 22;
 export function FloatingTabBar({ state, descriptors, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
   // While the Home stage grows into Now Playing, the pill sinks below the edge.
+  const reduceMotion = useReducedMotion();
+  const sinkDistance = PILL_HEIGHT + PILL_BOTTOM_GAP + insets.bottom + 16;
   const sinkStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateY: expandOrigin.value === 'stage' ? expandProgress.value * (PILL_HEIGHT + PILL_BOTTOM_GAP + insets.bottom + 16) : 0 },
-    ],
+    transform: [{ translateY: pillSinkOffset(expandProgress.value, expandOrigin.value, reduceMotion, sinkDistance) }],
   }));
 
   return (

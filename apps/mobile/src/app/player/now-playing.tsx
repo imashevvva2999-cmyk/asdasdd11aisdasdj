@@ -16,7 +16,7 @@ import { CircleButton, Icon, IconButton, PressableScale } from '@/components/ui'
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useContentWidth } from '@/hooks/use-content-width';
 import { useWindowSize } from '@/hooks/use-window-size';
-import { SAMPLE_LYRICS_NOTE, activeLineIndex, lyricsStateFor } from '@/lib/lyrics-state';
+import { lyricPreview, lyricsStateFor } from '@/lib/lyrics-state';
 import { goBack } from '@/lib/navigation';
 import { getAlbumById } from '@/mocks';
 import { usePlayerStore } from '@/state/player-store';
@@ -81,9 +81,7 @@ export default function NowPlayingScreen() {
   const demoAudio = hasDemoAudio(track.id);
   const artworkSize = playerArtworkSize(windowWidth, windowHeight);
   // One lyric line under the controls — only for real lyrics data (W3 spec §2.4).
-  const lyrics = lyricsStateFor(track.id);
-  const lyricLine =
-    lyrics.kind === 'synced' ? lyrics.lines[Math.max(0, activeLineIndex(lyrics.lines, progressSec * 1000))]?.text : undefined;
+  const lyricLine = lyricPreview(lyricsStateFor(track.id), progressSec * 1000);
 
   return (
     <GestureDetector gesture={collapse}>
@@ -197,15 +195,15 @@ export default function NowPlayingScreen() {
         {lyricLine !== undefined && (
           <PressableScale
             accessibilityRole="button"
-            accessibilityLabel={`${lyrics.kind === 'synced' && lyrics.source === 'sample' ? SAMPLE_LYRICS_NOTE.label : 'Lyrics'}: ${lyricLine}. Open lyrics`}
+            accessibilityLabel={`${lyricLine.label}: ${lyricLine.text}. Open lyrics`}
             onPress={() => router.push('/player/lyrics')}
             style={styles.lyricPreview}
           >
             <ThemedText variant="label-sm" style={styles.onColorQuiet}>
-              {lyrics.kind === 'synced' && lyrics.source === 'sample' ? SAMPLE_LYRICS_NOTE.label : 'Lyrics'}
+              {lyricLine.label}
             </ThemedText>
             <ThemedText variant="body-lg" numberOfLines={1} style={styles.lyricText}>
-              {lyricLine}
+              {lyricLine.text}
             </ThemedText>
           </PressableScale>
         )}

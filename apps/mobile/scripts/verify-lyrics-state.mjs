@@ -8,7 +8,7 @@
  * Usage: npx tsx scripts/verify-lyrics-state.mjs
  */
 import { hasDemoAudio } from '../src/audio/demo-audio.ts';
-import { LYRICS_EMPTY, SAMPLE_LYRICS_NOTE, activeLineIndex, lyricsStateFor } from '../src/lib/lyrics-state.ts';
+import { LYRICS_EMPTY, SAMPLE_LYRICS_NOTE, activeLineIndex, lyricPreview, lyricsStateFor } from '../src/lib/lyrics-state.ts';
 import { getLyricsForTrack, tracks } from '../src/mocks/index.ts';
 
 let failures = 0;
@@ -50,6 +50,14 @@ check('exactly on a timestamp → that line', activeLineIndex(lines, 8000) === 1
 check('just before the next timestamp → previous line', activeLineIndex(lines, 15999) === 1);
 check('after the last line → last', activeLineIndex(lines, 999999) === 2);
 check('no lines → -1', activeLineIndex([], 5000) === -1);
+
+// The one-line preview under Now Playing's controls.
+const synced = { kind: 'synced', source: 'catalog', lines };
+check('preview before the first timestamp shows nothing (no line ahead of time)', lyricPreview(synced, 500) === undefined);
+check('preview shows the current line', lyricPreview(synced, 9000)?.text === 'b');
+check('catalog lyrics are labelled "Lyrics"', lyricPreview(synced, 9000)?.label === 'Lyrics');
+check('sample lyrics are labelled "Sample lyrics"', lyricPreview({ ...synced, source: 'sample' }, 9000)?.label === 'Sample lyrics');
+check('no preview without lyrics', lyricPreview({ kind: 'demo-instrumental' }, 9000) === undefined && lyricPreview({ kind: 'none' }, 9000) === undefined);
 
 if (failures > 0) {
   console.error(`\n${failures} lyrics-state check(s) failed.`);
