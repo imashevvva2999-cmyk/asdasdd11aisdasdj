@@ -1,6 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View, type LayoutChangeEvent, type ViewStyle } from 'react-native';
 import Animated, { useAnimatedScrollHandler, useAnimatedStyle, useSharedValue, type AnimatedStyle } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -63,6 +63,7 @@ export default function HomeScreen() {
   const headerHeight = useSharedValue(0);
   const hasStage = useSharedValue(hasTrack);
   const focused = useSharedValue(false);
+  const [homeFocused, setHomeFocused] = useState(false);
 
   useEffect(() => {
     hasStage.value = hasTrack;
@@ -73,6 +74,7 @@ export default function HomeScreen() {
   useFocusEffect(
     useCallback(() => {
       focused.value = true;
+      setHomeFocused(true);
       // Home is in front again, so no player is open: a stale "opening from the
       // stage" (e.g. a double tap the router deduped) must not linger.
       releaseStageOpen();
@@ -80,6 +82,7 @@ export default function HomeScreen() {
       stageVisible.value = hasStage.value && stageOnScreen(scrollY.value, stageHeight.value);
       return () => {
         focused.value = false;
+        setHomeFocused(false);
         // Other tabs have no stage: the capsule is the player there. Opening the
         // player from the stage keeps it "on screen" (it grows into the player
         // and comes back on close), so the capsule never flashes in between.
@@ -145,7 +148,8 @@ export default function HomeScreen() {
                   play(tile.trackIds[0]!, tile.trackIds);
                   router.push('/player/now-playing');
                 }}
-                onPlayPress={() => play(tile.trackIds[0]!, tile.trackIds)}
+                // A quiet ⋯ with the mix's actions instead of a coral Play per row.
+                onMorePress={() => router.push({ pathname: '/sheets/options', params: { kind: 'mix', id: tile.id } })}
                 style={styles.forYouItem}
               />
             ))}
@@ -156,7 +160,8 @@ export default function HomeScreen() {
           <View style={styles.section}>
             <FeaturedBanner
               layout="footer"
-              animated
+              // The living waveform runs only while Home is on screen (not under the player or another tab).
+              animated={homeFocused}
               active={heroPlaying}
               title={hero.title}
               subtitle={hero.curator}

@@ -363,16 +363,18 @@ export type QuickTileProps = {
   title: string;
   onPress?: (event: GestureResponderEvent) => void;
   onPlayPress?: () => void;
+  /** A quiet ⋯ that opens the tile's actions (Home "For you", instead of the Play button). */
+  onMorePress?: () => void;
   style?: ViewStyle;
 };
 
 /** Compact 2-column "For you" quick-access tile — 48px cover + title + reveal
- * play button (docs/screens.md §3.4 "Quick tile"; Home S-01). */
-export function QuickTile({ coverUri, title, onPress, onPlayPress, style }: QuickTileProps) {
+ * play button or a quiet ⋯ menu (docs/screens.md §3.4 "Quick tile"; Home S-01). */
+export function QuickTile({ coverUri, title, onPress, onPlayPress, onMorePress, style }: QuickTileProps) {
   const hydrated = useHydrated();
 
   return (
-    <PressableScale onPress={onPress} accessibilityRole={onPlayPress ? undefined : 'button'} style={[quickTileStyles.row, style]}>
+    <PressableScale onPress={onPress} accessibilityRole={onPlayPress || onMorePress ? undefined : 'button'} style={[quickTileStyles.row, style]}>
       <View style={quickTileStyles.cover}>
         {coverUri && hydrated ? <Image source={toImageSource(coverUri)} style={StyleSheet.absoluteFill} contentFit="cover" /> : <CoverFallback seed={title} iconSize={18} />}
       </View>
@@ -382,6 +384,11 @@ export function QuickTile({ coverUri, title, onPress, onPlayPress, style }: Quic
       {onPlayPress && (
         <PressableScale accessibilityRole="button" accessibilityLabel={`Play ${title}`} onPress={onPlayPress} style={quickTileStyles.playButton}>
           <Icon name="play-arrow" size={16} color={Colors.text.high} />
+        </PressableScale>
+      )}
+      {onMorePress && (
+        <PressableScale accessibilityRole="button" accessibilityLabel={`More options for ${title}`} onPress={onMorePress} style={quickTileStyles.moreButton}>
+          <Icon name="more-horiz" size={20} color={Colors.text.medium} />
         </PressableScale>
       )}
     </PressableScale>
@@ -636,6 +643,15 @@ const quickTileStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: Spacing.xs,
+  },
+  // Quiet, no fill: the tile's actions stay one tap away without competing with the artwork.
+  moreButton: {
+    width: 36,
+    height: 36,
+    borderRadius: Radii.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 2,
   },
 });
 

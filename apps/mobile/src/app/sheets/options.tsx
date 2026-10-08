@@ -8,11 +8,13 @@ import { useHydratedSearchParams } from '@/hooks/use-hydrated-search-params';
 import { useToast } from '@/hooks/use-toast';
 import { goBack } from '@/lib/navigation';
 import { shareEntity } from '@/lib/share';
-import { getAlbumById, getTrackById } from '@/mocks';
+import { forYouMenuActions } from '@/lib/for-you-menu';
+import { forYouTiles, getAlbumById, getTrackById } from '@/mocks';
 import { useLibraryStore } from '@/state/library-store';
+import { usePlayerStore } from '@/state/player-store';
 import { usePlaylistsStore } from '@/state/playlists-store';
 
-type OptionsKind = 'track' | 'album' | 'playlist';
+type OptionsKind = 'track' | 'album' | 'playlist' | 'mix';
 
 /**
  * Track options sheet (docs/screens.md §3.7 "Track options sheet"; the
@@ -21,7 +23,8 @@ type OptionsKind = 'track' | 'album' | 'playlist';
  * ⋯. The same sheet also serves the album/playlist ⋯ menus (Album ⋯,
  * Library row ⋮, See All hero ⋯), offering only those screens' own
  * documented actions — Save, Download, View artist, Share — rather than
- * inventing new ones.
+ * inventing new ones. Home's "For you" tiles (`kind=mix`) offer what the app
+ * supports for a mix: Play, Shuffle and, for an artist's mix, View artist.
  */
 export default function OptionsSheet() {
   const params = useHydratedSearchParams<{ kind: OptionsKind; id: string }>();
@@ -38,6 +41,9 @@ function OptionsSheetContent({ kind, id }: { kind: OptionsKind; id: string }) {
   const toggleDownloaded = useLibraryStore((s) => s.toggleDownloaded);
   const { showToast, toast } = useToast();
 
+  const playMix = usePlayerStore((s) => s.play);
+  const shuffleMix = usePlayerStore((s) => s.playShuffled);
+  const mix = kind === 'mix' ? forYouTiles.find((tile) => tile.id === id) : undefined;
   const track = kind === 'track' ? getTrackById(id) : undefined;
   const album = kind === 'album' ? getAlbumById(id) : track?.albumId ? getAlbumById(track.albumId) : undefined;
 
@@ -48,10 +54,12 @@ function OptionsSheetContent({ kind, id }: { kind: OptionsKind; id: string }) {
         ? { title: album.title, subtitle: album.artistName, coverUri: album.coverUri }
         : kind === 'playlist' && playlist
           ? { title: playlist.title, subtitle: playlist.curator ?? 'Playlist', coverUri: playlist.coverUri }
-          : undefined;
+          : kind === 'mix' && mix
+            ? { title: mix.title, subtitle: `${mix.trackIds.length} tracks`, coverUri: mix.coverUri }
+            : undefined;
 
   async function handleShare() {
-    if (!header) return;
+    if (!header || kind === 'mix') return;
     const shared = await shareEntity(kind, id, header.title);
     if (shared) {
       goBack();
@@ -103,6 +111,38 @@ function OptionsSheetContent({ kind, id }: { kind: OptionsKind; id: string }) {
             <MenuRow variant="flat" icon="person" title="View artist" onPress={() => goTo('/artist/[id]', track.artistId)} />
             {album && <MenuRow variant="flat" icon="album" title="Go to album" onPress={() => goTo('/album/[id]', album.id)} />}
             <MenuRow variant="flat" icon="share" title="Share track" onPress={handleShare} />
+          </>
+        )}
+
+        {kind === 'mix' && mix && (
+          <>
+            {forYouMenuActions(mix).map((action) =>
+              action === 'play' ? (
+                <MenuRow
+                  key={action}
+                  variant="flat"
+                  icon="play-arrow"
+                  title="Play"
+                  onPress={() => {
+                    playMix(mix.trackIds[0]!, mix.trackIds);
+                    goBack();
+                  }}
+                />
+              ) : action === 'shuffle' ? (
+                <MenuRow
+                  key={action}
+                  variant="flat"
+                  icon="shuffle"
+                  title="Shuffle"
+                  onPress={() => {
+                    shuffleMix(mix.trackIds);
+                    goBack();
+                  }}
+                />
+              ) : mix.artistId ? (
+                <MenuRow key={action} variant="flat" icon="person" title="View artist" onPress={() => goTo('/artist/[id]', mix.artistId!)} />
+              ) : null,
+            )}
           </>
         )}
 
