@@ -27,8 +27,10 @@ img { display:block; width:100%; height:100%; object-fit:cover; }
 
 /* Stage */
 .stage { position:absolute; left:0; right:0; top:0; background:linear-gradient(180deg, var(--s-top) 0%, var(--s-mid) 58%, var(--s-deep) 84%, var(--canvas) 100%); }
-.stage.full { background:linear-gradient(180deg, var(--s-top) 0%, var(--s-mid) 52%, var(--s-deep) 100%); }
-.stage.dark { background:linear-gradient(180deg, #1d3157 0%, #142038 45%, #0e1524 100%); }
+.stage.full { background:linear-gradient(180deg, var(--s-top) 0%, var(--s-mid) 46%, var(--s-deep) 78%, #0c1220 100%); }
+/* Depth by darkening the edges (vignette), never by adding light. */
+.stage::after { content:''; position:absolute; inset:0; background:radial-gradient(140% 90% at 50% 16%, rgba(8,10,16,0) 50%, rgba(8,10,16,0.5) 100%); pointer-events:none; }
+.stage.dark { background:linear-gradient(180deg, #1d3157 0%, #142038 40%, #0f1828 75%, #0b111d 100%); }
 
 /* Header on Home */
 .hhead { position:absolute; left:20px; right:20px; top:54px; height:40px; display:flex; align-items:center; justify-content:space-between; z-index:5; }
@@ -109,14 +111,14 @@ img { display:block; width:100%; height:100%; object-fit:cover; }
 
 /* Lyrics / Queue */
 .mhead { position:absolute; left:20px; right:16px; top:56px; display:flex; align-items:center; gap:12px; }
-.mhead .cv { width:44px; height:44px; border-radius:12px; overflow:hidden; flex:none; }
-.mhead .ti { flex:1; } .mhead b { display:block; font:700 15px Inter; } .mhead span { font-size:13px; color:var(--soft); }
+.mhead .cv { width:36px; height:36px; border-radius:10px; overflow:hidden; flex:none; }
+.mhead .ti { flex:1; } .mhead b { display:block; font:600 14px Inter; } .mhead span { font-size:12px; color:var(--faint); }
 .seg { position:absolute; left:50%; top:114px; transform:translateX(-50%); width:230px; display:flex; background:rgba(10,10,12,0.36); border-radius:999px; padding:4px; }
 .seg span { flex:1; height:34px; border-radius:999px; display:grid; place-items:center; font:600 13px Inter; color:var(--soft); }
 .seg span.on { background:var(--ink); color:#0e1524; }
 .lyr { position:absolute; left:24px; right:24px; top:180px; bottom:206px; overflow:hidden; display:flex; flex-direction:column; gap:12px; -webkit-mask-image:linear-gradient(180deg, transparent 0, #000 6%, #000 82%, transparent 100%); }
-.lyr p { font:700 27px/34px 'Plus Jakarta Sans'; letter-spacing:-0.025em; color:rgba(255,255,255,0.34); }
-.lyr p.past { color:rgba(255,255,255,0.55); } .lyr p.cur { color:var(--ink); }
+.lyr p { font:700 28px/35px 'Plus Jakarta Sans'; letter-spacing:-0.025em; color:rgba(255,255,255,0.3); }
+.lyr p.past { color:rgba(255,255,255,0.5); } .lyr p.cur { color:var(--ink); font-size:32px; line-height:39px; }
 .qlist { position:absolute; left:16px; right:16px; top:166px; }
 .qlist h4 { font:600 12px Inter; color:var(--faint); margin:8px 8px 6px; }
 .qrow { display:grid; grid-template-columns:48px 1fr auto; gap:12px; align-items:center; height:62px; padding:0 8px; border-radius:16px; }

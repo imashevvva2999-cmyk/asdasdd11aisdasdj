@@ -10,7 +10,9 @@
 <style>
 /* Playing track: Horizon (Solaris Echo). Its precomputed palette, not a purple one. */
 :root { --canvas:#0A0A0C; --l1:#141418; --l2:#1C1C24; --ink:#FFFFFF; --soft:rgba(255,255,255,0.76); --faint:rgba(255,255,255,0.5); --mid:#9E9EA8; --edge:rgba(255,255,255,0.08);
-  --coral:#FF4B4B; --gold:#F5A623; --p-bg:#365ba0; --p-deep:#1b2946; --p-mini:#1b2436; --p-acc:#4877d0; --stage-h:470px; }
+  --coral:#FF4B4B; --gold:#F5A623; --p-bg:#365ba0; --p-deep:#1b2946; --p-mini:#1b2436; --p-acc:#4877d0; --stage-h:470px;
+  /* Refined stage tones: the palette mixed ~70/30 with the canvas, three steps of depth. */
+  --s-top:#2a4477; --s-mid:#1a2a48; --s-deep:#111a2c; --s-floor:#0c1220; }
 * { box-sizing:border-box; margin:0; padding:0; }
 html,body { background:var(--canvas); color:var(--ink); font:400 15px/22px Inter, system-ui, sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }
 img { display:block; width:100%; height:100%; object-fit:cover; }
@@ -21,8 +23,10 @@ img { display:block; width:100%; height:100%; object-fit:cover; }
 .float { background:var(--l1); border:1px solid var(--edge); box-shadow:0 22px 44px -18px rgba(0,0,0,0.75); }
 
 /* The stage (from B): the playing track's colour, as a calm horizon band — flat fields, no glow. */
-.stage { position:fixed; left:0; right:0; top:0; height:var(--stage-h); background:linear-gradient(180deg, var(--p-bg) 0%, color-mix(in srgb, var(--p-deep) 88%, var(--canvas)) 72%, var(--canvas) 100%); }
-.stage.full { height:100vh; background:linear-gradient(180deg, var(--p-bg) 0%, var(--p-deep) 64%, #101826 100%); }
+.stage { position:fixed; left:0; right:0; top:0; height:var(--stage-h); background:linear-gradient(180deg, var(--s-top) 0%, var(--s-mid) 55%, var(--s-deep) 80%, var(--canvas) 100%); }
+/* Depth by darkening the edges (vignette), never by adding light. */
+.stage::after { content:''; position:absolute; inset:0; background:radial-gradient(130% 95% at 50% 18%, rgba(8,10,16,0) 52%, rgba(8,10,16,0.5) 100%); pointer-events:none; }
+.stage.full { height:100vh; background:linear-gradient(180deg, var(--s-top) 0%, var(--s-mid) 46%, var(--s-deep) 78%, var(--s-floor) 100%); }
 .stage.thin { height:200px; background:linear-gradient(180deg, color-mix(in srgb, var(--p-deep) 70%, var(--canvas)) 0%, var(--canvas) 100%); }
 
 /* Navigation pill (from C) */
@@ -90,6 +94,28 @@ img { display:block; width:100%; height:100%; object-fit:cover; }
 .capsule.wide { height:74px; gap:18px; padding:0 22px; }
 .capsule.wide::after { display:none; }
 .capsule .bar { width:300px; color:var(--mid); } .capsule .bar .tr { background:rgba(255,255,255,0.16); }
+.capsule.wide .bar { width:400px; }
+.more { width:42px; height:42px; border-radius:50%; display:grid; place-items:center; color:var(--mid); }
+.more.open { background:var(--l2); color:var(--ink); }
+.menu { position:fixed; left:calc(50% + 150px); bottom:110px; width:290px; border-radius:22px; padding:8px; z-index:12; }
+.menu .it { display:flex; align-items:center; gap:12px; height:42px; padding:0 12px; border-radius:12px; font:500 14px Inter; }
+.menu .it .mi { font-size:20px; color:var(--mid); }
+.menu .it .r { margin-left:auto; font:600 12px Inter; color:var(--mid); }
+.menu .it .r.on { color:var(--coral); }
+.menu .it.hl { background:var(--l2); }
+.menu kbd { margin-left:auto; font:600 11px Inter; color:var(--mid); border:1px solid var(--edge); border-radius:6px; padding:1px 6px; }
+.menu hr { border:0; height:1px; background:var(--edge); margin:6px 8px; }
+.quietrow { display:flex; gap:10px; justify-content:center; margin-top:16px; }
+.quietrow .chip { background:rgba(10,10,12,0.28); }
+/* Lyrics as the hero; the artwork becomes a small track label */
+.lyrics-hero { position:fixed; left:50%; transform:translateX(-50%); top:120px; bottom:118px; width:860px; display:flex; flex-direction:column; gap:14px; overflow:hidden; -webkit-mask-image:linear-gradient(180deg, transparent 0, #000 8%, #000 80%, transparent 100%); }
+.lyrics-hero p { font:700 42px/52px 'Plus Jakarta Sans'; letter-spacing:-0.03em; color:rgba(255,255,255,0.3); }
+.lyrics-hero p.past { color:rgba(255,255,255,0.5); } .lyrics-hero p.cur { color:var(--ink); }
+.trackchip { position:fixed; left:40px; top:24px; display:flex; align-items:center; gap:12px; z-index:9; }
+.trackchip .cv { width:56px; height:56px; border-radius:14px; overflow:hidden; box-shadow:0 12px 24px -12px rgba(0,0,0,0.7); }
+.trackchip b { display:block; font:700 15px Inter; } .trackchip span { font-size:13px; color:var(--soft); }
+.trackchip .mi { color:var(--coral); font-size:22px; margin-left:8px; }
+.segtop { position:fixed; right:40px; top:30px; z-index:9; }
 
 /* Now Playing: the stage grown to the whole window */
 .np { position:fixed; inset:0; display:grid; grid-template-columns:1fr; place-items:center; }
@@ -143,10 +169,19 @@ const navpill = (active = 'Home') => `<nav class="navpill float"><span class="lo
 const pillMin = () => `<nav class="navpill min float"><span class="ic">${mi('keyboard_arrow_down')}</span><span class="t">Playing from</span><b>${T.album}</b><span class="ic">${mi('more_horiz')}</span></nav>`;
 const capsule = () => `<div class="capsule float"><div class="cv">${img(T.cover)}</div><div class="ti"><b>${T.title}</b><span>${T.artist}</span></div>
   <div class="ctl">${mi('skip_previous')}<div class="pp">${mi('pause')}</div>${mi('skip_next')}</div><span class="div"></span>${mi('lyrics', 'mute')}${mi('queue_music', 'mute')}${mi('open_in_full', 'mute')}</div>`;
-const wide = (active) => `<div class="capsule wide float">${mi('favorite', 'on')}
-  <div class="ctl" style="margin-left:0">${mi('shuffle', 'mute')}${mi('skip_previous')}<div class="pp">${mi('pause')}</div>${mi('skip_next')}${mi('repeat', 'mute')}</div>
+// Playback first: prev / play / next and progress. Everything else lives in the More menu.
+const wide = (active, open = false) => `<div class="capsule wide float">
+  <div class="ctl" style="margin-left:0">${mi('skip_previous')}<div class="pp">${mi('pause')}</div>${mi('skip_next')}</div>
   <div class="bar"><span>${T.pos}</span><div class="tr"><i></i></div><span>${T.rem}</span></div><span class="div"></span>
-  ${mi('lyrics', active === 'lyrics' ? 'on' : 'mute')}${mi('queue_music', active === 'queue' ? 'on' : 'mute')}${mi('volunteer_activism', 'mute')}${mi('headphones', 'mute')}${mi('volume_up', 'mute')}</div>`;
+  ${mi('volume_up', 'mute')}<span class="more ${open ? 'open' : ''}" title="More">${mi('more_horiz')}</span></div>${open ? moreMenu(active) : ''}`;
+const moreMenu = (active) => `<div class="menu float">
+  <div class="it">${mi('shuffle')}Shuffle<span class="r">Off</span></div>
+  <div class="it">${mi('repeat')}Repeat<span class="r on">All</span></div><hr/>
+  <div class="it">${mi('lyrics')}Lyrics<kbd>L</kbd></div>
+  <div class="it">${mi('queue_music')}Queue<kbd>Q</kbd></div><hr/>
+  <div class="it hl">${mi('playlist_add')}Add to playlist</div>
+  <div class="it">${mi('volunteer_activism')}Support artist</div>
+  <div class="it">${mi('headphones')}Audio quality</div></div>`;
 const forYou = (cols = 6) => `<div class="sh"><h2>For you</h2></div><div class="grid6" style="grid-template-columns:repeat(${cols},1fr)">${FOR_YOU.slice(0, cols).map(([c, t], i) => `<div class="tile ${i === 2 ? 'hov' : ''}"><div class="cv">${img(c)}</div><b>${t}</b></div>`).join('')}</div>`;
 const stageCopy = (size = 72) => `<div class="stage-copy"><span class="label">Now playing, from ${T.album}</span><h1 class="disp" style="font-size:${size}px">${T.title}</h1><div class="by">${T.artist}</div>
   <div class="row-ctl">${mi('shuffle', 's')}${mi('skip_previous')}<div class="play">${mi('pause')}</div>${mi('skip_next')}${mi('repeat', 's')}</div>
@@ -156,6 +191,7 @@ const stageCopy = (size = 72) => `<div class="stage-copy"><span class="label">No
 const reelHome = () => `<div class="reel"><div class="slot cur">${img(T.cover)}</div><div class="slot peek">${img(NEXT)}</div></div>`;
 const reelPlayer = () => `<div class="reel"><div class="slot peek l">${img(PREV)}</div><div class="slot cur">${img(T.cover)}</div><div class="slot peek r">${img(NEXT)}</div></div>`;
 const center = (withFocus) => `<div class="center">${reelPlayer()}<h1 class="disp">${T.title}</h1><div class="by">${T.artist}</div>
+  <div class="quietrow"><span class="chip liked">${mi('favorite')}Liked</span><span class="chip">${mi('lyrics')}Lyrics</span><span class="chip">${mi('queue_music')}Queue</span></div>
   ${withFocus ? `<div class="focus"><p>${LINES[CURRENT_LINE - 1]}</p><p class="cur">${LINES[CURRENT_LINE]}</p><p>${LINES[CURRENT_LINE + 1]}</p></div>` : ''}</div>`;
 const lyricsPanel = () => `<aside class="panel"><div class="seg"><span class="on">Lyrics</span><span>Queue</span></div>
   <div class="lyr">${LINES.map((l, i) => `<p class="${i < CURRENT_LINE ? 'past' : i === CURRENT_LINE ? 'cur' : ''}">${l}</p>`).join('')}</div></aside>`;
@@ -178,7 +214,11 @@ mount({
     <section class="home-stage" style="--stage-h:690px;top:120px"><div class="reel" style="width:470px;height:370px"><div class="slot cur" style="height:370px">${img(T.cover)}</div><div class="slot peek" style="left:220px;height:250px">${img(NEXT)}</div></div>${stageCopy(66)}</section>
     <section class="below" style="top:704px;opacity:.35"><div class="wrap">${forYou()}</div></section><div class="ghostlabel">Mid-transition: the stage grows, the cover moves and grows, the sections below fade.</div>`,
   player: () => `<div class="stage full"></div>${pillMin()}<section class="np">${center(true)}</section>${wide('none')}`,
-  lyrics: () => `<div class="stage full"></div>${pillMin()}<section class="np split">${center(false)}${lyricsPanel()}</section>${wide('lyrics')}`,
+  lyrics: () => `<div class="stage full"></div>${pillMin()}
+    <div class="trackchip"><div class="cv">${img(T.cover)}</div><div><b>${T.title}</b><span>${T.artist}</span></div>${mi('favorite')}</div>
+    <div class="segtop"><div class="seg"><span class="on">Lyrics</span><span>Queue</span></div></div>
+    <section class="lyrics-hero">${LINES.map((l, i) => `<p class="${i < CURRENT_LINE ? 'past' : i === CURRENT_LINE ? 'cur' : ''}">${l}</p>`).join('')}</section>${wide('lyrics')}`,
+  menu: () => `<div class="stage full"></div>${pillMin()}<section class="np">${center(true)}</section><div style="position:fixed;inset:0;background:rgba(8,10,16,0.35);z-index:8"></div>${wide('none', true)}`,
   queue: () => `<div class="stage full"></div>${pillMin()}<section class="np split">${center(false)}${queuePanel()}</section>${wide('queue')}`,
   'tablet-home': () => `<div class="stage" style="--stage-h:440px"></div>${navpill()}
     <section class="tab-stage"><div class="reel" style="width:330px;height:260px"><div class="slot cur" style="height:260px">${img(T.cover)}</div><div class="slot peek" style="left:140px;height:190px">${img(NEXT)}</div></div>${stageCopy(56)}</section>
