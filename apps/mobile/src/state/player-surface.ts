@@ -4,6 +4,7 @@ import { scheduleOnUI } from 'react-native-worklets';
 
 import { Spacing } from '@/constants/theme';
 import { paletteForTrack, type ArtworkPalette } from '@/lib/palette';
+import { fitArtworkSize } from '@/lib/stage-math';
 import { getTrackById } from '@/mocks';
 
 import { playPosition, usePlayerStore } from './player-store';
@@ -41,9 +42,10 @@ export const PLAYER_HEADER_HEIGHT = 56;
 export const PLAYER_ARTWORK_TOP_GAP = Spacing.md;
 /** The cover grows from this scale as the player expands. */
 export const EXPAND_ART_SCALE_FROM = 0.6;
-export function playerArtworkSize(contentWidth: number): number {
-  // Stitch: artwork spans the content width (20px margins), capped at 340.
-  return Math.min(340, contentWidth - Spacing.margin * 2);
+export function playerArtworkSize(contentWidth: number, windowHeight: number): number {
+  // Stitch: artwork spans the content width (20px margins), capped at 340;
+  // W3: smaller on short windows so the action row stays on screen.
+  return fitArtworkSize(contentWidth, windowHeight);
 }
 
 /** Whether a swipe from play position `base` in direction `dir` has a track to land on. */

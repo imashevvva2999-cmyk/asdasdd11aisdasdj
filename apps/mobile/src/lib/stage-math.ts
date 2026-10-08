@@ -3,7 +3,26 @@
  * docs/superpowers/specs/w3-concepts/iphone/transition-storyboard.png). `p` is
  * the shared `expandProgress`: 0 = stage on Home, 1 = Now Playing.
  */
+import { Spacing } from '@/constants/theme';
+
 export type Rect = { x: number; y: number; width: number; height: number };
+
+/** Now Playing's cover is never larger than this (Stitch S-15)… */
+export const ARTWORK_MAX_SIZE = 340;
+/** …nor smaller than this on very short windows. */
+export const ARTWORK_MIN_SIZE = 200;
+/** Height of everything in Now Playing except the cover (header, title, scrubber,
+ * transport, lyric line, action row) — the cover gets what is left. */
+const PLAYER_CHROME_HEIGHT = 470;
+
+/** Cover size for Now Playing: the content width (20 px margins), capped at
+ * 340, and shrunk on short windows so the bottom row stays on screen. A height
+ * of 0 (server render) means unknown: width-bound only. */
+export function fitArtworkSize(contentWidth: number, windowHeight: number): number {
+  const byWidth = Math.min(ARTWORK_MAX_SIZE, contentWidth - Spacing.margin * 2);
+  if (windowHeight <= 0) return byWidth;
+  return Math.max(ARTWORK_MIN_SIZE, Math.min(byWidth, windowHeight - PLAYER_CHROME_HEIGHT));
+}
 
 export function clamp01(v: number): number {
   'worklet';

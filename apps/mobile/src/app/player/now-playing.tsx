@@ -15,6 +15,8 @@ import { ThemedView } from '@/components/themed-view';
 import { CircleButton, Icon, IconButton, PressableScale } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useContentWidth } from '@/hooks/use-content-width';
+import { useWindowSize } from '@/hooks/use-window-size';
+import { SAMPLE_LYRICS_NOTE, activeLineIndex, lyricsStateFor } from '@/lib/lyrics-state';
 import { goBack } from '@/lib/navigation';
 import { getAlbumById } from '@/mocks';
 import { usePlayerStore } from '@/state/player-store';
@@ -22,6 +24,8 @@ import { PLAYER_ARTWORK_TOP_GAP, PLAYER_HEADER_HEIGHT, playerArtworkSize } from 
 
 /** Secondary text and inactive icons on the adaptive background (readable on every palette). */
 const ON_COLOR_MEDIUM = 'rgba(255, 255, 255, 0.74)';
+/** Shuffle / repeat when off: quieter than the transport (W3 Этап 1, iphone/now-playing.png). */
+const ON_COLOR_QUIET = 'rgba(255, 255, 255, 0.56)';
 
 /** S-15 Now Playing — full-screen player modal (docs/screens.md §3.9). */
 export default function NowPlayingScreen() {
@@ -44,6 +48,7 @@ export default function NowPlayingScreen() {
   const toggleLike = usePlayerStore((s) => s.toggleLike);
   const liked = usePlayerStore((s) => (track ? s.isLiked(track.id) : false));
   const windowWidth = useContentWidth();
+  const { height: windowHeight } = useWindowSize();
   // Expand/collapse sheet (mini-player ↔ full player), Back/Escape handling.
   const { collapse, sheetStyle, chromeStyle, artStyle } = usePlayerSheet();
 
@@ -74,7 +79,11 @@ export default function NowPlayingScreen() {
   const unavailable = playback === 'unavailable';
   const failed = playback === 'error';
   const demoAudio = hasDemoAudio(track.id);
-  const artworkSize = playerArtworkSize(windowWidth);
+  const artworkSize = playerArtworkSize(windowWidth, windowHeight);
+  // One lyric line under the controls — only for real lyrics data (W3 spec §2.4).
+  const lyrics = lyricsStateFor(track.id);
+  const lyricLine =
+    lyrics.kind === 'synced' ? lyrics.lines[Math.max(0, activeLineIndex(lyrics.lines, progressSec * 1000))]?.text : undefined;
 
   return (
     <GestureDetector gesture={collapse}>
@@ -106,7 +115,7 @@ export default function NowPlayingScreen() {
           <ArtworkCarousel size={artworkSize} paused={!isPlaying} />
         </Animated.View>
 
-        <Animated.View style={chromeStyle}>
+        <Animated.View style={[styles.chrome, chromeStyle]}>
 
         <View style={styles.titleRow}>
           <View style={styles.titleBlock}>
@@ -156,9 +165,9 @@ export default function NowPlayingScreen() {
           <IconButton
             variant="ghost"
             icon="shuffle"
-            iconSize={26}
+            iconSize={22}
             accessibilityLabel="Shuffle"
-            color={shuffle ? Colors.primary : ON_COLOR_MEDIUM}
+            color={shuffle ? Colors.primary : ON_COLOR_QUIET}
             onPress={toggleShuffle}
           />
           <IconButton variant="ghost" icon="skip-previous" iconSize={38} accessibilityLabel="Previous track" size={52} onPress={previous} />
@@ -174,13 +183,29 @@ export default function NowPlayingScreen() {
           <IconButton variant="ghost" icon="skip-next" iconSize={38} accessibilityLabel="Next track" size={52} onPress={next} />
           <IconButton
             variant="ghost"
-            iconSize={26}
+            iconSize={22}
             icon="repeat"
             accessibilityLabel="Repeat"
-            color={repeat !== 'off' ? Colors.primary : ON_COLOR_MEDIUM}
+            color={repeat !== 'off' ? Colors.primary : ON_COLOR_QUIET}
             onPress={cycleRepeat}
           />
         </View>
+
+        {lyricLine !== undefined && (
+          <PressableScale
+            accessibilityRole="button"
+            accessibilityLabel={`${lyrics.kind === 'synced' && lyrics.source === 'sample' ? SAMPLE_LYRICS_NOTE.label : 'Lyrics'}: ${lyricLine}. Open lyrics`}
+            onPress={() => router.push('/player/lyrics')}
+            style={styles.lyricPreview}
+          >
+            <ThemedText variant="label-sm" style={styles.onColorQuiet}>
+              {lyrics.kind === 'synced' && lyrics.source === 'sample' ? SAMPLE_LYRICS_NOTE.label : 'Lyrics'}
+            </ThemedText>
+            <ThemedText variant="body-lg" numberOfLines={1} style={styles.lyricText}>
+              {lyricLine}
+            </ThemedText>
+          </PressableScale>
+        )}
 
         <View style={styles.actionBar}>
           <PlayerTabButton label="Lyrics" icon="lyrics" onPress={() => router.push('/player/lyrics')} />
@@ -210,12 +235,12 @@ function PressableLink({ label, onPress }: { label: string; onPress: () => void 
   );
 }
 
-/** Horizontal icon + label pill in the player's bottom action bar (Stitch S-15). */
+/** Quiet icon-over-label action in the player's bottom row (W3 Этап 1, iphone/now-playing.png). */
 function PlayerTabButton({ label, icon, onPress }: { label: string; icon: string; onPress: () => void }) {
   return (
     <PressableScale accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={styles.playerTabButton}>
-      <Icon name={icon} size={18} color={ON_COLOR_MEDIUM} />
-      <ThemedText variant="label-md" style={styles.onColorMedium}>
+      <Icon name={icon} size={22} color={ON_COLOR_MEDIUM} />
+      <ThemedText variant="label-sm" style={styles.onColorMedium}>
         {label}
       </ThemedText>
     </PressableScale>
@@ -255,6 +280,12 @@ const styles = StyleSheet.create({
   onColorMedium: {
     color: ON_COLOR_MEDIUM,
   },
+  onColorQuiet: {
+    color: ON_COLOR_QUIET,
+  },
+  chrome: {
+    flex: 1,
+  },
   titleRow: {
     paddingHorizontal: Spacing.margin,
     flexDirection: 'row',
@@ -292,24 +323,35 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.margin,
-    marginTop: Spacing.xl,
+    marginTop: Spacing.lg,
+  },
+  lyricPreview: {
+    alignItems: 'center',
+    gap: 2,
+    marginTop: Spacing.lg,
+    marginHorizontal: Spacing.margin,
+    paddingVertical: Spacing.xs,
+  },
+  lyricText: {
+    color: '#FFFFFF',
+    textAlign: 'center',
   },
   actionBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'space-around',
     marginHorizontal: Spacing.margin,
-    marginTop: Spacing.xl,
-    padding: Spacing.xs,
-    borderRadius: 20,
-    backgroundColor: 'rgba(10, 10, 12, 0.3)',
+    // Pinned to the bottom of the player, whatever the screen height.
+    marginTop: 'auto',
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.md,
   },
   playerTabButton: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 10,
-    borderRadius: Radii.full,
+    gap: 4,
+    minWidth: 64,
+    minHeight: 48,
+    justifyContent: 'center',
+    borderRadius: Radii.md,
   },
 });

@@ -35,7 +35,7 @@ export function PlayerExpandPreview() {
   const { height } = useWindowSize();
   const contentWidth = useContentWidth();
   const insets = useSafeAreaInsets();
-  const size = playerArtworkSize(contentWidth);
+  const size = playerArtworkSize(contentWidth, height);
   const pausedScale = isPlaying ? 1 : PAUSED_SCALE;
 
   const sheetStyle = useAnimatedStyle(() => {

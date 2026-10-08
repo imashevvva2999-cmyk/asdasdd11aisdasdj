@@ -9,7 +9,9 @@
  * Usage: npx tsx scripts/verify-stage-math.mjs
  */
 import {
+  ARTWORK_MIN_SIZE,
   clamp01,
+  fitArtworkSize,
   homeChromeOffset,
   homeChromeOpacity,
   lerpRect,
@@ -47,6 +49,13 @@ check(
   'no frame shows both chromes',
   [0.1, 0.2, 0.3, 0.4, 0.5].every((p) => homeChromeOpacity(p) === 0 || playerChromeOpacity(p) === 0),
 );
+
+// Now Playing cover: width-bound on tall phones, height-bound on short ones,
+// so the bottom action row never leaves the screen (360 × 740 clipped it).
+check('iPhone 390 × 844: width-bound cover, capped at 340', fitArtworkSize(390, 844) === 340);
+check('360 × 740: the cover shrinks so the controls fit', fitArtworkSize(360, 740) < 320 && fitArtworkSize(360, 740) === 740 - 470);
+check('very short window: never below the minimum', fitArtworkSize(375, 560) === ARTWORK_MIN_SIZE);
+check('unknown height (server render, 0): width-bound', fitArtworkSize(390, 0) === 340);
 
 if (failures > 0) {
   console.error(`\n${failures} stage-math check(s) failed.`);
