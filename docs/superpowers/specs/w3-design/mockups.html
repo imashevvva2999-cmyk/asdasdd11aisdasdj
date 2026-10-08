@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mmusic W3 Mockups</title>
+<!-- Design review mockups for W3 (tablet & desktop). Not application code.
+     Open with ?v=<view>: desktop-home, desktop-queue, desktop-player,
+     desktop-compact, tablet-home, tablet-player, states. -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+<style>
+:root {
+  --canvas: #0A0A0C; --l1: #141418; --l2: #1C1C24; --l3: #282834;
+  --coral: #FF4B4B; --gold: #F5A623;
+  --hi: #FFFFFF; --mid: #9E9EA8; --low: #5A5A66; --border: rgba(255,255,255,0.08);
+  /* Adaptive palette of the playing track (Midnight Mirage, precomputed, contrast-checked). */
+  --p-bg: #4a488e; --p-deep: #23223f; --p-mini: #201f32; --p-accent: #5d5bbe;
+  --sidebar: 260px; --rail: 72px; --bar: 88px; --panel: 360px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--canvas); color: var(--hi); font: 400 14px/20px Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.mi { font-family: 'Material Icons'; font-size: 22px; line-height: 1; font-feature-settings: 'liga'; user-select: none; }
+.h1 { font: 800 32px/38px 'Plus Jakarta Sans'; letter-spacing: -0.03em; }
+.h2 { font: 700 22px/28px 'Plus Jakarta Sans'; letter-spacing: -0.02em; }
+.label { font: 600 12px/16px Inter; color: var(--mid); }
+.meta { color: var(--mid); font-size: 13px; }
+.num { font-variant-numeric: tabular-nums; font-size: 12px; color: var(--mid); }
+
+/* ---------- App frame ---------- */
+.app { position: relative; height: 100vh; display: grid; overflow: hidden;
+  grid-template-columns: var(--nav-w, var(--sidebar)) 1fr var(--panel-w, 0px);
+  grid-template-rows: 1fr var(--bar); }
+.nav { grid-row: 1; background: var(--l1); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 20px 12px; gap: 4px; overflow: hidden; }
+.brand { display: flex; align-items: center; gap: 8px; padding: 4px 12px 20px; font: 800 22px 'Plus Jakarta Sans'; letter-spacing: -0.03em; }
+.brand .eq { display: flex; gap: 2px; align-items: center; height: 18px; }
+.brand .eq i { width: 3px; border-radius: 2px; background: var(--coral); }
+.nav a .t, .nav a span:not(.mi) { font-style: normal; }
+.nav a { display: flex; align-items: center; gap: 14px; height: 44px; padding: 0 12px; border-radius: 12px; color: var(--mid); font: 600 14px Inter; text-decoration: none; position: relative; }
+.nav a.active { color: var(--hi); background: var(--l2); }
+.nav a.active::before { content: ''; position: absolute; left: -12px; top: 12px; bottom: 12px; width: 3px; border-radius: 0 3px 3px 0; background: var(--coral); }
+.nav a.hover { color: var(--hi); background: rgba(255,255,255,0.04); }
+.nav .sep { height: 1px; background: var(--border); margin: 14px 12px; }
+.nav .section { display: flex; justify-content: space-between; align-items: center; padding: 0 12px 6px; }
+.nav .pl { display: flex; gap: 12px; align-items: center; padding: 6px 12px; border-radius: 10px; }
+.nav .pl .cv { width: 40px; height: 40px; border-radius: 8px; overflow: hidden; flex: none; }
+.nav .pl b { font: 600 13px Inter; display: block; }
+.nav .pl span { font-size: 12px; color: var(--mid); }
+.nav .pl.playing b { color: var(--coral); }
+.nav .grow { flex: 1; }
+.nav .me { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 12px; }
+.avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #3a3a48, #22222c); display: grid; place-items: center; font: 700 12px Inter; flex: none; }
+/* compact rail (narrow desktop windows) */
+.app.rail { --nav-w: var(--rail); }
+.app.rail .nav { padding: 20px 10px; align-items: center; }
+.app.rail .nav a { width: 52px; justify-content: center; padding: 0; }
+.app.rail .nav a .t, .app.rail .nav .section, .app.rail .nav .pl div, .app.rail .brand .word, .app.rail .me span { display: none; }
+.app.rail .nav a.active::before { left: -10px; }
+.app.rail .brand { padding: 4px 0 20px; }
+.app.rail .nav .pl { padding: 4px; }
+.app.rail .nav .sep { margin: 14px 4px; width: 40px; }
+/* tablet rail with labels */
+.app.tablet { --nav-w: 84px; --bar: 76px; }
+.app.tablet .nav { align-items: center; padding: 18px 8px; gap: 8px; }
+.app.tablet .nav a { flex-direction: column; height: 60px; width: 68px; gap: 4px; justify-content: center; padding: 0; font-size: 11px; }
+.app.tablet .nav a.active::before { left: -8px; top: 14px; bottom: 14px; }
+.app.tablet .brand .word, .app.tablet .nav .section, .app.tablet .nav .pl, .app.tablet .nav .sep, .app.tablet .me span { display: none; }
+.app.tablet .brand { padding: 2px 0 14px; }
+.app.tablet .topbar, .app.tablet .content { padding-left: 32px; padding-right: 32px; }
+
+.main { grid-row: 1; overflow: hidden; position: relative; }
+.topbar { position: sticky; top: 0; z-index: 2; height: 64px; display: flex; align-items: center; gap: 12px; padding: 0 32px; background: var(--canvas); }
+.circle { width: 36px; height: 36px; border-radius: 50%; background: var(--l1); display: grid; place-items: center; color: var(--mid); flex: none; }
+.circle.dim { opacity: .45; }
+.search { display: flex; align-items: center; gap: 10px; height: 44px; width: 380px; max-width: 50%; padding: 0 14px; border-radius: 12px; background: var(--l2); color: var(--mid); }
+.search kbd { margin-left: auto; font: 600 11px Inter; color: var(--low); border: 1px solid var(--l3); border-radius: 6px; padding: 2px 6px; }
+.content { padding: 8px 32px 32px; max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 36px; }
+.row-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 16px; }
+.row-head a { color: var(--mid); font: 600 13px Inter; text-decoration: none; }
+
+/* For you quick tiles */
+.quick { display: grid; grid-template-columns: repeat(var(--qcols, 3), 1fr); gap: 12px; }
+.qt { display: flex; align-items: center; gap: 14px; height: 64px; border-radius: 12px; background: var(--l1); overflow: hidden; }
+.qt .cv { width: 64px; height: 64px; flex: none; }
+.qt b { font: 600 14px Inter; flex: 1; }
+.qt .play { opacity: 0; margin-right: 12px; }
+.qt.hover { background: var(--l2); }
+.qt.hover .play { opacity: 1; }
+.play { width: 40px; height: 40px; border-radius: 50%; background: var(--coral); display: grid; place-items: center; color: #fff; flex: none; }
+.play.lg { width: 52px; height: 52px; }
+.play .mi { font-size: 26px; }
+
+/* Featured banner */
+.feature { height: 280px; border-radius: 24px; overflow: hidden; display: grid; grid-template-columns: 1.1fr 1fr; background: var(--l1); }
+.feature .art { position: relative; }
+.feature .art::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(20,20,24,0) 55%, var(--l1)); }
+.feature .copy { padding: 40px 40px 40px 8px; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+.feature .copy p { color: var(--mid); max-width: 420px; }
+.feature .actions { display: flex; gap: 12px; align-items: center; margin-top: 10px; }
+.ghost { height: 44px; padding: 0 18px; border-radius: 999px; background: var(--l2); display: inline-flex; align-items: center; gap: 8px; font: 600 13px Inter; }
+.badge-gold { color: var(--gold); font: 700 11px Inter; letter-spacing: .06em; }
+
+/* Card grid */
+.cards { display: grid; grid-template-columns: repeat(var(--cols, 6), 1fr); gap: 20px; }
+.card { display: flex; flex-direction: column; gap: 10px; padding: 10px; margin: -10px; border-radius: 16px; position: relative; }
+.card .cv { aspect-ratio: 1; border-radius: 16px; overflow: hidden; position: relative; }
+.card b { font: 600 14px Inter; }
+.card span { color: var(--mid); font-size: 13px; margin-top: -6px; }
+.card .play { position: absolute; right: 10px; bottom: 10px; opacity: 0; transform: translateY(4px); }
+.card.hover { background: var(--l1); }
+.card.hover .play { opacity: 1; transform: none; }
+.card.focus { outline: 2px solid var(--hi); outline-offset: 2px; }
+.round .cv { border-radius: 50%; }
+
+/* ---------- Player bar ---------- */
+.bar { grid-column: 1 / -1; grid-row: 2; position: relative; display: grid; grid-template-columns: minmax(220px, 1fr) minmax(360px, 640px) minmax(220px, 1fr); align-items: center; gap: 24px; padding: 0 20px; background: var(--p-mini); border-top: 1px solid rgba(255,255,255,0.06); }
+.bar .now { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.bar .now .cv { width: 56px; height: 56px; border-radius: 8px; overflow: hidden; flex: none; }
+.bar .now b { font: 600 14px Inter; display: block; }
+.bar .now span { color: var(--mid); font-size: 12px; }
+.bar .now .mi.on { color: var(--coral); font-size: 20px; }
+.bar .ctl { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.bar .btns { display: flex; align-items: center; gap: 20px; color: var(--hi); }
+.mute { color: var(--mid); }
+.bar .btns .mi.mute, .bar .btns .mi.on { font-size: 20px; }
+.on { color: var(--coral); }
+.bar .pp { width: 40px; height: 40px; border-radius: 50%; background: var(--hi); color: var(--canvas); display: grid; place-items: center; }
+.scrub { display: flex; align-items: center; gap: 10px; width: 100%; }
+.track { flex: 1; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.18); position: relative; }
+.track i { position: absolute; left: 0; top: 0; bottom: 0; width: var(--pos, 34%); border-radius: 2px; background: var(--hi); }
+.track.hover i { background: var(--coral); }
+.track.hover::after { content: ''; position: absolute; left: var(--pos, 34%); top: 50%; width: 12px; height: 12px; margin: -6px; border-radius: 50%; background: var(--hi); }
+.bar .side { display: flex; justify-content: flex-end; align-items: center; gap: 16px; color: var(--mid); }
+.bar .side .mi { font-size: 20px; }
+.vol { width: 96px; flex: none; }
+
+/* tablet mini bar */
+.app.tablet .bar { grid-template-columns: 1fr auto; gap: 16px; padding: 0 24px; }
+.app.tablet .bar .ctl .scrub, .app.tablet .bar .side { display: none; }
+.app.tablet .bar::before { content: ''; position: absolute; left: 0; top: 0; height: 2px; width: 34%; background: var(--p-accent); }
+
+/* ---------- Right panel ---------- */
+.panel { grid-column: 3; grid-row: 1; background: var(--l1); border-left: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+.tabs { display: flex; gap: 6px; padding: 18px 18px 10px; align-items: center; }
+.tab { height: 32px; padding: 0 14px; border-radius: 999px; display: grid; place-items: center; font: 600 13px Inter; color: var(--mid); background: var(--l2); }
+.tab.active { background: var(--hi); color: var(--canvas); }
+.tabs .x { margin-left: auto; color: var(--mid); }
+.plist { padding: 6px 10px 20px; display: flex; flex-direction: column; }
+.plist h4 { font: 600 12px Inter; color: var(--mid); padding: 14px 10px 8px; }
+.trow { display: flex; align-items: center; gap: 12px; height: 56px; padding: 0 10px; border-radius: 10px; }
+.trow .cv { width: 40px; height: 40px; border-radius: 8px; overflow: hidden; flex: none; }
+.trow div { flex: 1; min-width: 0; }
+.trow b { font: 600 14px Inter; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.trow span { font-size: 12px; color: var(--mid); }
+.trow.active b { color: var(--coral); }
+.trow.hover { background: var(--l2); }
+.trow.focus { outline: 2px solid var(--hi); outline-offset: -2px; }
+.trow .more { color: var(--mid); opacity: 0; }
+.trow.hover .more { opacity: 1; }
+.minieq { display: flex; gap: 2px; align-items: flex-end; height: 14px; }
+.minieq i { width: 3px; background: var(--coral); border-radius: 1px; }
+.panel.overlay { position: absolute; right: 0; top: 0; bottom: var(--bar); width: var(--panel); z-index: 5; box-shadow: -24px 0 48px rgba(0,0,0,0.5); }
+.scrim { position: absolute; inset: 0 0 var(--bar) 0; background: rgba(10,10,12,0.5); z-index: 4; }
+
+/* ---------- Expanded Now Playing (desktop) ---------- */
+.np { position: absolute; inset: 0; z-index: 3; background: linear-gradient(180deg, var(--p-bg) 0%, var(--p-deep) 70%, #141320 100%); display: grid; grid-template-columns: minmax(360px, 1fr) minmax(320px, 0.9fr); grid-template-rows: 40px 1fr; gap: 24px 56px; padding: 28px 56px 32px; }
+.np .head { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; }
+.from { text-align: center; }
+.from small { font: 700 10px Inter; letter-spacing: .06em; color: rgba(255,255,255,0.74); display: block; }
+.from b { font: 600 13px Inter; }
+.np .stage { display: flex; flex-direction: column; justify-content: center; gap: 28px; min-height: 0; }
+.np .strip { position: relative; height: min(52vh, 460px); }
+.np .strip .slot { position: absolute; top: 0; height: 100%; aspect-ratio: 1; border-radius: 24px; overflow: hidden; left: 50%; }
+.np .strip .cur { transform: translateX(-50%); box-shadow: 0 24px 48px rgba(0,0,0,0.35); }
+.np .strip .prev { transform: translateX(calc(-150% - 24px)) scale(.9); opacity: .28; }
+.np .strip .next { transform: translateX(calc(50% + 24px)) scale(.9); opacity: .28; }
+.np .strip .arrow { position: absolute; top: 50%; transform: translateY(-50%); z-index: 2; width: 44px; height: 44px; border-radius: 50%; background: rgba(10,10,12,0.4); display: grid; place-items: center; }
+.np .titles { text-align: center; }
+.np .titles h2 { font: 800 30px/36px 'Plus Jakarta Sans'; letter-spacing: -0.02em; }
+.np .titles p { color: rgba(255,255,255,0.74); font: 500 15px Inter; margin-top: 4px; }
+.glass-free { background: rgba(10,10,12,0.3); color: #fff; }
+.np .lyrics { overflow: hidden; display: flex; flex-direction: column; gap: 6px; -webkit-mask-image: linear-gradient(180deg, #000 0, #000 78%, transparent 100%); mask-image: linear-gradient(180deg, #000 0, #000 78%, transparent 100%); }
+.np .lyrics .tabs { padding: 0 0 18px; }
+.np .lyrics .tab, .tp .lower .tab { background: rgba(10,10,12,0.28); color: rgba(255,255,255,0.74); }
+.np .lyrics .tab.active, .tp .lower .tab.active { background: var(--hi); color: var(--canvas); }
+.np .lyrics p { font: 700 26px/36px 'Plus Jakarta Sans'; letter-spacing: -0.02em; color: rgba(255,255,255,0.38); }
+.np .lyrics p.cur { color: var(--hi); }
+.np .lyrics p.past { color: rgba(255,255,255,0.6); }
+
+/* ---------- Tablet player ---------- */
+.tp { height: 100vh; background: linear-gradient(180deg, var(--p-bg) 0%, var(--p-deep) 75%, #141320 100%); display: flex; flex-direction: column; padding: 24px 48px 28px; gap: 22px; overflow: hidden; }
+.tp .head { display: flex; align-items: center; justify-content: space-between; }
+.tp .art { width: min(62vw, 500px); aspect-ratio: 1; border-radius: 24px; overflow: hidden; margin: 4px auto 0; box-shadow: 0 24px 48px rgba(0,0,0,0.35); flex: none; }
+.tp .row { display: flex; align-items: center; justify-content: space-between; }
+.tp h2 { font: 800 28px/34px 'Plus Jakarta Sans'; letter-spacing: -0.02em; }
+.tp .sub { color: rgba(255,255,255,0.74); }
+.tp .transport { display: flex; justify-content: space-between; align-items: center; padding: 0 12px; }
+.tp .transport .big { width: 76px; height: 76px; border-radius: 50%; background: var(--coral); display: grid; place-items: center; }
+.tp .transport .big .mi { font-size: 40px; }
+.tp .transport .mi { font-size: 34px; }
+.tp .transport .s { font-size: 24px; color: rgba(255,255,255,0.74); }
+.tp .lower { flex: 1; min-height: 0; background: rgba(10,10,12,0.28); border-radius: 20px; padding: 16px 20px; overflow: hidden; }
+.tp .lower .tabs { padding: 0 0 8px; }
+.tp .lower p { font: 700 22px/32px 'Plus Jakarta Sans'; color: rgba(255,255,255,0.4); }
+.tp .lower p.cur { color: #fff; }
+.tp .track { background: rgba(255,255,255,0.24); }
+
+/* ---------- States board ---------- */
+.board { padding: 36px 44px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px 36px; }
+.board h3 { grid-column: 1 / -1; font: 700 18px 'Plus Jakarta Sans'; color: var(--mid); margin-top: 6px; }
+.cell { display: flex; flex-direction: column; gap: 12px; }
+.cell .cap { font: 600 12px Inter; color: var(--low); }
+.keys { display: grid; grid-template-columns: auto 1fr auto 1fr; gap: 10px 16px; align-items: center; background: var(--l1); border: 1px solid var(--border); border-radius: 16px; padding: 20px; }
+.keys kbd { font: 600 12px Inter; color: var(--hi); background: var(--l2); border: 1px solid var(--l3); border-bottom-width: 2px; border-radius: 6px; padding: 3px 8px; justify-self: start; white-space: nowrap; }
+.keys span { color: var(--mid); }
+.focus-ring { outline: 2px solid var(--hi); outline-offset: 2px; }
+.ctx { width: 240px; background: var(--l2); border: 1px solid var(--border); border-radius: 12px; padding: 6px; box-shadow: 0 12px 32px -8px rgba(0,0,0,0.65); }
+.ctx div { display: flex; gap: 12px; align-items: center; height: 36px; padding: 0 10px; border-radius: 8px; color: var(--hi); font: 500 13px Inter; }
+.ctx div .mi { font-size: 18px; color: var(--mid); }
+.ctx div.hl { background: var(--l3); }
+.ctx hr { border: 0; height: 1px; background: var(--border); margin: 4px 6px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const A = '../../../../apps/mobile/assets/artwork/';
+const img = (p) => `<img src="${A}${p}" alt="" />`;
+const mi = (n, c = '') => `<span class="mi ${c}">${n}</span>`;
+const eqBrand = `<span class="eq">${[7, 13, 18, 11, 6].map((h) => `<i style="height:${h}px"></i>`).join('')}</span>`;
+const minieq = `<span class="minieq">${[8, 13, 6].map((h) => `<i style="height:${h}px"></i>`).join('')}</span>`;
+
+const playlists = [
+  ['playlists/late-night-flow.jpg', 'Late Night Flow', 'Editorial playlist', true],
+  ['playlists/late-night-driving.jpg', 'Late Night Driving', '48 tracks'],
+  ['playlists/lofi-beats-to-code.jpg', 'Lo-Fi Beats to Code', 'Editorial playlist'],
+  ['playlists/electronic-essentials.jpg', 'Electronic Essentials', '65 tracks'],
+  ['albums/horizon-deluxe.jpg', 'Horizon (Deluxe)', 'Solaris Echo'],
+];
+function nav(active = 'home') {
+  const item = (id, icon, label) => `<a class="${active === id ? 'active' : ''}">${mi(icon)}<em class="t">${label}</em></a>`;
+  return `<nav class="nav">
+    <div class="brand">${eqBrand}<span class="word">Mmusic</span></div>
+    ${item('home', 'home', 'Home')}${item('search', 'search', 'Search')}${item('library', 'library_music', 'Library')}
+    <div class="sep"></div>
+    <div class="section"><span class="label">Your playlists</span>${mi('add', 'mute')}</div>
+    ${playlists.map(([c, t, s, p]) => `<div class="pl ${p ? 'playing' : ''}"><div class="cv">${img(c)}</div><div><b>${t}</b><span>${s}</span></div></div>`).join('')}
+    <div class="grow"></div>
+    <div class="me"><div class="avatar">AR</div><span class="meta">Alex Rivers</span></div>
+  </nav>`;
+}
+function topbar() {
+  return `<div class="topbar"><div class="circle">${mi('chevron_left')}</div><div class="circle dim">${mi('chevron_right')}</div>
+    <div class="search">${mi('search')}<span>Artists, songs, albums</span><kbd>/</kbd></div><div style="flex:1"></div>
+    <div class="circle">${mi('notifications_none')}</div></div>`;
+}
+const forYou = [['foryou/after-hours.jpg', 'After Hours'], ['foryou/synthetic-waves.jpg', 'Synthetic Waves'], ['foryou/deep-focus.jpg', 'Deep Focus'], ['artists/solaris-echo.jpg', 'Solaris Echo'], ['foryou/chill-electronic.jpg', 'Chill Electronic'], ['foryou/neo-soul.jpg', 'Neo Soul']];
+const trending = [['albums/nebula-dreams.jpg', 'Nebula Dreams', 'Kaelen'], ['albums/lost-frequencies.jpg', 'Lost Frequencies', 'Arlo'], ['albums/velvet-skyline.jpg', 'Velvet Skyline', 'Maya Lin'], ['albums/chronos-echoes.jpg', 'Chronos Echoes', 'Tate Vane'], ['albums/refraction-horizon.jpg', 'Refraction Horizon', 'Clover and the Pulse'], ['albums/resonant-field.jpg', 'Resonant Field', 'Sable Duo']];
+// Same content as the mobile Home sections (src/mocks/home.ts): no invented sections.
+const newReleases = [['albums/refraction-horizon.jpg', 'Refraction Horizon', 'Clover and the Pulse'], ['albums/resonant-field.jpg', 'Resonant Field', 'Sable Duo'], ['albums/solitary-echo.jpg', 'Solitary Echo', 'Yuki Tanaka'], ['albums/neo-classical-horizons.jpg', 'Neo-Classical Horizons', 'Nils Frahm'], ['albums/horizon-deluxe.jpg', 'Horizon (Deluxe)', 'Solaris Echo'], ['albums/nebula-dreams.jpg', 'Nebula Dreams', 'Kaelen']];
+const artists = [['artists/solaris-echo.jpg', 'Solaris Echo'], ['artists/kaelen.jpg', 'Kaelen'], ['generated/arlo.jpg', 'Arlo'], ['generated/maya-lin.jpg', 'Maya Lin'], ['generated/tate-vane.jpg', 'Tate Vane'], ['generated/this-is-solaris-echo.jpg', 'This is Solaris Echo']];
+
+function home({ cols = 6, qcols = 3, hoverQuick = 1, hoverCard = 2 } = {}) {
+  return `${topbar()}<div class="content" style="--cols:${cols};--qcols:${qcols}">
+    <section><div class="row-head"><h2 class="h2">For you</h2></div>
+      <div class="quick">${forYou.map(([c, t], i) => `<div class="qt ${i === hoverQuick ? 'hover' : ''}"><div class="cv">${img(c)}</div><b>${t}</b><div class="play">${mi('play_arrow')}</div></div>`).join('')}</div></section>
+    <section class="feature"><div class="art">${img('playlists/late-night-flow.jpg')}</div>
+      <div class="copy"><span class="badge-gold">EDITORIAL PLAYLIST</span><h1 class="h1">Late Night Flow</h1>
+      <p>Slow-burning electronica and ambient textures for the hours after midnight.</p>
+      <div class="actions"><div class="play lg">${mi('play_arrow')}</div><div class="ghost">${mi('favorite_border')}Save</div></div></div></section>
+    <section><div class="row-head"><h2 class="h2">Trending now</h2><a>Show all</a></div>
+      <div class="cards">${trending.slice(0, cols).map(([c, t, a], i) => `<div class="card ${i === hoverCard ? 'hover' : ''}"><div class="cv">${img(c)}<div class="play">${mi('play_arrow')}</div></div><b>${t}</b><span>${a}</span></div>`).join('')}</div></section>
+    <section><div class="row-head"><h2 class="h2">New releases</h2><a>Show all</a></div>
+      <div class="cards">${newReleases.slice(0, cols).map(([c, t, a]) => `<div class="card"><div class="cv">${img(c)}</div><b>${t}</b><span>${a}</span></div>`).join('')}</div></section>
+  </div>`;
+}
+function bar({ queueOn = false, lyricsOn = false, tablet = false } = {}) {
+  return `<footer class="bar">
+    <div class="now"><div class="cv">${img('tracks/midnight-mirage.jpg')}</div><div><b>Midnight Mirage</b><span>Solaris Echo</span></div>${tablet ? '' : mi('favorite', 'on')}</div>
+    <div class="ctl"><div class="btns">${tablet ? '' : mi('shuffle', 'mute')}${mi('skip_previous')}<div class="pp">${mi('pause')}</div>${mi('skip_next')}${tablet ? '' : mi('repeat', 'mute')}</div>
+      <div class="scrub"><span class="num">1:22</span><div class="track" style="--pos:34%"><i></i></div><span class="num">-2:38</span></div></div>
+    <div class="side">${mi('lyrics', lyricsOn ? 'on' : '')}${mi('queue_music', queueOn ? 'on' : '')}${mi('volume_up')}<div class="track vol" style="--pos:70%"><i></i></div>${mi('open_in_full')}</div>
+  </footer>`;
+}
+const queueRows = [['generated/horizon.jpg', 'Horizon', 'Solaris Echo', '3:04'], ['tracks/obsidian-frequencies.jpg', 'Obsidian Frequencies', 'Solaris Echo', '4:02'], ['generated/ember-tide.jpg', 'Ember Tide', 'Solaris Echo', '4:35'], ['generated/resonant-field-reprise.jpg', 'Resonant Field (Reprise)', 'Solaris Echo', '3:51'], ['tracks/vapor-trails.jpg', 'Vapor Trails', 'Overcast Skies', '3:28'], ['generated/abyssal-bloom-feat.jpg', 'Abyssal Bloom (feat. Kaelen)', 'Solaris Echo', '5:12']];
+function queuePanel(cls = '') {
+  return `<aside class="panel ${cls}"><div class="tabs"><div class="tab active">Queue</div><div class="tab">Lyrics</div><span class="x">${mi('close')}</span></div>
+    <div class="plist"><h4>Now playing</h4>
+      <div class="trow active"><div class="cv">${img('tracks/midnight-mirage.jpg')}</div><div><b>Midnight Mirage</b><span>Solaris Echo</span></div>${minieq}</div>
+      <h4>Playing next</h4>
+      ${queueRows.map(([c, t, a, d], i) => `<div class="trow ${i === 1 ? 'hover' : ''}"><div class="cv">${img(c)}</div><div><b>${t}</b><span>${a}</span></div><span class="num">${d}</span><span class="more">${mi('more_horiz')}</span></div>`).join('')}
+    </div></aside>`;
+}
+const lyrics = ['City lights dissolve to static', 'Chasing echoes down the wire', 'Midnight mirage, I keep walking', 'Through a haze of amber fire', 'Every signal fades to silence', 'Every shadow finds its frame', 'Midnight mirage, call your name', 'Nothing here is what it seems'];
+const npHead = `<div class="head"><div class="circle glass-free">${mi('keyboard_arrow_down')}</div>
+  <div class="from"><small>PLAYING FROM ALBUM</small><b>Horizon (Deluxe)</b></div><div class="circle glass-free">${mi('more_horiz')}</div></div>`;
+
+const views = {
+  'desktop-home': () => `<div class="app">${nav('home')}<main class="main">${home()}</main>${bar()}</div>`,
+  'desktop-queue': () => `<div class="app" style="--panel-w:var(--panel)">${nav('home')}<main class="main">${home({ cols: 5, hoverCard: -1, hoverQuick: -1 })}</main>${queuePanel()}${bar({ queueOn: true })}</div>`,
+  'desktop-player': () => `<div class="app">${nav('home')}<main class="main">
+      <section class="np">${npHead}
+        <div class="stage"><div class="strip"><div class="slot cur">${img('tracks/midnight-mirage.jpg')}</div>
+          <div class="arrow" style="left:calc(50% - min(26vh, 230px) - 64px)">${mi('chevron_left')}</div><div class="arrow" style="right:calc(50% - min(26vh, 230px) - 64px)">${mi('chevron_right')}</div></div>
+          <div class="titles"><h2>Midnight Mirage</h2><p>Solaris Echo</p></div></div>
+        <div class="lyrics"><div class="tabs"><div class="tab active">Lyrics</div><div class="tab">Queue</div></div>
+          ${lyrics.map((l, i) => `<p class="${i < 2 ? 'past' : i === 2 ? 'cur' : ''}">${l}</p>`).join('')}</div>
+      </section></main>${bar({ lyricsOn: true })}</div>`,
+  'desktop-compact': () => `<div class="app rail">${nav('home')}<main class="main">${home({ cols: 4, qcols: 2, hoverCard: -1, hoverQuick: -1 })}</main><div class="scrim"></div>${queuePanel('overlay')}${bar({ queueOn: true })}</div>`,
+  'tablet-home': () => `<div class="app tablet">${nav('home')}<main class="main">${home({ cols: 4, qcols: 2, hoverCard: -1, hoverQuick: -1 })}</main>${bar({ tablet: true })}</div>`,
+  'tablet-player': () => `<div class="tp">${npHead.replace('class="head"', 'class="head"')}
+      <div class="art">${img('tracks/midnight-mirage.jpg')}</div>
+      <div class="row"><div><h2>Midnight Mirage</h2><div class="sub">Solaris Echo ›</div></div>${mi('favorite', 'on')}</div>
+      <div class="scrub"><span class="num" style="color:rgba(255,255,255,.74)">1:22</span><div class="track" style="--pos:34%"><i></i></div><span class="num" style="color:rgba(255,255,255,.74)">-2:38</span></div>
+      <div class="transport">${mi('shuffle', 's')}${mi('skip_previous')}<div class="big">${mi('pause')}</div>${mi('skip_next')}${mi('repeat', 's')}</div>
+      <div class="lower"><div class="tabs"><div class="tab active">Lyrics</div><div class="tab">Queue</div></div>
+        ${lyrics.slice(1).map((l, i) => `<p class="${i === 1 ? 'cur' : ''}">${l}</p>`).join('')}</div>
+    </div>`,
+  states: () => `<div class="board">
+      <h3>Cards: default, hover (Play appears), keyboard focus</h3>
+      ${[['', 'Default'], ['hover', 'Hover'], ['focus', 'Keyboard focus']].map(([c, cap]) => `<div class="cell"><div class="cap">${cap}</div><div class="card ${c}" style="width:180px;margin:0"><div class="cv">${img('albums/velvet-skyline.jpg')}<div class="play">${mi('play_arrow')}</div></div><b>Velvet Skyline</b><span>Maya Lin</span></div></div>`).join('')}
+      <h3>Track rows, navigation, context menu</h3>
+      <div class="cell"><div class="cap">Row: hover / playing / keyboard focus</div><div style="width:340px">
+        <div class="trow hover"><div class="cv">${img('generated/horizon.jpg')}</div><div><b>Horizon</b><span>Solaris Echo</span></div><span class="num">3:04</span><span class="more">${mi('more_horiz')}</span></div>
+        <div class="trow active"><div class="cv">${img('tracks/midnight-mirage.jpg')}</div><div><b>Midnight Mirage</b><span>Solaris Echo</span></div>${minieq}</div>
+        <div class="trow focus"><div class="cv">${img('generated/ember-tide.jpg')}</div><div><b>Ember Tide</b><span>Solaris Echo</span></div><span class="num">4:35</span></div></div></div>
+      <div class="cell"><div class="cap">Sidebar: active / hover / keyboard focus</div><div class="nav" style="width:240px;border-radius:16px;border:1px solid var(--border)">
+        <a class="active">${mi('home')}<em class="t">Home</em></a><a class="hover">${mi('search')}<em class="t">Search</em></a><a class="focus-ring">${mi('library_music')}<em class="t">Library</em></a></div></div>
+      <div class="cell"><div class="cap">Right-click on a track: the same actions as the Options sheet</div><div class="ctx">
+        <div class="hl">${mi('playlist_add')}Add to playlist</div><hr/><div>${mi('person')}View artist</div><div>${mi('album')}Go to album</div><hr/><div>${mi('share')}Share track</div></div></div>
+      <h3>Keyboard (press ? on the website to see this list)</h3>
+      <div class="cell" style="grid-column: span 2"><div class="keys">
+        <kbd>Space</kbd><span>Play / Pause</span><kbd>Shift + ← / →</kbd><span>Previous / next track</span>
+        <kbd>← / →</kbd><span>Seek 5 s</span><kbd>↑ / ↓</kbd><span>Volume</span>
+        <kbd>M</kbd><span>Mute</span><kbd>/</kbd><span>Search</span>
+        <kbd>L</kbd><span>Lyrics panel</span><kbd>Q</kbd><span>Queue panel</span>
+        <kbd>F</kbd><span>Open / close the player</span><kbd>Esc</kbd><span>Close menu, panel or player</span></div></div>
+      <div class="cell"><div class="cap">Scrubber on hover: thumb and coral fill</div><div class="scrub" style="width:300px"><span class="num">1:22</span><div class="track hover" style="--pos:40%"><i></i></div><span class="num">-2:38</span></div>
+        <div class="cap" style="margin-top:12px">Focus ring: 2 px white with a 2 px gap — visible on every surface and palette</div></div>
+    </div>`,
+};
+const v = new URLSearchParams(location.search).get('v') || 'desktop-home';
+document.getElementById('root').innerHTML = (views[v] || views['desktop-home'])();
+</script>
+</body>
+</html>
