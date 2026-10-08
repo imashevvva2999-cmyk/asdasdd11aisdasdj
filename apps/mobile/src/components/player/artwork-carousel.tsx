@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { StyleSheet } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -36,7 +36,21 @@ const PAUSED_SCALE = 0.92;
  * visible cover. The gesture is built once and reads its limits from shared
  * values — rebuilding it on render dropped touches in the spike.
  */
-export function ArtworkCarousel({ size, paused }: { size: number; paused: boolean }) {
+export function ArtworkCarousel({
+  size,
+  paused,
+  onPress,
+  insideScroll = false,
+}: {
+  size: number;
+  paused: boolean;
+  onPress?: () => void;
+  /** The cover sits in a vertically scrolling page (Home stage): on touch web
+   * a vertical swipe that starts on it must scroll the page, so only the
+   * horizontal axis is claimed (`touch-action: pan-y`). In Now Playing the
+   * vertical drag belongs to the collapse gesture instead. */
+  insideScroll?: boolean;
+}) {
   const step = size + GAP;
   const reduceMotion = useReducedMotion();
   const pos = usePlayPosition();
@@ -96,6 +110,25 @@ export function ArtworkCarousel({ size, paused }: { size: number; paused: boolea
     [step],
   );
 
+  // Optional tap (the Home stage opens Now Playing): a tap only counts when the
+  // pan did not start, so a swipe never also opens the player. The handler is
+  // read through a ref, keeping the gesture itself built once.
+  const onPressRef = useRef(onPress);
+  useEffect(() => {
+    onPressRef.current = onPress;
+  }, [onPress]);
+  const firePress = useCallback(() => onPressRef.current?.(), []);
+  const tappable = onPress !== undefined;
+  const gesture = useMemo(() => {
+    if (!tappable) return pan;
+    const tap = Gesture.Tap()
+      .maxDistance(TAP_MAX_DISTANCE)
+      .onEnd((_e, success) => {
+        if (success) scheduleOnRN(firePress);
+      });
+    return Gesture.Exclusive(pan, tap);
+  }, [pan, tappable, firePress]);
+
   const stripStyle = useAnimatedStyle(() => ({ transform: [{ translateX: -carouselPos.value * step }] }));
 
   const pausedScale = useSharedValue(paused ? PAUSED_SCALE : 1);
@@ -113,17 +146,22 @@ export function ArtworkCarousel({ size, paused }: { size: number; paused: boolea
   ];
 
   return (
-    <GestureDetector gesture={pan}>
+    <GestureDetector gesture={gesture} touchAction={insideScroll ? 'pan-y' : undefined}>
       <Animated.View
         style={[{ width: size, height: size }, styles.shadow, scaleStyle]}
         accessible
         accessibilityRole="adjustable"
         accessibilityLabel={`Artwork: ${currentTitle}`}
-        accessibilityHint="Swipe left for the next track, right for the previous one"
-        accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
+        accessibilityHint={
+          tappable
+            ? 'Open the player. Swipe left for the next track, right for the previous one'
+            : 'Swipe left for the next track, right for the previous one'
+        }
+        accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }, ...(tappable ? [{ name: 'activate' as const }] : [])]}
         onAccessibilityAction={(event) => {
           if (event.nativeEvent.actionName === 'increment') swipeTo(1);
           if (event.nativeEvent.actionName === 'decrement') swipeTo(-1);
+          if (event.nativeEvent.actionName === 'activate') firePress();
         }}
         testID="artwork-carousel"
       >
@@ -138,6 +176,9 @@ export function ArtworkCarousel({ size, paused }: { size: number; paused: boolea
     </GestureDetector>
   );
 }
+
+/** A press that moves further than this is a drag, not a tap. */
+const TAP_MAX_DISTANCE = 8;
 
 function Slot({ trackId, at, size, step }: { trackId: TrackId; at: number; size: number; step: number }) {
   const track = getTrackById(trackId);

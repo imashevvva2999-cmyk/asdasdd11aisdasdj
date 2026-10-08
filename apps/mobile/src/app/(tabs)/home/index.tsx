@@ -1,8 +1,13 @@
-import { router } from 'expo-router';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect } from 'react';
+import { ScrollView, StyleSheet, View, type LayoutChangeEvent, type ViewStyle } from 'react-native';
+import Animated, { useAnimatedScrollHandler, useAnimatedStyle, useSharedValue, type AnimatedStyle } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { HomeStage, hasStartedPlayback } from '@/components/home/home-stage';
 import { MmusicBrand } from '@/components/mmusic-brand';
+import { PlayerBackground } from '@/components/player/player-background';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { CoverCard, FeaturedBanner, IconButton, MoodCard, QuickTile, SectionHeader, TrackRow, type MoodVisualKind } from '@/components/ui';
@@ -19,8 +24,20 @@ import {
   newReleases,
   trendingNowAlbumIds,
 } from '@/mocks';
+import { clamp01 } from '@/lib/stage-math';
 import { useLibraryStore } from '@/state/library-store';
 import { usePlayerStore } from '@/state/player-store';
+import { stageVisible } from '@/state/player-surface';
+
+/** The stage counts as gone (capsule appears) once this little of it is left on screen. */
+const STAGE_EXIT_OFFSET = 80;
+
+/** Whether enough of the Home stage is on screen to stand in for the capsule. */
+function stageOnScreen(scrollY: number, stageHeight: number): boolean {
+  'worklet';
+  // Before the stage is measured, assume it is there (it is, at the top).
+  return stageHeight === 0 || scrollY < stageHeight - STAGE_EXIT_OFFSET;
+}
 
 /** Mood motif per mix (presentation only — the mix data stays unchanged). */
 const MOOD_VISUALS: Record<string, MoodVisualKind> = {
@@ -46,10 +63,76 @@ export default function HomeScreen() {
   const isAlbumSaved = (albumId: string) => libraryItems.some((item) => item.kind === 'album' && item.refId === albumId);
   const { showToast, toast } = useToast();
 
+  // Floating Canvas stage (W3 Этап 1): the playing track's palette behind the
+  // header and the stage, scrolling away with them; the capsule takes over
+  // once the stage has left the screen.
+  const hasTrack = usePlayerStore((s) => hasStartedPlayback(s.playback) && s.currentTrack() !== undefined);
+  const scrollY = useSharedValue(0);
+  const stageHeight = useSharedValue(0);
+  const headerHeight = useSharedValue(0);
+  const hasStage = useSharedValue(hasTrack);
+  const focused = useSharedValue(false);
+
+  useEffect(() => {
+    hasStage.value = hasTrack;
+    if (!hasTrack) stageHeight.value = 0;
+    stageVisible.value = focused.value && hasTrack && stageOnScreen(scrollY.value, stageHeight.value);
+  }, [hasTrack, hasStage, focused, scrollY, stageHeight]);
+
+  useFocusEffect(
+    useCallback(() => {
+      focused.value = true;
+      stageVisible.value = hasStage.value && stageOnScreen(scrollY.value, stageHeight.value);
+      return () => {
+        focused.value = false;
+        // Other tabs have no stage: the capsule is the player there.
+        stageVisible.value = false;
+      };
+    }, [focused, hasStage, scrollY, stageHeight]),
+  );
+
+  const onScroll = useAnimatedScrollHandler((event) => {
+    scrollY.value = event.contentOffset.y;
+    if (focused.value && hasStage.value) stageVisible.value = stageOnScreen(event.contentOffset.y, stageHeight.value);
+  });
+  const backdropStyle = useAnimatedStyle(() => ({
+    height: headerHeight.value + stageHeight.value,
+    transform: [{ translateY: -Math.max(0, scrollY.value) }],
+  }));
+  // The header is clear over the stage and takes the canvas once the stage scrolls under it.
+  const headerStyle = useAnimatedStyle(() => {
+    const solid = hasStage.value ? clamp01((scrollY.value - (stageHeight.value - HEADER_FADE)) / HEADER_FADE) : 1;
+    return {
+      backgroundColor: `rgba(10, 10, 12, ${solid})`,
+      borderBottomColor: `rgba(255, 255, 255, ${0.06 * solid})`,
+    };
+  });
+
   return (
     <ThemedView surface="canvas" style={styles.flex}>
-      <Header />
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      {hasTrack && (
+        <Animated.View pointerEvents="none" style={[styles.backdrop, backdropStyle]}>
+          <PlayerBackground />
+          <LinearGradient colors={['rgba(10, 10, 12, 0)', 'rgba(10, 10, 12, 1)']} style={styles.backdropFade} />
+        </Animated.View>
+      )}
+      <Header
+        style={headerStyle}
+        onLayout={(e) => {
+          headerHeight.value = e.nativeEvent.layout.height;
+        }}
+      />
+      <Animated.ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+      >
+        <HomeStage
+          onLayout={(e) => {
+            stageHeight.value = e.nativeEvent.layout.height;
+          }}
+        />
         <Section title="For you">
           <View style={styles.forYouGrid}>
             {forYouTiles.map((tile) => (
@@ -204,15 +287,15 @@ export default function HomeScreen() {
             ))}
           </View>
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
       {toast}
     </ThemedView>
   );
 }
 
-function Header() {
+function Header({ style, onLayout }: { style: AnimatedStyle<ViewStyle>; onLayout: (event: LayoutChangeEvent) => void }) {
   return (
-    <ThemedView surface="canvas" style={headerStyles.header}>
+    <Animated.View style={[headerStyles.header, style]} onLayout={onLayout}>
       <SafeAreaView edges={['top']}>
         <View style={headerStyles.row}>
           <MmusicBrand />
@@ -223,7 +306,7 @@ function Header() {
           />
         </View>
       </SafeAreaView>
-    </ThemedView>
+    </Animated.View>
   );
 }
 
@@ -244,10 +327,28 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
+/** How far the header takes to turn solid as the stage passes under it. */
+const HEADER_FADE = 24;
+
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: {
     paddingBottom: Spacing.miniPlayerClearance,
+  },
+  backdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    overflow: 'hidden',
+  },
+  // The stage settles into the canvas instead of ending on a hard edge.
+  backdropFade: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 48,
   },
   section: {
     marginBottom: Spacing.lg,

@@ -4,7 +4,7 @@ import { scheduleOnUI } from 'react-native-worklets';
 
 import { Spacing } from '@/constants/theme';
 import { paletteForTrack, type ArtworkPalette } from '@/lib/palette';
-import { fitArtworkSize } from '@/lib/stage-math';
+import { fitArtworkSize, type Rect } from '@/lib/stage-math';
 import { getTrackById } from '@/mocks';
 
 import { playPosition, usePlayerStore } from './player-store';
@@ -32,6 +32,9 @@ export const playerFocused = makeMutable(false);
 /** The Home stage is on screen, so the capsule (mini-player) steps aside — the
  * playing track is never shown twice (W3 spec §2.5). */
 export const stageVisible = makeMutable(false);
+/** Where the Home stage's cover was (window coordinates) when it opened the
+ * player — the cover grows from there into Now Playing. Null when unknown. */
+export const stageCoverRect = makeMutable<Rect | null>(null);
 /** Play-order length and repeat-all, mirrored for the UI-thread swipe gestures. */
 export const orderLength = makeMutable(0);
 export const repeatAll = makeMutable(false);
