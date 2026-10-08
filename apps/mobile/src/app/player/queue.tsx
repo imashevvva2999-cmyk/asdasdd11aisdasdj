@@ -26,6 +26,7 @@ export default function QueueScreen() {
     [queue],
   );
   const currentIndex = usePlayerStore((s) => s.currentIndex);
+  const order = usePlayerStore((s) => s.order);
   const playFromQueueIndex = usePlayerStore((s) => s.playFromQueueIndex);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const autoplay = usePlayerStore((s) => s.autoplay);
@@ -36,7 +37,9 @@ export default function QueueScreen() {
 
   const current = queueTracks[currentIndex];
   const currentLiked = current ? likedTrackIds.has(current.id) : false;
-  const upcoming = queueTracks.slice(currentIndex + 1);
+  // "Playing Next" follows the play order (shuffle included), not queue order.
+  const upcomingIndices = useMemo(() => order.slice(order.indexOf(currentIndex) + 1), [order, currentIndex]);
+  const upcoming = upcomingIndices.map((index) => queueTracks[index]).filter((t): t is Track => Boolean(t));
   const openCurrentOptions = () => {
     if (current) router.push({ pathname: '/sheets/options', params: { kind: 'track', id: current.id } });
   };
@@ -108,7 +111,7 @@ export default function QueueScreen() {
                   title={track.title}
                   artist={track.artistName}
                   durationLabel={formatDuration(track.durationSec)}
-                  onPress={() => playFromQueueIndex(currentIndex + 1 + offset)}
+                  onPress={() => playFromQueueIndex(upcomingIndices[offset]!)}
                   style={styles.queueRow}
                 />
               ))

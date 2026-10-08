@@ -242,6 +242,77 @@ check('toggleAutoplay() turns it on', store().autoplay === true);
 store().toggleAutoplay();
 check('toggleAutoplay() again turns it off', store().autoplay === false);
 
+// ---- Play order (Шаг 1: carousel neighbours must be the tracks that really play next).
+const SIX = ['midnight-mirage', 'horizon', 'obsidian-frequencies', 'ember-tide', 'vapor-trails', 'abyssal-bloom'];
+store().play('midnight-mirage', SIX);
+check('shuffle off: play order is the queue order', store().order.join(',') === '0,1,2,3,4,5');
+check('peekNeighbors() at the start: no previous, next is the following track', store().peekNeighbors().prevId === undefined && store().peekNeighbors().nextId === 'horizon');
+check('upcomingTrackIds() lists the rest of the queue in order', store().upcomingTrackIds().join(',') === SIX.slice(1).join(','));
+
+store().toggleShuffle();
+const shuffled = store().order;
+check('shuffle on: play order is a permutation of the queue', [...shuffled].sort().join(',') === '0,1,2,3,4,5');
+check('shuffle on: the current track stays first in the play order', shuffled[0] === 0);
+let consistent = true;
+for (let step = 0; step < 5; step += 1) {
+  const peek = store().peekNeighbors().nextId;
+  store().next();
+  if (store().currentTrackId() !== peek) consistent = false;
+}
+check('shuffle: peekNeighbors().nextId is always the track next() plays', consistent);
+check('shuffle: upcomingTrackIds() follows the play order', store().upcomingTrackIds().length === 0);
+store().toggleShuffle();
+check('shuffle off again restores queue order', store().order.join(',') === '0,1,2,3,4,5');
+
+store().cycleRepeat(); // off -> all
+store().playFromQueueIndex(5);
+check('repeat all: the last track peeks the first as next', store().peekNeighbors().nextId === 'midnight-mirage');
+store().cycleRepeat(); // all -> one
+store().cycleRepeat(); // one -> off
+check('repeat off: the last track has no next', store().peekNeighbors().nextId === undefined);
+
+// ---- Swipe: the track changes at once, audio starts after a short settle (no churn on fast flicks).
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+store().play('midnight-mirage', ['midnight-mirage', 'horizon', 'obsidian-frequencies']);
+engine.emit({ playing: true, currentTime: 30 });
+engine.reset();
+store().swipeTo(1);
+check('swipeTo(1) changes the current track immediately', store().currentTrackId() === 'horizon' && store().progressSec === 0);
+check('swipeTo(1) shows loading but does not load audio yet', store().playback === 'loading' && !engine.called('load'));
+await wait(260);
+check('after the settle delay the swiped-to track loads and plays', engine.called('load', 'horizon') && engine.called('play'));
+store().swipeTo(-1);
+check('swipeTo(-1) always goes to the previous track (no 3 s restart rule)', store().currentTrackId() === 'midnight-mirage');
+await wait(260);
+
+engine.reset();
+store().swipeTo(1);
+store().swipeTo(-1);
+store().swipeTo(1);
+await wait(260);
+const loads = engine.calls.filter((c) => c[0] === 'load');
+check('rapid swipes load only the final track, once', loads.length === 1 && loads[0][1] === 'horizon' && store().currentTrackId() === 'horizon');
+
+engine.reset();
+store().swipeTo(1);
+check('swipe onto a track without audio is "unavailable" at once, nothing loads', store().playback === 'unavailable' && store().currentTrackId() === 'obsidian-frequencies');
+await wait(260);
+check('…and nothing loads later either', !engine.called('load'));
+
+store().swipeTo(-1);
+store().pause();
+engine.reset();
+await wait(260);
+check('pausing during the settle delay cancels the pending start', !engine.called('load') && !engine.called('play') && store().playback === 'paused');
+store().swipeTo(-1);
+await wait(260);
+check('swipe at the start of the queue (repeat off) does nothing', store().currentTrackId() === 'midnight-mirage');
+
+// ---- Queue edits keep the play order consistent.
+store().play('midnight-mirage', ['midnight-mirage', 'horizon', 'ember-tide']);
+store().removeFromQueue('horizon');
+check('removeFromQueue() keeps play order valid', store().order.join(',') === '0,1' && store().peekNeighbors().nextId === 'ember-tide');
+
 if (failures > 0) {
   console.error(`\n${failures} player-store check(s) failed.`);
   process.exit(1);

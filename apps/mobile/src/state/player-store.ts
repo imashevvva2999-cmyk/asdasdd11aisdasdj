@@ -30,6 +30,10 @@ export type PlaybackState = 'idle' | 'loading' | 'playing' | 'paused' | 'unavail
 type PlayerState = {
   queue: TrackId[];
   currentIndex: number;
+  /** Play order as queue indices: queue order, or a fixed shuffle permutation
+   * (current track first) so the next/previous track is known in advance —
+   * the artwork carousel shows exactly what will play. */
+  order: number[];
   playback: PlaybackState;
   /** `playback === 'playing'` — kept as its own field for the many readers. */
   isPlaying: boolean;
@@ -46,6 +50,10 @@ type PlayerState = {
   currentTrack: () => Track | undefined;
   currentTrackId: () => TrackId | undefined;
   queueTracks: () => Track[];
+  /** The tracks a swipe (or next()/previous()) would land on; undefined at a queue edge. */
+  peekNeighbors: () => { prevId: TrackId | undefined; nextId: TrackId | undefined };
+  /** Tracks after the current one, in play order (Queue "Playing Next"). */
+  upcomingTrackIds: () => TrackId[];
   play: (trackId: TrackId, queue?: TrackId[]) => void;
   /** "Shuffle" buttons: turn shuffle on and start from a random track. */
   playShuffled: (queue: TrackId[]) => void;
@@ -53,6 +61,10 @@ type PlayerState = {
   pause: () => void;
   next: () => void;
   previous: () => void;
+  /** Artwork / mini-player swipe: always the adjacent track in play order (no
+   * 3 s restart rule). The track changes at once; audio starts after a short
+   * settle so rapid flicks don't churn the audio engine. */
+  swipeTo: (dir: 1 | -1) => void;
   seekTo: (sec: number) => void;
   toggleShuffle: () => void;
   toggleAutoplay: () => void;
@@ -66,15 +78,49 @@ type PlayerState = {
 
 /** Restart instead of going back when Previous is pressed this far into a track. */
 const RESTART_THRESHOLD_SEC = 3;
+/** Swipes: wait this long after the last track change before starting audio. */
+export const SWIPE_AUDIO_DELAY_MS = 180;
 
 let engine: AudioEngine = silentEngine;
 let unsubscribeEngine: () => void = () => {};
 /** Track currently loaded into the engine — resuming it needs no reload. */
 let loadedTrackId: TrackId | undefined;
+/** A deferred (swipe) audio start that hasn't run yet. */
+let pendingStart: ReturnType<typeof setTimeout> | null = null;
+
+function cancelPendingStart() {
+  if (pendingStart) {
+    clearTimeout(pendingStart);
+    pendingStart = null;
+  }
+}
+
+function identityOrder(length: number): number[] {
+  return Array.from({ length }, (_, i) => i);
+}
+
+/** Current index first, the rest in a random order. */
+function shuffledOrder(length: number, first: number): number[] {
+  const rest = identityOrder(length).filter((i) => i !== first);
+  for (let i = rest.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [rest[i], rest[j]] = [rest[j]!, rest[i]!];
+  }
+  return [first, ...rest];
+}
+
+function buildOrder(length: number, current: number, shuffle: boolean): number[] {
+  return shuffle ? shuffledOrder(length, current) : identityOrder(length);
+}
 
 export const usePlayerStore = create<PlayerState>((set, get) => {
-  /** Starts the current track from the top: real audio, or honestly unavailable. */
-  function startCurrent() {
+  /**
+   * Starts the current track from the top: real audio, or honestly
+   * unavailable. `deferMs` (swipes) stops the old audio now but loads the new
+   * track only after the delay; a newer change cancels the pending start.
+   */
+  function startCurrent(deferMs = 0) {
+    cancelPendingStart();
     const id = get().currentTrackId();
     if (!hasDemoAudio(id)) {
       engine.pause();
@@ -82,11 +128,31 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
       set({ playback: 'unavailable', isPlaying: false, progressSec: 0, durationSec: undefined });
       return;
     }
-    loadedTrackId = id;
     set({ playback: 'loading', isPlaying: false, progressSec: 0, durationSec: undefined });
-    engine.load(id!);
-    engine.setLoop(get().repeat === 'one');
-    engine.play();
+    const begin = () => {
+      pendingStart = null;
+      loadedTrackId = id;
+      engine.load(id!);
+      engine.setLoop(get().repeat === 'one');
+      engine.play();
+    };
+    if (deferMs > 0) {
+      engine.pause();
+      pendingStart = setTimeout(begin, deferMs);
+    } else {
+      begin();
+    }
+  }
+
+  /** Queue index of the adjacent track in play order (wraps with repeat all). */
+  function neighborIndex(dir: 1 | -1): number | undefined {
+    const { order, currentIndex, repeat } = get();
+    const pos = order.indexOf(currentIndex);
+    if (pos === -1) return undefined;
+    const target = pos + dir;
+    if (target >= 0 && target < order.length) return order[target];
+    if (repeat === 'all' && order.length > 1) return order[(target + order.length) % order.length];
+    return undefined;
   }
 
   function stopAtEnd() {
@@ -98,6 +164,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
   return {
     queue: ['midnight-mirage', 'horizon', 'obsidian-frequencies', 'ember-tide'],
     currentIndex: 0,
+    order: identityOrder(4),
     playback: 'idle',
     isPlaying: false,
     progressSec: 0,
@@ -114,17 +181,30 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
     },
     queueTracks: () => get().queue.map((id) => getTrackById(id)).filter((t): t is Track => Boolean(t)),
 
+    peekNeighbors: () => {
+      const { queue } = get();
+      const prev = neighborIndex(-1);
+      const next = neighborIndex(1);
+      return { prevId: prev === undefined ? undefined : queue[prev], nextId: next === undefined ? undefined : queue[next] };
+    },
+
+    upcomingTrackIds: () => {
+      const { order, currentIndex, queue } = get();
+      return order.slice(order.indexOf(currentIndex) + 1).map((i) => queue[i]!);
+    },
+
     play: (trackId, queue) => {
       const nextQueue = queue ?? (get().queue.includes(trackId) ? get().queue : [trackId]);
       const index = Math.max(0, nextQueue.indexOf(trackId));
-      set({ queue: nextQueue, currentIndex: index });
+      const sameQueue = nextQueue === get().queue;
+      set({ queue: nextQueue, currentIndex: index, order: sameQueue ? get().order : buildOrder(nextQueue.length, index, get().shuffle) });
       startCurrent();
     },
 
     playShuffled: (queue) => {
       if (queue.length === 0) return;
       const startIndex = Math.floor(Math.random() * queue.length);
-      set({ queue, currentIndex: startIndex, shuffle: true });
+      set({ queue, currentIndex: startIndex, shuffle: true, order: shuffledOrder(queue.length, startIndex) });
       startCurrent();
     },
 
@@ -146,21 +226,15 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
 
     pause: () => {
       if (get().playback === 'unavailable') return;
+      cancelPendingStart();
       engine.pause();
       set({ playback: 'paused', isPlaying: false });
     },
 
     next: () => {
-      const { queue, currentIndex, shuffle, repeat } = get();
-      if (queue.length === 0) return;
-      let nextIndex: number;
-      if (shuffle) {
-        nextIndex = Math.floor(Math.random() * queue.length);
-      } else if (currentIndex + 1 < queue.length) {
-        nextIndex = currentIndex + 1;
-      } else if (repeat === 'all') {
-        nextIndex = 0;
-      } else {
+      if (get().queue.length === 0) return;
+      const nextIndex = neighborIndex(1);
+      if (nextIndex === undefined) {
         stopAtEnd();
         return;
       }
@@ -175,8 +249,17 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
         set({ progressSec: 0 });
         return;
       }
-      set({ currentIndex: currentIndex > 0 ? currentIndex - 1 : 0 });
+      const { order } = get();
+      const pos = order.indexOf(currentIndex);
+      set({ currentIndex: pos > 0 ? order[pos - 1]! : currentIndex });
       startCurrent();
+    },
+
+    swipeTo: (dir) => {
+      const target = neighborIndex(dir);
+      if (target === undefined) return;
+      set({ currentIndex: target });
+      startCurrent(SWIPE_AUDIO_DELAY_MS);
     },
 
     seekTo: (sec) => {
@@ -189,7 +272,10 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
       set({ progressSec: clamped });
     },
 
-    toggleShuffle: () => set({ shuffle: !get().shuffle }),
+    toggleShuffle: () => {
+      const shuffle = !get().shuffle;
+      set({ shuffle, order: buildOrder(get().queue.length, get().currentIndex, shuffle) });
+    },
 
     toggleAutoplay: () => set({ autoplay: !get().autoplay }),
 
@@ -213,7 +299,8 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
     isLiked: (trackId) => get().likedTrackIds.has(trackId),
 
     setQueue: (ids, startIndex = 0) => {
-      set({ queue: ids, currentIndex: Math.min(startIndex, Math.max(ids.length - 1, 0)) });
+      const currentIndex = Math.min(startIndex, Math.max(ids.length - 1, 0));
+      set({ queue: ids, currentIndex, order: buildOrder(ids.length, currentIndex, get().shuffle) });
     },
 
     removeFromQueue: (trackId) => {
@@ -222,7 +309,10 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
       if (removeIndex === -1 || removeIndex === currentIndex) return;
       const nextQueue = queue.filter((id) => id !== trackId);
       const nextIndex = removeIndex < currentIndex ? currentIndex - 1 : currentIndex;
-      set({ queue: nextQueue, currentIndex: nextIndex });
+      const order = get()
+        .order.filter((i) => i !== removeIndex)
+        .map((i) => (i > removeIndex ? i - 1 : i));
+      set({ queue: nextQueue, currentIndex: nextIndex, order });
     },
 
     playFromQueueIndex: (index) => {
@@ -239,6 +329,8 @@ function handleEngineStatus(status: EngineStatus) {
   const state = usePlayerStore.getState();
   // Nothing is playing for these; ignore late updates from a previous track.
   if (state.playback === 'unavailable' || state.playback === 'idle') return;
+  // A swipe's audio start is pending: updates still come from the old track.
+  if (pendingStart) return;
 
   if (status.error) {
     usePlayerStore.setState({ playback: 'error', isPlaying: false });
