@@ -3,16 +3,22 @@ import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { PlayerBackground } from '@/components/player/player-background';
+import { PlayerSubHeader } from '@/components/player/player-subheader';
+import { PlayerTransport } from '@/components/player/player-transport';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
 import { Artwork, EmptyState, EqualizerIndicator, Icon, IconButton, QueueRow, Toggle } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
-import { goBack } from '@/lib/navigation';
 import { getTrackById, type Track } from '@/mocks';
 import { usePlayerStore } from '@/state/player-store';
 
+/** Quiet surface for rows on the adaptive stage (no grey cards, W3 spec §1). */
+const ON_STAGE_SURFACE = 'rgba(10, 10, 12, 0.28)';
+
 /**
- * S-17 Playback Queue (docs/screens.md §3.9). Derives the track list locally
+ * S-17 Playback Queue (docs/screens.md §3.9; W3 Этап 1, iphone/queue.png): on
+ * the cover's stage colour, with the shared Lyrics / Queue header and the
+ * playback controls always below. Derives the track list locally
  * from the store's stable `queue` id array instead of calling the store's
  * own `queueTracks()` selector directly — that function allocates a new
  * array on every call, which breaks React's snapshot-stability check
@@ -45,19 +51,12 @@ export default function QueueScreen() {
   };
 
   return (
-    <ThemedView surface="canvas" style={styles.flex}>
+    <View style={styles.flex}>
+      <PlayerBackground />
       <SafeAreaView style={styles.flex}>
-        <View style={styles.header}>
-          <IconButton variant="ghost" icon="keyboard-arrow-down" iconSize={28} accessibilityLabel="Collapse" onPress={() => goBack()} />
-          <ThemedText variant="headline-sm">Playback Queue</ThemedText>
-          {current ? (
-            <IconButton variant="ghost" icon="more-horiz" iconSize={26} accessibilityLabel="More options" onPress={openCurrentOptions} />
-          ) : (
-            <View style={styles.headerSpacer} />
-          )}
-        </View>
+        <PlayerSubHeader active="queue" />
 
-        <ScrollView contentContainerStyle={styles.content}>
+        <ScrollView style={styles.flex} contentContainerStyle={styles.content}>
           {current && (
             <View style={styles.section}>
               <View style={styles.eyebrowRow}>
@@ -76,7 +75,7 @@ export default function QueueScreen() {
                   )}
                 </View>
                 <View style={styles.nowPlayingText}>
-                  <ThemedText variant="headline-sm" numberOfLines={1}>
+                  <ThemedText variant="headline-sm" numberOfLines={1} style={styles.nowPlayingTitle}>
                     {current.title}
                   </ThemedText>
                   <ThemedText variant="body-md" emphasis="medium" numberOfLines={1}>
@@ -94,6 +93,7 @@ export default function QueueScreen() {
                   accessibilityLabel={currentLiked ? 'Unlike' : 'Like'}
                   onPress={() => toggleLike(current.id)}
                 />
+                <IconButton variant="ghost" icon="more-horiz" iconSize={24} accessibilityLabel="More options" onPress={openCurrentOptions} />
               </View>
             </View>
           )}
@@ -129,8 +129,9 @@ export default function QueueScreen() {
             <Toggle value={autoplay} onValueChange={toggleAutoplay} accessibilityLabel="Infinity Autoplay" />
           </View>
         </ScrollView>
+        <PlayerTransport />
       </SafeAreaView>
-    </ThemedView>
+    </View>
   );
 }
 
@@ -142,19 +143,9 @@ function formatDuration(totalSeconds: number): string {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  header: {
-    height: 56,
-    paddingHorizontal: Spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  headerSpacer: {
-    width: 44,
-  },
   content: {
     paddingHorizontal: Spacing.margin,
-    paddingTop: Spacing.sm,
+    paddingTop: Spacing.lg,
     paddingBottom: Spacing.xl,
     gap: Spacing.lg,
   },
@@ -173,9 +164,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.md,
-    padding: Spacing.md,
+    paddingVertical: Spacing.sm,
+    paddingLeft: Spacing.sm,
     borderRadius: Radii.md,
-    backgroundColor: Colors.surface.l1,
+    backgroundColor: ON_STAGE_SURFACE,
+  },
+  nowPlayingTitle: {
+    color: Colors.primary,
   },
   coverOverlay: {
     position: 'absolute',
@@ -205,7 +200,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderRadius: Radii.md,
-    backgroundColor: Colors.surface.l1,
+    backgroundColor: ON_STAGE_SURFACE,
   },
   autoplayText: {
     flex: 1,
