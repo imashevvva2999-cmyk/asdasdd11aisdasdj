@@ -14,7 +14,7 @@ export type DemoAudioCredit = {
  * The recordings are not the catalog songs — they are labelled "Demo audio" in
  * the player and credited in the Demo audio sheet, as CC BY 4.0 requires.
  * Pure data (no `require`), so the player store and tests can import it; the
- * audio files themselves are wired in src/audio/expo-audio-engine.ts.
+ * audio files themselves are wired in src/audio/demo-sources.ts.
  */
 export const demoAudioCredits: Partial<Record<TrackId, DemoAudioCredit>> = {
   'midnight-mirage': {

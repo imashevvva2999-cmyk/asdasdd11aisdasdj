@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
-import { startAudio } from '@/audio/expo-audio-engine';
+import { startAudio } from '@/audio/platform-audio';
 import { PlayerExpandPreview } from '@/components/player/expand-preview';
 import { PlayerSurfaceSync } from '@/state/player-surface';
 import { loadedFonts } from '@/constants/fonts';

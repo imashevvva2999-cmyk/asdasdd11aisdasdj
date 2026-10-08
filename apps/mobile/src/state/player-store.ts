@@ -360,6 +360,11 @@ function handleEngineStatus(status: EngineStatus) {
     return;
   }
 
+  if (status.blocked) {
+    usePlayerStore.setState({ playback: 'paused', isPlaying: false });
+    return;
+  }
+
   const update: Partial<PlayerState> = { progressSec: status.currentTime };
   if (status.duration > 0) update.durationSec = status.duration;
 

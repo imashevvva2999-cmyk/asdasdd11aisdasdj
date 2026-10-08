@@ -1,18 +1,9 @@
-import { createAudioPlayer, setAudioModeAsync, type AudioSource, type AudioStatus } from 'expo-audio';
+import { createAudioPlayer, setAudioModeAsync, type AudioStatus } from 'expo-audio';
 
-import type { TrackId } from '@/mocks';
 import { bindAudioEngine } from '@/state/player-store';
 
 import { STATUS_INTERVAL_MS, type AudioEngine, type EngineStatus } from './audio-engine';
-
-/**
- * Demo audio files (CC BY 4.0, Kevin MacLeod — see assets/audio/CREDITS.md and
- * src/audio/demo-audio.ts). Keys must match `demoAudioCredits`.
- */
-const SOURCES: Partial<Record<TrackId, AudioSource>> = {
-  'midnight-mirage': require('../../assets/audio/chill-wave.mp3'),
-  horizon: require('../../assets/audio/floating-cities.mp3'),
-};
+import { DEMO_SOURCES } from './demo-sources';
 
 function toEngineStatus(status: AudioStatus): EngineStatus {
   return {
@@ -32,7 +23,7 @@ function createExpoAudioEngine(): AudioEngine {
   const player = createAudioPlayer(null, { updateInterval: STATUS_INTERVAL_MS });
   return {
     load: (trackId) => {
-      const source = SOURCES[trackId];
+      const source = DEMO_SOURCES[trackId];
       if (source !== undefined) player.replace(source);
     },
     play: () => player.play(),
@@ -52,7 +43,7 @@ function createExpoAudioEngine(): AudioEngine {
 
 let started = false;
 
-/** Called once on the client from the root layout (never during static web rendering). */
+/** Native (iOS/Android) audio. The website uses platform-audio.web.ts instead. Called once from the root layout. */
 export function startAudio() {
   if (started) return;
   started = true;

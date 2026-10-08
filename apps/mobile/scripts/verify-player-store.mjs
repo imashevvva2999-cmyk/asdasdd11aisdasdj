@@ -198,6 +198,15 @@ check('next() with repeat=all wraps to the first track', store().currentTrackId(
 store().cycleRepeat(); // all -> one
 store().cycleRepeat(); // one -> off
 
+// Browser autoplay policy (Safari): the browser refused to start playback
+// without a user gesture. Not an error — show paused so one tap on Play starts it.
+store().play('horizon', QUEUE);
+engine.emit({ playing: false, blocked: true });
+check('autoplay blocked → paused, not stuck loading and not an error', store().playback === 'paused' && store().isPlaying === false);
+engine.reset();
+store().togglePlayPause();
+check('Play after a blocked start plays the loaded track', engine.called('play') && store().playback === 'playing');
+
 // Load / playback error.
 store().play('horizon', QUEUE);
 engine.emit({ isLoaded: false, error: 'Playback error (code 4)' });

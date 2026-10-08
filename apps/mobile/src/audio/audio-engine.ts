@@ -12,11 +12,15 @@ export type EngineStatus = {
   isLoaded: boolean;
   didJustFinish: boolean;
   error: string | null;
+  /** The browser refused to start playback without a user gesture (autoplay
+   * policy, e.g. iOS Safari). Not an error: the track is loaded and paused. */
+  blocked?: boolean;
 };
 
 /**
  * What the player store needs from an audio backend. The app binds the
- * expo-audio implementation (src/audio/expo-audio-engine.ts) at startup; tests
+ * platform implementation at startup (src/audio/platform-audio.ts: expo-audio on
+ * native, one persistent <audio> element on the website); tests
  * bind a recording engine, so the store's playback logic runs in Node without
  * a native module. Tracks are loaded by id — the engine owns the id → audio
  * file mapping, keeping `require(...mp3)` out of the store.
