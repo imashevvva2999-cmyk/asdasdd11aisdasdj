@@ -44,13 +44,35 @@ export function getGenreById(id: string): Genre | undefined {
   return genres.find((genre) => genre.id === id);
 }
 
-/** Genre detail content (S-07) — only the Kyrgyz Music / "Steppe Resonance" genre is
- * populated with mock detail content for this batch; others fall back to a generic
- * detail shell using the Genre record above. */
-export const genreDetails: Record<string, { heroTitle: string; listeners: string; description: string }> = {
+export type GenreDetail = {
+  /** Small pill above the title: what kind of category this is. */
+  label: string;
+  description: string;
+  /** Replaces the category name as the hero title (Stitch S-07 "Steppe Resonance"). */
+  heroTitle?: string;
+  /** Only where the design supplies a figure — none are invented. */
+  listeners?: string;
+};
+
+/** Genre detail copy (S-07) for every Browse All category — editorial text for
+ * the existing categories, not new catalog content. */
+export const genreDetails: Record<string, GenreDetail> = {
   'kyrgyz-music': {
+    label: 'Regional',
     heroTitle: 'Steppe Resonance',
     listeners: '128K listeners',
     description: 'Ethno-synth and Komuz-driven productions blending Central Asian heritage instruments with modern electronic production.',
   },
+  'made-for-you': { label: 'Personal', description: 'Mixes shaped around what you play most, refreshed as your listening changes.' },
+  'charts-viral': { label: 'Charts', description: 'The tracks everyone is playing and sharing right now.' },
+  pop: { label: 'Genre', description: 'Big hooks, bright production and the songs that define the moment.' },
+  'hip-hop-rnb': { label: 'Genre', description: 'Hard-hitting beats, sharp verses and smooth late-night R&B.' },
+  'electronic-dance': { label: 'Genre', description: 'From warm synth textures to peak-time club energy.' },
+  'rock-indie': { label: 'Genre', description: 'Guitar-led records, from raw garage energy to dreamy indie.' },
+  'jazz-soul': { label: 'Genre', description: 'Rich voices, live instruments and timeless grooves.' },
+  'chill-lofi': { label: 'Mood', description: 'Soft beats and mellow textures for slowing down.' },
+  'deep-focus-ambient': { label: 'Mood', description: 'Calm, spacious sound that stays out of your way while you work.' },
+  'workout-high-energy': { label: 'Mood', description: 'Driving tempos to keep you moving through every set.' },
+  'classical-film': { label: 'Genre', description: 'Orchestral works and cinematic scores, from quiet to grand.' },
+  'fresh-finds': { label: 'Discovery', description: 'New and rising artists worth hearing early.' },
 };

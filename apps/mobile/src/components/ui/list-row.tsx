@@ -186,6 +186,8 @@ export function QueueRow({ coverUri, title, artist, durationLabel, onPress, styl
 export type LibraryRowProps = {
   coverUri?: LocalOrRemoteImage;
   coverShape?: 'square' | 'circle';
+  /** Shows a solid tile with this coral glyph instead of artwork (e.g. Liked Songs' heart). */
+  coverIcon?: string;
   title: string;
   subtitle?: string;
   verified?: boolean;
@@ -202,6 +204,7 @@ export type LibraryRowProps = {
 export function LibraryRow({
   coverUri,
   coverShape = 'square',
+  coverIcon,
   title,
   subtitle,
   verified,
@@ -212,7 +215,13 @@ export function LibraryRow({
 }: LibraryRowProps) {
   return (
     <PressableScale onPress={onPress} style={[styles.row, libraryRowStyles.row, style]} accessibilityRole={trailing === 'more' ? undefined : 'button'}>
-      <Cover uri={coverUri} seed={title} shape={coverShape} size={56} radius={Radii.DEFAULT} />
+      {coverIcon ? (
+        <View style={libraryRowStyles.iconCover}>
+          <Icon name={coverIcon} size={26} color={Colors.primary} />
+        </View>
+      ) : (
+        <Cover uri={coverUri} seed={title} shape={coverShape} size={56} radius={Radii.DEFAULT} />
+      )}
       <View style={styles.titleBlock}>
         <View style={libraryRowStyles.titleRow}>
           <ThemedText variant="body-lg" numberOfLines={1} style={libraryRowStyles.titleText}>
@@ -383,6 +392,17 @@ const libraryRowStyles = StyleSheet.create({
   row: {
     padding: Spacing.sm,
     borderRadius: Radii.md,
+  },
+  // Same treatment as the Liked Songs page badge (S-13), at row size.
+  iconCover: {
+    width: 56,
+    height: 56,
+    borderRadius: Radii.DEFAULT,
+    backgroundColor: Colors.surface.l2,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 75, 75, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   titleRow: {
     flexDirection: 'row',

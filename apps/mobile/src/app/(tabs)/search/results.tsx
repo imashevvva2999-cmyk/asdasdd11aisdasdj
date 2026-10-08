@@ -7,6 +7,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Artwork, AvatarCard, Chip, CircleButton, CoverCard, EmptyState, Icon, IconButton, LibraryRow, PressableScale, TextField, TrackRow } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useContentWidth } from '@/hooks/use-content-width';
+import { matchesQuery, normalizeQuery } from '@/lib/search-match';
 import { albums, artists, tracks, trendingSearches } from '@/mocks';
 import { usePlayerStore } from '@/state/player-store';
 import { usePlaylistsStore } from '@/state/playlists-store';
@@ -32,11 +33,11 @@ export default function SearchResultsScreen() {
   const likedTrackIds = usePlayerStore((s) => s.likedTrackIds);
   const toggleLike = usePlayerStore((s) => s.toggleLike);
 
-  const q = query.trim().toLowerCase();
-  const matchedArtists = useMemo(() => artists.filter((a) => q === '' || a.name.toLowerCase().includes(q)), [q]);
-  const matchedTracks = useMemo(() => tracks.filter((t) => q === '' || t.title.toLowerCase().includes(q) || t.artistName.toLowerCase().includes(q)), [q]);
-  const matchedAlbums = useMemo(() => albums.filter((a) => q === '' || a.title.toLowerCase().includes(q) || a.artistName.toLowerCase().includes(q)), [q]);
-  const matchedPlaylists = useMemo(() => playlists.filter((p) => q === '' || p.title.toLowerCase().includes(q)), [q, playlists]);
+  const q = normalizeQuery(query);
+  const matchedArtists = useMemo(() => artists.filter((a) => matchesQuery(q, a.name)), [q]);
+  const matchedTracks = useMemo(() => tracks.filter((t) => matchesQuery(q, t.title, t.artistName)), [q]);
+  const matchedAlbums = useMemo(() => albums.filter((a) => matchesQuery(q, a.title, a.artistName)), [q]);
+  const matchedPlaylists = useMemo(() => playlists.filter((p) => matchesQuery(q, p.title)), [q, playlists]);
 
   const topResult = matchedArtists[0];
   const hasAnyResult = matchedArtists.length > 0 || matchedTracks.length > 0 || matchedAlbums.length > 0 || matchedPlaylists.length > 0;

@@ -1,16 +1,16 @@
 import { router } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { AvatarCard, Chip, CircleButton, CoverCard, Icon, IconButton, LibraryRow, PressableScale } from '@/components/ui';
+import { AvatarCard, Chip, CoverCard, Icon, IconButton, LibraryRow, PressableScale, TextField, TextLinkButton, TrackRow } from '@/components/ui';
 import type { LocalOrRemoteImage } from '@/constants/stitch-artwork';
-import { Colors, Radii, Spacing } from '@/constants/theme';
+import { Colors, Spacing } from '@/constants/theme';
 import { useContentWidth } from '@/hooks/use-content-width';
-import { getAlbumById, getArtistById, type LibraryItem } from '@/mocks';
+import { matchesQuery, normalizeQuery } from '@/lib/search-match';
+import { getAlbumById, getArtistById, getTrackById, type LibraryItem, type Track } from '@/mocks';
 import { useLibraryStore } from '@/state/library-store';
 import { usePlayerStore } from '@/state/player-store';
 import { usePlaylistsStore } from '@/state/playlists-store';
@@ -24,6 +24,8 @@ type ResolvedItem = {
   subtitle: string;
   coverUri?: LocalOrRemoteImage;
   verified?: boolean;
+  /** Text Library search matches against (names, not the "Album •" labels). */
+  searchFields: string[];
   open: () => void;
 };
 
@@ -33,16 +35,25 @@ type ResolvedItem = {
  * downloading/creating anywhere in the app shows up here in the same
  * session. Playlists resolve through the playlists store so user-created
  * ones appear too. Sort and the list/grid view toggle are local UI state.
+ * Library search (🔍 in the sort row) narrows the same list — on top of the
+ * active filter chip and sort — and, under "All", also lists matching liked
+ * songs; every result opens its own artist / album / playlist / song.
  */
 export default function LibraryScreen() {
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>('All');
   const [sortMode, setSortMode] = useState<(typeof SORT_MODES)[number]>('Recently Added');
   const [gridView, setGridView] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const q = normalizeQuery(query);
   const windowWidth = useContentWidth();
   const gridItemWidth = Math.floor((Math.min(windowWidth, 800) - Spacing.margin * 2 - Spacing.md) / 2);
 
   const likedTrackIds = usePlayerStore((s) => s.likedTrackIds);
   const play = usePlayerStore((s) => s.play);
+  const currentTrackId = usePlayerStore((s) => s.currentTrackId());
+  const isPlaying = usePlayerStore((s) => s.isPlaying);
+  const toggleLike = usePlayerStore((s) => s.toggleLike);
   const items = useLibraryStore((s) => s.items);
   const downloadedIds = useLibraryStore((s) => s.downloadedIds);
   const playlists = usePlaylistsStore((s) => s.playlists);
@@ -54,12 +65,42 @@ export default function LibraryScreen() {
       const kind = filter === 'Playlists' ? 'playlist' : filter === 'Artists' ? 'artist' : 'album';
       return item.kind === kind;
     });
-    const resolved = filtered.map((item) => resolveItem(item, playlists)).filter((r): r is ResolvedItem => r !== undefined);
+    const resolved = filtered
+      .map((item) => resolveItem(item, playlists))
+      .filter((r): r is ResolvedItem => r !== undefined && matchesQuery(q, ...r.searchFields));
     if (sortMode === 'Alphabetical') return [...resolved].sort((a, b) => a.title.localeCompare(b.title));
     return [...resolved].sort((a, b) => b.item.addedAt.localeCompare(a.item.addedAt));
-  }, [items, downloadedIds, playlists, filter, sortMode]);
+  }, [items, downloadedIds, playlists, filter, sortMode, q]);
 
   const likedIds = Array.from(likedTrackIds);
+  // Songs aren't one of the chip kinds, so they only join results under "All".
+  const matchedSongs: Track[] =
+    q !== '' && filter === 'All'
+      ? likedIds.map((id) => getTrackById(id)).filter((t): t is Track => t !== undefined && matchesQuery(q, t.title, t.artistName))
+      : [];
+  const showLikedSongs = matchesQuery(q, 'Liked Songs');
+  const noMatches = q !== '' && visibleItems.length === 0 && matchedSongs.length === 0 && !showLikedSongs;
+
+  // Same row as every other Library item; play lives on the Liked Songs page.
+  const likedSongsRow = showLikedSongs && (
+    <LibraryRow
+      coverIcon="favorite"
+      title="Liked Songs"
+      subtitle={`Playlist • ${likedIds.length} ${likedIds.length === 1 ? 'song' : 'songs'}`}
+      trailing="chevron"
+      onPress={() => router.push('/library/liked-songs')}
+    />
+  );
+
+  function closeSearch() {
+    setQuery('');
+    setSearchOpen(false);
+  }
+
+  function playSong(trackId: string) {
+    play(trackId, likedIds);
+    router.push('/player/now-playing');
+  }
 
   return (
     <ThemedView surface="canvas" style={styles.flex}>
@@ -106,51 +147,67 @@ export default function LibraryScreen() {
             </ThemedText>
             <Icon name="expand-more" size={16} color={Colors.text.low} />
           </PressableScale>
-          <IconButton
-            icon={gridView ? 'view-agenda' : 'grid-view'}
-            accessibilityLabel={gridView ? 'Show as list' : 'Show as grid'}
-            onPress={() => setGridView((value) => !value)}
-            size={32}
-            style={styles.transparentButton}
-          />
+          <View style={styles.sortActions}>
+            <IconButton
+              icon="search"
+              accessibilityLabel="Search your library"
+              onPress={() => (searchOpen ? closeSearch() : setSearchOpen(true))}
+              size={32}
+              style={styles.transparentButton}
+              color={searchOpen ? Colors.primary : undefined}
+            />
+            <IconButton
+              icon={gridView ? 'view-agenda' : 'grid-view'}
+              accessibilityLabel={gridView ? 'Show as list' : 'Show as grid'}
+              onPress={() => setGridView((value) => !value)}
+              size={32}
+              style={styles.transparentButton}
+            />
+          </View>
         </View>
 
-        <PressableScale accessibilityLabel="Open Liked Songs" onPress={() => router.push('/library/liked-songs')} style={styles.likedSongsCard}>
-          <View style={styles.likedSongsInfo}>
-            <LinearGradient
-              colors={[Colors.primary, Colors.tertiary, Colors.secondary]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.likedSongsIcon}
-            >
-              <Icon name="favorite" size={28} color={Colors.text.high} />
-            </LinearGradient>
-            <View style={styles.likedSongsText}>
-              <ThemedText variant="headline-md">Liked Songs</ThemedText>
-              <View style={styles.likedSongsMetaRow}>
-                <ThemedText variant="body-sm" emphasis="medium">
-                  {likedIds.length} {likedIds.length === 1 ? 'track' : 'tracks'}
-                </ThemedText>
-              </View>
+        {searchOpen && (
+          <View style={styles.searchRow}>
+            {/* TextField's `style` styles the input itself, so the flex wrapper sizes the pill. */}
+            <View style={styles.searchField}>
+            <TextField
+              variant="search"
+              autoFocus
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Search your library"
+              accessibilityLabel="Search your library"
+              returnKeyType="search"
+              leftAccessory={<Icon name="search" color={Colors.text.medium} />}
+              rightAccessory={
+                query !== '' ? (
+                  <IconButton icon="close" size={32} color={Colors.text.medium} accessibilityLabel="Clear search" onPress={() => setQuery('')} style={styles.transparentButton} />
+                ) : undefined
+              }
+            />
             </View>
+            <TextLinkButton label="Cancel" tone="muted" onPress={closeSearch} />
           </View>
-          <CircleButton
-            icon="play-arrow"
-            size={48}
-            iconSize={24}
-            accessibilityLabel="Play Liked Songs"
-            onPress={() => likedIds.length > 0 && play(likedIds[0]!, likedIds)}
-          />
-        </PressableScale>
-
-        {visibleItems.length === 0 && (
-          <ThemedText variant="body-md" emphasis="medium" style={styles.emptyHint}>
-            {filter === 'Downloaded' ? 'Nothing downloaded yet.' : 'Nothing here yet.'}
-          </ThemedText>
         )}
+
+
+        {noMatches ? (
+          <ThemedText variant="body-md" emphasis="medium" style={styles.emptyHint}>
+            No matches for “{query.trim()}” in your library.
+          </ThemedText>
+        ) : (
+          visibleItems.length === 0 &&
+          q === '' && (
+            <ThemedText variant="body-md" emphasis="medium" style={styles.emptyHint}>
+              {filter === 'Downloaded' ? 'Nothing downloaded yet.' : 'Nothing here yet.'}
+            </ThemedText>
+          )
+        )}
+
 
         {gridView ? (
           <View style={styles.grid}>
+            {likedSongsRow}
             {chunkPairs(visibleItems).map((row, rowIndex) => (
               <View key={rowIndex} style={styles.gridRow}>
                 {row.map((entry) =>
@@ -182,6 +239,7 @@ export default function LibraryScreen() {
           </View>
         ) : (
           <View style={styles.list}>
+            {likedSongsRow}
             {visibleItems.map((entry) => (
               <LibraryRow
                 key={entry.item.id}
@@ -201,6 +259,29 @@ export default function LibraryScreen() {
             ))}
           </View>
         )}
+        {matchedSongs.length > 0 && (
+          <View style={styles.list}>
+            <ThemedText variant="label-lg" emphasis="medium">
+              Songs
+            </ThemedText>
+            {matchedSongs.map((track) => (
+              <TrackRow
+                key={track.id}
+                coverUri={track.coverUri}
+                active={currentTrackId === track.id}
+                title={track.title}
+                artist={track.artistName}
+                explicit={track.explicit}
+                lossless={track.lossless}
+                isPlaying={currentTrackId === track.id && isPlaying}
+                liked
+                onPress={() => playSong(track.id)}
+                onToggleLike={() => toggleLike(track.id)}
+                onOptionsPress={() => router.push({ pathname: '/sheets/options', params: { kind: 'track', id: track.id } })}
+              />
+            ))}
+          </View>
+        )}
       </ScrollView>
     </ThemedView>
   );
@@ -215,6 +296,7 @@ function resolveItem(item: LibraryItem, playlists: ReturnType<typeof usePlaylist
       title: playlist.title,
       subtitle: `${playlist.editorial ? 'Editorial' : 'Playlist'} • ${playlist.trackCount} ${playlist.trackCount === 1 ? 'song' : 'songs'}`,
       coverUri: playlist.coverUri,
+      searchFields: [playlist.title],
       open: () => router.push({ pathname: '/playlist/[id]', params: { id: playlist.id } }),
     };
   }
@@ -227,6 +309,7 @@ function resolveItem(item: LibraryItem, playlists: ReturnType<typeof usePlaylist
       subtitle: `Artist${artist.monthlyListeners ? ` • ${(artist.monthlyListeners / 1_000_000).toFixed(1)}M monthly listeners` : ''}`,
       coverUri: artist.photoUri,
       verified: artist.verified,
+      searchFields: [artist.name],
       open: () => router.push({ pathname: '/artist/[id]', params: { id: artist.id } }),
     };
   }
@@ -237,6 +320,7 @@ function resolveItem(item: LibraryItem, playlists: ReturnType<typeof usePlaylist
     title: album.title,
     subtitle: `Album • ${album.artistName} • ${album.trackCount} tracks`,
     coverUri: album.coverUri,
+    searchFields: [album.title, album.artistName],
     open: () => router.push({ pathname: '/album/[id]', params: { id: album.id } }),
   };
 }
@@ -295,42 +379,18 @@ const styles = StyleSheet.create({
   transparentButton: {
     backgroundColor: 'transparent',
   },
-  likedSongsCard: {
-    borderRadius: Radii.lg,
-    backgroundColor: Colors.surface.l2,
-    overflow: 'hidden',
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 16 },
-    shadowRadius: 36,
-    shadowOpacity: 0.22,
-    padding: Spacing.lg,
+  sortActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: Spacing.xs,
   },
-  likedSongsInfo: {
+  searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.lg,
+    gap: Spacing.md,
+  },
+  searchField: {
     flex: 1,
-    minWidth: 0,
-  },
-  likedSongsIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: Radii.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  likedSongsText: {
-    flex: 1,
-    minWidth: 0,
-    gap: 2,
-  },
-  likedSongsMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
   },
   list: {
     gap: Spacing.xs,

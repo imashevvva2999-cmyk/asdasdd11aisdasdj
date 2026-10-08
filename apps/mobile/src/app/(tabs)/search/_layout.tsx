@@ -1,6 +1,15 @@
 import { Stack } from 'expo-router';
 
+import { IconButton } from '@/components/ui';
 import { Colors } from '@/constants/theme';
+import { goBack } from '@/lib/navigation';
+
+/** Always-present back control: opened by direct link or after a web refresh
+ * there is no history, and the default back button would not render, leaving
+ * an empty header band. Falls back to the Search tab root. */
+function SearchBackButton() {
+  return <IconButton icon="arrow-back" variant="ghost" size={40} accessibilityLabel="Back" onPress={() => goBack('/search')} />;
+}
 
 /** Search tab's own stack (docs/screens.md §1: Search → Results → Empty; → Genre; → All Genres → Genre). */
 export default function SearchStackLayout() {
@@ -11,6 +20,7 @@ export default function SearchStackLayout() {
         headerTintColor: Colors.text.high,
         headerShadowVisible: false,
         contentStyle: { backgroundColor: Colors.canvas },
+        headerLeft: () => <SearchBackButton />,
       }}
     >
       <Stack.Screen name="index" options={{ headerShown: false }} />

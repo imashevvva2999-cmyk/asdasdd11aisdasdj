@@ -34,13 +34,6 @@ export default function SearchScreen() {
         <View style={styles.headerRow}>
           <MmusicBrand />
           <View style={styles.headerActions}>
-            {/* No casting support (OQ-28): say so rather than fake a device picker. */}
-            <IconButton
-              icon="cast"
-              accessibilityLabel="Cast"
-              onPress={() => showToast('Casting is not available in this preview', 'cast')}
-              size={40}
-            />
             <View>
               <IconButton
                 icon={unreadCount > 0 ? 'notifications-active' : 'notifications'}

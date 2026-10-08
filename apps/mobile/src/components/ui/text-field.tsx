@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
+import { Platform, StyleSheet, TextInput, View, type TextInputProps, type TextStyle } from 'react-native';
 
 import { resolveFontFamily } from '@/constants/fonts';
 import { Colors, Radii, Spacing, TypeScale } from '@/constants/theme';
@@ -103,6 +103,9 @@ const styles = StyleSheet.create({
     flex: 1,
     color: Colors.text.high,
     height: '100%',
+    // Web: the container's coral focus border is the focus indicator; drop the
+    // browser's second (blue) outline drawn inside the pill.
+    ...(Platform.OS === 'web' ? ({ outlineStyle: 'none' } as unknown as TextStyle) : null),
   },
   inputMultiline: {
     height: undefined,

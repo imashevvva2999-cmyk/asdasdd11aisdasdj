@@ -12,6 +12,10 @@ import { albums, artists, genreDetails, getGenreById, tracks } from '@/mocks';
 import { useLibraryStore } from '@/state/library-store';
 import { usePlayerStore } from '@/state/player-store';
 
+/** Compact enough that title, two lines of description and the actions sit
+ * comfortably over the artwork on a 390px-wide phone. */
+const HERO_HEIGHT = 280;
+
 /** S-07 Genre / Category detail (docs/screens.md §3.2). */
 export default function GenreDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -44,19 +48,26 @@ export default function GenreDetailScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         {/* Stitch S-07: full-bleed image card with the copy and actions overlaid. */}
         <View style={styles.hero}>
-          <Artwork uri={genre?.coverUri} size={heroWidth} aspectRatio={heroWidth / 320} radius={Radii.lg} style={StyleSheet.absoluteFill} />
+          <Artwork uri={genre?.coverUri} size={heroWidth} aspectRatio={heroWidth / HERO_HEIGHT} radius={Radii.lg} style={StyleSheet.absoluteFill} />
           <LinearGradient
-            colors={['rgba(10, 10, 12, 0.1)', 'rgba(10, 10, 12, 0.55)', 'rgba(10, 10, 12, 0.95)']}
-            locations={[0, 0.45, 1]}
+            colors={['rgba(10, 10, 12, 0.05)', 'rgba(10, 10, 12, 0.65)', 'rgba(10, 10, 12, 0.95)']}
+            locations={[0, 0.4, 1]}
             style={StyleSheet.absoluteFill}
           />
+          {detail && (
+            <View style={styles.kindPill}>
+              <ThemedText variant="label-sm" emphasis="high">
+                {detail.label}
+              </ThemedText>
+            </View>
+          )}
           <View style={styles.heroBody}>
-            {detail && (
+            {detail?.listeners && (
               <ThemedText variant="label-md" style={styles.heroEyebrow}>
                 {detail.listeners}
               </ThemedText>
             )}
-            <ThemedText variant="display-lg-mobile">{detail?.heroTitle ?? genre?.title ?? 'Genre'}</ThemedText>
+            <ThemedText variant="display-lg-mobile" numberOfLines={2}>{detail?.heroTitle ?? genre?.title ?? 'Genre'}</ThemedText>
             {detail && (
               <ThemedText variant="body-sm" emphasis="medium" numberOfLines={2}>
                 {detail.description}
@@ -80,7 +91,7 @@ export default function GenreDetailScreen() {
         </View>
 
         <View style={styles.section}>
-          <ThemedText variant="headline-md">Essential Compilations</ThemedText>
+          <SectionTitle title="Essential Compilations" subtitle="Signature soundscapes and journeys" />
           <View style={styles.grid}>
             {chunkPairs(compilations).map((row, rowIndex) => (
               <View key={rowIndex} style={styles.gridRow}>
@@ -102,7 +113,7 @@ export default function GenreDetailScreen() {
         </View>
 
         <View style={styles.section}>
-          <ThemedText variant="headline-md">Pioneering Artists</ThemedText>
+          <SectionTitle title="Pioneering Artists" subtitle="The artists shaping the sound" />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.carouselBleed} contentContainerStyle={styles.carousel}>
             {pioneeringArtists.map((artist) => (
               <AvatarCard
@@ -118,9 +129,7 @@ export default function GenreDetailScreen() {
         </View>
 
         <View style={styles.section}>
-          <View style={styles.sectionHeaderRow}>
-            <ThemedText variant="headline-md">Trending — Live Top {trending.length}</ThemedText>
-          </View>
+          <SectionTitle title={`Trending — Live Top ${trending.length}`} subtitle="Most played right now" />
           <View style={styles.trackList}>
             {trending.map((track, index) => (
               <TrackRow
@@ -140,7 +149,7 @@ export default function GenreDetailScreen() {
         </View>
 
         <View style={styles.section}>
-          <ThemedText variant="headline-md">New Releases</ThemedText>
+          <SectionTitle title="New Releases" subtitle="Recent releases" />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.carouselBleed} contentContainerStyle={styles.carousel}>
             {newReleases.map((album) => (
               <CoverCard
@@ -167,6 +176,18 @@ function chunkPairs<T>(items: T[]): T[][] {
   return rows;
 }
 
+/** Section heading with the one-line muted subtitle Stitch S-07 uses. */
+function SectionTitle({ title, subtitle }: { title: string; subtitle: string }) {
+  return (
+    <View style={styles.sectionTitle}>
+      <ThemedText variant="headline-md">{title}</ThemedText>
+      <ThemedText variant="body-sm" emphasis="medium">
+        {subtitle}
+      </ThemedText>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: {
@@ -175,7 +196,7 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.miniPlayerClearance,
   },
   hero: {
-    height: 320,
+    height: HERO_HEIGHT,
     borderRadius: Radii.lg,
     overflow: 'hidden',
     justifyContent: 'flex-end',
@@ -184,6 +205,15 @@ const styles = StyleSheet.create({
   heroBody: {
     padding: Spacing.lg,
     gap: Spacing.xs,
+  },
+  kindPill: {
+    position: 'absolute',
+    top: Spacing.md,
+    left: Spacing.md,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 4,
+    borderRadius: Radii.full,
+    backgroundColor: 'rgba(10, 10, 12, 0.55)',
   },
   heroEyebrow: {
     color: Colors.secondary,
@@ -210,10 +240,8 @@ const styles = StyleSheet.create({
   carouselBleed: {
     marginHorizontal: -Spacing.margin,
   },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  sectionTitle: {
+    gap: 2,
   },
   carousel: {
     gap: Spacing.md,
