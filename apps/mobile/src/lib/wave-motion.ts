@@ -6,13 +6,18 @@
  *
  * Two waves travel along the waveform in opposite directions at different
  * rates (their interference keeps the shape from ever repeating in lockstep),
- * and a slow third wave stretches and compresses the strands. Each clock runs
+ * and a third layer, running against the bend, spreads and gathers the
+ * strands so they cross and separate. Each clock runs
  * 0 → 1 and wraps, and every term is periodic in it, so the loop is seamless.
  * Pure worklet functions, covered by scripts/verify-home-ui.mjs.
  */
 
 /** Vertical slices across the banner — enough that neighbours never show a step. */
-export const WAVE_SLICES = 56;
+export const WAVE_SLICES = 72;
+
+/** The three wave clocks (ms per loop): unrelated periods so the motion never
+ * visibly repeats; fast enough to read as flowing, none under 3 s. */
+export const WAVE_CLOCK_MS = [4200, 6300, 7700] as const;
 
 /** The waveform spans about 6–94 % of the banner; its tips taper to nothing. */
 const WAVE_START = 0.05;
@@ -34,12 +39,16 @@ export function waveEnvelope(t: number): number {
 export function waveSliceMotion(t: number, c1: number, c2: number, c3: number, energy: number): { translateY: number; scaleY: number } {
   'worklet';
   const e = waveEnvelope(t);
-  const reach = 4.5 + 3.5 * energy;
-  const stretch = 0.08 + 0.05 * energy;
+  const reach = 8.5 + 3.5 * energy;
+  const stretch = 0.15 + 0.06 * energy;
+  // The bend: two waves travelling in opposite directions.
   const rightward = Math.sin(2 * Math.PI * (c1 - 0.9 * t));
   const leftward = Math.sin(2 * Math.PI * (c2 + 1.4 * t) + 1.3);
+  // The strands' own layer: they spread and gather on a wave that runs against
+  // the bend, so upper and lower strands cross and separate instead of moving as one.
+  const spread = 0.7 * Math.sin(2 * Math.PI * (c3 - 0.75 * t) + 0.4) + 0.3 * Math.sin(2 * Math.PI * (c2 - 1.1 * t) + 2.1);
   return {
     translateY: reach * e * (0.62 * rightward + 0.38 * leftward),
-    scaleY: 1 + stretch * e * Math.sin(2 * Math.PI * (c3 + 0.6 * t) + 0.4),
+    scaleY: 1 + stretch * e * spread,
   };
 }

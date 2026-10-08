@@ -13,10 +13,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { type LocalOrRemoteImage, toImageSource } from '@/constants/stitch-artwork';
-import { WAVE_SLICES, waveSliceMotion } from '@/lib/wave-motion';
-
-/** The three wave clocks: different, unrelated periods so the motion never visibly repeats. */
-const CLOCK_MS = [7400, 11300, 13900] as const;
+import { WAVE_CLOCK_MS, WAVE_SLICES, waveSliceMotion } from '@/lib/wave-motion';
 
 /**
  * Home hero artwork (Late Night Flow) as a living waveform. The artwork itself
@@ -48,7 +45,7 @@ export function LivingArtwork({ uri, active = false }: { uri: LocalOrRemoteImage
     if (!moving) return;
     // Each clock wraps 1 → 0; every motion term is periodic in it, so the loop has no seam.
     [c1, c2, c3].forEach((clock, i) => {
-      clock.value = withRepeat(withTiming(1, { duration: CLOCK_MS[i], easing: Easing.linear }), -1, false);
+      clock.value = withRepeat(withTiming(1, { duration: WAVE_CLOCK_MS[i], easing: Easing.linear }), -1, false);
     });
     return () => [c1, c2, c3].forEach((clock) => cancelAnimation(clock));
   }, [moving, c1, c2, c3]);

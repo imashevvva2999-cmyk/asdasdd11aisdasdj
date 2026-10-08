@@ -5,7 +5,7 @@
  *
  * Usage: npx tsx scripts/verify-home-ui.mjs
  */
-import { WAVE_SLICES, waveEnvelope, waveSliceMotion } from '../src/lib/wave-motion.ts';
+import { WAVE_CLOCK_MS, WAVE_SLICES, waveEnvelope, waveSliceMotion } from '../src/lib/wave-motion.ts';
 import { forYouMenuActions } from '../src/lib/for-you-menu.ts';
 import { forYouTiles } from '../src/mocks/index.ts';
 
@@ -28,9 +28,31 @@ const idle = sample((t, c) => waveSliceMotion(t, c, c, c, 0));
 const live = sample((t, c) => waveSliceMotion(t, c, c, c, 1));
 const maxShift = (list) => Math.max(...list.map((m) => Math.abs(m.translateY)));
 const maxStretch = (list) => Math.max(...list.map((m) => Math.abs(m.scaleY - 1)));
-check(`calm idle motion (≤ 7 px, ≤ 12 % stretch): ${maxShift(idle).toFixed(1)} px`, maxShift(idle) <= 7 && maxStretch(idle) <= 0.12);
-check('playing makes the motion fuller', maxShift(live) > maxShift(idle) && maxShift(live) <= 11);
-check('it really moves (not a still image)', maxShift(idle) > 2 && maxStretch(idle) > 0.04);
+check(
+  `lively idle motion (6–10 px bend, 12–20 % stretch): ${maxShift(idle).toFixed(1)} px, ${(maxStretch(idle) * 100).toFixed(0)} %`,
+  maxShift(idle) >= 6 && maxShift(idle) <= 10 && maxStretch(idle) >= 0.12 && maxStretch(idle) <= 0.2,
+);
+check('playing makes it fuller, never chaotic (≤ 14 px, ≤ 25 %)', maxShift(live) > maxShift(idle) && maxShift(live) <= 14 && maxStretch(live) <= 0.25);
+// v1 periods were 7.4 / 11.3 / 13.9 s and felt almost static: 1.5–2× faster, yet no clock under 3 s (calm, not frantic).
+const V1_CLOCK_MS = [7400, 11300, 13900];
+check(
+  `flows 1.5–2× faster than v1 (${WAVE_CLOCK_MS.join(' / ')} ms)`,
+  WAVE_CLOCK_MS.every((ms, i) => V1_CLOCK_MS[i] / ms >= 1.5 && V1_CLOCK_MS[i] / ms <= 2 && ms >= 3000),
+);
+// Layers: the upper and lower strands (the slice's stretch) move on their own wave, not in step with the bend.
+const series = Array.from({ length: 400 }, (_, k) => {
+  const c = k / 400;
+  return waveSliceMotion(0.35, c, (c * 1.6) % 1, (c * 1.9) % 1, 0.5);
+});
+const corr = (xs, ys) => {
+  const mx = xs.reduce((a, b) => a + b) / xs.length;
+  const my = ys.reduce((a, b) => a + b) / ys.length;
+  const cov = xs.reduce((a, x, i) => a + (x - mx) * (ys[i] - my), 0);
+  return cov / Math.sqrt(xs.reduce((a, x) => a + (x - mx) ** 2, 0) * ys.reduce((a, y) => a + (y - my) ** 2, 0));
+};
+const r = corr(series.map((m) => m.translateY), series.map((m) => m.scaleY));
+check(`upper and lower strands move independently of the bend (|r| = ${Math.abs(r).toFixed(2)} < 0.8)`, Math.abs(r) < 0.8);
+check('strands both spread and gather', series.some((m) => m.scaleY > 1.05) && series.some((m) => m.scaleY < 0.95));
 const loopStart = waveSliceMotion(0.4, 0, 0, 0, 0.5);
 const loopEnd = waveSliceMotion(0.4, 1, 1, 1, 0.5);
 check('loops seamlessly (clock 1 = clock 0)', Math.abs(loopStart.translateY - loopEnd.translateY) < 1e-9 && Math.abs(loopStart.scaleY - loopEnd.scaleY) < 1e-9);
