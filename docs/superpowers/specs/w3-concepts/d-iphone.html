@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Mmusic Concept D iPhone</title>
+<!-- Concept D — Floating Canvas on iPhone (390 × 844). Design review mockup, not app code.
+     ?v=home | home-scrolled | player | lyrics | queue | t&p=0..1 (transition frame) | g-swipe | g-close | g-seek -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+<style>
+/* Horizon palette, refined: mixed ~70/30 with the canvas so bright artwork never glares. */
+:root { --canvas:#0A0A0C; --l1:#141418; --l2:#1C1C24; --ink:#FFFFFF; --soft:rgba(255,255,255,0.78); --faint:rgba(255,255,255,0.5); --mid:#9E9EA8; --edge:rgba(255,255,255,0.08); --coral:#FF4B4B; --gold:#F5A623;
+  --s-top:#2a4477; --s-mid:#1a2a48; --s-deep:#111a2c; --p-acc:#4877d0; }
+* { box-sizing:border-box; margin:0; padding:0; }
+html,body { width:390px; height:844px; background:var(--canvas); color:var(--ink); font:400 15px/21px Inter, system-ui, sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }
+img { display:block; width:100%; height:100%; object-fit:cover; }
+.mi { font-family:'Material Icons'; font-size:24px; line-height:1; font-feature-settings:'liga'; }
+.eqmark { display:inline-flex; gap:2px; align-items:center; height:16px; } .eqmark i { width:3px; border-radius:2px; background:var(--coral); }
+.disp { font-family:'Plus Jakarta Sans'; font-weight:800; letter-spacing:-0.035em; }
+.screen { position:relative; width:390px; height:844px; overflow:hidden; background:var(--canvas); }
+.float { background:var(--l1); border:1px solid var(--edge); box-shadow:0 18px 36px -14px rgba(0,0,0,0.8); }
+
+/* iOS chrome: status bar and home indicator (safe areas 47 / 34 pt) */
+.status { position:absolute; left:0; right:0; top:0; height:47px; display:flex; align-items:center; justify-content:space-between; padding:6px 30px 0 34px; z-index:30; font:600 16px Inter; }
+.status .r { display:flex; gap:5px; align-items:center; } .status .mi { font-size:17px; }
+.homebar { position:absolute; left:50%; bottom:8px; width:134px; height:5px; margin-left:-67px; border-radius:3px; background:#fff; z-index:30; }
+
+/* Stage */
+.stage { position:absolute; left:0; right:0; top:0; background:linear-gradient(180deg, var(--s-top) 0%, var(--s-mid) 58%, var(--s-deep) 84%, var(--canvas) 100%); }
+.stage.full { background:linear-gradient(180deg, var(--s-top) 0%, var(--s-mid) 52%, var(--s-deep) 100%); }
+.stage.dark { background:linear-gradient(180deg, #1d3157 0%, #142038 45%, #0e1524 100%); }
+
+/* Header on Home */
+.hhead { position:absolute; left:20px; right:20px; top:54px; height:40px; display:flex; align-items:center; justify-content:space-between; z-index:5; }
+.hhead .logo { display:flex; align-items:center; gap:7px; font:800 20px 'Plus Jakarta Sans'; letter-spacing:-0.04em; }
+.hhead .r { display:flex; gap:10px; align-items:center; }
+.circ { width:36px; height:36px; border-radius:50%; background:rgba(10,10,12,0.32); display:grid; place-items:center; }
+.circ .mi { font-size:20px; }
+.avatar { width:36px; height:36px; border-radius:50%; background:rgba(10,10,12,0.4); display:grid; place-items:center; font:700 12px Inter; }
+
+/* Carousel (art) */
+.art { position:absolute; border-radius:24px; overflow:hidden; aspect-ratio:1; box-shadow:0 26px 44px -22px rgba(0,0,0,0.75); }
+.art.side { opacity:.42; box-shadow:none; border-radius:20px; }
+
+.ttl { position:absolute; left:20px; right:20px; text-align:center; }
+.ttl h1 { font-size:34px; line-height:1.02; }
+.ttl p { color:var(--soft); font:500 15px Inter; margin-top:4px; }
+.ctl { position:absolute; left:0; right:0; display:flex; align-items:center; justify-content:center; gap:34px; }
+.ctl .mi { font-size:34px; }
+.ctl .mute { font-size:22px; color:var(--faint); }
+.play { width:64px; height:64px; border-radius:50%; background:var(--coral); display:grid; place-items:center; flex:none; }
+.play .mi { font-size:36px; }
+.prog { position:absolute; left:28px; right:28px; }
+.prog .tr { height:4px; border-radius:2px; background:rgba(255,255,255,0.2); position:relative; }
+.prog .tr i { position:absolute; left:0; top:0; bottom:0; width:var(--pos,34%); border-radius:2px; background:var(--ink); }
+.prog .tr b { position:absolute; left:var(--pos,34%); top:50%; width:14px; height:14px; margin:-7px; border-radius:50%; background:var(--ink); }
+.prog .times { display:flex; justify-content:space-between; margin-top:8px; font:500 12px Inter; color:var(--faint); font-variant-numeric:tabular-nums; }
+.quiet { position:absolute; left:0; right:0; display:flex; justify-content:center; gap:14px; }
+.qbtn { height:38px; padding:0 14px; border-radius:999px; background:rgba(10,10,12,0.3); display:inline-flex; align-items:center; gap:7px; font:600 13px Inter; }
+.qbtn .mi { font-size:18px; } .qbtn.liked .mi { color:var(--coral); }
+
+/* Recommendations below the stage */
+.shelf { position:absolute; left:20px; right:0; }
+.shelf h2 { font:800 24px 'Plus Jakarta Sans'; letter-spacing:-0.035em; margin-bottom:12px; }
+.row { display:flex; gap:14px; }
+.tile { width:132px; flex:none; }
+.tile .cv { width:132px; height:132px; border-radius:20px; overflow:hidden; }
+.tile b { display:block; font:600 13px Inter; margin-top:8px; }
+
+/* Floating navigation pill (bottom, thumb reach) */
+.navpill { position:absolute; left:50%; transform:translateX(-50%); bottom:42px; height:58px; padding:0 8px; border-radius:999px; display:flex; align-items:center; gap:4px; z-index:20; }
+.navpill a { width:74px; height:44px; border-radius:999px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; font:600 10px Inter; color:var(--mid); }
+.navpill a .mi { font-size:22px; }
+.navpill a.on { color:var(--ink); } .navpill a.on .mi { color:var(--coral); }
+
+/* Capsule mini player */
+.capsule { position:absolute; left:16px; right:16px; bottom:112px; height:62px; border-radius:22px; display:flex; align-items:center; gap:12px; padding:0 10px 0 8px; overflow:hidden; z-index:19; }
+.capsule::after { content:''; position:absolute; left:0; bottom:0; height:2px; width:34%; background:var(--p-acc); }
+.capsule .cv { width:46px; height:46px; border-radius:14px; overflow:hidden; flex:none; }
+.capsule .ti { flex:1; min-width:0; } .capsule .ti b { display:block; font:600 14px Inter; } .capsule .ti span { font-size:12px; color:var(--mid); }
+.capsule .pp { width:42px; height:42px; border-radius:50%; background:var(--coral); display:grid; place-items:center; }
+.capsule .mi { font-size:26px; }
+
+/* Home scrolled content */
+.sc { position:absolute; left:0; right:0; top:100px; padding:0 20px; }
+.sc h2 { font:800 24px 'Plus Jakarta Sans'; letter-spacing:-0.035em; margin:0 0 12px; }
+.quick { display:grid; grid-template-columns:1fr 1fr; gap:12px 14px; }
+.qk { display:flex; align-items:center; gap:10px; }
+.qk .cv { width:52px; height:52px; border-radius:14px; overflow:hidden; flex:none; }
+.qk b { font:600 14px Inter; }
+.feat { margin-top:24px; position:relative; height:200px; border-radius:26px; overflow:hidden; }
+.feat .shade { position:absolute; inset:0; background:linear-gradient(180deg, rgba(10,10,12,0) 30%, rgba(10,10,12,0.85) 100%); }
+.feat .txt { position:absolute; left:18px; right:18px; bottom:16px; display:flex; align-items:flex-end; justify-content:space-between; }
+.feat small { font:600 12px Inter; color:var(--gold); } .feat h3 { font-size:28px; line-height:1; margin-top:4px; }
+.feat .pl { width:48px; height:48px; border-radius:50%; background:var(--coral); display:grid; place-items:center; }
+
+/* Now Playing header */
+.phead { position:absolute; left:16px; right:16px; top:54px; height:40px; display:flex; align-items:center; justify-content:space-between; z-index:5; }
+.phead .from { text-align:center; } .phead .from small { display:block; font:600 11px Inter; color:var(--faint); } .phead .from b { font:600 13px Inter; }
+.grab { position:absolute; left:50%; top:49px; width:36px; height:4px; margin-left:-18px; border-radius:2px; background:rgba(255,255,255,0.35); z-index:6; }
+.ttl-left { position:absolute; left:28px; right:28px; display:flex; align-items:flex-end; justify-content:space-between; }
+.ttl-left h1 { font-size:30px; line-height:1.05; } .ttl-left p { color:var(--soft); font:500 15px Inter; margin-top:4px; }
+.ttl-left .mi { color:var(--coral); font-size:28px; }
+.peek { position:absolute; left:28px; right:28px; text-align:center; font:600 17px/24px 'Plus Jakarta Sans'; color:var(--soft); }
+.peek small { display:block; font:600 11px Inter; color:var(--faint); margin-bottom:4px; letter-spacing:.02em; }
+.actions { position:absolute; left:28px; right:28px; display:flex; justify-content:space-between; }
+.actions > span { display:flex; flex-direction:column; align-items:center; gap:4px; font:600 11px Inter; color:var(--soft); width:64px; }
+.actions .mi { font-size:22px; font-family:'Material Icons'; font-weight:400; }
+
+/* Lyrics / Queue */
+.mhead { position:absolute; left:20px; right:16px; top:56px; display:flex; align-items:center; gap:12px; }
+.mhead .cv { width:44px; height:44px; border-radius:12px; overflow:hidden; flex:none; }
+.mhead .ti { flex:1; } .mhead b { display:block; font:700 15px Inter; } .mhead span { font-size:13px; color:var(--soft); }
+.seg { position:absolute; left:50%; top:114px; transform:translateX(-50%); width:230px; display:flex; background:rgba(10,10,12,0.36); border-radius:999px; padding:4px; }
+.seg span { flex:1; height:34px; border-radius:999px; display:grid; place-items:center; font:600 13px Inter; color:var(--soft); }
+.seg span.on { background:var(--ink); color:#0e1524; }
+.lyr { position:absolute; left:24px; right:24px; top:180px; bottom:206px; overflow:hidden; display:flex; flex-direction:column; gap:12px; -webkit-mask-image:linear-gradient(180deg, transparent 0, #000 6%, #000 82%, transparent 100%); }
+.lyr p { font:700 27px/34px 'Plus Jakarta Sans'; letter-spacing:-0.025em; color:rgba(255,255,255,0.34); }
+.lyr p.past { color:rgba(255,255,255,0.55); } .lyr p.cur { color:var(--ink); }
+.qlist { position:absolute; left:16px; right:16px; top:166px; }
+.qlist h4 { font:600 12px Inter; color:var(--faint); margin:8px 8px 6px; }
+.qrow { display:grid; grid-template-columns:48px 1fr auto; gap:12px; align-items:center; height:62px; padding:0 8px; border-radius:16px; }
+.qrow .cv { width:48px; height:48px; border-radius:12px; overflow:hidden; }
+.qrow b { display:block; font:600 15px Inter; } .qrow span { font-size:12px; color:var(--soft); }
+.qrow .d { font:500 12px Inter; color:var(--faint); font-variant-numeric:tabular-nums; }
+.qrow.now b { color:var(--coral); }
+.qrow.pressed { background:rgba(255,255,255,0.08); }
+.dock { position:absolute; left:0; right:0; bottom:0; height:200px; background:linear-gradient(180deg, rgba(14,21,36,0) 0%, #0e1524 28%); }
+.dock .prog { top:62px; }
+.dock .ctl { top:110px; gap:40px; } .dock .play { width:56px; height:56px; } .dock .ctl .mi { font-size:30px; }
+
+/* Gesture annotations */
+.finger { position:absolute; width:46px; height:46px; margin:-23px; border-radius:50%; background:rgba(255,255,255,0.28); border:2px solid rgba(255,255,255,0.85); z-index:40; }
+.note { position:absolute; z-index:41; background:var(--ink); color:#0e1524; font:700 12px Inter; padding:6px 10px; border-radius:999px; white-space:nowrap; }
+.arrow { position:absolute; z-index:40; height:3px; background:var(--ink); border-radius:2px; }
+.arrow::after { content:''; position:absolute; top:-6px; border:7.5px solid transparent; }
+.arrow.left::after { left:-12px; border-right-color:var(--ink); border-right-width:12px; }
+.arrow.down { width:3px; } .arrow.down::after { left:-6px; bottom:-12px; top:auto; border-top-color:var(--ink); border-top-width:12px; }
+.bubble { position:absolute; z-index:41; background:var(--ink); color:#0e1524; font:700 13px Inter; padding:4px 9px; border-radius:8px; font-variant-numeric:tabular-nums; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="common.js"></script>
+<script>
+const T = { cover: 'generated/horizon.jpg', title: 'Horizon', artist: 'Solaris Echo', album: 'Horizon (Deluxe)', pos: '1:03', rem: '-2:01' };
+const PREV = 'tracks/midnight-mirage.jpg', NEXT = 'tracks/obsidian-frequencies.jpg';
+// Mockup placeholder lyrics for Horizon (in the app, synced lyrics come from the catalogue).
+const LINES = ['Light along the edge of the dunes', 'Waiting for the sun to break', 'Horizon, carry me over', 'Every road I didn\'t take', 'Hold the line until the morning', 'Colours bleeding into blue', 'Horizon, carry me over', 'All the way back home to you'];
+const CUR = 2;
+const UP = QUEUE.slice(1).concat([['tracks/midnight-mirage.jpg', 'Midnight Mirage', 'Solaris Echo', '4:00']]);
+
+const status = () => `<div class="status"><span>9:41</span><span class="r">${mi('signal_cellular_alt')}${mi('wifi')}${mi('battery_full')}</span></div><div class="homebar"></div>`;
+const L = (a, b, p) => a + (b - a) * p;
+const clamp = (x) => Math.max(0, Math.min(1, x));
+
+/* One layout, interpolated by p: 0 = Home, 1 = Now Playing. Every transition frame is real geometry. */
+function stageFrame(p, { dx = 0, blend = null, seek = null } = {}) {
+  const stageH = L(650, 844, p);
+  const size = L(256, 320, p), top = L(108, 116, p), x = (390 - size) / 2 + dx;
+  const sideH = L(196, 236, p), sideTop = top + (size - sideH) / 2, gap = 18;
+  const homeO = clamp(1 - p * 3.2), playO = clamp(p * 2.4 - 1.3);
+  const pos = seek ?? 34;
+  const stageStyle = blend ? `background:linear-gradient(180deg, ${blend.top} 0%, ${blend.mid} 58%, var(--s-deep) 84%, var(--canvas) 100%)` : '';
+  return `<div class="stage ${p > 0.98 ? 'full' : ''}" style="height:${stageH}px;${stageStyle}"></div>
+    <div class="art side" style="left:${x - gap - sideH}px;top:${sideTop}px;height:${sideH}px">${img(PREV)}</div>
+    <div class="art" style="left:${x}px;top:${top}px;height:${size}px;z-index:3">${img(T.cover)}</div>
+    <div class="art side" style="left:${x + size + gap}px;top:${sideTop}px;height:${sideH}px">${img(NEXT)}</div>
+    <div style="opacity:${homeO};transform:translateY(${p * 90}px)">
+      <div class="hhead"><span class="logo">${EQ()}Mmusic</span><span class="r"><span class="circ">${mi('notifications_none')}</span><span class="avatar">AR</span></span></div>
+      <div class="ttl" style="top:388px"><h1 class="disp">${T.title}</h1><p>${T.artist}</p></div>
+      <div class="ctl" style="top:470px">${mi('skip_previous')}<div class="play">${mi('pause')}</div>${mi('skip_next')}</div>
+      <div class="prog" style="top:556px;--pos:34%"><div class="tr"><i></i></div><div class="times"><span>${T.pos}</span><span>${T.rem}</span></div></div>
+      <div class="quiet" style="top:600px"><span class="qbtn liked">${mi('favorite')}Liked</span><span class="qbtn">${mi('lyrics')}Lyrics</span><span class="qbtn">${mi('queue_music')}Up next</span></div>
+    </div>
+    <div style="opacity:${playO};transform:translateY(${(1 - p) * 40}px)">
+      <div class="grab"></div>
+      <div class="phead"><span class="circ">${mi('keyboard_arrow_down')}</span><span class="from"><small>Playing from</small><b>${T.album}</b></span><span class="circ">${mi('more_horiz')}</span></div>
+      <div class="ttl-left" style="top:${top + size + 26}px"><div><h1 class="disp">${T.title}</h1><p>${T.artist}</p></div>${mi('favorite')}</div>
+      <div class="prog" style="top:${top + size + 104}px;--pos:${pos}%"><div class="tr"><i></i>${seek ? '' : '<b></b>'}</div><div class="times"><span>${seek ? '2:01' : T.pos}</span><span>${seek ? '-1:03' : T.rem}</span></div></div>
+      <div class="ctl" style="top:${top + size + 150}px;gap:30px"><span class="mi mute">shuffle</span>${mi('skip_previous')}<div class="play" style="width:72px;height:72px">${mi('pause')}</div>${mi('skip_next')}<span class="mi mute">repeat</span></div>
+      <div class="peek" style="top:${top + size + 254}px"><small>Lyrics</small>${LINES[CUR]}</div>
+      <div class="actions" style="top:${top + size + 318}px"><span>${mi('lyrics')}Lyrics</span><span>${mi('queue_music')}Queue</span><span>${mi('volunteer_activism')}Support</span><span>${mi('headphones')}Audio</span></div>
+    </div>`;
+}
+const shelf = (p = 0) => `<div class="shelf" style="top:${L(664, 900, p)}px;opacity:${clamp(1 - p * 2)}"><h2>For you</h2><div class="row">${FOR_YOU.slice(0, 4).map(([c, t]) => `<div class="tile"><div class="cv">${img(c)}</div><b>${t}</b></div>`).join('')}</div></div>`;
+const navpill = (p = 0) => `<nav class="navpill float" style="transform:translate(-50%, ${L(0, 140, p)}px)"><a class="on">${mi('home')}Home</a><a>${mi('search')}Search</a><a>${mi('library_music')}Library</a></nav>`;
+const dock = () => `<div class="dock"><div class="prog" style="--pos:34%"><div class="tr"><i></i><b></b></div><div class="times"><span>${T.pos}</span><span>${T.rem}</span></div></div>
+  <div class="ctl">${mi('skip_previous')}<div class="play">${mi('pause')}</div>${mi('skip_next')}</div></div>`;
+const miniHead = () => `<div class="mhead"><div class="cv">${img(T.cover)}</div><div class="ti"><b>${T.title}</b><span>${T.artist}</span></div><span class="circ">${mi('keyboard_arrow_down')}</span></div>`;
+
+const views = {
+  home: () => `<div class="screen">${stageFrame(0)}${shelf(0)}${navpill(0)}${status()}</div>`,
+  'home-scrolled': () => `<div class="screen"><div class="stage" style="height:180px;background:linear-gradient(180deg,#16233d 0%, var(--canvas) 100%)"></div>
+    <div class="hhead"><span class="logo">${EQ()}Mmusic</span><span class="r"><span class="circ">${mi('notifications_none')}</span><span class="avatar">AR</span></span></div>
+    <div class="sc"><h2>For you</h2><div class="quick">${FOR_YOU.map(([c, t]) => `<div class="qk"><div class="cv">${img(c)}</div><b>${t}</b></div>`).join('')}</div>
+      <div class="feat">${img(FEATURED.cover)}<div class="shade"></div><div class="txt"><div><small>${FEATURED.kind}</small><h3 class="disp">${FEATURED.title}</h3></div><span class="pl">${mi('play_arrow')}</span></div></div>
+      <h2 style="margin-top:24px">Trending now</h2><div class="row">${TRENDING.slice(0, 3).map(([c, t]) => `<div class="tile"><div class="cv">${img(c)}</div><b>${t}</b></div>`).join('')}</div></div>
+    <div class="capsule float"><div class="cv">${img(T.cover)}</div><div class="ti"><b>${T.title}</b><span>${T.artist}</span></div><span class="pp">${mi('pause')}</span>${mi('skip_next')}</div>
+    ${navpill(0)}${status()}</div>`,
+  player: () => `<div class="screen">${stageFrame(1)}${status()}</div>`,
+  lyrics: () => `<div class="screen"><div class="stage dark" style="height:844px"></div>${miniHead()}<div class="seg"><span class="on">Lyrics</span><span>Queue</span></div>
+    <div class="lyr">${LINES.map((l, i) => `<p class="${i < CUR ? 'past' : i === CUR ? 'cur' : ''}">${l}</p>`).join('')}</div>${dock()}${status()}</div>`,
+  queue: () => `<div class="screen"><div class="stage dark" style="height:844px"></div>${miniHead()}<div class="seg"><span>Lyrics</span><span class="on">Queue</span></div>
+    <div class="qlist"><h4>Now playing</h4><div class="qrow now"><div class="cv">${img(T.cover)}</div><div><b>${T.title}</b><span>${T.artist}</span></div><span class="d">3:04</span></div>
+      <h4>Next</h4>${UP.slice(0, 5).map(([c, t, a, d], i) => `<div class="qrow ${i === 1 ? 'pressed' : ''}"><div class="cv">${img(c)}</div><div><b>${t}</b><span>${a}</span></div><span class="d">${d}</span></div>`).join('')}</div>${dock()}${status()}</div>`,
+  t: () => { const p = Number(new URLSearchParams(location.search).get('p') || 0); return `<div class="screen">${stageFrame(p)}${shelf(p)}${navpill(p)}${status()}${p === 0 ? '<div class="finger" style="left:195px;top:236px"></div><div class="note" style="left:172px;top:276px">Tap</div>' : ''}</div>`; },
+  'g-swipe': () => `<div class="screen">${stageFrame(0, { dx: -118, blend: { top: '#38446c', mid: '#202941' } })}${shelf(0)}${navpill(0)}${status()}
+    <div class="finger" style="left:150px;top:236px"></div><div class="arrow left" style="left:84px;top:235px;width:60px"></div><div class="note" style="left:70px;top:270px">Drag ← next track</div></div>`,
+  'g-close': () => `<div class="screen"><div style="position:absolute;inset:0;transform:scale(.96);opacity:.55">${stageFrame(0)}${shelf(0)}${navpill(0)}</div>
+    <div style="position:absolute;inset:0;transform:translateY(230px);border-radius:28px 28px 0 0;overflow:hidden">${stageFrame(1)}</div>${status()}
+    <div class="finger" style="left:195px;top:420px"></div><div class="arrow down" style="left:194px;top:340px;height:60px"></div><div class="note" style="left:128px;top:450px">Swipe down to Home</div></div>`,
+  'g-seek': () => `<div class="screen">${stageFrame(1, { seek: 62 })}${status()}
+    <div class="prog" style="top:${116 + 320 + 104}px;--pos:62%;z-index:39"><div class="tr" style="height:6px"><b style="width:22px;height:22px;margin:-11px"></b></div></div>
+    <div class="bubble" style="left:${28 + 334 * 0.62 - 22}px;top:${116 + 320 + 66}px">2:01</div>
+    <div class="finger" style="left:${28 + 334 * 0.62}px;top:${116 + 320 + 106}px"></div></div>`,
+};
+const v = new URLSearchParams(location.search).get('v') || 'home';
+document.getElementById('root').innerHTML = (views[v] || views.home)();
+</script>
+</body>
+</html>
