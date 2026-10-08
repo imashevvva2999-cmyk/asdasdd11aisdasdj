@@ -1,6 +1,7 @@
 import { BlurView } from 'expo-blur';
-import { forwardRef, type ReactNode } from 'react';
+import { forwardRef, useEffect, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   BottomSheetBackdrop,
@@ -65,18 +66,29 @@ export type SheetScreenProps = {
  */
 export function SheetScreen({ children, onDismiss }: SheetScreenProps) {
   const insets = useSafeAreaInsets();
+  const reduceMotion = useReducedMotion();
+  // Opening motion: the backdrop fades in while the panel rises into place.
+  const open = useSharedValue(reduceMotion ? 1 : 0);
+  useEffect(() => {
+    if (!reduceMotion) open.value = withTiming(1, { duration: 260, easing: Easing.out(Easing.cubic) });
+  }, [open, reduceMotion]);
+  const scrimStyle = useAnimatedStyle(() => ({ opacity: open.value }));
+  const panelStyle = useAnimatedStyle(() => ({ transform: [{ translateY: (1 - open.value) * 48 }], opacity: 0.4 + open.value * 0.6 }));
+
   return (
     <View style={sheetStyles.root}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Close"
-        style={sheetStyles.scrim}
-        onPress={onDismiss ?? (() => goBack())}
-      />
-      <View style={[sheetStyles.panel, { paddingBottom: Math.max(insets.bottom, Spacing.lg) }]}>
+      <Animated.View style={[sheetStyles.scrimLayer, scrimStyle]}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Close"
+          style={sheetStyles.scrim}
+          onPress={onDismiss ?? (() => goBack())}
+        />
+      </Animated.View>
+      <Animated.View style={[sheetStyles.panel, { paddingBottom: Math.max(insets.bottom, Spacing.lg) }, panelStyle]}>
         <View style={sheetStyles.handle} />
         {children}
-      </View>
+      </Animated.View>
     </View>
   );
 }
@@ -85,6 +97,13 @@ const sheetStyles = StyleSheet.create({
   root: {
     flex: 1,
     justifyContent: 'flex-end',
+  },
+  scrimLayer: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
   },
   scrim: {
     position: 'absolute',

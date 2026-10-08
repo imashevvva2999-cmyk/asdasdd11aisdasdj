@@ -36,6 +36,11 @@ export default function HomeScreen() {
   const play = usePlayerStore((s) => s.play);
   const currentTrackId = usePlayerStore((s) => s.currentTrackId());
   const isPlaying = usePlayerStore((s) => s.isPlaying);
+  const togglePlayPause = usePlayerStore((s) => s.togglePlayPause);
+  const queue = usePlayerStore((s) => s.queue);
+  // The hero's own tracks are what the player is on (queue matches the playlist).
+  const heroInPlayer = !!hero?.trackIds && !!currentTrackId && hero.trackIds.includes(currentTrackId) && queue.length === hero.trackIds.length;
+  const heroPlaying = heroInPlayer && isPlaying;
   const libraryItems = useLibraryStore((s) => s.items);
   const toggleSaved = useLibraryStore((s) => s.toggleSaved);
   const isAlbumSaved = (albumId: string) => libraryItems.some((item) => item.kind === 'album' && item.refId === albumId);
@@ -72,12 +77,17 @@ export default function HomeScreen() {
             <FeaturedBanner
               layout="footer"
               animated
+              active={heroPlaying}
               title={hero.title}
               subtitle={hero.curator}
               coverUri={hero.coverUri}
               height={224}
               onPress={() => router.push({ pathname: '/playlist/[id]', params: { id: hero.id } })}
               onPlayPress={() => {
+                if (heroInPlayer) {
+                  togglePlayPause();
+                  return;
+                }
                 const trackIds = hero.trackIds;
                 if (trackIds && trackIds.length > 0) play(trackIds[0]!, trackIds);
               }}

@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -8,9 +9,12 @@ import { ThemedView } from '@/components/themed-view';
 import { Artwork, CircleButton, Icon, IconButton, PressableScale } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useContentWidth } from '@/hooks/use-content-width';
+import { useSmoothProgress } from '@/hooks/use-smooth-progress';
 import { goBack } from '@/lib/navigation';
 import { getAlbumById } from '@/mocks';
 import { usePlayerStore } from '@/state/player-store';
+
+const PAUSED_ART_SCALE = 0.88;
 
 /** S-15 Now Playing — full-screen player modal (docs/screens.md §3.9). */
 export default function NowPlayingScreen() {
@@ -32,6 +36,33 @@ export default function NowPlayingScreen() {
   const liked = usePlayerStore((s) => (track ? s.isLiked(track.id) : false));
   const [scrubberWidth, setScrubberWidth] = useState(0);
   const windowWidth = useContentWidth();
+  const reduceMotion = useReducedMotion();
+
+  // Hooks stay above the empty-state return below.
+  const ratio = track && track.durationSec > 0 ? Math.min(1, progressSec / track.durationSec) : 0;
+  const progress = useSmoothProgress(ratio);
+  const progressFillStyle = useAnimatedStyle(() => ({ width: `${progress.value * 100}%` }));
+  const thumbStyle = useAnimatedStyle(() => ({ left: `${progress.value * 100}%` }));
+
+  // Paused-state cue: artwork rests slightly smaller and its glow dims.
+  const artScale = useSharedValue(isPlaying ? 1 : PAUSED_ART_SCALE);
+  useEffect(() => {
+    const target = isPlaying ? 1 : PAUSED_ART_SCALE;
+    artScale.value = reduceMotion ? target : withTiming(target, { duration: 320, easing: Easing.out(Easing.back(1.4)) });
+  }, [isPlaying, reduceMotion, artScale]);
+  const artStyle = useAnimatedStyle(() => ({ transform: [{ scale: artScale.value }] }));
+  // 0 when paused → 1 when playing, derived from the same scale.
+  const glowStyle = useAnimatedStyle(() => {
+    const on = (artScale.value - PAUSED_ART_SCALE) / (1 - PAUSED_ART_SCALE);
+    return { opacity: 0.03 + on * 0.09, transform: [{ scale: 1 + on * 0.2 }] };
+  });
+
+  // Web has no native modal transition, so the screen rises in on open.
+  const enter = useSharedValue(Platform.OS === 'web' && !reduceMotion ? 0 : 1);
+  useEffect(() => {
+    if (Platform.OS === 'web' && !reduceMotion) enter.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.cubic) });
+  }, [enter, reduceMotion]);
+  const enterStyle = useAnimatedStyle(() => ({ opacity: enter.value, transform: [{ translateY: (1 - enter.value) * 40 }] }));
 
   useEffect(() => {
     if (trackId && trackId !== currentTrackId) {
@@ -54,12 +85,12 @@ export default function NowPlayingScreen() {
 
   const album = track.albumId ? getAlbumById(track.albumId) : undefined;
   const remainingSec = Math.max(0, track.durationSec - progressSec);
-  const progressRatio = track.durationSec > 0 ? progressSec / track.durationSec : 0;
   // Stitch: artwork spans the content width (20px margins), capped at 340.
   const artworkSize = Math.min(340, windowWidth - Spacing.margin * 2);
 
   return (
     <ThemedView surface="canvas" style={styles.flex}>
+      <Animated.View style={[styles.flex, enterStyle]}>
       <SafeAreaView style={styles.flex}>
         <View style={styles.header}>
           <IconButton variant="ghost" icon="keyboard-arrow-down" iconSize={28} accessibilityLabel="Collapse player" onPress={() => goBack()} />
@@ -81,8 +112,10 @@ export default function NowPlayingScreen() {
         </View>
 
         <View style={styles.artworkWrap}>
-          <View style={styles.artworkGlow} pointerEvents="none" />
-          <Artwork uri={track.coverUri} size={artworkSize} radius={32} />
+          <Animated.View style={[styles.artworkGlow, glowStyle]} pointerEvents="none" />
+          <Animated.View style={artStyle}>
+            <Artwork uri={track.coverUri} size={artworkSize} radius={32} />
+          </Animated.View>
         </View>
 
         <View style={styles.titleRow}>
@@ -126,9 +159,9 @@ export default function NowPlayingScreen() {
             style={styles.scrubberHitArea}
           >
             <View style={styles.scrubberTrack}>
-              <View style={[styles.scrubberProgress, { width: `${progressRatio * 100}%` }]} />
+              <Animated.View style={[styles.scrubberProgress, progressFillStyle]} />
             </View>
-            <View pointerEvents="none" style={[styles.scrubberThumb, { left: `${progressRatio * 100}%` }]} />
+            <Animated.View pointerEvents="none" style={[styles.scrubberThumb, thumbStyle]} />
           </Pressable>
           <View style={styles.timeRow}>
             <ThemedText variant="mono-num" emphasis="medium">
@@ -179,6 +212,7 @@ export default function NowPlayingScreen() {
           <PlayerTabButton label="Audio" icon="headphones" onPress={() => router.push('/profile/audio-quality')} />
         </View>
       </SafeAreaView>
+      </Animated.View>
     </ThemedView>
   );
 }
@@ -244,8 +278,6 @@ const styles = StyleSheet.create({
     height: '70%',
     borderRadius: Radii.full,
     backgroundColor: Colors.primary,
-    opacity: 0.12,
-    transform: [{ scale: 1.2 }],
   },
   titleRow: {
     paddingHorizontal: Spacing.margin,

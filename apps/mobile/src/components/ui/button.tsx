@@ -3,6 +3,7 @@ import { ActivityIndicator, StyleSheet, View, type GestureResponderEvent, type V
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { shadow } from '@mmusic/design-tokens';
 
+import { AnimatedIcon } from './animated-icon';
 import { Icon } from './icon';
 import { PressableScale } from './pressable-scale';
 import { ThemedText } from '../themed-text';
@@ -67,7 +68,7 @@ export function PillButton({
         </View>
       ) : (
         <View style={styles.content}>
-          {leadingIcon && <Icon name={leadingIcon} size={18} color={Colors.text.high} />}
+          {leadingIcon && <AnimatedIcon name={leadingIcon} size={18} color={Colors.text.high} />}
           <ThemedText variant="label-lg" emphasis="high">
             {label}
           </ThemedText>
@@ -149,7 +150,7 @@ export function CircleButton({ icon, onPress, disabled = false, size = 64, iconS
         style,
       ]}
     >
-      <Icon name={icon} size={iconSize} color={Colors.text.high} />
+      <AnimatedIcon name={icon} size={iconSize} color={Colors.text.high} />
     </PressableScale>
   );
 }
@@ -196,7 +197,7 @@ export function IconButton({
         style,
       ]}
     >
-      <Icon name={icon} size={iconSize ?? Math.round(size * (ghost ? 0.6 : 0.45))} color={color} />
+      <AnimatedIcon name={icon} size={iconSize ?? Math.round(size * (ghost ? 0.6 : 0.45))} color={color} />
     </PressableScale>
   );
 }

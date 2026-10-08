@@ -1,12 +1,14 @@
 import { router } from 'expo-router';
 import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
+import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { CircleButton, EmptyState, Icon, IconButton, PressableScale } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
+import { useSmoothProgress } from '@/hooks/use-smooth-progress';
 import { useToast } from '@/hooks/use-toast';
 import { goBack } from '@/lib/navigation';
 import { shareEntity } from '@/lib/share';
@@ -37,6 +39,8 @@ export default function LyricsScreen() {
 
   const durationSec = track?.durationSec ?? 0;
   const progressRatio = durationSec > 0 ? Math.min(1, progressSec / durationSec) : 0;
+  const progress = useSmoothProgress(progressRatio);
+  const progressFillStyle = useAnimatedStyle(() => ({ width: `${progress.value * 100}%` }));
 
   return (
     <ThemedView surface="canvas" style={styles.flex}>
@@ -98,7 +102,7 @@ export default function LyricsScreen() {
         {track && (
           <View style={styles.footer}>
             <View style={styles.progressTrack} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-              <View style={[styles.progressFill, { width: `${progressRatio * 100}%` }]} />
+              <Animated.View style={[styles.progressFill, progressFillStyle]} />
             </View>
             <View style={styles.timeRow}>
               <ThemedText variant="mono-num" emphasis="primary">

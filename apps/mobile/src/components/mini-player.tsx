@@ -1,8 +1,12 @@
 import { router } from 'expo-router';
+import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
+import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors, Radii, Spacing } from '@/constants/theme';
+import { useSmoothProgress } from '@/hooks/use-smooth-progress';
+import type { Track } from '@/mocks';
 import { usePlayerStore } from '@/state/player-store';
 
 import { Artwork } from './ui/artwork';
@@ -25,66 +29,90 @@ import { PressableScale } from './ui/pressable-scale';
  */
 export function MiniPlayer() {
   const track = usePlayerStore((s) => s.currentTrack());
+  if (!track) {
+    return null;
+  }
+  return <MiniPlayerBody track={track} />;
+}
+
+function MiniPlayerBody({ track }: { track: Track }) {
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const progressSec = usePlayerStore((s) => s.progressSec);
   const togglePlayPause = usePlayerStore((s) => s.togglePlayPause);
   const next = usePlayerStore((s) => s.next);
-
-  if (!track) {
-    return null;
-  }
+  const reduceMotion = useReducedMotion();
 
   const progressRatio = track.durationSec > 0 ? Math.min(1, progressSec / track.durationSec) : 0;
+  const progress = useSmoothProgress(progressRatio);
+  const progressStyle = useAnimatedStyle(() => ({ width: `${progress.value * 100}%` }));
+
+  // Slides up into place the first time something plays; cross-fades the
+  // cover + title when the track changes (both follow real store state).
+  const enter = useSharedValue(reduceMotion ? 1 : 0);
+  const trackFade = useSharedValue(1);
+  useEffect(() => {
+    if (!reduceMotion) enter.value = withTiming(1, { duration: 280, easing: Easing.out(Easing.cubic) });
+  }, [enter, reduceMotion]);
+  useEffect(() => {
+    if (reduceMotion) return;
+    trackFade.value = 0.2;
+    trackFade.value = withTiming(1, { duration: 260, easing: Easing.out(Easing.quad) });
+  }, [track.id, reduceMotion, trackFade]);
+  const wrapStyle = useAnimatedStyle(() => ({ opacity: enter.value, transform: [{ translateY: (1 - enter.value) * 16 }] }));
+  const trackStyle = useAnimatedStyle(() => ({ opacity: trackFade.value }));
 
   return (
-    <PressableScale
-      onPress={() => router.push({ pathname: '/player/now-playing', params: { trackId: track.id } })}
-      style={styles.wrap}
-    >
-      <View style={styles.progressTrack}>
-        <View style={[styles.progressFill, { width: `${progressRatio * 100}%` }]} />
-      </View>
-      <View style={styles.row}>
-        <View style={styles.leftGroup}>
-          <Artwork uri={track.coverUri} size={44} radius={Radii.DEFAULT} style={styles.iconTile} />
-          <View style={styles.textBlock}>
-            <ThemedText variant="label-lg" numberOfLines={1}>
-              {track.title}
-            </ThemedText>
-            <View style={styles.metaRow}>
-              <ThemedText variant="body-sm" emphasis="medium" numberOfLines={1} style={styles.artistText}>
-                {track.artistName}
+    <Animated.View style={[styles.wrap, wrapStyle]}>
+      <PressableScale
+        // No button role: it contains real buttons (nested <button> is invalid on web).
+        accessibilityLabel={`Now playing: ${track.title} by ${track.artistName}. Open player`}
+        onPress={() => router.push({ pathname: '/player/now-playing', params: { trackId: track.id } })}
+      >
+        <View style={styles.progressTrack}>
+          <Animated.View style={[styles.progressFill, progressStyle]} />
+        </View>
+        <View style={styles.row}>
+          <Animated.View style={[styles.leftGroup, trackStyle]}>
+            <Artwork uri={track.coverUri} size={44} radius={Radii.DEFAULT} style={styles.iconTile} />
+            <View style={styles.textBlock}>
+              <ThemedText variant="label-lg" numberOfLines={1}>
+                {track.title}
               </ThemedText>
-              {isPlaying && <EqualizerIndicator size={12} />}
+              <View style={styles.metaRow}>
+                <ThemedText variant="body-sm" emphasis="medium" numberOfLines={1} style={styles.artistText}>
+                  {track.artistName}
+                </ThemedText>
+                {isPlaying && <EqualizerIndicator size={12} />}
+              </View>
             </View>
+          </Animated.View>
+          <View style={styles.actions}>
+            <IconButton
+              variant="ghost"
+              icon="skip-next"
+              iconSize={26}
+              accessibilityLabel="Next track"
+              onPress={(e) => {
+                e.stopPropagation();
+                next();
+              }}
+              size={44}
+            />
+            <IconButton
+              icon={isPlaying ? 'pause' : 'play-arrow'}
+              accessibilityLabel={isPlaying ? 'Pause' : 'Play'}
+              onPress={(e) => {
+                e.stopPropagation();
+                togglePlayPause();
+              }}
+              size={44}
+              iconSize={24}
+              style={styles.playButton}
+            />
           </View>
         </View>
-        <View style={styles.actions}>
-          <IconButton
-            variant="ghost"
-            icon="skip-next"
-            iconSize={26}
-            accessibilityLabel="Next track"
-            onPress={(e) => {
-              e.stopPropagation();
-              next();
-            }}
-            size={44}
-          />
-          <IconButton
-            icon={isPlaying ? 'pause' : 'play-arrow'}
-            accessibilityLabel={isPlaying ? 'Pause' : 'Play'}
-            onPress={(e) => {
-              e.stopPropagation();
-              togglePlayPause();
-            }}
-            size={44}
-            iconSize={24}
-            style={styles.playButton}
-          />
-        </View>
-      </View>
-    </PressableScale>
+      </PressableScale>
+    </Animated.View>
   );
 }
 
