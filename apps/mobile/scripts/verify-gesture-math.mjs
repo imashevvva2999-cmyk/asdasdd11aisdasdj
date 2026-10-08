@@ -49,9 +49,10 @@ check('axis: mostly vertical → y', lockAxis(5, -20) === 'y');
 check('axis: diagonal leaning horizontal → x', lockAxis(-150, -36) === 'x');
 
 const H = 844;
-check('expand progress follows an upward drag', Math.abs(expandProgress(-0.375 * H, H) - 0.5) < 1e-9);
+// 1:1 with the finger: the sheet edge stays under it (progress = share of the screen height).
+check('expand progress follows an upward drag 1:1', Math.abs(expandProgress(-0.5 * H, H) - 0.5) < 1e-9);
 check('expand progress is clamped 0…1', expandProgress(200, H) === 0 && expandProgress(-2 * H, H) === 1);
-check('collapse progress follows a downward drag', Math.abs(collapseProgress(0.375 * H, H) - 0.5) < 1e-9);
+check('collapse progress follows a downward drag 1:1', Math.abs(collapseProgress(0.5 * H, H) - 0.5) < 1e-9);
 check('collapse progress is clamped 0…1', collapseProgress(-100, H) === 1 && collapseProgress(2 * H, H) === 0);
 
 check('expand: released past 30% → open', resolveExpand(0.35, 0) === 'open');

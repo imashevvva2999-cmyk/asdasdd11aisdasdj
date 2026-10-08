@@ -8,6 +8,7 @@ import { StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { startAudio } from '@/audio/expo-audio-engine';
+import { PlayerExpandPreview } from '@/components/player/expand-preview';
 import { PlayerSurfaceSync } from '@/state/player-surface';
 import { loadedFonts } from '@/constants/fonts';
 import { Colors } from '@/constants/theme';
@@ -76,7 +77,12 @@ export default function RootLayout() {
             }}
           >
             <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="player" options={{ presentation: 'fullScreenModal' }} />
+            <Stack.Screen
+              name="player"
+              // Dynamic Premium (plan §4.2): no system transition or native swipe —
+              // Now Playing draws its own expand/collapse over the screen beneath.
+              options={{ presentation: 'transparentModal', animation: 'none', gestureEnabled: false, contentStyle: { backgroundColor: 'transparent' } }}
+            />
             <Stack.Screen
               name="sheets"
               // Transparent so the shared SheetScreen can draw its own dimmed
@@ -89,6 +95,8 @@ export default function RootLayout() {
             <Stack.Screen name="playlist/[id]" options={{ headerShown: true, title: 'Playlist' }} />
             <Stack.Screen name="profile" options={{ headerShown: false }} />
           </Stack>
+          {/* Follows a swipe up on the mini-player until the player route opens. */}
+          <PlayerExpandPreview />
         </ThemeProvider>
       </BottomSheetModalProvider>
       </View>

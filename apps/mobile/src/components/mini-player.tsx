@@ -1,14 +1,39 @@
 import { router } from 'expo-router';
-import { useEffect } from 'react';
-import { StyleSheet, View } from 'react-native';
-import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, {
+  Easing,
+  Extrapolation,
+  cancelAnimation,
+  interpolate,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { scheduleOnRN } from 'react-native-worklets';
 
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useSmoothProgress } from '@/hooks/use-smooth-progress';
 import type { Track } from '@/mocks';
+import { expandProgress as expandFor, lockAxis, resolveExpand, resolveSwipe, rubberBand } from '@/lib/gesture-math';
 import { usePlayerStore } from '@/state/player-store';
-import { carouselPos, paletteColor, useNeighborPalettes } from '@/state/player-surface';
+import {
+  CAROUSEL_SPRING,
+  EXPAND_SPRING,
+  REDUCED_SETTLE_MS,
+  canStep,
+  carouselPos,
+  carouselTarget,
+  expandPreview,
+  expandProgress,
+  paletteColor,
+  playerFocused,
+  useNeighborPalettes,
+} from '@/state/player-surface';
 
 import { Artwork } from './ui/artwork';
 import { ThemedText } from './themed-text';
@@ -43,7 +68,9 @@ function MiniPlayerBody({ track }: { track: Track }) {
   const engineDurationSec = usePlayerStore((s) => s.durationSec);
   const togglePlayPause = usePlayerStore((s) => s.togglePlayPause);
   const next = usePlayerStore((s) => s.next);
+  const swipeTo = usePlayerStore((s) => s.swipeTo);
   const reduceMotion = useReducedMotion();
+  const { height } = useWindowDimensions();
 
   const durationSec = engineDurationSec ?? track.durationSec;
   const progressRatio = durationSec > 0 ? Math.min(1, progressSec / durationSec) : 0;
@@ -71,15 +98,122 @@ function MiniPlayerBody({ track }: { track: Track }) {
     trackFade.value = 0.2;
     trackFade.value = withTiming(1, { duration: 260, easing: Easing.out(Easing.quad) });
   }, [track.id, reduceMotion, trackFade]);
-  const wrapStyle = useAnimatedStyle(() => ({ opacity: enter.value, transform: [{ translateY: (1 - enter.value) * 16 }] }));
-  const trackStyle = useAnimatedStyle(() => ({ opacity: trackFade.value }));
+  // Hidden under the full player while it expands/collapses (no double cover).
+  const wrapStyle = useAnimatedStyle(() => {
+    const underPlayer = playerFocused.value || expandPreview.value;
+    const hide = underPlayer ? interpolate(expandProgress.value, [0, 0.25], [1, 0], Extrapolation.CLAMP) : 1;
+    return { opacity: enter.value * hide, transform: [{ translateY: (1 - enter.value) * 16 }] };
+  });
+
+  const openPlayer = useCallback(() => {
+    // Web: the pressed mini-player keeps focus while the player hides it from
+    // assistive tech (aria-hidden); release focus first.
+    if (Platform.OS === 'web') (document.activeElement as HTMLElement | null)?.blur?.();
+    router.push({ pathname: '/player/now-playing', params: { trackId: usePlayerStore.getState().currentTrackId() } });
+  }, []);
+
+  // A drag must not also count as a tap (web fires click after a pointer drag):
+  // set when the pan starts, cleared shortly after it ends.
+  const dragging = useRef(false);
+  const clearTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const markDragStart = useCallback(() => {
+    clearTimeout(clearTimer.current);
+    dragging.current = true;
+  }, []);
+  const markDragEnd = useCallback(() => {
+    clearTimeout(clearTimer.current);
+    clearTimer.current = setTimeout(() => {
+      dragging.current = false;
+    }, DRAG_TAP_GUARD_MS);
+  }, []);
+  useEffect(() => () => clearTimeout(clearTimer.current), []);
+
+  // Swipe gestures (plan §11a п. 4, Step 0 §12.2): ←/→ changes track, ↑ expands.
+  // The axis locks on the first real movement; built once, limits read from shared values.
+  const axis = useSharedValue<'x' | 'y' | 'none' | null>(null);
+  const swipeBase = useSharedValue(0);
+  const contentTx = useSharedValue(0);
+  const pan = useMemo(
+    () =>
+      Gesture.Pan()
+        .minDistance(10)
+        .onStart(() => {
+          axis.value = null;
+          scheduleOnRN(markDragStart);
+        })
+        .onUpdate((e) => {
+          if (axis.value === null) {
+            const locked = lockAxis(e.translationX, e.translationY);
+            if (locked === 'x') {
+              axis.value = 'x';
+              cancelAnimation(carouselPos);
+              swipeBase.value = carouselTarget.value;
+            } else if (locked === 'y') {
+              // Only an upward drag expands; a downward one is ignored.
+              axis.value = e.translationY < 0 ? 'y' : 'none';
+              if (axis.value === 'y') {
+                cancelAnimation(expandProgress);
+                expandProgress.value = 0;
+                expandPreview.value = true;
+              }
+            }
+          }
+          if (axis.value === 'x') {
+            const offset = rubberBand(e.translationX, canStep(swipeBase.value, -1), canStep(swipeBase.value, 1));
+            contentTx.value = offset * 0.5;
+            // The tint follows the finger, like the full player's background.
+            carouselPos.value = swipeBase.value - offset / MINI_SWIPE_WIDTH;
+          } else if (axis.value === 'y') {
+            expandProgress.value = expandFor(e.translationY, height);
+          }
+        })
+        .onEnd((e) => {
+          if (axis.value === 'x') {
+            const base = swipeBase.value;
+            const offset = (base - carouselPos.value) * MINI_SWIPE_WIDTH;
+            const result = resolveSwipe(offset, e.velocityX, MINI_SWIPE_WIDTH, canStep(base, -1), canStep(base, 1));
+            const dir = result === 'next' ? 1 : result === 'prev' ? -1 : 0;
+            carouselTarget.value = base + dir;
+            carouselPos.value = reduceMotion
+              ? withTiming(base + dir, { duration: REDUCED_SETTLE_MS })
+              : withSpring(base + dir, CAROUSEL_SPRING);
+            if (dir !== 0) scheduleOnRN(swipeTo, dir as 1 | -1);
+          } else if (axis.value === 'y') {
+            if (resolveExpand(expandProgress.value, e.velocityY) === 'open') {
+              // Keep the layer moving; the route opens now and takes over at the same progress.
+              expandProgress.value = withSpring(1, EXPAND_SPRING);
+              scheduleOnRN(openPlayer);
+            } else {
+              expandProgress.value = withTiming(0, { duration: reduceMotion ? REDUCED_SETTLE_MS : 220 }, (finished) => {
+                if (finished) expandPreview.value = false;
+              });
+            }
+          }
+        })
+        .onFinalize((_, success) => {
+          // A pan that never activated was a tap: nothing to guard.
+          if (success || axis.value !== null) scheduleOnRN(markDragEnd);
+          contentTx.value = reduceMotion ? 0 : withSpring(0, CAROUSEL_SPRING);
+          axis.value = null;
+        }),
+    [axis, swipeBase, contentTx, height, reduceMotion, swipeTo, openPlayer, markDragStart, markDragEnd],
+  );
+  const trackStyle = useAnimatedStyle(() => ({
+    opacity: trackFade.value * (1 - Math.min(0.6, Math.abs(contentTx.value) / 200)),
+    transform: [{ translateX: contentTx.value }],
+  }));
 
   return (
-    <Animated.View style={[styles.wrap, tintStyle, wrapStyle]}>
+    <GestureDetector gesture={pan}>
+    <Animated.View style={[styles.wrap, tintStyle, wrapStyle]} testID="mini-player">
       <PressableScale
         // No button role: it contains real buttons (nested <button> is invalid on web).
         accessibilityLabel={`Now playing: ${track.title} by ${track.artistName}. Open player`}
-        onPress={() => router.push({ pathname: '/player/now-playing', params: { trackId: track.id } })}
+        accessibilityHint="Swipe up to expand, left or right to change track"
+        onPress={() => {
+          if (dragging.current) return;
+          openPlayer();
+        }}
       >
         <View style={styles.progressTrack}>
           <Animated.View style={[styles.progressFill, progressStyle]} />
@@ -128,6 +262,7 @@ function MiniPlayerBody({ track }: { track: Track }) {
         </View>
       </PressableScale>
     </Animated.View>
+    </GestureDetector>
   );
 }
 
@@ -145,6 +280,12 @@ export function MiniPlayerOverlay() {
     </View>
   );
 }
+
+
+/** A mini-player swipe of this many points equals one track (commit at 35 %). */
+const MINI_SWIPE_WIDTH = 200;
+/** How long after a drag a click is still treated as part of it. */
+const DRAG_TAP_GUARD_MS = 300;
 
 /** Scroll padding that keeps content clear of `MiniPlayerOverlay`. */
 export const MINI_PLAYER_OVERLAY_CLEARANCE = 96;

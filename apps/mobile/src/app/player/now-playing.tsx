@@ -1,13 +1,15 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect } from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
-import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
+import { StyleSheet, View } from 'react-native';
+import { GestureDetector } from 'react-native-gesture-handler';
+import Animated from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { hasDemoAudio } from '@/audio/demo-audio';
 import { ArtworkCarousel } from '@/components/player/artwork-carousel';
 import { PlayerBackground } from '@/components/player/player-background';
 import { SeekBar } from '@/components/player/seek-bar';
+import { usePlayerSheet } from '@/components/player/use-player-sheet';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { CircleButton, Icon, IconButton, PressableScale } from '@/components/ui';
@@ -16,6 +18,7 @@ import { useContentWidth } from '@/hooks/use-content-width';
 import { goBack } from '@/lib/navigation';
 import { getAlbumById } from '@/mocks';
 import { usePlayerStore } from '@/state/player-store';
+import { PLAYER_ARTWORK_TOP_GAP, PLAYER_HEADER_HEIGHT, playerArtworkSize } from '@/state/player-surface';
 
 /** Secondary text and inactive icons on the adaptive background (readable on every palette). */
 const ON_COLOR_MEDIUM = 'rgba(255, 255, 255, 0.74)';
@@ -41,18 +44,12 @@ export default function NowPlayingScreen() {
   const toggleLike = usePlayerStore((s) => s.toggleLike);
   const liked = usePlayerStore((s) => (track ? s.isLiked(track.id) : false));
   const windowWidth = useContentWidth();
-  const reduceMotion = useReducedMotion();
+  // Expand/collapse sheet (mini-player ↔ full player), Back/Escape handling.
+  const { collapse, sheetStyle, chromeStyle, artStyle } = usePlayerSheet();
 
   // Hooks stay above the empty-state return below.
   // The engine's real duration once loaded; the catalog value until then.
   const durationSec = engineDurationSec ?? track?.durationSec ?? 0;
-
-  // Web has no native modal transition, so the screen rises in on open.
-  const enter = useSharedValue(Platform.OS === 'web' && !reduceMotion ? 0 : 1);
-  useEffect(() => {
-    if (Platform.OS === 'web' && !reduceMotion) enter.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.cubic) });
-  }, [enter, reduceMotion]);
-  const enterStyle = useAnimatedStyle(() => ({ opacity: enter.value, transform: [{ translateY: (1 - enter.value) * 40 }] }));
 
   useEffect(() => {
     if (trackId && trackId !== currentTrackId) {
@@ -77,16 +74,15 @@ export default function NowPlayingScreen() {
   const unavailable = playback === 'unavailable';
   const failed = playback === 'error';
   const demoAudio = hasDemoAudio(track.id);
-  // Stitch: artwork spans the content width (20px margins), capped at 340.
-  const artworkSize = Math.min(340, windowWidth - Spacing.margin * 2);
+  const artworkSize = playerArtworkSize(windowWidth);
 
   return (
-    <View style={styles.flex}>
+    <GestureDetector gesture={collapse}>
+      <Animated.View style={[styles.sheet, sheetStyle]} testID="now-playing-sheet">
       {/* Dynamic Premium: the cover's palette, following the carousel. */}
       <PlayerBackground />
-      <Animated.View style={[styles.flex, enterStyle]}>
       <SafeAreaView style={styles.flex}>
-        <View style={styles.header}>
+        <Animated.View style={[styles.header, chromeStyle]}>
           <IconButton variant="ghost" icon="keyboard-arrow-down" iconSize={28} accessibilityLabel="Collapse player" onPress={() => goBack()} />
           <View style={styles.headerCenter}>
             <ThemedText variant="label-sm" style={[styles.headerEyebrow, styles.onColorMedium]}>
@@ -103,12 +99,14 @@ export default function NowPlayingScreen() {
             accessibilityLabel="More options"
             onPress={() => router.push({ pathname: '/sheets/options', params: { kind: 'track', id: track.id } })}
           />
-        </View>
+        </Animated.View>
 
-        <View style={styles.artworkWrap}>
+        <Animated.View style={[styles.artworkWrap, artStyle]}>
           {/* Swipe left/right to change track (the real playing track). */}
           <ArtworkCarousel size={artworkSize} paused={!isPlaying} />
-        </View>
+        </Animated.View>
+
+        <Animated.View style={chromeStyle}>
 
         <View style={styles.titleRow}>
           <View style={styles.titleBlock}>
@@ -194,9 +192,10 @@ export default function NowPlayingScreen() {
           />
           <PlayerTabButton label="Audio" icon="headphones" onPress={() => router.push('/profile/audio-quality')} />
         </View>
+        </Animated.View>
       </SafeAreaView>
       </Animated.View>
-    </View>
+    </GestureDetector>
   );
 }
 
@@ -225,13 +224,17 @@ function PlayerTabButton({ label, icon, onPress }: { label: string; icon: string
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  sheet: {
+    flex: 1,
+    overflow: 'hidden',
+  },
   emptyState: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   header: {
-    height: 56,
+    height: PLAYER_HEADER_HEIGHT,
     paddingHorizontal: Spacing.sm,
     flexDirection: 'row',
     alignItems: 'center',
@@ -246,7 +249,7 @@ const styles = StyleSheet.create({
   artworkWrap: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: Spacing.md,
+    marginTop: PLAYER_ARTWORK_TOP_GAP,
     marginBottom: Spacing.xl,
   },
   onColorMedium: {

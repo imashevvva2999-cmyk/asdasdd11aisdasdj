@@ -2,6 +2,7 @@ import { useLayoutEffect, useMemo, useRef } from 'react';
 import { interpolateColor, makeMutable, useReducedMotion, withSpring } from 'react-native-reanimated';
 import { scheduleOnUI } from 'react-native-worklets';
 
+import { Spacing } from '@/constants/theme';
 import { paletteForTrack, type ArtworkPalette } from '@/lib/palette';
 import { getTrackById } from '@/mocks';
 
@@ -23,6 +24,34 @@ export const carouselPos = makeMutable(0);
 export const carouselTarget = makeMutable(0);
 /** 0 = mini-player, 1 = full player (vertical expand/collapse). */
 export const expandProgress = makeMutable(0);
+/** A swipe up on the mini-player is drawing the in-place expand layer (plan §12.2). */
+export const expandPreview = makeMutable(false);
+/** Now Playing is the focused screen, so the mini-player under it fades with `expandProgress`. */
+export const playerFocused = makeMutable(false);
+/** Play-order length and repeat-all, mirrored for the UI-thread swipe gestures. */
+export const orderLength = makeMutable(0);
+export const repeatAll = makeMutable(false);
+
+export const EXPAND_SPRING = { stiffness: 220, damping: 26, mass: 1 };
+/** Reduce motion: settle without a spring. */
+export const REDUCED_SETTLE_MS = 120;
+
+/** Now Playing geometry, shared with the expand layer so both draw the cover in the same place. */
+export const PLAYER_HEADER_HEIGHT = 56;
+export const PLAYER_ARTWORK_TOP_GAP = Spacing.md;
+/** The cover grows from this scale as the player expands. */
+export const EXPAND_ART_SCALE_FROM = 0.6;
+export function playerArtworkSize(contentWidth: number): number {
+  // Stitch: artwork spans the content width (20px margins), capped at 340.
+  return Math.min(340, contentWidth - Spacing.margin * 2);
+}
+
+/** Whether a swipe from play position `base` in direction `dir` has a track to land on. */
+export function canStep(base: number, dir: 1 | -1): boolean {
+  'worklet';
+  if (repeatAll.value && orderLength.value > 1) return true;
+  return dir > 0 ? base < orderLength.value - 1 : base > 0;
+}
 
 /** Index of the current track in play order. */
 export function usePlayPosition(): number {
@@ -40,8 +69,14 @@ export function usePlayPosition(): number {
 export function PlayerSurfaceSync() {
   const pos = usePlayPosition();
   const order = usePlayerStore((s) => s.order);
+  const repeat = usePlayerStore((s) => s.repeat);
   const reduceMotion = useReducedMotion();
   const last = useRef({ pos, order });
+
+  useLayoutEffect(() => {
+    orderLength.value = order.length;
+    repeatAll.value = repeat === 'all';
+  }, [order.length, repeat]);
 
   useLayoutEffect(() => {
     const previous = last.current;

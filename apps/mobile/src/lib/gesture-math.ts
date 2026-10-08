@@ -12,8 +12,12 @@ export const COMMIT_DISTANCE = 0.35;
 export const EDGE_RESISTANCE = 0.3;
 /** Pixels of movement before a gesture's axis is decided. */
 export const AXIS_LOCK_DISTANCE = 6;
-/** A vertical drag of this share of the screen height means fully open/closed. */
-export const VERTICAL_TRAVEL = 0.75;
+/**
+ * A vertical drag of this share of the screen height means fully open/closed.
+ * 1 = the sheet edge moves 1:1 with the finger, so the commit thresholds below
+ * are shares of the screen height (plan §4.1: expand > 30 %, collapse > 25 %).
+ */
+export const VERTICAL_TRAVEL = 1;
 export const VERTICAL_FLICK_VELOCITY = 700;
 export const EXPAND_COMMIT = 0.3;
 export const COLLAPSE_KEEP_OPEN = 0.75;

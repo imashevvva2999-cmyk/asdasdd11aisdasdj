@@ -18,7 +18,7 @@ import { Radii } from '@/constants/theme';
 import { resolveSwipe, rubberBand } from '@/lib/gesture-math';
 import { getTrackById, type TrackId } from '@/mocks';
 import { usePlayerStore } from '@/state/player-store';
-import { CAROUSEL_SPRING, carouselPos, carouselTarget, usePlayPosition } from '@/state/player-surface';
+import { CAROUSEL_SPRING, REDUCED_SETTLE_MS, canStep, carouselPos, carouselTarget, usePlayPosition } from '@/state/player-surface';
 
 const GAP = 16;
 const PAUSED_SCALE = 0.92;
@@ -53,15 +53,10 @@ export function ArtworkCarousel({ size, paused }: { size: number; paused: boolea
   );
   const currentId = queue[currentIndex];
 
-  // Limits for the UI-thread gesture, mirrored from the store.
-  const orderLength = useSharedValue(order.length);
-  const repeatAll = useSharedValue(repeat === 'all');
   const reduce = useSharedValue(reduceMotion);
   useEffect(() => {
-    orderLength.value = order.length;
-    repeatAll.value = repeat === 'all';
     reduce.value = reduceMotion;
-  }, [order.length, repeat, reduceMotion, orderLength, repeatAll, reduce]);
+  }, [reduceMotion, reduce]);
 
   const dragStart = useSharedValue(0);
 
@@ -77,23 +72,23 @@ export function ArtworkCarousel({ size, paused }: { size: number; paused: boolea
         .onUpdate((e) => {
           // Swipes in flight accumulate from the target, so fast flicks are never lost.
           const base = carouselTarget.value;
-          const canPrev = base > 0 || (repeatAll.value && orderLength.value > 1);
-          const canNext = base < orderLength.value - 1 || (repeatAll.value && orderLength.value > 1);
+          const canPrev = canStep(base, -1);
+          const canNext = canStep(base, 1);
           const raw = dragStart.value - e.translationX / step;
           const offset = rubberBand((base - raw) * step, canPrev, canNext);
           carouselPos.value = base - offset / step;
         })
         .onEnd((e) => {
           const base = carouselTarget.value;
-          const canPrev = base > 0 || (repeatAll.value && orderLength.value > 1);
-          const canNext = base < orderLength.value - 1 || (repeatAll.value && orderLength.value > 1);
+          const canPrev = canStep(base, -1);
+          const canNext = canStep(base, 1);
           const offset = (base - carouselPos.value) * step;
           const result = resolveSwipe(offset, e.velocityX, step, canPrev, canNext);
           const dir = result === 'next' ? 1 : result === 'prev' ? -1 : 0;
           const target = base + dir;
           carouselTarget.value = target;
           carouselPos.value = reduce.value
-            ? withTiming(target, { duration: 120, easing: Easing.out(Easing.quad) })
+            ? withTiming(target, { duration: REDUCED_SETTLE_MS, easing: Easing.out(Easing.quad) })
             : withSpring(target, { ...CAROUSEL_SPRING, velocity: -e.velocityX / step });
           if (dir !== 0) scheduleOnRN(swipeTo, dir as 1 | -1);
         }),
