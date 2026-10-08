@@ -5,7 +5,7 @@ import { ScrollView, StyleSheet, View, type LayoutChangeEvent, type ViewStyle } 
 import Animated, { useAnimatedScrollHandler, useAnimatedStyle, useSharedValue, type AnimatedStyle } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { HomeStage, hasStartedPlayback } from '@/components/home/home-stage';
+import { HomeStage } from '@/components/home/home-stage';
 import { MmusicBrand } from '@/components/mmusic-brand';
 import { PlayerBackground } from '@/components/player/player-background';
 import { ThemedText } from '@/components/themed-text';
@@ -25,19 +25,10 @@ import {
   trendingNowAlbumIds,
 } from '@/mocks';
 import { clamp01 } from '@/lib/stage-math';
+import { hasStartedPlayback, stageOnScreen } from '@/lib/stage-rules';
 import { useLibraryStore } from '@/state/library-store';
 import { usePlayerStore } from '@/state/player-store';
 import { expandOrigin, stageVisible } from '@/state/player-surface';
-
-/** The stage counts as gone (capsule appears) once this little of it is left on screen. */
-const STAGE_EXIT_OFFSET = 80;
-
-/** Whether enough of the Home stage is on screen to stand in for the capsule. */
-function stageOnScreen(scrollY: number, stageHeight: number): boolean {
-  'worklet';
-  // Before the stage is measured, assume it is there (it is, at the top).
-  return stageHeight === 0 || scrollY < stageHeight - STAGE_EXIT_OFFSET;
-}
 
 /** Mood motif per mix (presentation only — the mix data stays unchanged). */
 const MOOD_VISUALS: Record<string, MoodVisualKind> = {

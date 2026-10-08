@@ -23,6 +23,7 @@ import { useSmoothProgress } from '@/hooks/use-smooth-progress';
 import type { Track } from '@/mocks';
 import { useWindowSize } from '@/hooks/use-window-size';
 import { expandProgress as expandFor, lockAxis, resolveExpand, resolveSwipe, rubberBand } from '@/lib/gesture-math';
+import { hasStartedPlayback } from '@/lib/stage-rules';
 import { usePlayerStore } from '@/state/player-store';
 import {
   CAROUSEL_SPRING,
@@ -60,7 +61,10 @@ import { PressableScale } from './ui/pressable-scale';
  */
 export function MiniPlayer({ respectStage = false }: { respectStage?: boolean }) {
   const track = usePlayerStore((s) => s.currentTrack());
-  if (!track) {
+  const started = usePlayerStore((s) => hasStartedPlayback(s.playback));
+  // The seeded queue on a cold load is not playback: no capsule until something
+  // has been played (W3 Этап 1, decision OQ-W3-2 — no fake playing state).
+  if (!track || !started) {
     return null;
   }
   return <MiniPlayerBody track={track} respectStage={respectStage} />;

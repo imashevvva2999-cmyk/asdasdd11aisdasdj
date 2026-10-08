@@ -9,7 +9,8 @@ import { ThemedText } from '@/components/themed-text';
 import { CircleButton, Icon, IconButton, PressableScale } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { homeChromeOffset, homeChromeOpacity } from '@/lib/stage-math';
-import { usePlayerStore, type PlaybackState } from '@/state/player-store';
+import { hasStartedPlayback } from '@/lib/stage-rules';
+import { usePlayerStore } from '@/state/player-store';
 import { expandOrigin, expandProgress, stageCoverRect } from '@/state/player-surface';
 
 /** The cover on the Home stage (iphone/home.png); it grows into Now Playing's. */
@@ -64,14 +65,21 @@ export function HomeStage({ onLayout }: { onLayout?: (event: LayoutChangeEvent) 
       </View>
 
       <Animated.View style={chromeStyle}>
-      <View style={styles.titleBlock}>
+      {/* Also opens the player: the keyboard / screen-reader path (the cover's
+          tap is a pointer gesture, and the capsule steps aside for the stage). */}
+      <PressableScale
+        accessibilityRole="button"
+        accessibilityLabel={`Open player: ${track.title} by ${track.artistName}`}
+        onPress={openPlayer}
+        style={styles.titleBlock}
+      >
         <ThemedText variant="display-lg-mobile" numberOfLines={1} style={styles.center}>
           {track.title}
         </ThemedText>
         <ThemedText variant="label-lg" numberOfLines={1} style={[styles.center, styles.onColorMedium]}>
           {track.artistName}
         </ThemedText>
-      </View>
+      </PressableScale>
 
       <View style={styles.transport}>
         <IconButton variant="ghost" icon="skip-previous" iconSize={34} size={48} accessibilityLabel="Previous track" onPress={previous} />
@@ -112,15 +120,6 @@ export function HomeStage({ onLayout }: { onLayout?: (event: LayoutChangeEvent) 
       </Animated.View>
     </View>
   );
-}
-
-/**
- * The store seeds a queue on a cold load, so a "current track" exists before
- * anything was played; until playback has started once (`idle`), that is not
- * an active track and Home shows no stage (decision OQ-W3-2).
- */
-export function hasStartedPlayback(playback: PlaybackState): boolean {
-  return playback !== 'idle';
 }
 
 /** Opens Now Playing from the stage, noting where the cover is so it can grow from there. */

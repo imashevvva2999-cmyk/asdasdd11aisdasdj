@@ -18,6 +18,7 @@ import {
   playerChromeOffset,
   playerChromeOpacity,
 } from '../src/lib/stage-math.ts';
+import { hasStartedPlayback, stageOnScreen } from '../src/lib/stage-rules.ts';
 
 let failures = 0;
 function check(label, condition) {
@@ -56,6 +57,16 @@ check('iPhone 390 × 844: width-bound cover, capped at 340', fitArtworkSize(390,
 check('360 × 740: the cover shrinks so the controls fit', fitArtworkSize(360, 740) < 320 && fitArtworkSize(360, 740) === 740 - 470);
 check('very short window: never below the minimum', fitArtworkSize(375, 560) === ARTWORK_MIN_SIZE);
 check('unknown height (server render, 0): width-bound', fitArtworkSize(390, 0) === 340);
+
+// Stage and capsule rules (Review Focus 2 and 4): nothing counts as playing
+// until playback has started, so a cold load shows neither a stage nor a capsule.
+check('cold load (idle, seeded queue) is not an active track', hasStartedPlayback('idle') === false);
+check(
+  'any started state is active (playing, paused, loading, unavailable, error)',
+  ['playing', 'paused', 'loading', 'unavailable', 'error'].every((s) => hasStartedPlayback(s)),
+);
+check('stage not measured yet → treated as on screen', stageOnScreen(500, 0) === true);
+check('stage counts as on screen until 80 px are left', stageOnScreen(519, 600) === true && stageOnScreen(520, 600) === false);
 
 if (failures > 0) {
   console.error(`\n${failures} stage-math check(s) failed.`);
