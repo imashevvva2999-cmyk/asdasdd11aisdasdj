@@ -1,262 +1,164 @@
-import { router } from 'expo-router';
-import { useMemo } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import Animated, { useAnimatedStyle } from 'react-native-reanimated';
+import { useReducedMotion } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { PlayerBackground } from '@/components/player/player-background';
+import { PlayerSubHeader } from '@/components/player/player-subheader';
+import { PlayerTransport } from '@/components/player/player-transport';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { CircleButton, EmptyState, Icon, IconButton, PressableScale } from '@/components/ui';
-import { Colors, Spacing } from '@/constants/theme';
-import { useSmoothProgress } from '@/hooks/use-smooth-progress';
-import { useToast } from '@/hooks/use-toast';
-import { goBack } from '@/lib/navigation';
-import { shareEntity } from '@/lib/share';
-import { getLyricsForTrack } from '@/mocks';
+import { EmptyState } from '@/components/ui';
+import { Colors, Radii, Spacing } from '@/constants/theme';
+import { LYRICS_EMPTY, SAMPLE_LYRICS_NOTE, activeLineIndex, lyricsStateFor } from '@/lib/lyrics-state';
+import type { LyricLine } from '@/mocks';
 import { usePlayerStore } from '@/state/player-store';
 
-/** S-16 Synchronized Lyrics (docs/screens.md §3.9). */
+/** After a manual scroll, follow the current line again after this long. */
+const RESUME_FOLLOW_MS = 4000;
+/** The current line rests this far down the lyrics area. */
+const FOLLOW_ANCHOR = 0.35;
+
+/**
+ * S-16 Synchronized Lyrics (docs/screens.md §3.9; W3 Этап 1, iphone/lyrics.png):
+ * the text is the hero, on the cover's stage colour, with the shared header and
+ * the playback controls always below. Only lyrics from the catalog data are
+ * shown (W3 spec §2.4); sample text is labelled, and demo recordings without
+ * lyrics say they are instrumental. No swipe-to-close here: dragging scrolls
+ * the text, ⌄ and Back return to Now Playing.
+ */
 export default function LyricsScreen() {
   const track = usePlayerStore((s) => s.currentTrack());
   const progressSec = usePlayerStore((s) => s.progressSec);
-  const isPlaying = usePlayerStore((s) => s.isPlaying);
-  const playback = usePlayerStore((s) => s.playback);
-  const togglePlayPause = usePlayerStore((s) => s.togglePlayPause);
-  const next = usePlayerStore((s) => s.next);
-  const previous = usePlayerStore((s) => s.previous);
-  const { showToast, toast } = useToast();
-
-  const lines = track ? getLyricsForTrack(track.id) : undefined;
-
-  const activeIndex = useMemo(() => {
-    if (!lines) return -1;
-    const progressMs = progressSec * 1000;
-    let index = -1;
-    for (let i = 0; i < lines.length; i += 1) {
-      if (lines[i].timeMs <= progressMs) index = i;
-    }
-    return index;
-  }, [lines, progressSec]);
-
-  // The engine's real duration once loaded; the catalog value until then.
-  const engineDurationSec = usePlayerStore((s) => s.durationSec);
-  const durationSec = engineDurationSec ?? track?.durationSec ?? 0;
-  const progressRatio = durationSec > 0 ? Math.min(1, progressSec / durationSec) : 0;
-  const progress = useSmoothProgress(progressRatio);
-  const progressFillStyle = useAnimatedStyle(() => ({ width: `${progress.value * 100}%` }));
+  const state = lyricsStateFor(track?.id);
 
   return (
-    <ThemedView surface="canvas" style={styles.flex}>
+    <View style={styles.flex}>
+      <PlayerBackground />
       <SafeAreaView style={styles.flex}>
-        <View style={styles.header}>
-          <IconButton icon="keyboard-arrow-down" accessibilityLabel="Collapse" onPress={() => goBack()} />
-          <View style={styles.headerCenter}>
-            {track && (
-              <>
-                <ThemedText variant="headline-sm" numberOfLines={1}>
-                  {track.title}
-                </ThemedText>
-                <ThemedText variant="label-md" emphasis="medium" numberOfLines={1}>
-                  {track.artistName}
-                </ThemedText>
-              </>
-            )}
-          </View>
-          <IconButton
-            icon="ios-share"
-            accessibilityLabel="Share"
-            onPress={async () => {
-              if (!track) return;
-              const shared = await shareEntity('track', track.id, track.title);
-              if (!shared) showToast("Sharing isn't available on this device", 'share');
-            }}
-          />
-        </View>
-
-        {!track || !lines ? (
-          <EmptyState icon="lyrics" title="Lyrics unavailable" hint="Synchronized lyrics haven't been added for this track yet." />
+        <PlayerSubHeader active="lyrics" />
+        {state.kind === 'synced' ? (
+          <SyncedLyrics lines={state.lines} sample={state.source === 'sample'} progressMs={progressSec * 1000} />
         ) : (
-          <ScrollView contentContainerStyle={styles.lyricsContent}>
-            {lines.map((line, index) => {
-              const distance = Math.abs(index - activeIndex);
-              if (distance === 0) {
-                return (
-                  <View key={line.timeMs} style={styles.activeRow}>
-                    <View style={styles.activeBar} />
-                    <ThemedText variant="display-lg-mobile" style={styles.activeLine}>
-                      {line.text}
-                    </ThemedText>
-                  </View>
-                );
-              }
-              return (
-                <ThemedText
-                  key={line.timeMs}
-                  variant={distance === 1 ? 'headline-lg' : 'headline-md'}
-                  style={{ opacity: distance === 1 ? 0.42 : distance === 2 ? 0.24 : 0.14 }}
-                >
-                  {line.text}
-                </ThemedText>
-              );
-            })}
-          </ScrollView>
-        )}
-
-        {track && (
-          <View style={styles.footer}>
-            <View style={styles.progressTrack} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-              <Animated.View style={[styles.progressFill, progressFillStyle]} />
-            </View>
-            <View style={styles.timeRow}>
-              {playback === 'unavailable' || playback === 'error' ? (
-                <ThemedText variant="body-sm" emphasis="medium" accessibilityRole="alert">
-                  {playback === 'unavailable' ? 'No audio in this preview' : "Couldn't play this track. Tap play to retry."}
-                </ThemedText>
-              ) : (
-                <>
-                  <ThemedText variant="mono-num" emphasis="primary">
-                    {formatTime(progressSec)}
-                  </ThemedText>
-                  <ThemedText variant="mono-num" emphasis="medium">
-                    -{formatTime(Math.max(0, durationSec - progressSec))}
-                  </ThemedText>
-                </>
-              )}
-            </View>
-            <View style={styles.transportRow}>
-              <IconButton variant="ghost" icon="skip-previous" iconSize={30} size={48} accessibilityLabel="Previous" onPress={previous} />
-              <CircleButton
-                icon={isPlaying ? 'pause' : 'play-arrow'}
-                accessibilityLabel={
-                  playback === 'unavailable' ? 'Play (no audio in this preview)' : playback === 'loading' ? 'Loading. Pause' : isPlaying ? 'Pause' : 'Play'
-                }
-                size={64}
-                iconSize={32}
-                disabled={playback === 'unavailable'}
-                loading={playback === 'loading'}
-                onPress={togglePlayPause}
-              />
-              <IconButton variant="ghost" icon="skip-next" iconSize={30} size={48} accessibilityLabel="Next" onPress={next} />
-            </View>
+          <View style={styles.empty}>
+            <EmptyState icon="lyrics" title={LYRICS_EMPTY[state.kind].title} hint={LYRICS_EMPTY[state.kind].hint} />
           </View>
         )}
-
-        <View style={styles.tabRow}>
-          <PlayerTab label="Lyrics" icon="mic-none" active />
-          <PlayerTab label="Audio" icon="headphones" onPress={() => router.push('/profile/audio-quality')} />
-          <PlayerTab label="Queue" icon="queue-music" onPress={() => router.push('/player/queue')} />
-        </View>
+        <PlayerTransport />
       </SafeAreaView>
-      {toast}
-    </ThemedView>
+    </View>
   );
 }
 
-function PlayerTab({ label, icon, active = false, onPress }: { label: string; icon: string; active?: boolean; onPress?: () => void }) {
-  const color = active ? Colors.primary : Colors.text.medium;
+function SyncedLyrics({ lines, sample, progressMs }: { lines: LyricLine[]; sample: boolean; progressMs: number }) {
+  const reduceMotion = useReducedMotion();
+  const scrollRef = useRef<ScrollView>(null);
+  const lineY = useRef<number[]>([]);
+  const [viewportHeight, setViewportHeight] = useState(0);
+  const following = useRef(true);
+  const resumeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const activeIndex = activeLineIndex(lines, progressMs);
+
+  useEffect(() => () => clearTimeout(resumeTimer.current), []);
+
+  // Keep the current line at the anchor, unless the listener is reading elsewhere.
+  useEffect(() => {
+    if (!following.current || activeIndex < 0 || viewportHeight === 0) return;
+    const y = lineY.current[activeIndex];
+    if (y === undefined) return;
+    scrollRef.current?.scrollTo({ y: Math.max(0, y - viewportHeight * FOLLOW_ANCHOR), animated: !reduceMotion });
+  }, [activeIndex, viewportHeight, reduceMotion]);
+
+  const pauseFollowing = () => {
+    following.current = false;
+    clearTimeout(resumeTimer.current);
+    resumeTimer.current = setTimeout(() => {
+      following.current = true;
+    }, RESUME_FOLLOW_MS);
+  };
+
   return (
-    <PressableScale
-      accessibilityRole="tab"
-      accessibilityState={{ selected: active }}
-      accessibilityLabel={label}
-      disabled={active}
-      onPress={onPress}
-      style={styles.tab}
-    >
-      <Icon name={icon} size={22} color={color} />
-      <ThemedText variant="label-sm" style={{ color }}>
-        {label}
-      </ThemedText>
-    </PressableScale>
+    <View style={styles.flex}>
+      {sample && (
+        <View style={styles.sampleNote}>
+          <View style={styles.samplePill}>
+            <ThemedText variant="label-sm" style={styles.samplePillText}>
+              {SAMPLE_LYRICS_NOTE.label}
+            </ThemedText>
+          </View>
+          <ThemedText variant="body-sm" style={styles.sampleHint} numberOfLines={2}>
+            {SAMPLE_LYRICS_NOTE.hint}
+          </ThemedText>
+        </View>
+      )}
+      <ScrollView
+        ref={scrollRef}
+        style={styles.flex}
+        contentContainerStyle={[styles.lyricsContent, { paddingBottom: viewportHeight * (1 - FOLLOW_ANCHOR) }]}
+        showsVerticalScrollIndicator={false}
+        onLayout={(e) => setViewportHeight(e.nativeEvent.layout.height)}
+        onScrollBeginDrag={pauseFollowing}
+        // Web: a mouse wheel or trackpad scroll is a manual scroll too.
+        {...({ onWheel: pauseFollowing } as object)}
+      >
+        {lines.map((line, index) => {
+          const distance = Math.abs(index - activeIndex);
+          const active = distance === 0;
+          return (
+            <ThemedText
+              key={line.timeMs}
+              variant="display-lg-mobile"
+              onLayout={(e) => {
+                lineY.current[index] = e.nativeEvent.layout.y;
+              }}
+              style={[styles.line, active ? styles.lineActive : { opacity: distance === 1 ? 0.55 : 0.32 }]}
+            >
+              {line.text}
+            </ThemedText>
+          );
+        })}
+      </ScrollView>
+    </View>
   );
-}
-
-function formatTime(totalSeconds: number): string {
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = Math.floor(totalSeconds % 60);
-  return `${minutes}:${String(seconds).padStart(2, '0')}`;
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  header: {
-    height: 64,
-    paddingHorizontal: Spacing.margin,
+  empty: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  sampleNote: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.margin,
+    paddingTop: Spacing.md,
   },
-  headerCenter: {
-    flex: 1,
-    alignItems: 'center',
+  samplePill: {
     paddingHorizontal: Spacing.sm,
+    paddingVertical: 3,
+    borderRadius: Radii.full,
+    backgroundColor: 'rgba(255, 255, 255, 0.14)',
+  },
+  samplePillText: {
+    color: Colors.text.high,
+  },
+  sampleHint: {
+    flex: 1,
+    color: 'rgba(255, 255, 255, 0.64)',
   },
   lyricsContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
     paddingHorizontal: Spacing.margin,
-    paddingVertical: Spacing.xl,
-    gap: Spacing.xl,
+    paddingTop: Spacing.lg,
+    gap: Spacing.md,
   },
-  activeRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 14,
+  line: {
+    fontSize: 28,
+    lineHeight: 35,
   },
-  activeBar: {
-    width: 6,
-    height: 24,
-    marginTop: 8,
-    borderRadius: 3,
-    backgroundColor: Colors.primary,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowRadius: 10,
-    shadowOpacity: 0.8,
-  },
-  activeLine: {
-    flex: 1,
-    fontSize: 34,
-    lineHeight: 42,
-  },
-  footer: {
-    paddingHorizontal: Spacing.margin,
-    gap: Spacing.xs,
-  },
-  progressTrack: {
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: Colors.surface.l3,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: Colors.primary,
-  },
-  timeRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    minHeight: 20,
-  },
-  transportRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 40,
-    paddingVertical: Spacing.md,
-  },
-  tabRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginHorizontal: Spacing.margin,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.sm,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  tab: {
-    alignItems: 'center',
-    gap: 4,
-    minWidth: 64,
+  lineActive: {
+    fontSize: 32,
+    lineHeight: 40,
+    opacity: 1,
   },
 });
