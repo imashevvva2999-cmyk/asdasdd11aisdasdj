@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Mmusic Concept A</title>
+<!-- Concept A — Immersive Editorial. Design review mockup, not app code. ?v=home | home-lower | player | queue -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+<style>
+:root { --canvas:#0A0A0C; --ink:#FFFFFF; --mid:#9E9EA8; --low:#5A5A66; --rule:rgba(255,255,255,0.10); --coral:#FF4B4B; --gold:#F5A623; }
+* { box-sizing:border-box; margin:0; padding:0; }
+html,body { background:var(--canvas); color:var(--ink); font:400 15px/22px Inter, system-ui, sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }
+img { display:block; width:100%; height:100%; object-fit:cover; }
+.mi { font-family:'Material Icons'; font-size:22px; line-height:1; font-feature-settings:'liga'; }
+.eqmark { display:inline-flex; gap:2px; align-items:center; height:18px; } .eqmark i { width:3px; border-radius:2px; background:var(--coral); }
+.disp { font-family:'Plus Jakarta Sans'; font-weight:800; letter-spacing:-0.045em; }
+
+/* Masthead: text navigation, no sidebar */
+.mast { height:76px; display:flex; align-items:center; gap:44px; padding:0 56px; }
+.logo { display:flex; align-items:center; gap:10px; font:800 24px 'Plus Jakarta Sans'; letter-spacing:-0.04em; }
+.links { display:flex; gap:28px; }
+.links a { font:600 15px Inter; color:var(--mid); padding:6px 0; border-bottom:2px solid transparent; }
+.links a.on { color:var(--ink); border-color:var(--coral); }
+.mast .find { margin-left:auto; display:flex; align-items:center; gap:10px; width:340px; padding:8px 0; border-bottom:1px solid var(--rule); color:var(--mid); }
+.mast .find kbd { margin-left:auto; font:600 11px Inter; color:var(--low); }
+.mast .icon { color:var(--mid); }
+.av { width:34px; height:34px; border-radius:50%; background:#22222c; display:grid; place-items:center; font:700 12px Inter; }
+
+/* Home: asymmetric editorial grid */
+.page { height:calc(100vh - 76px - 56px); overflow:hidden; padding:8px 56px 0; }
+.lead { display:grid; grid-template-columns:7fr 5fr; gap:56px; height:430px; }
+.lead .cover { margin-left:-56px; border-radius:0 28px 28px 0; overflow:hidden; position:relative; }
+.lead .copy { align-self:center; }
+.kicker { font:600 13px Inter; color:var(--gold); }
+.lead h1 { font-size:104px; line-height:0.92; margin:14px 0 22px; }
+.lead p { font:400 19px/28px Inter; color:var(--mid); max-width:430px; }
+.cta { display:flex; gap:18px; align-items:center; margin-top:28px; }
+.btn { height:52px; padding:0 26px; border-radius:999px; background:var(--coral); display:inline-flex; gap:10px; align-items:center; font:700 15px Inter; }
+.link { font:600 15px Inter; color:var(--ink); border-bottom:1px solid var(--rule); padding-bottom:2px; display:inline-flex; gap:8px; align-items:center; }
+.band { display:grid; grid-template-columns:3fr 9fr; gap:56px; margin-top:36px; border-top:1px solid var(--rule); padding-top:22px; }
+.band h2 { font:800 30px/34px 'Plus Jakarta Sans'; letter-spacing:-0.035em; }
+.band .sub { color:var(--mid); margin-top:8px; font-size:14px; }
+.index { display:grid; grid-template-columns:repeat(3,1fr); gap:18px 32px; }
+.index .it { display:flex; gap:16px; align-items:center; }
+.index .it .cv { width:60px; height:60px; border-radius:10px; overflow:hidden; flex:none; }
+.index .it b { font:700 20px/24px 'Plus Jakarta Sans'; letter-spacing:-0.02em; }
+.index .it.hover b { color:var(--coral); }
+.mosaic { display:grid; grid-template-columns:1.35fr 1fr 1fr 1fr; gap:24px; align-items:end; }
+.mosaic .cv { border-radius:18px; overflow:hidden; aspect-ratio:1; }
+.mosaic .big .cv { aspect-ratio:1; }
+.mosaic b { display:block; margin-top:10px; font:600 15px Inter; } .mosaic span { color:var(--mid); font-size:13px; }
+
+/* Folio: the running footer that plays music */
+.folio { position:fixed; left:0; right:0; bottom:0; height:56px; display:flex; align-items:center; gap:28px; padding:0 56px; border-top:1px solid var(--rule); background:var(--canvas); }
+.folio::before { content:''; position:absolute; left:0; top:-1px; height:2px; width:34%; background:var(--coral); }
+.folio .np { display:flex; align-items:baseline; gap:12px; min-width:0; }
+.folio .np small { font:600 12px Inter; color:var(--mid); }
+.folio .np b { font:700 17px 'Plus Jakarta Sans'; letter-spacing:-0.02em; }
+.folio .np span { color:var(--mid); }
+.folio .t { font:500 12px Inter; color:var(--mid); font-variant-numeric:tabular-nums; }
+.folio .ctl { display:flex; gap:18px; align-items:center; margin-left:auto; }
+.folio .pp { width:36px; height:36px; border-radius:50%; background:var(--ink); color:var(--canvas); display:grid; place-items:center; }
+.folio .txt { display:flex; gap:22px; font:600 13px Inter; color:var(--mid); }
+.folio .txt .on { color:var(--ink); }
+.folio.tinted { background:#1c1b2e; border-color:transparent; }
+
+/* Now Playing: a magazine spread */
+.spread { position:fixed; inset:0 0 56px 0; display:grid; grid-template-columns:1fr 1fr; }
+.spread .art { position:relative; }
+.spread .art .cl { position:absolute; left:40px; top:28px; width:44px; height:44px; border-radius:50%; background:rgba(10,10,12,0.45); display:grid; place-items:center; }
+.spread .art .cap { position:absolute; left:40px; bottom:28px; font:600 13px Inter; color:rgba(255,255,255,0.85); }
+.spread .text { background:linear-gradient(180deg,#2a2950 0%, #1c1b2e 100%); padding:56px 72px 40px 64px; display:flex; flex-direction:column; overflow:hidden; }
+.spread .meta { display:flex; justify-content:space-between; font:600 13px Inter; color:rgba(255,255,255,0.7); }
+.spread h1 { font-size:84px; line-height:0.92; margin:22px 0 10px; }
+.spread .by { font:500 18px Inter; color:rgba(255,255,255,0.78); display:flex; gap:24px; align-items:center; }
+.spread .by a { color:var(--ink); border-bottom:1px solid rgba(255,255,255,0.3); }
+.acts { display:flex; gap:22px; margin-top:22px; font:600 13px Inter; color:rgba(255,255,255,0.78); }
+.acts span { display:inline-flex; gap:6px; align-items:center; } .acts .mi { font-size:18px; }
+.acts .liked { color:var(--coral); }
+.tabs { display:flex; gap:26px; margin-top:34px; border-bottom:1px solid rgba(255,255,255,0.14); }
+.tabs a { font:600 14px Inter; color:rgba(255,255,255,0.6); padding-bottom:10px; border-bottom:2px solid transparent; margin-bottom:-1px; }
+.tabs a.on { color:var(--ink); border-color:var(--coral); }
+.lyr { margin-top:26px; display:flex; flex-direction:column; gap:6px; -webkit-mask-image:linear-gradient(180deg,#000 70%,transparent); }
+.lyr p { font:700 34px/42px 'Plus Jakarta Sans'; letter-spacing:-0.03em; color:rgba(255,255,255,0.34); }
+.lyr p.past { color:rgba(255,255,255,0.55); } .lyr p.cur { color:var(--ink); }
+.toc { margin-top:18px; }
+.toc .row { display:grid; grid-template-columns:44px 1fr auto; align-items:baseline; gap:12px; padding:13px 0; border-bottom:1px solid rgba(255,255,255,0.10); }
+.toc .n { font:600 13px Inter; color:rgba(255,255,255,0.5); font-variant-numeric:tabular-nums; }
+.toc b { font:700 24px/28px 'Plus Jakarta Sans'; letter-spacing:-0.025em; }
+.toc .a { font:500 14px Inter; color:rgba(255,255,255,0.6); margin-left:10px; }
+.toc .d { font:500 13px Inter; color:rgba(255,255,255,0.6); font-variant-numeric:tabular-nums; }
+.toc .row.now b { color:var(--coral); }
+.toc .row.hover { background:rgba(10,10,12,0.22); margin:0 -16px; padding:13px 16px; border-radius:10px; }
+.toc .row.hover .n { color:var(--ink); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="common.js"></script>
+<script>
+const mast = () => `<header class="mast"><div class="logo">${EQ()}Mmusic</div>
+  <nav class="links"><a class="on">Home</a><a>Search</a><a>Library</a></nav>
+  <div class="find">${mi('search')}Artists, songs, albums<kbd>/</kbd></div>${mi('notifications_none', 'icon')}<div class="av">AR</div></header>`;
+const folio = (tinted = false, panel = 'lyrics') => `<footer class="folio ${tinted ? 'tinted' : ''}">
+  <div class="np"><small>Now playing</small><b>${NOW.title}</b><span>${NOW.artist}</span></div>
+  <span class="t">${NOW.pos} / 4:00</span>
+  <div class="ctl">${mi('shuffle')}${mi('skip_previous')}<div class="pp">${mi('pause')}</div>${mi('skip_next')}${mi('repeat')}</div>
+  <div class="txt"><span class="${tinted && panel === 'lyrics' ? 'on' : ''}">Lyrics</span><span class="${tinted && panel === 'queue' ? 'on' : ''}">Queue</span><span>${mi('volume_up')}</span><span>${mi(tinted ? 'close_fullscreen' : 'open_in_full')}</span></div></footer>`;
+const spread = (panel) => `<section class="spread"><div class="art">${img(NOW.cover)}<div class="cl">${mi('keyboard_arrow_down')}</div><div class="cap">Drag or press ← → to change track</div></div>
+  <div class="text"><div class="meta"><span>From the album ${NOW.album}</span><span>Track 1 of 6</span></div>
+    <h1 class="disp">${NOW.title}</h1>
+    <div class="by"><a>${NOW.artist}</a><span>4:00</span></div>
+    <div class="acts"><span class="liked">${mi('favorite')}Liked</span><span>${mi('playlist_add')}Add to playlist</span><span>${mi('volunteer_activism')}Support artist</span><span>${mi('headphones')}Audio</span></div>
+    <div class="tabs"><a class="${panel === 'lyrics' ? 'on' : ''}">Lyrics</a><a class="${panel === 'queue' ? 'on' : ''}">Up next</a></div>
+    ${panel === 'lyrics'
+      ? `<div class="lyr">${LYRICS.map((l, i) => `<p class="${i < CURRENT_LINE ? 'past' : i === CURRENT_LINE ? 'cur' : ''}">${l}</p>`).join('')}</div>`
+      : `<div class="toc"><div class="row now"><span class="n">Now</span><div><b>${NOW.title}</b><span class="a">${NOW.artist}</span></div><span class="d">4:00</span></div>
+         ${QUEUE.slice(0, 5).map(([, t, a, d], i) => `<div class="row ${i === 1 ? 'hover' : ''}"><span class="n">${String(i + 2).padStart(2, '0')}</span><div><b>${t}</b><span class="a">${a}</span></div><span class="d">${i === 1 ? mi('play_arrow') : d}</span></div>`).join('')}</div>`}
+  </div></section>`;
+
+mount({
+  home: () => `${mast()}<main class="page">
+    <section class="lead"><div class="cover">${img(FEATURED.cover)}</div>
+      <div class="copy"><span class="kicker">${FEATURED.kind}</span><h1 class="disp">Late<br/>Night Flow</h1><p>${FEATURED.blurb}</p>
+        <div class="cta"><span class="btn">${mi('play_arrow')}Play</span><span class="link">${mi('favorite_border')}Save</span></div></div></section>
+    <section class="band"><div><h2>For you</h2><p class="sub">Mixes picked from what you play.</p></div>
+      <div class="index">${FOR_YOU.map(([c, t], i) => `<div class="it ${i === 1 ? 'hover' : ''}"><div class="cv">${img(c)}</div><b>${t}</b></div>`).join('')}</div></section>
+  </main>${folio()}`,
+  'home-lower': () => `${mast()}<main class="page">
+    <section class="band" style="margin-top:0"><div><h2>Trending now</h2><p class="sub">What listeners are playing this week.</p></div>
+      <div class="mosaic"><div class="big"><div class="cv">${img(TRENDING[0][0])}</div><b>${TRENDING[0][1]}</b><span>${TRENDING[0][2]}</span></div>
+      ${TRENDING.slice(1, 4).map(([c, t, a]) => `<div><div class="cv">${img(c)}</div><b>${t}</b><span>${a}</span></div>`).join('')}</div></section>
+    <section class="band"><div><h2>New releases</h2></div>
+      <div class="mosaic" style="grid-template-columns:repeat(4,1fr)">${NEW_RELEASES.map(([c, t, a]) => `<div><div class="cv">${img(c)}</div><b>${t}</b><span>${a}</span></div>`).join('')}</div></section>
+  </main>${folio()}`,
+  player: () => `${spread('lyrics')}${folio(true, 'lyrics')}`,
+  queue: () => `${spread('queue')}${folio(true, 'queue')}`,
+});
+</script>
+</body>
+</html>

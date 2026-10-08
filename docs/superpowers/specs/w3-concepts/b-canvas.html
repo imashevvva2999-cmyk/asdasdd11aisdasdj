@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Mmusic Concept B</title>
+<!-- Concept B — Living Canvas. Design review mockup, not app code. ?v=home | home-scrolled | player | queue -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+<style>
+:root { --canvas:#0A0A0C; --ink:#FFFFFF; --soft:rgba(255,255,255,0.74); --faint:rgba(255,255,255,0.5); --coral:#FF4B4B; --gold:#F5A623;
+  --p-bg:#4a488e; --p-deep:#23223f; --p-acc:#5d5bbe; }
+* { box-sizing:border-box; margin:0; padding:0; }
+html,body { background:var(--canvas); color:var(--ink); font:400 15px/22px Inter, system-ui, sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }
+img { display:block; width:100%; height:100%; object-fit:cover; }
+.mi { font-family:'Material Icons'; font-size:22px; line-height:1; font-feature-settings:'liga'; }
+.eqmark { display:inline-flex; gap:2px; align-items:center; height:18px; } .eqmark i { width:3px; border-radius:2px; background:var(--coral); }
+.disp { font-family:'Plus Jakarta Sans'; font-weight:800; letter-spacing:-0.04em; }
+
+/* The canvas: the page itself takes the playing track's palette (flat colour fields, no blur, no glow). */
+.canvas { position:fixed; inset:0; background:
+  linear-gradient(180deg, color-mix(in srgb, var(--p-bg) 62%, var(--canvas)) 0%, color-mix(in srgb, var(--p-deep) 70%, var(--canvas)) 46%, var(--canvas) 92%); }
+.canvas.full { background: linear-gradient(160deg, var(--p-bg) 0%, var(--p-deep) 62%, #15142a 100%); }
+.canvas.scrolled { background: linear-gradient(180deg, color-mix(in srgb, var(--p-deep) 55%, var(--canvas)) 0%, var(--canvas) 55%); }
+
+/* Spine: a slim vertical navigation that also carries the pulse (mini player) */
+.spine { position:fixed; left:0; top:0; bottom:0; width:92px; display:flex; flex-direction:column; align-items:center; padding:26px 0 22px; gap:6px; z-index:2; }
+.spine .mark { margin-bottom:26px; }
+.spine a { width:64px; height:60px; border-radius:16px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; font:600 11px Inter; color:var(--soft); }
+.spine a.on { color:var(--ink); background:rgba(10,10,12,0.28); }
+.spine a.on .mi { color:var(--coral); }
+.spine .grow { flex:1; }
+.pulse { position:relative; width:56px; height:56px; margin-bottom:14px; }
+.pulse .ring { position:absolute; inset:0; border-radius:50%; background:conic-gradient(var(--coral) 0 34%, rgba(255,255,255,0.18) 34% 100%); }
+.pulse .cv { position:absolute; inset:4px; border-radius:50%; overflow:hidden; }
+.pulse .pp { position:absolute; inset:4px; border-radius:50%; display:grid; place-items:center; background:rgba(10,10,12,0.42); }
+.av { width:36px; height:36px; border-radius:50%; background:rgba(10,10,12,0.4); display:grid; place-items:center; font:700 12px Inter; }
+
+.main { position:fixed; left:92px; right:0; top:0; bottom:0; padding:26px 56px 0 32px; overflow:hidden; }
+.top { display:flex; align-items:center; gap:14px; height:44px; }
+.find { display:flex; align-items:center; gap:10px; width:360px; height:44px; padding:0 16px; border-radius:999px; background:rgba(10,10,12,0.32); color:var(--soft); }
+.find kbd { margin-left:auto; font:600 11px Inter; color:var(--faint); }
+.top .bell { margin-left:auto; color:var(--soft); }
+
+/* Portal: the playing track lives at the top of Home */
+.portal { display:grid; grid-template-columns:340px 1fr; gap:44px; margin-top:34px; align-items:center; }
+.portal .cv { width:340px; height:340px; border-radius:28px; overflow:hidden; box-shadow:0 30px 60px -20px rgba(0,0,0,0.6); }
+.portal small { font:600 13px Inter; color:var(--soft); }
+.portal h1 { font-size:76px; line-height:0.95; margin:10px 0 8px; }
+.portal .by { font:500 18px Inter; color:var(--soft); }
+.ctl { display:flex; align-items:center; gap:26px; margin-top:26px; }
+.ctl .mi { font-size:30px; } .ctl .s { font-size:22px; color:var(--soft); }
+.big { width:64px; height:64px; border-radius:50%; background:var(--coral); display:grid; place-items:center; }
+.big .mi { font-size:36px; }
+.scrub { display:flex; align-items:center; gap:12px; margin-top:20px; max-width:560px; font:500 12px Inter; color:var(--soft); font-variant-numeric:tabular-nums; }
+.scrub .tr { flex:1; height:4px; border-radius:2px; background:rgba(255,255,255,0.22); position:relative; }
+.scrub .tr i { position:absolute; left:0; top:0; bottom:0; width:34%; background:var(--ink); border-radius:2px; }
+.chips { display:flex; gap:10px; margin-top:22px; }
+.chip { height:36px; padding:0 14px; border-radius:999px; background:rgba(10,10,12,0.3); display:inline-flex; align-items:center; gap:8px; font:600 13px Inter; color:var(--ink); }
+.chip .mi { font-size:18px; } .chip.liked .mi { color:var(--coral); }
+
+.row-h { display:flex; justify-content:space-between; align-items:baseline; margin:44px 0 16px; }
+.row-h h2 { font:800 26px 'Plus Jakarta Sans'; letter-spacing:-0.03em; }
+.row-h a { font:600 13px Inter; color:var(--soft); }
+.covers { display:grid; grid-template-columns:repeat(6,1fr); gap:24px; }
+.covers .cv { aspect-ratio:1; border-radius:20px; overflow:hidden; position:relative; }
+.covers b { display:block; margin-top:10px; font:600 15px Inter; } .covers span { font-size:13px; color:var(--faint); }
+.covers .hov .cv { transform:translateY(-4px); box-shadow:0 18px 30px -12px rgba(0,0,0,0.6); }
+.covers .hov .cv::after { content:'play_arrow'; font-family:'Material Icons'; position:absolute; right:12px; bottom:12px; width:44px; height:44px; border-radius:50%; background:var(--coral); display:grid; place-items:center; font-size:26px; }
+.feat { display:grid; grid-template-columns:1fr 1.1fr; gap:40px; align-items:center; margin-top:34px; }
+.feat .cv { height:300px; border-radius:28px; overflow:hidden; }
+.feat .k { font:600 13px Inter; color:var(--gold); }
+.feat h2 { font-size:60px; line-height:0.95; margin:10px 0 14px; }
+.feat p { color:var(--soft); font-size:17px; line-height:26px; max-width:440px; }
+
+/* Now Playing: the canvas at full colour, the carousel visible at both edges */
+.stage { position:fixed; left:92px; right:0; top:0; bottom:0; padding:28px 56px 30px 24px; display:grid; grid-template-columns:1fr 470px; gap:48px; }
+.stage .head { position:absolute; left:24px; right:56px; top:28px; display:flex; justify-content:space-between; align-items:center; z-index:2; }
+.ghostbtn { width:44px; height:44px; border-radius:50%; background:rgba(10,10,12,0.3); display:grid; place-items:center; }
+.stage .from { text-align:center; font:600 13px Inter; color:var(--soft); } .stage .from b { color:var(--ink); display:block; font-size:14px; }
+.carousel { position:relative; overflow:hidden; display:flex; flex-direction:column; justify-content:center; align-items:center; }
+.carousel .strip { position:relative; width:100%; height:440px; }
+.carousel .slot { position:absolute; top:50%; border-radius:28px; overflow:hidden; aspect-ratio:1; }
+.carousel .cur { left:50%; height:440px; transform:translate(-50%,-50%); box-shadow:0 34px 70px -24px rgba(0,0,0,0.65); }
+.carousel .side { height:300px; opacity:.38; transform:translateY(-50%); }
+.carousel .prev { left:-150px; } .carousel .next { right:-150px; }
+.np-title { text-align:center; margin-top:26px; }
+.np-title h1 { font-size:46px; line-height:1; } .np-title p { color:var(--soft); font:500 17px Inter; margin-top:6px; }
+.carousel .ctl { justify-content:center; margin-top:18px; }
+.carousel .scrub { width:520px; margin:16px auto 0; }
+.side-col { display:flex; flex-direction:column; padding-top:70px; min-height:0; }
+.side-col .tabs { display:flex; gap:8px; }
+.tab { height:34px; padding:0 16px; border-radius:999px; background:rgba(10,10,12,0.28); display:grid; place-items:center; font:600 13px Inter; color:var(--soft); }
+.tab.on { background:var(--ink); color:#15142a; }
+.lyr { margin-top:28px; display:flex; flex-direction:column; gap:10px; -webkit-mask-image:linear-gradient(180deg,#000 72%,transparent); }
+.lyr p { font:700 30px/38px 'Plus Jakarta Sans'; letter-spacing:-0.03em; color:rgba(255,255,255,0.36); }
+.lyr p.past { color:rgba(255,255,255,0.55); } .lyr p.cur { color:var(--ink); }
+.side-col .chips { margin-top:auto; flex-wrap:wrap; }
+/* Queue: a river of upcoming covers */
+.river { margin-top:28px; display:flex; flex-direction:column; gap:12px; }
+.river .it { display:grid; grid-template-columns:72px 1fr auto; gap:16px; align-items:center; padding:8px; border-radius:18px; }
+.river .it .cv { width:72px; height:72px; border-radius:14px; overflow:hidden; }
+.river .it b { font:700 18px 'Plus Jakarta Sans'; letter-spacing:-0.02em; display:block; } .river .it span { color:var(--soft); font-size:13px; }
+.river .it .d { font:500 13px Inter; color:var(--soft); font-variant-numeric:tabular-nums; }
+.river .it.next { background:rgba(10,10,12,0.28); }
+.river .it.next small { font:600 11px Inter; color:var(--coral); display:block; margin-bottom:2px; }
+.river .it.hov { background:rgba(255,255,255,0.08); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="common.js"></script>
+<script>
+const spine = (pulse) => `<nav class="spine"><div class="mark">${EQ()}</div>
+  <a class="on">${mi('home')}Home</a><a>${mi('search')}Search</a><a>${mi('library_music')}Library</a>
+  <div class="grow"></div>${pulse ? `<div class="pulse"><div class="ring"></div><div class="cv">${img(NOW.cover)}</div><div class="pp">${mi('pause')}</div></div>` : ''}<div class="av">AR</div></nav>`;
+const topBar = () => `<div class="top"><div class="find">${mi('search')}Artists, songs, albums<kbd>/</kbd></div><span class="bell">${mi('notifications_none')}</span></div>`;
+const controls = () => `<div class="ctl">${mi('shuffle', 's')}${mi('skip_previous')}<div class="big">${mi('pause')}</div>${mi('skip_next')}${mi('repeat', 's')}</div>
+  <div class="scrub"><span>${NOW.pos}</span><div class="tr"><i></i></div><span>${NOW.rem}</span></div>`;
+const stage = (panel) => `<div class="canvas full"></div>${spine(false)}<section class="stage">
+  <div class="head"><div class="ghostbtn">${mi('keyboard_arrow_down')}</div><div class="from">Playing from album<b>${NOW.album}</b></div><div class="ghostbtn">${mi('more_horiz')}</div></div>
+  <div class="carousel"><div class="strip"><div class="slot side prev">${img('albums/horizon-deluxe.jpg')}</div><div class="slot cur">${img(NOW.cover)}</div><div class="slot side next">${img('generated/horizon.jpg')}</div></div>
+    <div class="np-title"><h1 class="disp">${NOW.title}</h1><p>${NOW.artist}</p></div>${controls()}</div>
+  <div class="side-col"><div class="tabs"><span class="tab ${panel === 'lyrics' ? 'on' : ''}">Lyrics</span><span class="tab ${panel === 'queue' ? 'on' : ''}">Up next</span></div>
+    ${panel === 'lyrics'
+      ? `<div class="lyr">${LYRICS.map((l, i) => `<p class="${i < CURRENT_LINE ? 'past' : i === CURRENT_LINE ? 'cur' : ''}">${l}</p>`).join('')}</div>`
+      : `<div class="river">${QUEUE.slice(0, 5).map(([c, t, a, d], i) => `<div class="it ${i === 0 ? 'next' : i === 2 ? 'hov' : ''}"><div class="cv">${img(c)}</div><div>${i === 0 ? '<small>Next</small>' : ''}<b>${t}</b><span>${a}</span></div><span class="d">${i === 2 ? mi('play_arrow') : d}</span></div>`).join('')}</div>`}
+    <div class="chips"><span class="chip liked">${mi('favorite')}Liked</span><span class="chip">${mi('playlist_add')}Add to playlist</span><span class="chip">${mi('volunteer_activism')}Support</span><span class="chip">${mi('headphones')}Audio</span></div></div>
+</section>`;
+
+mount({
+  home: () => `<div class="canvas"></div>${spine(false)}<main class="main">${topBar()}
+    <section class="portal"><div class="cv">${img(NOW.cover)}</div><div><small>Now playing, from ${NOW.album}</small><h1 class="disp">${NOW.title}</h1><div class="by">${NOW.artist}</div>${controls()}
+      <div class="chips"><span class="chip liked">${mi('favorite')}Liked</span><span class="chip">${mi('lyrics')}Lyrics</span><span class="chip">${mi('queue_music')}Up next</span><span class="chip">${mi('open_in_full')}Open player</span></div></div></section>
+    <div class="row-h"><h2>For you</h2></div>
+    <div class="covers">${FOR_YOU.map(([c, t], i) => `<div class="${i === 2 ? 'hov' : ''}"><div class="cv">${img(c)}</div><b>${t}</b></div>`).join('')}</div>
+  </main>`,
+  'home-scrolled': () => `<div class="canvas scrolled"></div>${spine(true)}<main class="main">${topBar()}
+    <section class="feat"><div class="cv">${img(FEATURED.cover)}</div><div><span class="k">${FEATURED.kind}</span><h2 class="disp">${FEATURED.title}</h2><p>${FEATURED.blurb}</p>
+      <div class="chips" style="margin-top:22px"><span class="chip" style="background:var(--coral)">${mi('play_arrow')}Play</span><span class="chip">${mi('favorite_border')}Save</span></div></div></section>
+    <div class="row-h"><h2>Trending now</h2><a>Show all</a></div>
+    <div class="covers">${TRENDING.map(([c, t, a], i) => `<div class="${i === 1 ? 'hov' : ''}"><div class="cv">${img(c)}</div><b>${t}</b><span>${a}</span></div>`).join('')}</div>
+  </main>`,
+  player: () => stage('lyrics'),
+  queue: () => stage('queue'),
+});
+</script>
+</body>
+</html>
