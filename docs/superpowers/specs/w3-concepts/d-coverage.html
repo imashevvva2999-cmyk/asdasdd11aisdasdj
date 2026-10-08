@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Mmusic Floating Canvas Coverage</title>
+<!-- Floating Canvas (Concept D) across every screen family — iPhone 390 × 844. Design review mockup, not app code.
+     Real catalog text and artwork only. ?v=search | results | empty | genre | library | liked | artist | album | playlist |
+     empty-playlist | create | profile | settings | support | confirm | success | history | options | addto | notifications | become -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+<style>
+:root { --canvas:#0A0A0C; --l1:#141418; --l2:#1C1C24; --ink:#fff; --soft:rgba(255,255,255,.78); --faint:rgba(255,255,255,.5); --mid:#9E9EA8; --edge:rgba(255,255,255,.08); --coral:#FF4B4B; --gold:#F5A623; --t:#2a4477; }
+* { box-sizing:border-box; margin:0; padding:0; }
+html,body { width:390px; height:844px; background:var(--canvas); color:var(--ink); font:400 15px/21px Inter, system-ui, sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }
+img { display:block; width:100%; height:100%; object-fit:cover; }
+.mi { font-family:'Material Icons'; font-size:24px; line-height:1; font-feature-settings:'liga'; font-weight:400; }
+.disp { font-family:'Plus Jakarta Sans', Inter, sans-serif; font-weight:800; letter-spacing:-.035em; line-height:1.06; }
+.screen { position:relative; width:390px; height:844px; overflow:hidden; background:var(--canvas); }
+.status { position:absolute; left:0; right:0; top:0; height:47px; display:flex; align-items:center; justify-content:space-between; padding:6px 30px 0 34px; z-index:60; font:600 16px Inter; }
+.status .r { display:flex; gap:5px; } .status .mi { font-size:17px; }
+.homebar { position:absolute; left:50%; bottom:8px; width:134px; height:5px; margin-left:-67px; border-radius:3px; background:#fff; z-index:60; }
+.float { background:var(--l1); border:1px solid var(--edge); box-shadow:0 18px 36px -14px rgba(0,0,0,.8); }
+.body { position:absolute; left:0; right:0; top:0; bottom:0; overflow:hidden; }
+.pad { padding:0 20px; }
+.circ { width:36px; height:36px; border-radius:50%; background:rgba(10,10,12,.36); display:grid; place-items:center; flex:none; } .circ .mi { font-size:20px; }
+.avatar { width:36px; height:36px; border-radius:50%; background:var(--l2); display:grid; place-items:center; font:700 12px Inter; }
+/* Stage: the artwork's own colour behind the top of an entity page, darkening into the canvas. No glow. */
+.stage { position:absolute; left:0; right:0; top:0; background:linear-gradient(180deg, var(--t) 0%, color-mix(in srgb, var(--t) 55%, #0A0A0C) 52%, var(--canvas) 100%); }
+.stage::after { content:''; position:absolute; inset:0; background:radial-gradient(140% 90% at 50% 16%, rgba(8,10,16,0) 50%, rgba(8,10,16,.45) 100%); }
+/* Full-bleed artist / genre photo that dissolves into the stage (no seam, no overlay colour). */
+.hero { position:absolute; left:0; right:0; top:0; -webkit-mask-image:linear-gradient(180deg, #000 0%, #000 52%, transparent 100%); mask-image:linear-gradient(180deg, #000 0%, #000 52%, transparent 100%); }
+.topbar { position:absolute; left:16px; right:16px; top:52px; height:40px; display:flex; align-items:center; justify-content:space-between; z-index:30; }
+.h1 { font:800 34px/1.05 'Plus Jakarta Sans', Inter, sans-serif; letter-spacing:-.035em; }
+.h2 { font:800 22px/1.1 'Plus Jakarta Sans', Inter, sans-serif; letter-spacing:-.03em; margin:22px 0 12px; display:flex; justify-content:space-between; align-items:baseline; }
+.h2 a { font:600 13px Inter; color:var(--soft); letter-spacing:0; }
+.meta { color:var(--soft); font:500 14px Inter; margin-top:6px; }
+.eyebrow { font:600 12px/16px Inter; color:var(--gold); margin-bottom:4px; }
+.field { height:48px; border-radius:16px; background:var(--l1); border:1px solid var(--edge); display:flex; align-items:center; gap:10px; padding:0 14px; color:var(--mid); font:500 15px Inter; }
+.field .mi { font-size:22px; } .field.typed { color:var(--ink); }
+.chips { display:flex; gap:8px; overflow:hidden; }
+.chip { height:34px; padding:0 14px; border-radius:999px; background:var(--l1); border:1px solid var(--edge); display:inline-flex; align-items:center; gap:6px; font:600 13px Inter; color:var(--soft); white-space:nowrap; flex:none; }
+.chip .mi { font-size:17px; } .chip.on { background:var(--ink); color:#0e1524; border-color:var(--ink); }
+.quiet { height:40px; padding:0 16px; border-radius:999px; background:rgba(10,10,12,.34); display:inline-flex; align-items:center; gap:7px; font:600 13px Inter; }
+.quiet .mi { font-size:19px; } .quiet.coralic .mi { color:var(--coral); }
+.play { width:56px; height:56px; border-radius:50%; background:var(--coral); display:grid; place-items:center; flex:none; } .play .mi { font-size:32px; }
+.cta { height:54px; border-radius:999px; background:var(--coral); display:flex; align-items:center; justify-content:center; gap:8px; font:700 16px Inter; }
+.actions { display:flex; align-items:center; gap:10px; margin-top:16px; }
+.row { display:grid; grid-template-columns:auto 1fr auto; gap:12px; align-items:center; min-height:58px; }
+.row .cv { width:48px; height:48px; border-radius:12px; overflow:hidden; } .row .cv.round { border-radius:50%; }
+.row b { display:block; font:600 15px Inter; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .row span { font-size:13px; color:var(--mid); }
+.row .d { font:500 12px Inter; color:var(--faint); font-variant-numeric:tabular-nums; display:flex; align-items:center; gap:6px; } .row .d .mi { font-size:20px; }
+.row .n { width:22px; text-align:center; font:600 14px Inter; color:var(--faint); font-variant-numeric:tabular-nums; }
+.covers { display:flex; gap:14px; }
+.cover { width:140px; flex:none; } .cover .cv { width:140px; height:140px; border-radius:18px; overflow:hidden; } .cover b { display:block; font:600 13px Inter; margin-top:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .cover span { font-size:12px; color:var(--mid); }
+.tiles { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.tile { position:relative; height:96px; border-radius:18px; overflow:hidden; } .tile::after { content:''; position:absolute; inset:0; background:linear-gradient(180deg, rgba(10,10,12,0) 35%, rgba(10,10,12,.7)); }
+.tile b { position:absolute; left:12px; bottom:10px; font:700 15px 'Plus Jakarta Sans', Inter, sans-serif; z-index:2; }
+.wide { position:relative; height:168px; border-radius:22px; overflow:hidden; }
+.wide .shade { position:absolute; inset:0; background:linear-gradient(180deg, rgba(10,10,12,0) 25%, rgba(10,10,12,.85)); }
+.wide .txt { position:absolute; left:16px; right:16px; bottom:14px; }
+.empty { display:flex; flex-direction:column; align-items:center; text-align:center; gap:10px; padding:0 30px; }
+.empty .ic { width:64px; height:64px; border-radius:50%; background:var(--l1); display:grid; place-items:center; } .empty .ic .mi { font-size:30px; color:var(--soft); }
+.empty h3 { font:700 18px 'Plus Jakarta Sans', Inter, sans-serif; } .empty p { color:var(--mid); font-size:14px; }
+.navpill { position:absolute; left:50%; transform:translateX(-50%); bottom:42px; height:58px; padding:0 8px; border-radius:999px; display:flex; align-items:center; gap:4px; z-index:50; }
+.navpill a { width:74px; height:44px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; font:600 10px Inter; color:var(--mid); }
+.navpill a .mi { font-size:22px; } .navpill a.on { color:var(--ink); } .navpill a.on .mi { color:var(--coral); }
+.capsule { position:absolute; left:16px; right:16px; height:62px; border-radius:999px; display:flex; align-items:center; gap:12px; padding:0 10px 0 8px; overflow:hidden; z-index:49; background:#24223d; border:1px solid var(--edge); }
+.capsule::after { content:''; position:absolute; left:24px; bottom:0; height:2px; width:30%; background:#5d5bbe; }
+.capsule .cv { width:46px; height:46px; border-radius:14px; overflow:hidden; flex:none; } .capsule .ti { flex:1; } .capsule b { display:block; font:600 14px Inter; } .capsule span { font-size:12px; color:var(--mid); }
+.capsule .pp { width:42px; height:42px; border-radius:50%; background:var(--coral); display:grid; place-items:center; }
+.fade-bottom { position:absolute; left:0; right:0; bottom:0; height:200px; background:linear-gradient(180deg, rgba(10,10,12,0), var(--canvas) 55%); z-index:40; }
+/* Sheets: a solid drawer over a dimmed page — no blur. */
+.dim { position:absolute; inset:0; background:rgba(0,0,0,.58); z-index:70; }
+.sheet { position:absolute; left:0; right:0; bottom:0; background:var(--l1); border-top-left-radius:28px; border-top-right-radius:28px; border:1px solid var(--edge); padding:12px 20px 44px; z-index:71; }
+.sheet .handle { width:40px; height:5px; border-radius:3px; background:rgba(255,255,255,.22); margin:0 auto 16px; }
+.sheet .head { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+.sheet .head .cv { width:52px; height:52px; border-radius:14px; overflow:hidden; flex:none; } .sheet .head .cv.round { border-radius:50%; }
+.sheet .head div { flex:1; } .sheet .head b { display:block; font:700 17px 'Plus Jakarta Sans', Inter, sans-serif; } .sheet .head span { font-size:13px; color:var(--mid); }
+.mrow { display:flex; align-items:center; gap:14px; height:54px; font:600 15px Inter; } .mrow .mi { color:var(--soft); font-size:22px; }
+.amts { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:18px; }
+.amt { height:58px; border-radius:16px; background:var(--l2); border:1px solid var(--edge); display:flex; flex-direction:column; align-items:center; justify-content:center; font:700 18px 'Plus Jakarta Sans', Inter, sans-serif; } .amt small { font:500 11px Inter; color:var(--mid); }
+.amt.on { background:var(--ink); color:#0e1524; } .amt.on small { color:#0e1524; }
+.toggle { width:46px; height:28px; border-radius:999px; background:var(--l2); position:relative; flex:none; } .toggle::after { content:''; position:absolute; left:3px; top:3px; width:22px; height:22px; border-radius:50%; background:var(--mid); }
+.toggle.on { background:var(--coral); } .toggle.on::after { left:21px; background:#fff; }
+.srow { display:flex; align-items:center; gap:12px; min-height:58px; border-bottom:1px solid var(--edge); }
+.srow .tx { flex:1; min-width:0; } .srow b { display:block; font:600 15px Inter; } .srow span { font-size:12px; color:var(--mid); } .srow .val { color:var(--soft); font:500 14px Inter; display:flex; align-items:center; gap:2px; }
+.icn { width:38px; height:38px; border-radius:50%; background:var(--l1); display:grid; place-items:center; flex:none; } .icn .mi { font-size:20px; color:var(--soft); } .icn.coral .mi { color:var(--coral); } .icn.gold .mi { color:var(--gold); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="common.js"></script>
+<script>
+const st = () => `<div class="status"><span>9:41</span><span class="r">${mi('signal_cellular_alt')}${mi('wifi')}${mi('battery_full')}</span></div><div class="homebar"></div>`;
+const nav = (on) => `<nav class="navpill float">${[['home', 'Home'], ['search', 'Search'], ['library_music', 'Library']].map(([i, t]) => `<a class="${t.toLowerCase() === on ? 'on' : ''}">${mi(i)}${t}</a>`).join('')}</nav>`;
+const cap = (bottom = 112) => `<div class="capsule" style="bottom:${bottom}px"><div class="cv">${img('tracks/midnight-mirage.jpg')}</div><div class="ti"><b>Midnight Mirage</b><span>Solaris Echo</span></div>${mi('skip_next')}<div class="pp">${mi('pause')}</div></div>`;
+// Tab screens: floating nav pill + capsule. Content pages: capsule only. Sheets: dimmed page + solid drawer.
+const tab = (on, inner) => `<div class="screen"><div class="body">${inner}</div><div class="fade-bottom"></div>${cap()}${nav(on)}${st()}</div>`;
+const page = (inner, tone) => `<div class="screen" style="--t:${tone}"><div class="body">${inner}</div><div class="fade-bottom" style="height:150px"></div>${cap(42)}${st()}</div>`;
+const sheetOver = (inner, tone, sheet) => `<div class="screen" style="--t:${tone}"><div class="body">${inner}</div><div class="dim"></div>${sheet}${st()}</div>`;
+const back = (right = mi('more_horiz')) => `<div class="topbar"><span class="circ">${mi('arrow_back')}</span><span class="circ">${right}</span></div>`;
+const trow = (cv, t, s, d, n) => `<div class="row" ${n !== undefined ? 'style="grid-template-columns:22px 48px 1fr auto"' : ''}>${n !== undefined ? `<span class="n">${n}</span>` : ''}<div class="cv">${img(cv)}</div><div style="min-width:0"><b>${t}</b><span>${s}</span></div><span class="d">${d}${mi('more_vert')}</span></div>`;
+const tracksSE = [['tracks/midnight-mirage.jpg', 'Midnight Mirage', 'Solaris Echo', '4:00'], ['generated/horizon.jpg', 'Horizon', 'Solaris Echo', '3:04'], ['tracks/obsidian-frequencies.jpg', 'Obsidian Frequencies', 'Solaris Echo', '4:02'], ['generated/ember-tide.jpg', 'Ember Tide', 'Solaris Echo', '4:35'], ['generated/resonant-field-reprise.jpg', 'Resonant Field (Reprise)', 'Solaris Echo', '3:09']];
+const genreTiles = [['generated/made-for-you.jpg', 'Made For You'], ['generated/charts-viral.jpg', 'Charts & Viral']];
+const trending = (list) => list.map(([t, s], i) => `<div class="row" style="min-height:48px"><span class="n" style="color:var(--coral)">0${i + 1}</span><div style="min-width:0"><b>${t}</b><span>${s}</span></div>${mi('north_east')}</div>`).join('');
+
+const artistInner = () => `<div class="stage" style="height:540px"></div>
+  <div class="hero" style="height:380px">${img('artists/solaris-echo.jpg')}</div>
+  ${back()}
+  <div class="pad" style="position:absolute;left:0;right:0;top:268px">
+    <div class="disp" style="font-size:44px;line-height:1">Solaris Echo</div>
+    <div class="meta">3.2M monthly listeners · Bishkek, Kyrgyzstan</div>
+    <div class="actions"><div class="play">${mi('play_arrow')}</div><span class="quiet">${mi('check')}Following</span><span class="quiet coralic">${mi('volunteer_activism')}Support</span></div>
+    <div class="h2">Popular</div>${tracksSE.map(([c, t, s, d], i) => trow(c, t, s, d, i + 1)).join('')}
+  </div>`;
+const albumInner = () => `<div class="stage" style="height:560px"></div>${back()}
+  <div style="position:absolute;left:79px;top:104px;width:232px;height:232px;border-radius:24px;overflow:hidden;box-shadow:0 26px 44px -22px rgba(0,0,0,.75)">${img('albums/horizon-deluxe.jpg')}</div>
+  <div class="pad" style="position:absolute;left:0;right:0;top:358px">
+    <div class="disp" style="font-size:30px">Horizon (Deluxe)</div>
+    <div class="meta" style="color:var(--ink);font-weight:600;display:flex;align-items:center;gap:8px"><span style="width:22px;height:22px;border-radius:50%;overflow:hidden">${img('artists/solaris-echo.jpg')}</span>Solaris Echo</div>
+    <div class="meta" style="margin-top:4px">Album · 2024 · 6 tracks</div>
+    <div class="actions"><div class="play">${mi('play_arrow')}</div><span class="quiet">${mi('shuffle')}Shuffle</span><span class="quiet">${mi('add')}Save</span><span class="circ" style="margin-left:auto">${mi('more_horiz')}</span></div>
+    <div style="margin-top:8px">${tracksSE.slice(0, 3).map(([, t, s, d], i) => `<div class="row" style="grid-template-columns:22px 1fr auto"><span class="n">${i + 1}</span><div><b>${t}</b><span>${s}</span></div><span class="d">${d}</span></div>`).join('')}</div>
+  </div>`;
+const libraryInner = () => `<div class="pad" style="padding-top:58px">
+  <div style="display:flex;justify-content:space-between;align-items:center"><div class="h1">Your Library</div><div style="display:flex;gap:10px"><span class="circ" style="background:var(--coral)">${mi('add')}</span><span class="avatar">AR</span></div></div>
+  <div class="chips" style="margin-top:16px">${['All', 'Playlists', 'Artists', 'Albums', 'Downloaded'].map((c, i) => `<span class="chip ${i === 0 ? 'on' : ''}">${c}</span>`).join('')}</div>
+  <div style="display:flex;justify-content:space-between;margin:16px 0 4px;color:var(--soft);font:600 13px Inter"><span style="display:flex;gap:6px;align-items:center">${mi('swap_vert')}Recently Added</span>${mi('grid_view')}</div>
+  <div class="row"><div class="cv" style="background:linear-gradient(135deg,#5d5bbe,#23223f);display:grid;place-items:center">${mi('favorite')}</div><div><b>Liked Songs</b><span>Playlist · 2 songs</span></div>${mi('chevron_right')}</div>
+  ${[['playlists/late-night-driving.jpg', 'Late Night Driving', 'Playlist · 48 songs'], ['artists/solaris-echo.jpg', 'Solaris Echo', 'Artist · 3.2M monthly listeners', 'round'], ['albums/horizon-deluxe.jpg', 'Horizon (Deluxe)', 'Album · Solaris Echo · 6 tracks'], ['playlists/lofi-beats-to-code.jpg', 'Lo-Fi Beats to Code / Relax', 'Editorial · 120 songs'], ['playlists/electronic-essentials.jpg', 'Electronic Essentials', 'Playlist · 65 songs'], ['artists/kaelen.jpg', 'Kaelen', 'Artist · 1.8M monthly listeners', 'round']].map(([c, t, s, r]) => `<div class="row"><div class="cv ${r || ''}">${img(c)}</div><div style="min-width:0"><b>${t}</b><span>${s}</span></div>${mi('more_vert')}</div>`).join('')}
+</div>`;
+const handle = '<div class="handle"></div>';
+
+const views = {
+  search: () => tab('search', `<div class="pad" style="padding-top:58px">
+    <div style="display:flex;justify-content:space-between;align-items:center"><div class="h1">Search</div><span class="avatar">AR</span></div>
+    <div class="field" style="margin-top:14px">${mi('search')}What do you want to listen to?</div>
+    <div class="h2" style="margin-top:20px">Recent searches <a>Clear all</a></div>
+    <div class="chips">${['Tame Impala', 'Ambient Techno', 'Billie Eilish', 'Solaris Echo'].map((c) => `<span class="chip">${mi('history')}${c}</span>`).join('')}</div>
+    <div class="h2">Trending searches</div>${trending([['Challengers OST', 'Trent Reznor'], ['Midnight Mirage', 'Solaris Echo'], ['Fred again..', 'Electronic']])}
+    <div class="h2">Browse all</div>
+    <div class="wide">${img('genres/kyrgyz-music.jpg')}<div class="shade"></div><div class="txt"><div class="eyebrow">Regional</div><div class="disp" style="font-size:24px">Kyrgyz Music</div><div class="meta" style="margin-top:2px">Ethno-synth & Komuz beats</div></div></div>
+    <div class="tiles" style="margin-top:12px">${genreTiles.map(([c, t]) => `<div class="tile">${img(c)}<b>${t}</b></div>`).join('')}</div>
+  </div>`),
+
+  results: () => tab('search', `<div class="pad" style="padding-top:58px">
+    <div style="display:flex;gap:10px;align-items:center"><div class="field typed" style="flex:1">${mi('search')}solaris</div><span style="font:600 14px Inter;color:var(--soft)">Cancel</span></div>
+    <div class="chips" style="margin-top:14px">${['All', 'Songs', 'Artists', 'Albums', 'Playlists'].map((c, i) => `<span class="chip ${i === 0 ? 'on' : ''}">${c}</span>`).join('')}</div>
+    <div class="h2">Top result</div>
+    <div style="display:flex;gap:14px;align-items:center;padding:14px;border-radius:22px;background:linear-gradient(120deg,#40322f,#1b1716)"><div style="width:84px;height:84px;border-radius:50%;overflow:hidden;flex:none">${img('artists/solaris-echo.jpg')}</div><div style="flex:1"><div class="disp" style="font-size:24px">Solaris Echo</div><div class="meta">Artist · 3.2M monthly listeners</div></div><div class="play" style="width:48px;height:48px">${mi('play_arrow')}</div></div>
+    <div class="h2">Songs</div>${tracksSE.slice(0, 3).map(([c, t, s, d]) => trow(c, t, s, d)).join('')}
+    <div class="h2">Albums & EPs</div><div class="covers"><div class="cover"><div class="cv">${img('albums/horizon-deluxe.jpg')}</div><b>Horizon (Deluxe)</b><span>Album · 2024</span></div></div>
+  </div>`),
+
+  empty: () => tab('search', `<div class="pad" style="padding-top:58px">
+    <div style="display:flex;gap:10px;align-items:center"><div class="field typed" style="flex:1">${mi('search')}xyzzy</div><span style="font:600 14px Inter;color:var(--soft)">Cancel</span></div>
+    <div class="empty" style="margin-top:70px"><div class="ic">${mi('search_off')}</div><h3>No results for “xyzzy”</h3><p>Please check your spelling or try searching for another artist, track, album, or genre.</p><span class="quiet" style="margin-top:6px;background:var(--l1)">${mi('grid_view')}Explore All Genres</span></div>
+    <div class="h2" style="margin-top:44px">Trending right now</div>${trending([['Challengers OST', 'Trent Reznor'], ['Midnight Mirage', 'Solaris Echo']])}
+  </div>`),
+
+  genre: () => page(`<div class="stage" style="height:600px"></div>
+    <div class="hero" style="height:350px">${img('genres/kyrgyz-music.jpg')}</div>${back()}
+    <div class="pad" style="position:absolute;left:0;right:0;top:236px">
+      <div class="eyebrow">Regional · 128K listeners</div><div class="disp" style="font-size:40px;line-height:1.02;margin-top:4px">Kyrgyz Music</div>
+      <div class="meta">Ethno-synth and Komuz-driven productions blending Central Asian heritage instruments with modern electronic production.</div>
+      <div class="actions"><span class="cta" style="height:46px;padding:0 20px">${mi('play_arrow')}Listen Now</span></div>
+      <div class="h2">Essential compilations</div>
+      <div class="covers">${[['albums/nebula-dreams.jpg', 'Nebula Dreams', 'Kaelen'], ['albums/lost-frequencies.jpg', 'Lost Frequencies', 'Arlo'], ['albums/velvet-skyline.jpg', 'Velvet Skyline', 'Maya Lin']].map(([c, t, s]) => `<div class="cover"><div class="cv">${img(c)}</div><b>${t}</b><span>${s}</span></div>`).join('')}</div>
+    </div>`, '#4a3330'),
+
+  library: () => tab('library', libraryInner()),
+
+  liked: () => page(`<div class="stage" style="height:480px"></div>${back(mi('search'))}
+    <div class="pad" style="position:absolute;left:0;right:0;top:110px">
+      <div style="width:150px;height:150px;border-radius:24px;background:linear-gradient(135deg,#5d5bbe,#23223f);display:grid;place-items:center;box-shadow:0 26px 44px -22px rgba(0,0,0,.75)"><span class="mi" style="font-size:64px">favorite</span></div>
+      <div class="eyebrow" style="margin-top:18px;color:var(--soft)">Auto playlist</div><div class="disp" style="font-size:38px">Liked Songs</div><div class="meta">2 saved tracks</div>
+      <div class="actions"><div class="play">${mi('play_arrow')}</div><span class="quiet">${mi('shuffle')}Shuffle</span></div>
+      <div style="margin-top:12px">${[['tracks/midnight-mirage.jpg', 'Midnight Mirage', 'Solaris Echo', '4:00'], ['tracks/abyssal-bloom.jpg', 'Abyssal Bloom', 'Elena Rostova', '3:56']].map(([c, t, s, d]) => trow(c, t, s, d)).join('')}</div>
+    </div>`, '#373567'),
+
+  artist: () => page(artistInner(), '#40322f'),
+  album: () => page(albumInner(), '#624933'),
+
+  playlist: () => page(`<div class="stage" style="height:560px"></div>${back()}
+    <div style="position:absolute;left:20px;top:104px;width:168px;height:168px;border-radius:22px;overflow:hidden;box-shadow:0 26px 44px -22px rgba(0,0,0,.75)">${img('playlists/late-night-flow.jpg')}</div>
+    <div class="pad" style="position:absolute;left:0;right:0;top:292px">
+      <div class="eyebrow">Editorial playlist</div><div class="disp" style="font-size:36px;margin-top:2px">Late Night Flow</div>
+      <div class="meta">Slow-burning ambient and downtempo electronic for the hours after midnight.</div>
+      <div class="meta" style="font-size:13px;color:var(--faint)">Curated by Brian Eno & Friends · 4 tracks · 16 min</div>
+      <div class="actions"><span class="cta" style="height:48px;padding:0 22px">${mi('play_arrow')}Play All</span><span class="quiet">${mi('shuffle')}</span><span class="quiet">${mi('add')}</span></div>
+      <div style="margin-top:8px">${[['albums/nebula-dreams.jpg', 'Nebula Dreams', 'Kaelen', '4:24'], ['albums/lost-frequencies.jpg', 'Lost Frequencies', 'Arlo', '3:51'], ['albums/velvet-skyline.jpg', 'Velvet Skyline', 'Maya Lin', '4:14']].map(([c, t, s, d]) => trow(c, t, s, d)).join('')}</div>
+    </div>`, '#694440'),
+
+  'empty-playlist': () => page(`<div class="stage" style="height:520px"></div>${back()}
+    <div style="position:absolute;left:20px;top:104px;width:168px;height:168px;border-radius:22px;overflow:hidden">${img('playlists/late-night-driving.jpg')}</div>
+    <div class="pad" style="position:absolute;left:0;right:0;top:292px">
+      <div class="eyebrow" style="color:var(--soft)">Your playlist</div><div class="disp" style="font-size:36px;margin-top:2px">Late Night Driving</div>
+      <div class="meta">48 tracks · 3 hr 12 min</div>
+      <div class="empty" style="margin-top:56px"><div class="ic">${mi('queue_music')}</div><h3>No tracks yet</h3><p>Add some from any track's ⋮ menu.</p></div>
+    </div>`, '#3b4146'),
+
+  create: () => `<div class="screen"><div class="body pad" style="padding-top:56px">
+    <div style="display:flex;justify-content:space-between;align-items:center;height:40px;font:600 15px Inter"><span style="color:var(--soft)">Cancel</span><b>Create Playlist</b><span style="color:var(--coral)">Create</span></div>
+    <div style="display:flex;gap:16px;align-items:center;margin-top:22px">
+      <div style="width:132px;height:132px;border-radius:22px;border:1.5px dashed rgba(255,255,255,.22);display:grid;place-items:center;text-align:center;color:var(--soft);font:600 13px Inter"><div>${mi('add_photo_alternate')}<br/>Add Cover</div></div>
+      <div style="display:flex;flex-direction:column;gap:10px;align-items:flex-start"><span style="font-size:13px;color:var(--mid)">Custom art or photo</span><span class="quiet" style="background:var(--l1)">${mi('auto_awesome')}AI Generate</span><span class="quiet" style="background:var(--l1)">${mi('gradient')}Color Wave</span></div>
+    </div>
+    <div style="font:600 13px Inter;color:var(--soft);margin:26px 0 8px;display:flex;justify-content:space-between"><span>Name</span><span style="color:var(--faint)">0/50</span></div><div class="field">&nbsp;</div>
+    <div style="font:600 13px Inter;color:var(--soft);margin:18px 0 8px">Description <span style="color:var(--faint)">(Optional)</span></div><div class="field" style="height:84px">&nbsp;</div>
+    <div style="margin-top:12px"><div class="srow"><div class="tx"><b>Public Playlist</b><span>Anyone can find and listen</span></div><span class="toggle on"></span></div><div class="srow" style="border:0"><div class="tx"><b>Collaborative</b><span>Invite friends to add tracks</span></div><span class="toggle"></span></div></div>
+    <div class="cta" style="position:absolute;left:20px;right:20px;bottom:52px">Create Playlist</div>
+  </div>${st()}</div>`,
+
+  profile: () => `<div class="screen"><div class="body pad" style="padding-top:56px">
+    <div style="display:flex;justify-content:space-between;align-items:center;height:40px"><b style="font:600 15px Inter">Profile</b><span class="circ" style="background:var(--l1)">${mi('arrow_back')}</span></div>
+    <div style="display:flex;gap:16px;align-items:center;margin-top:14px"><div style="width:84px;height:84px;border-radius:50%;background:var(--l2);display:grid;place-items:center;font:800 26px 'Plus Jakarta Sans', Inter, sans-serif">AR</div><div><div class="disp" style="font-size:28px">Alex Rivers</div><div class="meta" style="margin-top:2px">Member since 2023</div><div class="eyebrow" style="margin-top:4px">MBANK VIP Sound</div></div></div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);margin-top:22px;border-top:1px solid var(--edge);border-bottom:1px solid var(--edge)">${[['482', 'Saved'], ['38', 'Playlists'], ['650 сом', 'Supported']].map(([v, l], i) => `<div style="padding:14px 0;${i ? 'border-left:1px solid var(--edge);padding-left:14px' : ''}"><div class="disp" style="font-size:22px">${v}</div><span style="font-size:12px;color:var(--mid)">${l}</span></div>`).join('')}</div>
+    <div class="h2">Listening pulse <a>This month</a></div>
+    <div class="row" style="min-height:52px"><div class="cv round">${img('artists/solaris-echo.jpg')}</div><div><span>Top artist</span><b>Solaris Echo</b></div><span class="d" style="color:var(--coral)">42 hrs</span></div>
+    <div class="row" style="min-height:52px"><div class="icn">${mi('graphic_eq')}</div><div><span>Top genre</span><b>Modular Synth</b></div><span></span></div>
+    <div class="h2">Studio sanctuary</div>
+    ${[['volunteer_activism', 'Support History', '650 сом supported · 3 artists', 'coral'], ['high_quality', 'Audio Quality & Playback', '', 'gold'], ['cloud_download', 'Downloads & Offline', '14.2 GB used · 2 downloaded', ''], ['verified_user', 'Account & Security', 'MBANK Connected ID', ''], ['settings', 'All Settings', 'Every preference in one place', '']].map(([i, t, s, c]) => `<div class="srow"><span class="icn ${c}">${mi(i)}</span><div class="tx"><b>${t}</b>${s ? `<span>${s}</span>` : ''}</div>${mi('chevron_right')}</div>`).join('')}
+  </div>${st()}</div>`,
+
+  settings: () => `<div class="screen"><div class="body pad" style="padding-top:56px">
+    <div style="display:flex;align-items:center;gap:12px;height:40px"><span class="circ" style="background:var(--l1)">${mi('arrow_back')}</span><div class="disp" style="font-size:24px">Settings</div></div>
+    <div class="h2" style="font-size:18px">Audio streaming & lossless</div>
+    <div class="srow"><div class="tx"><b>Lossless</b><span>Preview setting — not yet applied to streams</span></div><span class="toggle on"></span></div>
+    <div class="srow"><div class="tx"><b>Wi-Fi Quality</b></div><span class="val">High${mi('chevron_right')}</span></div>
+    <div class="srow"><div class="tx"><b>Cellular Quality</b></div><span class="val">Normal${mi('chevron_right')}</span></div>
+    <div class="srow"><div class="tx"><b>Volume Normalization</b><span>Keep playback volume consistent between tracks</span></div><span class="toggle on"></span></div>
+    <div class="h2" style="font-size:18px">Downloads & storage</div>
+    <div class="srow"><div class="tx"><b>Download Quality</b></div><span class="val">High${mi('chevron_right')}</span></div>
+    <div class="srow"><div class="tx"><b>Download over Cellular</b><span>Allow offline transfers over mobile data</span></div><span class="toggle"></span></div>
+    <div class="srow"><div class="tx"><b>Storage Used</b><span>14.2 GB · cache 1.4 GB</span></div><span class="val" style="color:var(--coral);font-weight:600">Clear Cache</span></div>
+    <div class="h2" style="font-size:18px">Playback & sound engine</div>
+    <div class="srow"><div class="tx"><b>Gapless</b><span>Seamless transitions between tracks</span></div><span class="toggle on"></span></div>
+  </div>${st()}</div>`,
+
+  support: () => sheetOver(artistInner(), '#40322f', `<div class="sheet">${handle}
+    <div class="head"><div class="cv round">${img('artists/solaris-echo.jpg')}</div><div><b>Support Artist</b><span>Direct artist patronage for Solaris Echo</span></div><span class="circ" style="background:var(--l2)">${mi('close')}</span></div>
+    <div class="amts">${[10, 50, 100, 500].map((a) => `<div class="amt ${a === 100 ? 'on' : ''}">${a}<small>сом</small></div>`).join('')}</div>
+    <div class="chip" style="margin-top:10px">${mi('edit')}More</div>
+    <div style="display:flex;gap:8px;align-items:center;margin:18px 0 16px;color:var(--soft);font:500 13px Inter">${mi('bolt')}Direct payout to artist</div>
+    <div class="cta">Support with 100 сом</div></div>`),
+
+  confirm: () => sheetOver(artistInner(), '#40322f', `<div class="sheet">${handle}
+    <div style="text-align:center"><div style="width:76px;height:76px;border-radius:50%;overflow:hidden;margin:4px auto 10px">${img('artists/solaris-echo.jpg')}</div>
+    <div class="disp" style="font-size:22px">Solaris Echo <span class="mi" style="font-size:18px;color:var(--coral)">verified</span></div><div class="meta" style="margin-top:2px">Electronic · Ambient</div>
+    <div style="font:600 12px Inter;color:var(--faint);margin-top:20px">Contribution amount</div><div class="disp" style="font-size:52px;margin-top:2px">100 <span style="font-size:22px;color:var(--soft)">сом</span></div></div>
+    <div class="srow" style="margin-top:12px;border-top:1px solid var(--edge)"><span class="icn">${mi('account_balance')}</span><div class="tx"><b>MBANK account •••• 4892</b></div><span class="chip" style="height:26px">Direct</span></div>
+    <div class="cta" style="margin-top:18px">Confirm & Send 100 сом</div><div style="text-align:center;margin-top:14px;font:600 14px Inter;color:var(--soft)">Cancel</div></div>`),
+
+  success: () => sheetOver(artistInner(), '#40322f', `<div class="sheet" style="text-align:center">${handle}
+    <div style="width:76px;height:76px;border-radius:50%;border:2px solid var(--coral);display:grid;place-items:center;margin:8px auto 14px"><span class="mi" style="font-size:40px;color:var(--coral)">check</span></div>
+    <div class="eyebrow" style="color:var(--coral)">Direct patronage complete</div><div class="disp" style="font-size:34px;margin-top:4px">Supported 100 сом</div>
+    <div class="chip" style="margin:14px auto 0;height:40px"><span style="width:26px;height:26px;border-radius:50%;overflow:hidden">${img('artists/solaris-echo.jpg')}</span>Solaris Echo</div>
+    <div class="cta" style="margin-top:22px">Done ${mi('check')}</div><div style="margin-top:14px;font:600 14px Inter;color:var(--soft)">View Support Receipt in History</div></div>`),
+
+  history: () => `<div class="screen"><div class="body pad" style="padding-top:56px">
+    <div style="display:flex;align-items:center;gap:12px;height:40px"><span class="circ" style="background:var(--l1)">${mi('arrow_back')}</span><b style="font:600 15px Inter">Support History</b></div>
+    <div style="margin-top:18px;font:600 12px Inter;color:var(--faint)">Total supported</div><div class="disp" style="font-size:52px">650 <span style="font-size:22px;color:var(--soft)">сом</span></div><div class="meta">Direct patronage to 3 artists</div>
+    <div class="chips" style="margin-top:18px">${['All', 'This Month', 'Last Week', 'Grant'].map((c, i) => `<span class="chip ${i === 0 ? 'on' : ''}">${c}</span>`).join('')}</div>
+    <div class="h2" style="font-size:18px">October 2026</div>
+    ${[['artists/solaris-echo.jpg', 'Solaris Echo', 'Oct 6, 7:20 PM', '100']].map(([c, n, w, a]) => `<div class="row"><div class="cv round">${img(c)}</div><div><b>${n}</b><span>Direct Fan Patronage · ${w}</span></div><span style="text-align:right"><b style="font:700 15px Inter">${a} сом</b><span style="font-size:12px">Completed</span></span></div>`).join('')}
+    <div class="h2" style="font-size:18px">September 2026</div>
+    ${[['artists/kaelen.jpg', 'Kaelen', 'Sep 30, 12:05 PM', '50'], ['generated/maya-lin.jpg', 'Maya Lin', 'Sep 18, 8:45 AM', '500']].map(([c, n, w, a]) => `<div class="row"><div class="cv round">${img(c)}</div><div><b>${n}</b><span>Direct Fan Patronage · ${w}</span></div><span style="text-align:right"><b style="font:700 15px Inter">${a} сом</b><span style="font-size:12px">Completed</span></span></div>`).join('')}
+    <div style="text-align:center;margin-top:26px;font:500 12px Inter;color:var(--faint)">MBANK Direct Creator Network</div>
+  </div>${st()}</div>`,
+
+  options: () => sheetOver(albumInner(), '#624933', `<div class="sheet">${handle}
+    <div class="head"><div class="cv">${img('generated/horizon.jpg')}</div><div><b>Horizon</b><span>Solaris Echo</span></div><span class="circ" style="background:var(--l2)">${mi('close')}</span></div>
+    ${[['playlist_add', 'Add to playlist'], ['person', 'View artist'], ['album', 'Go to album'], ['ios_share', 'Share track']].map(([i, t]) => `<div class="mrow">${mi(i)}${t}</div>`).join('')}
+    <div style="text-align:center;margin-top:10px;font:600 15px Inter;color:var(--soft)">Cancel</div></div>`),
+
+  addto: () => sheetOver(albumInner(), '#624933', `<div class="sheet" style="top:120px">${handle}
+    <div style="display:flex;justify-content:space-between;align-items:center"><div class="disp" style="font-size:24px">Add to Playlist</div><span style="color:var(--coral);font:700 15px Inter">Done</span></div>
+    <div class="row" style="margin-top:10px"><div class="cv">${img('generated/horizon.jpg')}</div><div><b>Horizon</b><span>Solaris Echo</span></div><span></span></div>
+    <div class="field" style="margin:8px 0 6px">${mi('search')}Find a playlist…</div>
+    <div class="row"><div class="cv" style="background:var(--l2);display:grid;place-items:center">${mi('add')}</div><div><b>New Playlist</b><span>Create and auto-insert current track</span></div><span></span></div>
+    ${[['playlists/late-night-flow.jpg', 'Late Night Flow', true], ['playlists/late-night-driving.jpg', 'Late Night Driving', false], ['playlists/electronic-essentials.jpg', 'Electronic Essentials', false]].map(([c, t, on]) => `<div class="row"><div class="cv">${img(c)}</div><div><b>${t}</b></div><span class="mi" style="color:${on ? 'var(--coral)' : 'var(--mid)'}">${on ? 'check_circle' : 'radio_button_unchecked'}</span></div>`).join('')}</div>`),
+
+  notifications: () => sheetOver(libraryInner(), '#2a4477', `<div class="sheet" style="top:150px">${handle}
+    <div style="display:flex;justify-content:space-between;align-items:center"><div class="disp" style="font-size:24px">Notifications</div><span class="chip" style="height:26px;color:var(--gold)">Demo</span></div>
+    <div style="display:flex;justify-content:space-between;margin:10px 0 6px;font:600 13px Inter;color:var(--soft)"><span>3 unread</span><span>Mark all read · Clear all</span></div>
+    ${[['new_releases', 'New release', '2h ago', 'Solaris Echo released Horizon (Deluxe).', 1], ['volunteer_activism', 'Support completed', 'Yesterday', 'Your 100 сом support to Solaris Echo went through.', 1], ['queue_music', 'Playlist updated', '2d ago', 'Late Night Flow has new tracks.', 1], ['trending_up', 'Trending artist', '4d ago', 'Kaelen is trending in Electronic this week.', 0]].map(([i, t, w, s, u]) => `<div class="srow" style="align-items:flex-start;padding:12px 0"><span class="icn ${u ? 'coral' : ''}">${mi(i)}</span><div class="tx"><b>${t}</b><span>${s}</span></div><span style="font-size:12px;color:var(--faint)">${w}</span></div>`).join('')}</div>`),
+
+  become: () => `<div class="screen" style="--t:#40322f"><div class="body"><div class="stage" style="height:520px"></div>${back(mi('close'))}
+    <div class="pad" style="position:absolute;left:0;right:0;top:120px">
+      <div class="eyebrow" style="color:var(--soft)">Artist studio</div><div class="disp" style="font-size:40px;line-height:1.04;margin-top:6px">Share your sound with the world</div>
+      <div class="meta">Share your music, connect with listeners and receive support directly through Mmusic.</div>
+      <div style="margin-top:22px">${[['upload', 'Share Your Music', 'Upload and publish your tracks.', ''], ['volunteer_activism', 'Fan Support', 'Receive support directly from listeners.', 'coral'], ['insights', 'Artist Insights', 'See how listeners engage with your music.', 'gold']].map(([i, t, s, c]) => `<div class="srow"><span class="icn ${c}">${mi(i)}</span><div class="tx"><b>${t}</b><span>${s}</span></div></div>`).join('')}</div>
+    </div><div class="cta" style="position:absolute;left:20px;right:20px;bottom:52px">Become an Artist</div></div>${st()}</div>`,
+};
+const v = new URLSearchParams(location.search).get('v') || 'search';
+document.getElementById('root').innerHTML = views[v] ? views[v]() : `unknown view ${v}`;
+</script>
+</body>
+</html>

@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Mmusic Floating Canvas Desktop Coverage</title>
+<!-- Floating Canvas (Concept D) on desktop 1440 × 900 for the main screen families. Design review mockup, not app code.
+     Real catalog text and artwork only. ?v=search | library | artist | album -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+<style>
+:root { --canvas:#0A0A0C; --l1:#141418; --l2:#1C1C24; --ink:#fff; --soft:rgba(255,255,255,.78); --faint:rgba(255,255,255,.5); --mid:#9E9EA8; --edge:rgba(255,255,255,.08); --coral:#FF4B4B; --gold:#F5A623; --t:#2a4477; }
+* { box-sizing:border-box; margin:0; padding:0; }
+html,body { width:1440px; height:900px; background:var(--canvas); color:var(--ink); font:400 15px/21px Inter, system-ui, sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }
+img { display:block; width:100%; height:100%; object-fit:cover; }
+.mi { font-family:'Material Icons'; font-size:22px; line-height:1; font-feature-settings:'liga'; font-weight:400; }
+.disp { font-family:'Plus Jakarta Sans', Inter, sans-serif; font-weight:800; letter-spacing:-.035em; line-height:1.04; }
+.screen { position:relative; width:1440px; height:900px; overflow:hidden; background:var(--canvas); }
+.col { position:absolute; left:130px; right:130px; }
+.float { background:var(--l1); border:1px solid var(--edge); box-shadow:0 18px 36px -14px rgba(0,0,0,.8); }
+.navpill { position:absolute; top:20px; left:50%; transform:translateX(-50%); height:54px; padding:0 7px 0 18px; border-radius:999px; display:flex; align-items:center; gap:4px; z-index:9; }
+.navpill .logo { display:flex; align-items:center; gap:8px; font:800 18px 'Plus Jakarta Sans'; letter-spacing:-.04em; margin-right:12px; } .navpill .logo .mi { color:var(--coral); }
+.navpill a { height:40px; padding:0 16px; border-radius:999px; display:grid; place-items:center; font:600 14px Inter; color:var(--mid); }
+.navpill a.on { background:var(--ink); color:var(--canvas); }
+.navpill .sep { width:1px; height:24px; background:var(--edge); margin:0 6px; }
+.navpill .ic { width:40px; height:40px; border-radius:50%; display:grid; place-items:center; color:var(--mid); }
+.navpill .av { width:40px; height:40px; border-radius:50%; background:var(--l2); display:grid; place-items:center; font:700 12px Inter; }
+.capsule { position:absolute; left:50%; bottom:24px; transform:translateX(-50%); height:68px; border-radius:999px; display:flex; align-items:center; gap:16px; padding:0 18px 0 10px; overflow:hidden; z-index:9; }
+.capsule::after { content:''; position:absolute; left:0; bottom:0; height:2px; width:34%; background:#5d5bbe; }
+.capsule .cv { width:48px; height:48px; border-radius:14px; overflow:hidden; flex:none; }
+.capsule b { display:block; font:600 14px Inter; } .capsule span { font-size:12px; color:var(--mid); }
+.capsule .ctl { display:flex; align-items:center; gap:14px; margin-left:10px; }
+.capsule .pp { width:44px; height:44px; border-radius:50%; background:var(--coral); display:grid; place-items:center; }
+.stage { position:absolute; left:0; right:0; top:0; background:linear-gradient(180deg, var(--t) 0%, color-mix(in srgb, var(--t) 55%, #0A0A0C) 55%, var(--canvas) 100%); }
+.stage::after { content:''; position:absolute; inset:0; background:radial-gradient(120% 90% at 50% 10%, rgba(8,10,16,0) 50%, rgba(8,10,16,.45) 100%); }
+.h1 { font:800 56px/1.02 'Plus Jakarta Sans', Inter, sans-serif; letter-spacing:-.04em; }
+.h2 { font:800 26px/1.1 'Plus Jakarta Sans', Inter, sans-serif; letter-spacing:-.03em; margin:0 0 14px; display:flex; justify-content:space-between; align-items:baseline; }
+.h2 a { font:600 13px Inter; color:var(--soft); letter-spacing:0; }
+.meta { color:var(--soft); font:500 15px Inter; margin-top:8px; }
+.eyebrow { font:600 13px Inter; color:var(--gold); }
+.field { height:56px; border-radius:18px; background:var(--l1); border:1px solid var(--edge); display:flex; align-items:center; gap:12px; padding:0 18px; color:var(--mid); font:500 16px Inter; }
+.chip { height:36px; padding:0 16px; border-radius:999px; background:var(--l1); border:1px solid var(--edge); display:inline-flex; align-items:center; gap:6px; font:600 13px Inter; color:var(--soft); } .chip .mi { font-size:17px; }
+.chip.on { background:var(--ink); color:#0e1524; border-color:var(--ink); }
+.chips { display:flex; gap:8px; }
+.quiet { height:44px; padding:0 18px; border-radius:999px; background:rgba(10,10,12,.34); display:inline-flex; align-items:center; gap:8px; font:600 14px Inter; } .quiet.coralic .mi { color:var(--coral); }
+.play { width:60px; height:60px; border-radius:50%; background:var(--coral); display:grid; place-items:center; flex:none; } .play .mi { font-size:34px; }
+.actions { display:flex; align-items:center; gap:12px; margin-top:22px; }
+.row { display:grid; grid-template-columns:28px 48px 1fr 200px 60px 28px; gap:14px; align-items:center; height:62px; border-radius:14px; padding:0 12px; }
+.row.noalb { grid-template-columns:28px 48px 1fr 60px 28px; }
+.row.hov { background:rgba(255,255,255,.06); }
+.row .cv { width:48px; height:48px; border-radius:12px; overflow:hidden; }
+.row b { display:block; font:600 15px Inter; } .row span { font-size:13px; color:var(--mid); } .row .n { text-align:center; font:600 14px Inter; color:var(--faint); }
+.row .d { font:500 13px Inter; color:var(--faint); text-align:right; font-variant-numeric:tabular-nums; }
+.grid { display:grid; grid-template-columns:repeat(6, 1fr); gap:24px; }
+.card .cv { aspect-ratio:1; border-radius:20px; overflow:hidden; position:relative; } .card.round .cv { border-radius:50%; }
+.card b { display:block; font:600 14px Inter; margin-top:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .card span { font-size:13px; color:var(--mid); } .card.round { text-align:center; }
+.card .hp { position:absolute; right:12px; bottom:12px; width:46px; height:46px; border-radius:50%; background:var(--coral); display:grid; place-items:center; box-shadow:0 10px 20px -8px rgba(0,0,0,.6); }
+.tile { position:relative; height:120px; border-radius:20px; overflow:hidden; } .tile::after { content:''; position:absolute; inset:0; background:linear-gradient(180deg, rgba(10,10,12,0) 35%, rgba(10,10,12,.75)); }
+.tile b { position:absolute; left:16px; bottom:12px; font:700 17px 'Plus Jakarta Sans', Inter, sans-serif; z-index:2; }
+/* Artist photo dissolves into the stage to the left and bottom — no seam, no overlay colour. */
+.hero { position:absolute; -webkit-mask-image:linear-gradient(90deg, transparent 0%, #000 35%), linear-gradient(180deg, #000 60%, transparent 100%); -webkit-mask-composite:source-in; mask-image:linear-gradient(90deg, transparent 0%, #000 35%), linear-gradient(180deg, #000 60%, transparent 100%); mask-composite:intersect; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="common.js"></script>
+<script>
+const nav = (on) => `<nav class="navpill float"><span class="logo">${mi('graphic_eq')}Mmusic</span>${['Home', 'Search', 'Library'].map((t) => `<a class="${t === on ? 'on' : ''}">${t}</a>`).join('')}<span class="sep"></span><span class="ic">${mi('search')}</span><span class="ic">${mi('notifications_none')}</span><span class="av">AR</span></nav>`;
+const cap = () => `<div class="capsule float" style="background:#24223d"><div class="cv">${img('tracks/midnight-mirage.jpg')}</div><div><b>Midnight Mirage</b><span>Solaris Echo</span></div><div class="ctl">${mi('skip_previous')}<span class="pp">${mi('pause')}</span>${mi('skip_next')}</div><span class="mi" style="color:var(--mid)">open_in_full</span></div>`;
+const shell = (on, inner, tone) => `<div class="screen" style="--t:${tone || '#2a4477'}">${inner}<div style="position:absolute;left:0;right:0;bottom:0;height:150px;background:linear-gradient(180deg,rgba(10,10,12,0),var(--canvas) 60%);z-index:8"></div>${nav(on)}${cap()}</div>`;
+const tracks = [['tracks/midnight-mirage.jpg', 'Midnight Mirage', 'Solaris Echo', 'Horizon (Deluxe)', '4:00'], ['generated/horizon.jpg', 'Horizon', 'Solaris Echo', 'Horizon (Deluxe)', '3:04'], ['tracks/obsidian-frequencies.jpg', 'Obsidian Frequencies', 'Solaris Echo', 'Horizon (Deluxe)', '4:02'], ['generated/ember-tide.jpg', 'Ember Tide', 'Solaris Echo', 'Horizon (Deluxe)', '4:35'], ['generated/resonant-field-reprise.jpg', 'Resonant Field (Reprise)', 'Solaris Echo', 'Horizon (Deluxe)', '3:09']];
+// Hover row: ▶ replaces the number (desktop hover state).
+const trow = ([c, t, s, a, d], i, hov, noAlbum) => `<div class="row ${hov ? 'hov' : ''} ${noAlbum ? 'noalb' : ''}"><span class="n">${hov ? `<span class="mi" style="color:var(--ink)">play_arrow</span>` : i + 1}</span><div class="cv">${img(c)}</div><div><b>${t}</b><span>${s}</span></div>${noAlbum ? '' : `<span style="font-size:13px;color:var(--mid)">${a}</span>`}<span class="d">${d}</span><span class="mi" style="color:var(--mid)">more_horiz</span></div>`;
+
+const views = {
+  search: () => shell('Search', `<div class="col" style="top:110px">
+    <div class="h1">Search</div>
+    <div class="field" style="margin-top:20px;width:720px">${mi('search')}What do you want to listen to?<span style="margin-left:auto;font:600 12px Inter;border:1px solid var(--edge);border-radius:6px;padding:2px 7px">/</span></div>
+    <div style="display:flex;gap:10px;margin-top:16px;align-items:center"><span style="font:600 13px Inter;color:var(--faint);margin-right:6px">Recent</span>${['Tame Impala', 'Ambient Techno', 'Billie Eilish', 'Solaris Echo'].map((c) => `<span class="chip">${mi('history')}${c}</span>`).join('')}<span style="font:600 13px Inter;color:var(--soft);margin-left:6px">Clear all</span></div>
+    <div style="display:grid;grid-template-columns:360px 1fr;gap:48px;margin-top:40px">
+      <div><div class="h2">Trending searches</div>${[['Challengers OST', 'Trent Reznor'], ['Midnight Mirage', 'Solaris Echo'], ['Fred again..', 'Electronic'], ['Discovery', 'Daft Punk']].map(([t, s], i) => `<div style="display:flex;gap:16px;align-items:center;height:58px;border-bottom:1px solid var(--edge)"><span style="font:700 15px Inter;color:var(--coral);width:24px">0${i + 1}</span><div style="flex:1"><b style="font:600 15px Inter;display:block">${t}</b><span style="font-size:13px;color:var(--mid)">${s}</span></div><span class="mi" style="color:var(--mid)">north_east</span></div>`).join('')}</div>
+      <div><div class="h2">Browse all <a>All genres & moods</a></div>
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:16px">
+          <div style="grid-row:span 2;position:relative;border-radius:22px;overflow:hidden">${img('genres/kyrgyz-music.jpg')}<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,10,12,0) 35%,rgba(10,10,12,.85))"></div><div style="position:absolute;left:20px;bottom:18px"><div class="eyebrow">Regional</div><div class="disp" style="font-size:30px">Kyrgyz Music</div><div class="meta" style="margin-top:2px">Ethno-synth & Komuz beats</div></div></div>
+          ${[['generated/made-for-you.jpg', 'Made For You'], ['generated/charts-viral.jpg', 'Charts & Viral'], ['generated/pop.jpg', 'Pop'], ['generated/electronic-dance.jpg', 'Electronic & Dance']].map(([c, t]) => `<div class="tile">${img(c)}<b>${t}</b></div>`).join('')}
+        </div></div>
+    </div></div>`),
+
+  library: () => shell('Library', `<div class="col" style="top:110px">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between"><div class="h1">Your Library</div><div style="display:flex;gap:10px;align-items:center"><span class="quiet" style="background:var(--l1)">${mi('swap_vert')}Recently Added</span><span class="quiet" style="background:var(--coral)">${mi('add')}Create Playlist</span></div></div>
+    <div class="chips" style="margin-top:20px">${['All', 'Playlists', 'Artists', 'Albums', 'Downloaded'].map((c, i) => `<span class="chip ${i === 0 ? 'on' : ''}">${c}</span>`).join('')}</div>
+    <div class="grid" style="margin-top:30px">
+      <div class="card"><div class="cv" style="background:linear-gradient(135deg,#5d5bbe,#23223f);display:grid;place-items:center"><span class="mi" style="font-size:56px">favorite</span></div><b>Liked Songs</b><span>Playlist · 2 songs</span></div>
+      <div class="card"><div class="cv">${img('playlists/late-night-driving.jpg')}<span class="hp">${mi('play_arrow')}</span></div><b>Late Night Driving</b><span>Playlist · 48 songs</span></div>
+      <div class="card round"><div class="cv">${img('artists/solaris-echo.jpg')}</div><b>Solaris Echo</b><span>Artist</span></div>
+      <div class="card"><div class="cv">${img('albums/horizon-deluxe.jpg')}</div><b>Horizon (Deluxe)</b><span>Album · Solaris Echo</span></div>
+      <div class="card"><div class="cv">${img('playlists/lofi-beats-to-code.jpg')}</div><b>Lo-Fi Beats to Code / Relax</b><span>Editorial · 120 songs</span></div>
+      <div class="card"><div class="cv">${img('playlists/electronic-essentials.jpg')}</div><b>Electronic Essentials</b><span>Playlist · 65 songs</span></div>
+      <div class="card round"><div class="cv">${img('artists/kaelen.jpg')}</div><b>Kaelen</b><span>Artist</span></div>
+      <div class="card"><div class="cv">${img('albums/neo-classical-horizons.jpg')}</div><b>Neo-Classical Horizons</b><span>Album · Nils Frahm</span></div>
+    </div></div>`),
+
+  artist: () => shell('Home', `<div class="stage" style="height:640px"></div>
+    <div class="hero" style="right:0;top:0;width:900px;height:560px">${img('artists/solaris-echo.jpg')}</div>
+    <div class="col" style="top:250px">
+      <div class="eyebrow" style="color:var(--soft)">Bishkek, Kyrgyzstan · Electronic · Ambient</div>
+      <div class="disp" style="font-size:96px;margin-top:6px">Solaris Echo</div>
+      <div class="meta">3.2M monthly listeners</div>
+      <div class="actions"><div class="play">${mi('play_arrow')}</div><span class="quiet">${mi('check')}Following</span><span class="quiet coralic">${mi('volunteer_activism')}Support</span><span class="quiet" style="padding:0 12px">${mi('more_horiz')}</span></div>
+      <div style="display:grid;grid-template-columns:1fr 340px;gap:48px;margin-top:40px">
+        <div><div class="h2">Popular</div>${tracks.slice(0, 4).map((t, i) => trow(t, i, i === 1)).join('')}</div>
+        <div><div class="h2">About</div><div class="meta" style="margin-top:0">Blending analog synths with mountainous ambient echoes from Central Asia. Solaris Echo has spent the last decade building a sound that sits between late-night club records and quiet-room listening.</div></div>
+      </div></div>`, '#40322f'),
+
+  album: () => shell('Home', `<div class="stage" style="height:620px"></div>
+    <div class="col" style="top:110px;display:flex;gap:40px;align-items:flex-end">
+      <div style="width:280px;height:280px;border-radius:28px;overflow:hidden;flex:none;box-shadow:0 30px 60px -28px rgba(0,0,0,.8)">${img('albums/horizon-deluxe.jpg')}</div>
+      <div><div class="eyebrow" style="color:var(--soft)">Album · 2024</div><div class="disp" style="font-size:72px;margin-top:6px">Horizon (Deluxe)</div>
+      <div class="meta" style="color:var(--ink);font-weight:600;display:flex;align-items:center;gap:10px"><span style="width:28px;height:28px;border-radius:50%;overflow:hidden">${img('artists/solaris-echo.jpg')}</span>Solaris Echo <span style="color:var(--soft);font-weight:500">· 6 tracks</span></div>
+      <div class="actions"><div class="play">${mi('play_arrow')}</div><span class="quiet">${mi('shuffle')}Shuffle</span><span class="quiet">${mi('add')}Save</span><span class="quiet" style="padding:0 12px">${mi('more_horiz')}</span></div></div>
+    </div>
+    <div class="col" style="top:440px">
+      <div class="row noalb" style="height:36px;color:var(--faint);font:600 12px Inter;border-bottom:1px solid var(--edge);border-radius:0"><span class="n">#</span><span></span><span>Title</span><span class="d">${mi('schedule')}</span><span></span></div>
+      ${tracks.slice(0, 5).map((t, i) => trow(t, i, i === 2, true)).join('')}
+    </div>`, '#624933'),
+};
+const v = new URLSearchParams(location.search).get('v') || 'search';
+document.getElementById('root').innerHTML = views[v] ? views[v]() : `unknown view ${v}`;
+</script>
+</body>
+</html>
