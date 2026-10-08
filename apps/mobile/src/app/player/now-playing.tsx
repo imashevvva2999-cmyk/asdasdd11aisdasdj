@@ -4,8 +4,9 @@ import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ThemedText } from '@/components/themed-text';
 import { hasDemoAudio } from '@/audio/demo-audio';
+import { PlayerBackground } from '@/components/player/player-background';
+import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Artwork, CircleButton, Icon, IconButton, PressableScale } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
@@ -16,6 +17,8 @@ import { getAlbumById } from '@/mocks';
 import { usePlayerStore } from '@/state/player-store';
 
 const PAUSED_ART_SCALE = 0.88;
+/** Secondary text and inactive icons on the adaptive background (readable on every palette). */
+const ON_COLOR_MEDIUM = 'rgba(255, 255, 255, 0.74)';
 
 /** S-15 Now Playing — full-screen player modal (docs/screens.md §3.9). */
 export default function NowPlayingScreen() {
@@ -49,18 +52,13 @@ export default function NowPlayingScreen() {
   const progressFillStyle = useAnimatedStyle(() => ({ width: `${progress.value * 100}%` }));
   const thumbStyle = useAnimatedStyle(() => ({ left: `${progress.value * 100}%` }));
 
-  // Paused-state cue: artwork rests slightly smaller and its glow dims.
+  // Paused-state cue: the artwork rests slightly smaller.
   const artScale = useSharedValue(isPlaying ? 1 : PAUSED_ART_SCALE);
   useEffect(() => {
     const target = isPlaying ? 1 : PAUSED_ART_SCALE;
     artScale.value = reduceMotion ? target : withTiming(target, { duration: 320, easing: Easing.out(Easing.back(1.4)) });
   }, [isPlaying, reduceMotion, artScale]);
   const artStyle = useAnimatedStyle(() => ({ transform: [{ scale: artScale.value }] }));
-  // 0 when paused → 1 when playing, derived from the same scale.
-  const glowStyle = useAnimatedStyle(() => {
-    const on = (artScale.value - PAUSED_ART_SCALE) / (1 - PAUSED_ART_SCALE);
-    return { opacity: 0.03 + on * 0.09, transform: [{ scale: 1 + on * 0.2 }] };
-  });
 
   // Web has no native modal transition, so the screen rises in on open.
   const enter = useSharedValue(Platform.OS === 'web' && !reduceMotion ? 0 : 1);
@@ -97,13 +95,15 @@ export default function NowPlayingScreen() {
   const artworkSize = Math.min(340, windowWidth - Spacing.margin * 2);
 
   return (
-    <ThemedView surface="canvas" style={styles.flex}>
+    <View style={styles.flex}>
+      {/* Dynamic Premium: the cover's palette, following the carousel. */}
+      <PlayerBackground />
       <Animated.View style={[styles.flex, enterStyle]}>
       <SafeAreaView style={styles.flex}>
         <View style={styles.header}>
           <IconButton variant="ghost" icon="keyboard-arrow-down" iconSize={28} accessibilityLabel="Collapse player" onPress={() => goBack()} />
           <View style={styles.headerCenter}>
-            <ThemedText variant="label-sm" emphasis="medium" style={styles.headerEyebrow}>
+            <ThemedText variant="label-sm" style={[styles.headerEyebrow, styles.onColorMedium]}>
               {album ? 'PLAYING FROM ALBUM' : 'PLAYING'}
             </ThemedText>
             <ThemedText variant="label-md" numberOfLines={1}>
@@ -120,8 +120,7 @@ export default function NowPlayingScreen() {
         </View>
 
         <View style={styles.artworkWrap}>
-          <Animated.View style={[styles.artworkGlow, glowStyle]} pointerEvents="none" />
-          <Animated.View style={artStyle}>
+          <Animated.View style={[styles.artworkShadow, artStyle]}>
             <Artwork uri={track.coverUri} size={artworkSize} radius={32} />
           </Animated.View>
         </View>
@@ -144,8 +143,8 @@ export default function NowPlayingScreen() {
                   onPress={() => router.push('/sheets/demo-audio')}
                   style={styles.demoPill}
                 >
-                  <Icon name="info-outline" size={14} color={Colors.text.medium} />
-                  <ThemedText variant="label-sm" emphasis="medium">
+                  <Icon name="info-outline" size={14} color={ON_COLOR_MEDIUM} />
+                  <ThemedText variant="label-sm" style={styles.onColorMedium}>
                     Demo audio
                   </ThemedText>
                 </PressableScale>
@@ -155,7 +154,7 @@ export default function NowPlayingScreen() {
           <IconButton
             icon={liked ? 'favorite' : 'favorite-border'}
             accessibilityLabel={liked ? 'Unlike' : 'Like'}
-            color={liked ? Colors.primary : Colors.text.medium}
+            color={liked ? Colors.primary : ON_COLOR_MEDIUM}
             size={48}
             onPress={() => toggleLike(track.id)}
           />
@@ -192,15 +191,15 @@ export default function NowPlayingScreen() {
           {/* Same row height in every state, so nothing shifts. */}
           <View style={styles.timeRow}>
             {unavailable || failed ? (
-              <ThemedText variant="body-sm" emphasis="medium" accessibilityRole="alert">
+              <ThemedText variant="body-sm" style={styles.onColorMedium} accessibilityRole="alert">
                 {unavailable ? 'No audio in this preview' : "Couldn't play this track. Tap play to retry."}
               </ThemedText>
             ) : (
               <>
-                <ThemedText variant="mono-num" emphasis="medium">
+                <ThemedText variant="mono-num" style={styles.onColorMedium}>
                   {formatTime(progressSec)}
                 </ThemedText>
-                <ThemedText variant="mono-num" emphasis="medium">
+                <ThemedText variant="mono-num" style={styles.onColorMedium}>
                   -{formatTime(remainingSec)}
                 </ThemedText>
               </>
@@ -214,7 +213,7 @@ export default function NowPlayingScreen() {
             icon="shuffle"
             iconSize={26}
             accessibilityLabel="Shuffle"
-            color={shuffle ? Colors.primary : Colors.text.medium}
+            color={shuffle ? Colors.primary : ON_COLOR_MEDIUM}
             onPress={toggleShuffle}
           />
           <IconButton variant="ghost" icon="skip-previous" iconSize={38} accessibilityLabel="Previous track" size={52} onPress={previous} />
@@ -233,7 +232,7 @@ export default function NowPlayingScreen() {
             iconSize={26}
             icon="repeat"
             accessibilityLabel="Repeat"
-            color={repeat !== 'off' ? Colors.primary : Colors.text.medium}
+            color={repeat !== 'off' ? Colors.primary : ON_COLOR_MEDIUM}
             onPress={cycleRepeat}
           />
         </View>
@@ -250,17 +249,17 @@ export default function NowPlayingScreen() {
         </View>
       </SafeAreaView>
       </Animated.View>
-    </ThemedView>
+    </View>
   );
 }
 
 function PressableLink({ label, onPress }: { label: string; onPress: () => void }) {
   return (
     <PressableScale onPress={onPress} accessibilityRole="button" style={styles.inlineLink}>
-      <ThemedText variant="label-lg" emphasis="medium" numberOfLines={1}>
+      <ThemedText variant="label-lg" numberOfLines={1} style={styles.onColorMedium}>
         {label}
       </ThemedText>
-      <Icon name="chevron-right" size={16} color={Colors.text.medium} />
+      <Icon name="chevron-right" size={16} color={ON_COLOR_MEDIUM} />
     </PressableScale>
   );
 }
@@ -269,8 +268,8 @@ function PressableLink({ label, onPress }: { label: string; onPress: () => void 
 function PlayerTabButton({ label, icon, onPress }: { label: string; icon: string; onPress: () => void }) {
   return (
     <PressableScale accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={styles.playerTabButton}>
-      <Icon name={icon} size={18} color={Colors.text.medium} />
-      <ThemedText variant="label-md" emphasis="medium">
+      <Icon name={icon} size={18} color={ON_COLOR_MEDIUM} />
+      <ThemedText variant="label-md" style={styles.onColorMedium}>
         {label}
       </ThemedText>
     </PressableScale>
@@ -309,12 +308,16 @@ const styles = StyleSheet.create({
     marginTop: Spacing.md,
     marginBottom: Spacing.xl,
   },
-  artworkGlow: {
-    position: 'absolute',
-    width: '70%',
-    height: '70%',
-    borderRadius: Radii.full,
-    backgroundColor: Colors.primary,
+  // A soft, neutral shadow — depth without a coloured glow.
+  artworkShadow: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 18 },
+    shadowOpacity: 0.35,
+    shadowRadius: 28,
+    elevation: 14,
+  },
+  onColorMedium: {
+    color: ON_COLOR_MEDIUM,
   },
   titleRow: {
     paddingHorizontal: Spacing.margin,
@@ -354,21 +357,21 @@ const styles = StyleSheet.create({
     height: 16,
     marginLeft: -8,
     borderRadius: Radii.full,
-    backgroundColor: Colors.primary,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowRadius: 12,
-    shadowOpacity: 0.8,
+    backgroundColor: Colors.text.high,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 4,
+    shadowOpacity: 0.3,
   },
   scrubberTrack: {
     height: 4,
     borderRadius: 2,
-    backgroundColor: Colors.surface.l3,
+    backgroundColor: 'rgba(255, 255, 255, 0.24)',
     overflow: 'hidden',
   },
   scrubberProgress: {
     height: '100%',
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.text.high,
     borderRadius: 3,
   },
   timeRow: {
@@ -383,7 +386,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.sm,
     paddingVertical: 2,
     borderRadius: Radii.full,
-    backgroundColor: Colors.surface.l2,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
   },
   transportRow: {
     flexDirection: 'row',
@@ -400,7 +403,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xl,
     padding: Spacing.xs,
     borderRadius: 20,
-    backgroundColor: Colors.surface.l1,
+    backgroundColor: 'rgba(10, 10, 12, 0.3)',
   },
   playerTabButton: {
     flexDirection: 'row',

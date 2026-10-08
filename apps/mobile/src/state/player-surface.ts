@@ -1,0 +1,108 @@
+import { useLayoutEffect, useMemo, useRef } from 'react';
+import { interpolateColor, makeMutable, useReducedMotion, withSpring } from 'react-native-reanimated';
+import { scheduleOnUI } from 'react-native-worklets';
+
+import { paletteForTrack, type ArtworkPalette } from '@/lib/palette';
+import { getTrackById } from '@/mocks';
+
+import { usePlayerStore } from './player-store';
+
+/**
+ * Shared animation state for the Dynamic Premium player
+ * (docs/superpowers/specs/2026-10-08-player-gestures-plan.md §3–§5, §12).
+ *
+ * One continuous value drives the artwork carousel, the mini-player and both
+ * adaptive backgrounds, so they can never disagree: `carouselPos` is the
+ * position in PLAY ORDER (2.4 = 40% of the way from track #2 to #3). Covers sit
+ * at fixed positions by play order, so a React re-render after a track change
+ * never moves a cover that is already on screen (the Step 0 one-frame jump).
+ */
+export const CAROUSEL_SPRING = { stiffness: 260, damping: 28, mass: 1 };
+export const carouselPos = makeMutable(0);
+/** Where the carousel is heading; a gesture sets it before the store catches up. */
+export const carouselTarget = makeMutable(0);
+/** 0 = mini-player, 1 = full player (vertical expand/collapse). */
+export const expandProgress = makeMutable(0);
+
+/** Index of the current track in play order. */
+export function usePlayPosition(): number {
+  const order = usePlayerStore((s) => s.order);
+  const currentIndex = usePlayerStore((s) => s.currentIndex);
+  return order.indexOf(currentIndex);
+}
+
+/**
+ * Follows the store: when the track changes without a gesture (buttons, end
+ * of track, Queue), the carousel glides to it — from one slot away for a long
+ * jump. A gesture that already heads there is left alone. A new queue or
+ * shuffle order snaps instantly. Mounted once, in the root layout.
+ */
+export function PlayerSurfaceSync() {
+  const pos = usePlayPosition();
+  const order = usePlayerStore((s) => s.order);
+  const reduceMotion = useReducedMotion();
+  const last = useRef({ pos, order });
+
+  useLayoutEffect(() => {
+    const previous = last.current;
+    last.current = { pos, order };
+    const orderChanged = previous.order !== order;
+    const lastPos = previous.pos;
+    scheduleOnUI(() => {
+      'worklet';
+      if (orderChanged) {
+        carouselTarget.value = pos;
+        carouselPos.value = pos;
+        return;
+      }
+      if (carouselTarget.value === pos) return;
+      let start: number;
+      if (carouselTarget.value !== lastPos) {
+        // A gesture committed towards a neighbour but the store landed on another
+        // position (repeat-all wrap): keep the visual offset relative to the target.
+        start = pos + (carouselPos.value - carouselTarget.value);
+      } else {
+        const delta = pos - lastPos;
+        start = Math.abs(delta) <= 1 ? carouselPos.value : pos - Math.sign(delta);
+      }
+      carouselTarget.value = pos;
+      carouselPos.value = start;
+      carouselPos.value = reduceMotion ? pos : withSpring(pos, CAROUSEL_SPRING);
+    });
+  }, [pos, order, reduceMotion]);
+
+  return null;
+}
+
+export type NeighborPalettes = {
+  pos: number;
+  prev: ArtworkPalette;
+  current: ArtworkPalette;
+  next: ArtworkPalette;
+};
+
+/** Palettes of the previous, current and next track in play order. */
+export function useNeighborPalettes(): NeighborPalettes {
+  const queue = usePlayerStore((s) => s.queue);
+  const order = usePlayerStore((s) => s.order);
+  const currentIndex = usePlayerStore((s) => s.currentIndex);
+  const repeat = usePlayerStore((s) => s.repeat);
+  return useMemo(() => {
+    const { prevId, nextId } = usePlayerStore.getState().peekNeighbors();
+    const current = paletteForTrack(getTrackById(queue[currentIndex] ?? ''));
+    return {
+      pos: order.indexOf(currentIndex),
+      prev: prevId ? paletteForTrack(getTrackById(prevId)) : current,
+      current,
+      next: nextId ? paletteForTrack(getTrackById(nextId)) : current,
+    };
+    // repeat changes which neighbours exist at the queue edges.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queue, order, currentIndex, repeat]);
+}
+
+/** Colour between the neighbours' palettes for the carousel position `p`. */
+export function paletteColor(p: number, pos: number, prev: string, current: string, next: string): string {
+  'worklet';
+  return interpolateColor(p - pos, [-1, 0, 1], [prev, current, next]);
+}

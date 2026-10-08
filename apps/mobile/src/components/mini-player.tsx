@@ -8,6 +8,7 @@ import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useSmoothProgress } from '@/hooks/use-smooth-progress';
 import type { Track } from '@/mocks';
 import { usePlayerStore } from '@/state/player-store';
+import { carouselPos, paletteColor, useNeighborPalettes } from '@/state/player-surface';
 
 import { Artwork } from './ui/artwork';
 import { ThemedText } from './themed-text';
@@ -48,7 +49,15 @@ function MiniPlayerBody({ track }: { track: Track }) {
   const progressRatio = durationSec > 0 ? Math.min(1, progressSec / durationSec) : 0;
   const unavailable = playback === 'unavailable';
   const progress = useSmoothProgress(progressRatio);
-  const progressStyle = useAnimatedStyle(() => ({ width: `${progress.value * 100}%` }));
+  // Same palette source as Now Playing, at mini strength (≥ 7:1 for white text).
+  const palettes = useNeighborPalettes();
+  const progressStyle = useAnimatedStyle(() => ({
+    width: `${progress.value * 100}%`,
+    backgroundColor: paletteColor(carouselPos.value, palettes.pos, palettes.prev.accent, palettes.current.accent, palettes.next.accent),
+  }));
+  const tintStyle = useAnimatedStyle(() => ({
+    backgroundColor: paletteColor(carouselPos.value, palettes.pos, palettes.prev.mini, palettes.current.mini, palettes.next.mini),
+  }));
 
   // Slides up into place the first time something plays; cross-fades the
   // cover + title when the track changes (both follow real store state).
@@ -66,7 +75,7 @@ function MiniPlayerBody({ track }: { track: Track }) {
   const trackStyle = useAnimatedStyle(() => ({ opacity: trackFade.value }));
 
   return (
-    <Animated.View style={[styles.wrap, wrapStyle]}>
+    <Animated.View style={[styles.wrap, tintStyle, wrapStyle]}>
       <PressableScale
         // No button role: it contains real buttons (nested <button> is invalid on web).
         accessibilityLabel={`Now playing: ${track.title} by ${track.artistName}. Open player`}
@@ -153,9 +162,9 @@ const styles = StyleSheet.create({
     bottom: 0,
     borderRadius: Radii.md,
     overflow: 'hidden',
-    // Near-opaque so content scrolling underneath doesn't read through (no
-    // cross-platform backdrop blur is available here).
-    backgroundColor: 'rgba(24, 24, 30, 0.97)',
+    // Opaque palette tint (animated, see tintStyle) so content scrolling
+    // underneath doesn't read through; this is the fallback before first paint.
+    backgroundColor: Colors.surface.l1,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(255, 255, 255, 0.1)',
     shadowColor: '#000',
@@ -170,7 +179,6 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: '100%',
-    backgroundColor: Colors.primary,
   },
   row: {
     flexDirection: 'row',

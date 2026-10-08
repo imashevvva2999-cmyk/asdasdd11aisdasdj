@@ -8,6 +8,7 @@ import { StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { startAudio } from '@/audio/expo-audio-engine';
+import { PlayerSurfaceSync } from '@/state/player-surface';
 import { loadedFonts } from '@/constants/fonts';
 import { Colors } from '@/constants/theme';
 import { MAX_CONTENT_WIDTH } from '@/hooks/use-content-width';
@@ -62,6 +63,8 @@ export default function RootLayout() {
       <BottomSheetModalProvider>
         <ThemeProvider value={DarkTheme}>
           <StatusBar style="light" />
+          {/* Keeps the shared carousel position (artwork, colours, mini-player) in step with the store. */}
+          <PlayerSurfaceSync />
           <Stack
             screenOptions={{
               headerShown: false,
