@@ -5,10 +5,11 @@ import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, w
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { hasDemoAudio } from '@/audio/demo-audio';
+import { ArtworkCarousel } from '@/components/player/artwork-carousel';
 import { PlayerBackground } from '@/components/player/player-background';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Artwork, CircleButton, Icon, IconButton, PressableScale } from '@/components/ui';
+import { CircleButton, Icon, IconButton, PressableScale } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useContentWidth } from '@/hooks/use-content-width';
 import { useSmoothProgress } from '@/hooks/use-smooth-progress';
@@ -16,7 +17,6 @@ import { goBack } from '@/lib/navigation';
 import { getAlbumById } from '@/mocks';
 import { usePlayerStore } from '@/state/player-store';
 
-const PAUSED_ART_SCALE = 0.88;
 /** Secondary text and inactive icons on the adaptive background (readable on every palette). */
 const ON_COLOR_MEDIUM = 'rgba(255, 255, 255, 0.74)';
 
@@ -52,13 +52,6 @@ export default function NowPlayingScreen() {
   const progressFillStyle = useAnimatedStyle(() => ({ width: `${progress.value * 100}%` }));
   const thumbStyle = useAnimatedStyle(() => ({ left: `${progress.value * 100}%` }));
 
-  // Paused-state cue: the artwork rests slightly smaller.
-  const artScale = useSharedValue(isPlaying ? 1 : PAUSED_ART_SCALE);
-  useEffect(() => {
-    const target = isPlaying ? 1 : PAUSED_ART_SCALE;
-    artScale.value = reduceMotion ? target : withTiming(target, { duration: 320, easing: Easing.out(Easing.back(1.4)) });
-  }, [isPlaying, reduceMotion, artScale]);
-  const artStyle = useAnimatedStyle(() => ({ transform: [{ scale: artScale.value }] }));
 
   // Web has no native modal transition, so the screen rises in on open.
   const enter = useSharedValue(Platform.OS === 'web' && !reduceMotion ? 0 : 1);
@@ -120,9 +113,8 @@ export default function NowPlayingScreen() {
         </View>
 
         <View style={styles.artworkWrap}>
-          <Animated.View style={[styles.artworkShadow, artStyle]}>
-            <Artwork uri={track.coverUri} size={artworkSize} radius={32} />
-          </Animated.View>
+          {/* Swipe left/right to change track (the real playing track). */}
+          <ArtworkCarousel size={artworkSize} paused={!isPlaying} />
         </View>
 
         <View style={styles.titleRow}>
@@ -307,14 +299,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: Spacing.md,
     marginBottom: Spacing.xl,
-  },
-  // A soft, neutral shadow — depth without a coloured glow.
-  artworkShadow: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 18 },
-    shadowOpacity: 0.35,
-    shadowRadius: 28,
-    elevation: 14,
   },
   onColorMedium: {
     color: ON_COLOR_MEDIUM,
