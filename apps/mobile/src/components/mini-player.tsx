@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   Easing,
@@ -19,6 +19,7 @@ import { scheduleOnRN } from 'react-native-worklets';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useSmoothProgress } from '@/hooks/use-smooth-progress';
 import type { Track } from '@/mocks';
+import { useWindowSize } from '@/hooks/use-window-size';
 import { expandProgress as expandFor, lockAxis, resolveExpand, resolveSwipe, rubberBand } from '@/lib/gesture-math';
 import { usePlayerStore } from '@/state/player-store';
 import {
@@ -70,7 +71,7 @@ function MiniPlayerBody({ track }: { track: Track }) {
   const next = usePlayerStore((s) => s.next);
   const swipeTo = usePlayerStore((s) => s.swipeTo);
   const reduceMotion = useReducedMotion();
-  const { height } = useWindowDimensions();
+  const { height } = useWindowSize();
 
   const durationSec = engineDurationSec ?? track.durationSec;
   const progressRatio = durationSec > 0 ? Math.min(1, progressSec / durationSec) : 0;

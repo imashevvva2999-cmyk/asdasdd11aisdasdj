@@ -17,6 +17,14 @@ export type IconProps = {
   color?: ColorValue;
 };
 
+/**
+ * The icon fonts. Loaded together with the text fonts in the root layout so an
+ * icon renders the same glyph in the server-rendered web page and on the client:
+ * @expo/vector-icons draws an empty <Text> until its font counts as loaded, which
+ * made every icon a hydration mismatch (React #418) on the website.
+ */
+export const iconFonts = { ...MaterialIcons.font, ...MaterialCommunityIcons.font };
+
 export function Icon({ name, set = 'material', size = 20, color = Colors.text.high }: IconProps) {
   if (set === 'community') {
     return <MaterialCommunityIcons name={name as never} size={size} color={color} />;

@@ -1,4 +1,4 @@
-import { useWindowDimensions } from 'react-native';
+import { useWindowSize } from './use-window-size';
 
 /**
  * Widest the app's column gets. Mmusic is a mobile/WebView layout (DESIGN.md:
@@ -10,5 +10,5 @@ export const MAX_CONTENT_WIDTH = 480;
 /** Window width capped at the app column — use instead of the raw window
  * width when sizing grid tiles, heroes and artwork. */
 export function useContentWidth(): number {
-  return Math.min(useWindowDimensions().width, MAX_CONTENT_WIDTH);
+  return Math.min(useWindowSize().width, MAX_CONTENT_WIDTH);
 }

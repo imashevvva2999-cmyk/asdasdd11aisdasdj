@@ -10,7 +10,8 @@
  */
 import { execSync } from 'node:child_process';
 import { existsSync, readFileSync, rmSync } from 'node:fs';
-import { join } from 'node:path';
+import { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
 
 const root = join(import.meta.dirname, '..');
 const distDir = join(root, 'dist');
@@ -139,6 +140,22 @@ for (const [path, expected] of TITLES) {
     console.error(`✗ FAIL     title for ${path}: expected "${expected}", got "${title}"`);
     failures += 1;
   }
+}
+
+// React #418 (hydration): icons must be drawn in the server-rendered HTML exactly
+// as the client draws them. @expo/vector-icons renders an empty <Text> until its
+// font counts as loaded, so the icon fonts have to load with the text fonts.
+const require = createRequire(import.meta.url);
+const glyphMap = JSON.parse(
+  readFileSync(join(dirname(require.resolve('@expo/vector-icons/package.json')), 'build/vendor/react-native-vector-icons/glyphmaps/MaterialIcons.json'), 'utf8'),
+);
+const homeHtml = existsSync(join(distDir, 'home/index.html')) ? readFileSync(join(distDir, 'home/index.html'), 'utf8') : '';
+const missingGlyphs = ['home', 'search', 'library-music'].filter((name) => !homeHtml.includes(String.fromCodePoint(glyphMap[name])));
+if (missingGlyphs.length === 0) {
+  console.log('✓ OK       tab bar icons are server-rendered (no hydration mismatch)');
+} else {
+  console.error(`✗ FAIL     icons missing from server HTML (React #418): ${missingGlyphs.join(', ')}`);
+  failures += 1;
 }
 
 // W1 — development-only pages are not part of the public website.

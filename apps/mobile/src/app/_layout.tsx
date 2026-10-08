@@ -9,6 +9,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { startAudio } from '@/audio/platform-audio';
 import { PlayerExpandPreview } from '@/components/player/expand-preview';
+import { iconFonts } from '@/components/ui/icon';
 import { RouteTitle } from '@/components/web/route-title';
 import { PlayerSurfaceSync } from '@/state/player-surface';
 import { loadedFonts } from '@/constants/fonts';
@@ -40,7 +41,7 @@ SplashScreen.preventAutoHideAsync();
  * can't render — route structure is identical for both targets.
  */
 export default function RootLayout() {
-  const [fontsLoaded, fontError] = useFonts(loadedFonts);
+  const [fontsLoaded, fontError] = useFonts({ ...loadedFonts, ...iconFonts });
 
   useEffect(() => {
     if (fontsLoaded || fontError) {

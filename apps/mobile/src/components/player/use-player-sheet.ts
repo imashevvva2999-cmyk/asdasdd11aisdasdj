@@ -1,6 +1,6 @@
 import { useFocusEffect, useNavigation } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { Platform, useWindowDimensions } from 'react-native';
+import { Platform } from 'react-native';
 import { Gesture } from 'react-native-gesture-handler';
 import {
   Easing,
@@ -15,6 +15,7 @@ import {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
+import { useWindowSize } from '@/hooks/use-window-size';
 import { collapseProgress, resolveCollapse } from '@/lib/gesture-math';
 import { goBack } from '@/lib/navigation';
 import {
@@ -43,7 +44,7 @@ const RELEASE_COLLAPSE_MS = 200;
  */
 export function usePlayerSheet() {
   const navigation = useNavigation();
-  const { height } = useWindowDimensions();
+  const { height } = useWindowSize();
   const reduceMotion = useReducedMotion();
   const dragging = useSharedValue(false);
   const allowRemove = useRef(false);

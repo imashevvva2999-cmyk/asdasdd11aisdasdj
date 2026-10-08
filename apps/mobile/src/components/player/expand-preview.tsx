@@ -1,10 +1,11 @@
-import { StyleSheet, useWindowDimensions } from 'react-native';
+import { StyleSheet } from 'react-native';
 import Animated, { interpolate, useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Artwork } from '@/components/ui';
 import { Radii } from '@/constants/theme';
 import { useContentWidth } from '@/hooks/use-content-width';
+import { useWindowSize } from '@/hooks/use-window-size';
 import { usePlayerStore } from '@/state/player-store';
 import {
   EXPAND_ART_SCALE_FROM,
@@ -31,7 +32,7 @@ export const SHEET_TOP_RADIUS = 24;
 export function PlayerExpandPreview() {
   const track = usePlayerStore((s) => s.currentTrack());
   const isPlaying = usePlayerStore((s) => s.isPlaying);
-  const { height } = useWindowDimensions();
+  const { height } = useWindowSize();
   const contentWidth = useContentWidth();
   const insets = useSafeAreaInsets();
   const size = playerArtworkSize(contentWidth);
