@@ -90,7 +90,8 @@ const styles = StyleSheet.create({
   content: {
     padding: Spacing.margin,
     gap: Spacing.lg,
-    paddingBottom: Spacing.xl * 3,
+    // Clear of the floating nav pill and player capsule (W3 Этап 1).
+    paddingBottom: Spacing.miniPlayerClearance,
   },
   titleBlock: {
     gap: Spacing.xs,

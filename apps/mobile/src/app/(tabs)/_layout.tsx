@@ -3,52 +3,31 @@ import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { MiniPlayer } from '@/components/mini-player';
+import { CAPSULE_GAP, FloatingTabBar, PILL_BOTTOM_GAP, PILL_HEIGHT } from '@/components/nav/floating-tab-bar';
 import { Icon } from '@/components/ui/icon';
-import { resolveFontFamily } from '@/constants/fonts';
-import { Colors, TypeScale } from '@/constants/theme';
 
-/** Measured from the Stitch Home/Library exports (`<nav class="... h-20 ...">`,
- * `w-16 h-12` per-tab touch target, `text-[24px]` icons) — Фаза 4 visual QA pass. */
-const TAB_BAR_HEIGHT = 80;
-const TAB_ICON_SIZE = 24;
+const TAB_ICON_SIZE = 22;
 
 /**
- * Main bottom navigation — Home / Search / Library (docs/screens.md §1 "Таб-бар [Д]").
- * Exactly 3 tabs per the design — no additional tabs are introduced. Each tab owns
- * its own nested Stack (home/_layout.tsx, search/_layout.tsx, library/_layout.tsx)
- * so "каждая вкладка хранит свой стек навигации" (screens.md §1) holds: pushing a
+ * Main navigation — Home / Search / Library (docs/screens.md §1 "Таб-бар [Д]"),
+ * drawn as the Floating Canvas pill (W3 Этап 1, Concept D). Exactly 3 tabs per
+ * the design — no additional tabs are introduced. Each tab owns its own nested
+ * Stack (home/_layout.tsx, search/_layout.tsx, library/_layout.tsx) so "каждая
+ * вкладка хранит свой стек навигации" (screens.md §1) holds: pushing a
  * tab-local screen (e.g. Home → See All) does not affect the other tabs' stacks.
  * Shared cross-tab destinations (Artist/Album/Playlist/Create Playlist) live at
  * the root level instead (src/app/artist/[id].tsx etc.) so they aren't duplicated
  * per tab — see src/app/_layout.tsx.
  *
- * The persistent mini-player (DESIGN.md "Floating Mini-Player") is mounted here,
- * floating just above the tab bar, so Home/Search/Library share one instance
- * instead of each screen rebuilding it (Фаза 4 visual QA pass).
+ * The player capsule (the mini-player) is mounted here once, floating just
+ * above the pill, so Home/Search/Library share one instance.
  */
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
 
   return (
     <View style={styles.flex}>
-      <Tabs
-        screenOptions={{
-          headerShown: false,
-          tabBarActiveTintColor: Colors.primary,
-          tabBarInactiveTintColor: Colors.text.medium,
-          tabBarStyle: {
-            backgroundColor: 'rgba(19, 19, 21, 0.92)',
-            borderTopColor: 'rgba(255, 255, 255, 0.05)',
-            height: TAB_BAR_HEIGHT + insets.bottom,
-            paddingTop: 12,
-            paddingBottom: insets.bottom,
-          },
-          tabBarLabelStyle: {
-            fontFamily: resolveFontFamily(TypeScale['label-sm'].fontFamily, TypeScale['label-sm'].fontWeight),
-            fontSize: TypeScale['label-sm'].fontSize,
-          },
-        }}
-      >
+      <Tabs screenOptions={{ headerShown: false }} tabBar={(props) => <FloatingTabBar {...props} />}>
         <Tabs.Screen
           name="home"
           options={{
@@ -72,7 +51,10 @@ export default function TabsLayout() {
         />
       </Tabs>
 
-      <View style={[styles.miniPlayerSlot, { bottom: TAB_BAR_HEIGHT + insets.bottom }]} pointerEvents="box-none">
+      <View
+        style={[styles.miniPlayerSlot, { bottom: insets.bottom + PILL_BOTTOM_GAP + PILL_HEIGHT + CAPSULE_GAP }]}
+        pointerEvents="box-none"
+      >
         <MiniPlayer />
       </View>
     </View>

@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -7,7 +7,9 @@ import Animated, {
   Extrapolation,
   cancelAnimation,
   interpolate,
+  useAnimatedReaction,
   useAnimatedStyle,
+  useDerivedValue,
   useReducedMotion,
   useSharedValue,
   withSpring,
@@ -33,6 +35,7 @@ import {
   expandProgress,
   paletteColor,
   playerFocused,
+  stageVisible,
   useNeighborPalettes,
 } from '@/state/player-surface';
 
@@ -99,11 +102,22 @@ function MiniPlayerBody({ track }: { track: Track }) {
     trackFade.value = 0.2;
     trackFade.value = withTiming(1, { duration: 260, easing: Easing.out(Easing.quad) });
   }, [track.id, reduceMotion, trackFade]);
+  // Steps aside while the Home stage shows the same track (W3: never shown twice).
+  const stageHide = useDerivedValue(() =>
+    withTiming(stageVisible.value ? 0 : 1, { duration: reduceMotion ? 0 : STAGE_SWAP_MS }),
+  );
+  const [behindStage, setBehindStage] = useState(false);
+  useAnimatedReaction(
+    () => stageVisible.value,
+    (visible, previous) => {
+      if (visible !== previous) scheduleOnRN(setBehindStage, visible);
+    },
+  );
   // Hidden under the full player while it expands/collapses (no double cover).
   const wrapStyle = useAnimatedStyle(() => {
     const underPlayer = playerFocused.value || expandPreview.value;
     const hide = underPlayer ? interpolate(expandProgress.value, [0, 0.25], [1, 0], Extrapolation.CLAMP) : 1;
-    return { opacity: enter.value * hide, transform: [{ translateY: (1 - enter.value) * 16 }] };
+    return { opacity: enter.value * hide * stageHide.value, transform: [{ translateY: (1 - enter.value) * 16 }] };
   });
 
   const openPlayer = useCallback(() => {
@@ -206,7 +220,13 @@ function MiniPlayerBody({ track }: { track: Track }) {
 
   return (
     <GestureDetector gesture={pan}>
-    <Animated.View style={[styles.wrap, tintStyle, wrapStyle]} testID="mini-player">
+    <Animated.View
+      style={[styles.wrap, tintStyle, wrapStyle]}
+      pointerEvents={behindStage ? 'none' : 'auto'}
+      accessibilityElementsHidden={behindStage}
+      importantForAccessibility={behindStage ? 'no-hide-descendants' : 'auto'}
+      testID="mini-player"
+    >
       <PressableScale
         // No button role: it contains real buttons (nested <button> is invalid on web).
         accessibilityLabel={`Now playing: ${track.title} by ${track.artistName}. Open player`}
@@ -216,9 +236,6 @@ function MiniPlayerBody({ track }: { track: Track }) {
           openPlayer();
         }}
       >
-        <View style={styles.progressTrack}>
-          <Animated.View style={[styles.progressFill, progressStyle]} />
-        </View>
         <View style={styles.row}>
           <Animated.View style={[styles.leftGroup, trackStyle]}>
             <Artwork uri={track.coverUri} size={44} radius={Radii.DEFAULT} style={styles.iconTile} />
@@ -261,6 +278,10 @@ function MiniPlayerBody({ track }: { track: Track }) {
             />
           </View>
         </View>
+        {/* Progress as a thin palette line along the capsule's bottom edge (iphone/home-scrolled.png). */}
+        <View style={styles.progressTrack}>
+          <Animated.View style={[styles.progressFill, progressStyle]} />
+        </View>
       </PressableScale>
     </Animated.View>
     </GestureDetector>
@@ -287,6 +308,8 @@ export function MiniPlayerOverlay() {
 const MINI_SWIPE_WIDTH = 200;
 /** How long after a drag a click is still treated as part of it. */
 const DRAG_TAP_GUARD_MS = 300;
+/** The capsule fades out/in as the Home stage leaves or returns. */
+const STAGE_SWAP_MS = 160;
 
 /** Scroll padding that keeps content clear of `MiniPlayerOverlay`. */
 export const MINI_PLAYER_OVERLAY_CLEARANCE = 96;
@@ -302,7 +325,8 @@ const styles = StyleSheet.create({
     left: Spacing.margin,
     right: Spacing.margin,
     bottom: 0,
-    borderRadius: Radii.md,
+    // Floating Canvas capsule (W3 Этап 1).
+    borderRadius: Radii.full,
     overflow: 'hidden',
     // Opaque palette tint (animated, see tintStyle) so content scrolling
     // underneath doesn't read through; this is the fallback before first paint.

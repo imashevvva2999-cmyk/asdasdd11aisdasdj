@@ -29,6 +29,9 @@ export const expandProgress = makeMutable(0);
 export const expandPreview = makeMutable(false);
 /** Now Playing is the focused screen, so the mini-player under it fades with `expandProgress`. */
 export const playerFocused = makeMutable(false);
+/** The Home stage is on screen, so the capsule (mini-player) steps aside — the
+ * playing track is never shown twice (W3 spec §2.5). */
+export const stageVisible = makeMutable(false);
 /** Play-order length and repeat-all, mirrored for the UI-thread swipe gestures. */
 export const orderLength = makeMutable(0);
 export const repeatAll = makeMutable(false);

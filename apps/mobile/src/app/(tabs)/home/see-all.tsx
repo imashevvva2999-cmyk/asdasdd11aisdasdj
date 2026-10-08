@@ -187,6 +187,8 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: {
     padding: Spacing.margin,
+    // Clear of the floating nav pill and player capsule (W3 Этап 1).
+    paddingBottom: Spacing.miniPlayerClearance,
     gap: Spacing.lg,
   },
   filterRow: {
