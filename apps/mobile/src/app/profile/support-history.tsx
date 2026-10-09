@@ -2,10 +2,13 @@ import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { DemoNotice } from '@/components/demo-notice';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Artwork, Chip, EmptyState, Icon, PressableScale } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
+import { useHydrated } from '@/hooks/use-hydrated';
+import { groupSupportHistory, supportDateLabel, type SupportDateMode } from '@/lib/support-dates';
 import { getArtistById, type SupportHistoryEntry } from '@/mocks';
 import { useSupportStore } from '@/state/support-store';
 
@@ -34,7 +37,11 @@ export default function SupportHistoryScreen() {
 
   const totalSupported = history.reduce((sum, entry) => sum + entry.amount, 0);
   const distinctArtistCount = new Set(history.map((entry) => entry.artistId)).size;
-  const grouped = groupByPeriod(visibleHistory);
+  // The static HTML and the first browser render share one fixed date form
+  // (UTC, months only); after hydration: the visitor's time zone, Today / Last Week.
+  const hydrated = useHydrated();
+  const dateMode: SupportDateMode = hydrated ? { kind: 'live', now: new Date() } : { kind: 'static' };
+  const grouped = groupSupportHistory(visibleHistory, dateMode);
 
   return (
     <ThemedView surface="canvas" style={styles.flex}>
@@ -52,6 +59,7 @@ export default function SupportHistoryScreen() {
           <ThemedText variant="body-md" emphasis="medium">
             Direct patronage to {distinctArtistCount} {distinctArtistCount === 1 ? 'creator' : 'creators'}
           </ThemedText>
+          <DemoNotice text="Demo history" style={styles.demoNotice} />
         </View>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
@@ -67,7 +75,7 @@ export default function SupportHistoryScreen() {
             hint="Open an artist's profile and tap Support to send direct patronage."
           />
         ) : (
-          Object.entries(grouped).map(([period, entries]) => (
+          grouped.map(([period, entries]) => (
             <View key={period} style={styles.group}>
               <View style={styles.groupHeader}>
                 <ThemedText variant="label-md" emphasis="medium" style={styles.groupTitle}>
@@ -79,7 +87,7 @@ export default function SupportHistoryScreen() {
               </View>
               <View style={styles.entries}>
                 {entries.map((entry) => (
-                  <SupportHistoryRow key={entry.id} entry={entry} />
+                  <SupportHistoryRow key={entry.id} entry={entry} dateMode={dateMode} />
                 ))}
               </View>
             </View>
@@ -97,11 +105,8 @@ export default function SupportHistoryScreen() {
   );
 }
 
-function SupportHistoryRow({ entry }: { entry: SupportHistoryEntry }) {
+function SupportHistoryRow({ entry, dateMode }: { entry: SupportHistoryEntry; dateMode: SupportDateMode }) {
   const artist = getArtistById(entry.artistId);
-  const date = new Date(entry.createdAt);
-  const dateLabel = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-  const timeLabel = date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 
   return (
     <PressableScale
@@ -128,36 +133,19 @@ function SupportHistoryRow({ entry }: { entry: SupportHistoryEntry }) {
           {entry.amount} сом • Completed
         </ThemedText>
         <ThemedText variant="label-md" emphasis="medium">
-          {dateLabel}, {timeLabel}
+          {supportDateLabel(entry.createdAt, dateMode)}
         </ThemedText>
       </View>
     </PressableScale>
   );
 }
 
-function groupByPeriod(entries: SupportHistoryEntry[]): Record<string, SupportHistoryEntry[]> {
-  const now = new Date();
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const startOfWeek = new Date(startOfToday.getTime() - 7 * 24 * 60 * 60 * 1000);
-
-  const groups: Record<string, SupportHistoryEntry[]> = {};
-  for (const entry of entries) {
-    const date = new Date(entry.createdAt);
-    let label: string;
-    if (date >= startOfToday) {
-      label = 'Today';
-    } else if (date >= startOfWeek) {
-      label = 'Last Week';
-    } else {
-      label = date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
-    }
-    (groups[label] ??= []).push(entry);
-  }
-  return groups;
-}
-
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  demoNotice: {
+    justifyContent: 'flex-start',
+    marginTop: Spacing.sm,
+  },
   content: {
     padding: Spacing.margin,
     gap: Spacing.lg,

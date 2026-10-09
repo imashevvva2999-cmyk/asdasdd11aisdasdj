@@ -54,7 +54,7 @@
     "preview:web": "node scripts/serve-web.mjs dist",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
-    "test": "node scripts/verify-routes.mjs && node scripts/verify-web-server.mjs && tsx scripts/verify-player-store.mjs && tsx scripts/verify-support-store.mjs && tsx scripts/verify-artist-store.mjs && tsx scripts/verify-library-store.mjs && tsx scripts/verify-search-match.mjs && tsx scripts/verify-palettes.mjs && tsx scripts/verify-gesture-math.mjs && tsx scripts/verify-browser-audio.mjs && tsx scripts/verify-artwork-coverage.mjs && tsx scripts/verify-stage-tones.mjs && tsx scripts/verify-stage-math.mjs && tsx scripts/verify-lyrics-state.mjs && tsx scripts/verify-home-ui.mjs && tsx scripts/verify-particle-wave.mjs && node scripts/verify-vercel-config.mjs",
+    "test": "node scripts/verify-routes.mjs && node scripts/verify-web-server.mjs && tsx scripts/verify-player-store.mjs && tsx scripts/verify-support-store.mjs && tsx scripts/verify-artist-store.mjs && tsx scripts/verify-library-store.mjs && tsx scripts/verify-search-match.mjs && tsx scripts/verify-palettes.mjs && tsx scripts/verify-gesture-math.mjs && tsx scripts/verify-browser-audio.mjs && tsx scripts/verify-artwork-coverage.mjs && tsx scripts/verify-stage-tones.mjs && tsx scripts/verify-stage-math.mjs && tsx scripts/verify-lyrics-state.mjs && tsx scripts/verify-home-ui.mjs && tsx scripts/verify-particle-wave.mjs && node scripts/verify-vercel-config.mjs && tsx scripts/verify-support-dates.mjs",
     "verify:routes": "node scripts/verify-routes.mjs",
     "verify:player-store": "tsx scripts/verify-player-store.mjs",
     "verify:support-store": "tsx scripts/verify-support-store.mjs",

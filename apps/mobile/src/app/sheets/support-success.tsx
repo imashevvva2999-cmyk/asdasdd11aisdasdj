@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Artwork, Icon, PillButton, SheetScreen, TextLinkButton } from '@/components/ui';
+import { DemoNotice } from '@/components/demo-notice';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { goBack } from '@/lib/navigation';
 import { getArtistById } from '@/mocks';
@@ -61,6 +62,7 @@ export default function SupportSuccessSheet() {
           {artist.verified && <Icon name="verified" size={16} color={Colors.primary} />}
         </View>
 
+        <DemoNotice text="Demo — no money was sent" style={styles.demoNotice} />
         <PillButton label="Done" trailingIcon="check" onPress={handleDone} style={styles.cta} />
         <TextLinkButton
           tone="muted"
@@ -79,6 +81,9 @@ export default function SupportSuccessSheet() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  demoNotice: {
+    marginTop: Spacing.md,
+  },
   notFound: {
     padding: Spacing.margin,
     textAlign: 'center',

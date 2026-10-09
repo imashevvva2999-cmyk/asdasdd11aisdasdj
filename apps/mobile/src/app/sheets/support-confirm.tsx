@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Artwork, Icon, PillButton, SheetScreen, TextLinkButton } from '@/components/ui';
+import { DemoNotice } from '@/components/demo-notice';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { goBack } from '@/lib/navigation';
 import { getArtistById } from '@/mocks';
@@ -80,6 +81,8 @@ export default function SupportConfirmSheet() {
           </View>
         </View>
 
+        <DemoNotice text="Demo — no money is sent" style={styles.demoNotice} />
+
         <PillButton
           label={`Confirm & Send ${amount} сом`}
           trailingIcon="bolt"
@@ -95,6 +98,9 @@ export default function SupportConfirmSheet() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  demoNotice: {
+    marginTop: Spacing.md,
+  },
   notFound: {
     padding: Spacing.margin,
     textAlign: 'center',
