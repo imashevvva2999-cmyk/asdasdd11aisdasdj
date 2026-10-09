@@ -6,7 +6,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Artwork, Icon, IconButton, MenuRow, PressableScale, StatCard } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useToast } from '@/hooks/use-toast';
-import { currentUser, getArtistById } from '@/mocks';
+import { currentUser } from '@/mocks';
 import { useArtistStore } from '@/state/artist-store';
 import { useLibraryStore } from '@/state/library-store';
 import { useSettingsStore } from '@/state/settings-store';
@@ -31,7 +31,6 @@ export default function ProfileScreen() {
 
   const totalSupported = history.reduce((sum, entry) => sum + entry.amount, 0);
   const distinctArtistCount = new Set(history.map((entry) => entry.artistId)).size;
-  const topArtist = currentUser.topArtistId ? getArtistById(currentUser.topArtistId) : undefined;
 
   /** No real account/session exists in the frontend-only build (MBANK auth is
    * a backend concern), so Log Out says so honestly instead of pretending. */
@@ -77,55 +76,6 @@ export default function ProfileScreen() {
           <StatCard variant="metric" label="Supported" value={String(totalSupported)} unit="сом" style={styles.supportedStat} />
         </View>
 
-        {(topArtist || currentUser.topGenre || currentUser.monthlyListeningHours) && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeaderRow}>
-              <View style={styles.sectionTitleRow}>
-                <Icon name="insights" size={22} color={Colors.primary} />
-                <ThemedText variant="headline-md">Listening Pulse</ThemedText>
-              </View>
-              <ThemedText variant="label-sm" emphasis="medium" style={styles.upperLabel}>
-                This Month
-              </ThemedText>
-            </View>
-            <View style={styles.pulseRow}>
-              {topArtist && (
-                <View style={styles.pulseCard}>
-                  <View style={styles.pulseArtistRow}>
-                    <Artwork uri={topArtist.photoUri} size={44} radius={Radii.DEFAULT} placeholderIcon="person" />
-                    <View style={styles.pulseText}>
-                      <ThemedText variant="label-sm" emphasis="medium" style={styles.upperLabel}>
-                        Top Artist
-                      </ThemedText>
-                      <ThemedText variant="label-lg" numberOfLines={1}>
-                        {topArtist.name}
-                      </ThemedText>
-                    </View>
-                  </View>
-                  {currentUser.monthlyListeningHours !== undefined && (
-                    <View style={styles.pulseMetaRow}>
-                      <Icon name="schedule" size={16} color={Colors.primary} />
-                      <ThemedText variant="label-md" emphasis="primary">
-                        {currentUser.monthlyListeningHours} hrs listened
-                      </ThemedText>
-                    </View>
-                  )}
-                </View>
-              )}
-              {currentUser.topGenre && (
-                <View style={styles.pulseCard}>
-                  <ThemedText variant="label-sm" emphasis="medium" style={styles.upperLabel}>
-                    Top Genre
-                  </ThemedText>
-                  <ThemedText variant="headline-sm" numberOfLines={2}>
-                    {currentUser.topGenre}
-                  </ThemedText>
-                </View>
-              )}
-            </View>
-          </View>
-        )}
-
         <View style={styles.section}>
           <ThemedText variant="headline-md">Studio Sanctuary</ThemedText>
           <View style={styles.menuList}>
@@ -154,14 +104,6 @@ export default function ProfileScreen() {
               title="Account & Security"
               subtitle="MBANK Connected ID"
               onPress={() => router.push('/profile/account')}
-            />
-            {/* S-24 in full: every preference on one screen (the rows above open its parts). */}
-            <MenuRow
-              icon="settings"
-              tone="neutral"
-              title="All Settings"
-              subtitle="Every preference in one place"
-              onPress={() => router.push('/profile/settings')}
             />
             <MenuRow
               icon="mic"
@@ -267,46 +209,6 @@ const styles = StyleSheet.create({
   },
   supportedStat: {
     backgroundColor: 'rgba(255, 75, 75, 0.06)',
-  },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  sectionTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
-  },
-  upperLabel: {
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-  },
-  pulseRow: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-  },
-  pulseCard: {
-    flex: 1,
-    padding: Spacing.md,
-    borderRadius: Radii.lg,
-    backgroundColor: Colors.surface.l1,
-    gap: Spacing.sm,
-    justifyContent: 'space-between',
-  },
-  pulseArtistRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  pulseText: {
-    flex: 1,
-    minWidth: 0,
-  },
-  pulseMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
   },
   menuList: {
     gap: Spacing.sm,

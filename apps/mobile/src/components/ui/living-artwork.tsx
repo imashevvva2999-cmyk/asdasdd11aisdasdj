@@ -3,52 +3,53 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import Animated, {
   Easing,
-  cancelAnimation,
   useAnimatedStyle,
+  useFrameCallback,
   useReducedMotion,
   useSharedValue,
-  withRepeat,
   withTiming,
   type SharedValue,
 } from 'react-native-reanimated';
 
 import { type LocalOrRemoteImage, toImageSource } from '@/constants/stitch-artwork';
-import { WAVE_CLOCK_MS, WAVE_SLICES, waveSliceMotion } from '@/lib/wave-motion';
+import { WAVE_SLICES, waveSliceMotion } from '@/lib/wave-motion';
+
+/** The motion grows in from the still artwork instead of snapping to a bent pose. */
+const INTRO_S = 0.8;
 
 /**
  * Home hero artwork (Late Night Flow) as a living waveform. The artwork itself
  * moves: it is cut into thin vertical slices and each slice bends, ripples and
- * gently stretches along travelling waves (src/lib/wave-motion.ts), so the
- * whole coral wave flows while keeping its silhouette, colour and detail.
- * No overlays, no glow — the still artwork stays underneath only to fill the
- * dark edges a moved slice uncovers.
+ * gently stretches (src/lib/wave-motion.ts), so the whole coral wave morphs
+ * while keeping its silhouette, colour and detail. No overlays, no glow — the
+ * still artwork stays underneath only to fill the dark edges a moved slice uncovers.
  *
- * Only transforms animate (on the UI thread, no re-renders), so it stays cheap
- * on phones and desktop. `active` (the hero playlist is playing — frontend
- * state only, not real audio data) makes the motion a little fuller.
+ * Driven by one continuous clock (seconds, only increasing), so the motion
+ * never loops. Only transforms animate (on the UI thread, no re-renders), so it
+ * stays cheap on phones and desktop. `active` (the hero playlist is playing —
+ * frontend state only, not real audio data) makes the motion a little fuller.
  * Reduce motion shows the still image.
  */
 export function LivingArtwork({ uri, active = false }: { uri: LocalOrRemoteImage; active?: boolean }) {
   const reduceMotion = useReducedMotion();
   const [size, setSize] = useState<{ width: number; height: number } | null>(null);
   const energy = useSharedValue(active ? 1 : 0);
-  const c1 = useSharedValue(0);
-  const c2 = useSharedValue(0);
-  const c3 = useSharedValue(0);
+  const time = useSharedValue(0);
   const moving = !reduceMotion && size !== null;
 
   useEffect(() => {
     energy.value = withTiming(active ? 1 : 0, { duration: 900, easing: Easing.inOut(Easing.quad) });
   }, [active, energy]);
 
+  const clock = useFrameCallback((frame) => {
+    // Capped so a stalled frame (tab switch, slow device) never jumps the shape.
+    time.value += Math.min(frame.timeSincePreviousFrame ?? 0, 50) / 1000;
+  }, false);
+
   useEffect(() => {
-    if (!moving) return;
-    // Each clock wraps 1 → 0; every motion term is periodic in it, so the loop has no seam.
-    [c1, c2, c3].forEach((clock, i) => {
-      clock.value = withRepeat(withTiming(1, { duration: WAVE_CLOCK_MS[i], easing: Easing.linear }), -1, false);
-    });
-    return () => [c1, c2, c3].forEach((clock) => cancelAnimation(clock));
-  }, [moving, c1, c2, c3]);
+    clock.setActive(moving);
+    return () => clock.setActive(false);
+  }, [moving, clock]);
 
   const onLayout = (event: LayoutChangeEvent) => {
     const { width, height } = event.nativeEvent.layout;
@@ -61,7 +62,7 @@ export function LivingArtwork({ uri, active = false }: { uri: LocalOrRemoteImage
       <Image source={toImageSource(uri)} style={StyleSheet.absoluteFill} contentFit="cover" />
       {moving &&
         Array.from({ length: WAVE_SLICES }, (_, index) => (
-          <Slice key={index} index={index} uri={uri} size={size} clocks={[c1, c2, c3]} energy={energy} />
+          <Slice key={index} index={index} uri={uri} size={size} time={time} energy={energy} />
         ))}
     </View>
   );
@@ -71,21 +72,22 @@ function Slice({
   index,
   uri,
   size,
-  clocks,
+  time,
   energy,
 }: {
   index: number;
   uri: LocalOrRemoteImage;
   size: { width: number; height: number };
-  clocks: [SharedValue<number>, SharedValue<number>, SharedValue<number>];
+  time: SharedValue<number>;
   energy: SharedValue<number>;
 }) {
   const sliceWidth = size.width / WAVE_SLICES;
   const t = (index + 0.5) / WAVE_SLICES;
-  const [c1, c2, c3] = clocks;
   const motion = useAnimatedStyle(() => {
-    const { translateY, scaleY } = waveSliceMotion(t, c1.value, c2.value, c3.value, energy.value);
-    return { transform: [{ translateY }, { scaleY }] };
+    const { translateY, scaleY } = waveSliceMotion(t, time.value, energy.value);
+    const p = Math.min(time.value / INTRO_S, 1);
+    const intro = p * p * (3 - 2 * p);
+    return { transform: [{ translateY: translateY * intro }, { scaleY: 1 + (scaleY - 1) * intro }] };
   });
 
   return (

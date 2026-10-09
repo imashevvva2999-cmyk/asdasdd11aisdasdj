@@ -1,13 +1,10 @@
-import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, View, type LayoutChangeEvent, type ViewStyle } from 'react-native';
-import Animated, { useAnimatedScrollHandler, useAnimatedStyle, useSharedValue, type AnimatedStyle } from 'react-native-reanimated';
+import { useCallback, useState } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { HomeStage, releaseStageOpen } from '@/components/home/home-stage';
+import { releaseStageOpen } from '@/components/home/home-stage';
 import { MmusicBrand } from '@/components/mmusic-brand';
-import { PlayerBackground } from '@/components/player/player-background';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { CoverCard, FeaturedBanner, IconButton, MoodCard, QuickTile, SectionHeader, TrackRow, type MoodVisualKind } from '@/components/ui';
@@ -24,8 +21,6 @@ import {
   newReleases,
   trendingNowAlbumIds,
 } from '@/mocks';
-import { clamp01 } from '@/lib/stage-math';
-import { hasStartedPlayback, stageOnScreen } from '@/lib/stage-rules';
 import { useLibraryStore } from '@/state/library-store';
 import { usePlayerStore } from '@/state/player-store';
 import { expandOrigin, stageVisible } from '@/state/player-surface';
@@ -54,85 +49,25 @@ export default function HomeScreen() {
   const isAlbumSaved = (albumId: string) => libraryItems.some((item) => item.kind === 'album' && item.refId === albumId);
   const { showToast, toast } = useToast();
 
-  // Floating Canvas stage (W3 Этап 1): the playing track's palette behind the
-  // header and the stage, scrolling away with them; the capsule takes over
-  // once the stage has left the screen.
-  const hasTrack = usePlayerStore((s) => hasStartedPlayback(s.playback) && s.currentTrack() !== undefined);
-  const scrollY = useSharedValue(0);
-  const stageHeight = useSharedValue(0);
-  const headerHeight = useSharedValue(0);
-  const hasStage = useSharedValue(hasTrack);
-  const focused = useSharedValue(false);
+  // The living Late Night Flow wave runs only while Home is in front.
   const [homeFocused, setHomeFocused] = useState(false);
-
-  useEffect(() => {
-    hasStage.value = hasTrack;
-    if (!hasTrack) stageHeight.value = 0;
-    stageVisible.value = focused.value && hasTrack && stageOnScreen(scrollY.value, stageHeight.value);
-  }, [hasTrack, hasStage, focused, scrollY, stageHeight]);
 
   useFocusEffect(
     useCallback(() => {
-      focused.value = true;
       setHomeFocused(true);
-      // Home is in front again, so no player is open: a stale "opening from the
-      // stage" (e.g. a double tap the router deduped) must not linger.
+      // Home has no player stage any more: the capsule is the player on every
+      // tab, and the player always opens from it.
       releaseStageOpen();
       expandOrigin.value = 'mini';
-      stageVisible.value = hasStage.value && stageOnScreen(scrollY.value, stageHeight.value);
-      return () => {
-        focused.value = false;
-        setHomeFocused(false);
-        // Other tabs have no stage: the capsule is the player there. Opening the
-        // player from the stage keeps it "on screen" (it grows into the player
-        // and comes back on close), so the capsule never flashes in between.
-        if (expandOrigin.value !== 'stage') stageVisible.value = false;
-      };
-    }, [focused, hasStage, scrollY, stageHeight]),
+      stageVisible.value = false;
+      return () => setHomeFocused(false);
+    }, []),
   );
-
-  const onScroll = useAnimatedScrollHandler((event) => {
-    scrollY.value = event.contentOffset.y;
-    if (focused.value && hasStage.value) stageVisible.value = stageOnScreen(event.contentOffset.y, stageHeight.value);
-  });
-  const backdropStyle = useAnimatedStyle(() => ({
-    height: headerHeight.value + stageHeight.value,
-    transform: [{ translateY: -Math.max(0, scrollY.value) }],
-  }));
-  // The header is clear over the stage and takes the canvas once the stage scrolls under it.
-  const headerStyle = useAnimatedStyle(() => {
-    const solid = hasStage.value ? clamp01((scrollY.value - (stageHeight.value - HEADER_FADE)) / HEADER_FADE) : 1;
-    return {
-      backgroundColor: `rgba(10, 10, 12, ${solid})`,
-      borderBottomColor: `rgba(255, 255, 255, ${0.06 * solid})`,
-    };
-  });
 
   return (
     <ThemedView surface="canvas" style={styles.flex}>
-      {hasTrack && (
-        <Animated.View pointerEvents="none" style={[styles.backdrop, backdropStyle]}>
-          <PlayerBackground />
-          <LinearGradient colors={['rgba(10, 10, 12, 0)', 'rgba(10, 10, 12, 1)']} style={styles.backdropFade} />
-        </Animated.View>
-      )}
-      <Header
-        style={headerStyle}
-        onLayout={(e) => {
-          headerHeight.value = e.nativeEvent.layout.height;
-        }}
-      />
-      <Animated.ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-        onScroll={onScroll}
-        scrollEventThrottle={16}
-      >
-        <HomeStage
-          onLayout={(e) => {
-            stageHeight.value = e.nativeEvent.layout.height;
-          }}
-        />
+      <Header />
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Section title="For you">
           <View style={styles.forYouGrid}>
             {forYouTiles.map((tile) => (
@@ -160,8 +95,10 @@ export default function HomeScreen() {
           <View style={styles.section}>
             <FeaturedBanner
               layout="footer"
-              // The living waveform runs only while Home is on screen (not under the player or another tab).
-              animated={homeFocused}
+              // The particle wave stays mounted and runs only while Home is on screen
+              // (paused under the player or another tab, so it resumes without a restart).
+              animated
+              paused={!homeFocused}
               active={heroPlaying}
               title={hero.title}
               subtitle={hero.curator}
@@ -289,15 +226,15 @@ export default function HomeScreen() {
             ))}
           </View>
         </View>
-      </Animated.ScrollView>
+      </ScrollView>
       {toast}
     </ThemedView>
   );
 }
 
-function Header({ style, onLayout }: { style: AnimatedStyle<ViewStyle>; onLayout: (event: LayoutChangeEvent) => void }) {
+function Header() {
   return (
-    <Animated.View style={[headerStyles.header, style]} onLayout={onLayout}>
+    <View style={headerStyles.header}>
       <SafeAreaView edges={['top']}>
         <View style={headerStyles.row}>
           <MmusicBrand />
@@ -308,7 +245,7 @@ function Header({ style, onLayout }: { style: AnimatedStyle<ViewStyle>; onLayout
           />
         </View>
       </SafeAreaView>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -329,28 +266,10 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-/** How far the header takes to turn solid as the stage passes under it. */
-const HEADER_FADE = 24;
-
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: {
     paddingBottom: Spacing.miniPlayerClearance,
-  },
-  backdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    overflow: 'hidden',
-  },
-  // The stage settles into the canvas instead of ending on a hard edge.
-  backdropFade: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 48,
   },
   section: {
     marginBottom: Spacing.lg,
@@ -402,6 +321,7 @@ const styles = StyleSheet.create({
 
 const headerStyles = StyleSheet.create({
   header: {
+    backgroundColor: Colors.canvas,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: 'rgba(255,255,255,0.06)',
   },

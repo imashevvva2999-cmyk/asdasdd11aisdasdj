@@ -9,7 +9,7 @@ import { useHydrated } from '@/hooks/use-hydrated';
 
 import { Icon } from './icon';
 import { AnimatedIcon } from './animated-icon';
-import { LivingArtwork } from './living-artwork';
+import { ParticleWaveArtwork } from './particle-wave/particle-wave-artwork';
 import { MoodVisual, type MoodVisualKind } from './mood-visual';
 import { PressableScale } from './pressable-scale';
 import { ThemedText } from '../themed-text';
@@ -176,16 +176,18 @@ export type FeaturedBannerProps = {
    * outer card's own button role so the two don't nest as DOM buttons. */
   onPlayPress?: () => void;
   onPress?: (event: GestureResponderEvent) => void;
-  /** 'footer' layout only — gently animate the artwork (Home hero waveform). */
+  /** 'footer' layout only — the artwork is the living particle wave (Home hero, Late Night Flow). */
   animated?: boolean;
-  /** With `animated`: the banner's playlist is currently playing (livelier motion, pause glyph). */
+  /** With `animated`: freeze the wave on its current frame (Home is not in front). */
+  paused?: boolean;
+  /** The banner's playlist is currently playing (pause glyph on the play button). */
   active?: boolean;
   style?: ViewStyle;
 };
 
 /** Hero banner (DESIGN.md "Album & Playlist Cards"; docs/screens.md §3.4). Defaults
  * to 16:9; pass `height` for the fixed-height heroes used on Home/Search/Genre. */
-export function FeaturedBanner({ coverUri, title, subtitle, height, layout = 'overlay', onPlayPress, onPress, animated = false, active = false, style }: FeaturedBannerProps) {
+export function FeaturedBanner({ coverUri, title, subtitle, height, layout = 'overlay', onPlayPress, onPress, animated = false, paused = false, active = false, style }: FeaturedBannerProps) {
   const hydrated = useHydrated();
 
   if (layout === 'footer') {
@@ -194,7 +196,7 @@ export function FeaturedBanner({ coverUri, title, subtitle, height, layout = 'ov
         <View style={[cardStyles.footerBannerImage, { height: height ?? 224 }]}>
           {coverUri && hydrated ? (
             animated ? (
-              <LivingArtwork uri={coverUri} active={active} />
+              <ParticleWaveArtwork uri={coverUri} paused={paused} />
             ) : (
               <Image source={toImageSource(coverUri)} style={StyleSheet.absoluteFill} contentFit="cover" />
             )

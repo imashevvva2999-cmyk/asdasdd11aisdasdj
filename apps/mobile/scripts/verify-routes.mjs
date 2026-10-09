@@ -57,7 +57,7 @@ const expectations = [
   { path: 'sheets/support.html', mustContain: [], mustNotContain: ['PLACEHOLDER', 'Artist not found.'], label: 'Support Artist (S-19, neutral shell until ?artistId= is known)' },
   { path: 'sheets/support-confirm.html', mustContain: ['Nothing to confirm'], mustNotContain: ['PLACEHOLDER'], label: 'Donation Confirmation (S-20, nothing to confirm yet)' },
   { path: 'sheets/support-success.html', mustContain: ['No recent support to show.'], mustNotContain: ['PLACEHOLDER'], label: 'Support Success (S-21, no recent donation yet)' },
-  { path: 'profile/index.html', mustContain: ['Alex Rivers', 'Studio Sanctuary', 'Become an Artist', 'Supported', 'All Settings'], mustNotContain: ['PLACEHOLDER'], label: 'Profile Hub (S-23)' },
+  { path: 'profile/index.html', mustContain: ['Alex Rivers', 'Studio Sanctuary', 'Support History', 'Audio Quality', 'Downloads', 'Account', 'Become an Artist', 'Log Out', 'Saved', 'Playlists', 'Supported'], mustNotContain: ['PLACEHOLDER', 'All Settings', 'Listening Pulse'], label: 'Profile Hub (S-23)' },
   { path: 'profile/settings.html', mustContain: ['Audio Streaming', 'Downloads &amp; Storage', 'Playback &amp; Sound Engine', 'Account &amp; Payments'], mustNotContain: ['PLACEHOLDER'], label: 'Settings (S-24)' },
   { path: 'profile/audio-quality.html', mustContain: ['Audio Streaming', 'Playback &amp; Sound Engine'], mustNotContain: ['PLACEHOLDER', 'Downloads &amp; Storage', 'Account &amp; Payments'], label: 'Audio Quality & Playback (S-23 destination)' },
   { path: 'profile/downloads.html', mustContain: ['Downloads &amp; Storage', 'Downloaded Music'], mustNotContain: ['PLACEHOLDER', 'Audio Streaming', 'Account &amp; Payments'], label: 'Downloads & Offline (S-23 destination)' },
