@@ -1,3 +1,5 @@
+import type { LocalizedText } from './dashboard-i18n';
+
 /**
  * Deterministic mock analytics (Artist Dashboard Analytics). No real
  * telemetry exists — every number here is seeded from the track id and
@@ -23,8 +25,8 @@ export type TrackAnalytics = {
   peakLabel: string;
   avgListenSec: number;
   avgListenPct: number;
-  geography: { city: string; country: string; pct: number }[];
-  channels: { name: string; pct: number }[];
+  geography: { city: LocalizedText; country: LocalizedText; pct: number }[];
+  channels: { name: LocalizedText; pct: number }[];
 };
 
 const PERIOD_POINTS: Record<TimePeriod, number> = { '24h': 6, '7d': 7, '28d': 10, all: 12 };
@@ -91,16 +93,16 @@ export function getTrackAnalytics(trackId: string, period: TimePeriod): TrackAna
     avgListenSec: Math.round(180 + rand() * 90),
     avgListenPct: Math.round(70 + rand() * 20),
     geography: [
-      { city: 'Bishkek', country: 'Kyrgyzstan', pct: geoPcts[0]! },
-      { city: 'Almaty', country: 'Kazakhstan', pct: geoPcts[1]! },
-      { city: 'Osh', country: 'Kyrgyzstan', pct: geoPcts[2]! },
-      { city: 'Other cities', country: 'Global', pct: lastGeo },
+      { city: { en: 'Bishkek', ru: 'Бишкек' }, country: { en: 'Kyrgyzstan', ru: 'Кыргызстан' }, pct: geoPcts[0]! },
+      { city: { en: 'Almaty', ru: 'Алматы' }, country: { en: 'Kazakhstan', ru: 'Казахстан' }, pct: geoPcts[1]! },
+      { city: { en: 'Osh', ru: 'Ош' }, country: { en: 'Kyrgyzstan', ru: 'Кыргызстан' }, pct: geoPcts[2]! },
+      { city: { en: 'Other cities', ru: 'Другие города' }, country: { en: 'Global', ru: 'Глобал' }, pct: lastGeo },
     ],
     channels: [
-      { name: 'Mmusic For You', pct: chanPcts[0]! },
-      { name: 'Playlists', pct: chanPcts[1]! },
-      { name: 'Artist Search', pct: chanPcts[2]! },
-      { name: 'Track Radio', pct: lastChan },
+      { name: { en: 'Mmusic For You', ru: 'Mmusic For You' }, pct: chanPcts[0]! },
+      { name: { en: 'Playlists', ru: 'Плейлисты' }, pct: chanPcts[1]! },
+      { name: { en: 'Artist Search', ru: 'Поиск артиста' }, pct: chanPcts[2]! },
+      { name: { en: 'Track Radio', ru: 'Радио трека' }, pct: lastChan },
     ],
   };
 }

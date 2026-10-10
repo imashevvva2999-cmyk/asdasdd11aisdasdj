@@ -1,35 +1,46 @@
+import type { LocalizedText } from '@/lib/dashboard-i18n';
+
 /**
  * Mock Promotion data (Artist Dashboard, Stitch "mmusic_boost"). No real
  * campaigns exist — launching one is explicitly disabled in the UI.
  */
-export type PromoTool = { id: string; name: string; priceLabel: string; description: string; badge?: string };
+export type PromoTool = { id: string; name: LocalizedText; priceLabel: string; description: LocalizedText; badge?: string };
 
 export const PROMO_TOOLS: PromoTool[] = [
   {
     id: 'recommendation-boost',
-    name: 'Recommendation Boost',
+    name: { en: 'Recommendation Boost', ru: 'Рекомендательный Буст' },
     priceLabel: 'From 1,500 сом',
-    description: 'Priority placement in For You, New Releases, and Artist Radio mixes. AI targeting with high engagement.',
+    description: {
+      en: 'Priority placement in For You, New Releases, and Artist Radio mixes. AI targeting with high engagement.',
+      ru: 'Приоритетный показ в «Для вас», «Радар новинок» и волнах артистов. AI-таргетинг с высокой вовлечённостью.',
+    },
     badge: '3 formats',
   },
   {
     id: 'editorial-pitch',
-    name: 'Editorial Pitch',
+    name: { en: 'Editorial Pitch', ru: 'Питчинг в Редакцию' },
     priceLabel: '2 slots',
-    description: 'Direct submission to curators: Top Kyrgyzstan, Electronic Chill, Evening Bishkek, and regional playlists.',
+    description: {
+      en: 'Direct submission to curators: Top Kyrgyzstan, Electronic Chill, Evening Bishkek, and regional playlists.',
+      ru: 'Прямая отправка кураторам: «Топ Кыргызстан», «Electronic Chill», «Вечерний Бишкек» и региональные подборки.',
+    },
   },
   {
     id: 'home-banner',
-    name: 'Home & Stories Banner',
+    name: { en: 'Home & Stories Banner', ru: 'Баннер на Главной и в Stories' },
     priceLabel: 'Premium',
-    description: 'Exclusive hero visual in the app and a full-screen announcement in Stories, up to 180,000 impressions.',
+    description: {
+      en: 'Exclusive hero visual in the app and a full-screen announcement in Stories, up to 180,000 impressions.',
+      ru: 'Эксклюзивный заглавный визуал в приложении и полноэкранный анонс в Stories, до 180 000 показов.',
+    },
     badge: 'Premium',
   },
 ];
 
 export type ActiveCampaign = {
   trackId: string;
-  dayOfTotal: string;
+  dayOfTotal: LocalizedText;
   reach: number;
   reachGoal: number;
   conversionRatePct: number;
@@ -39,7 +50,7 @@ export type ActiveCampaign = {
 
 export const ACTIVE_CAMPAIGN: ActiveCampaign = {
   trackId: 'midnight-mirage',
-  dayOfTotal: 'Day 4 of 10',
+  dayOfTotal: { en: 'Day 4 of 10', ru: 'День 4 из 10' },
   reach: 12400,
   reachGoal: 25000,
   conversionRatePct: 8.4,
@@ -47,9 +58,21 @@ export const ACTIVE_CAMPAIGN: ActiveCampaign = {
   progressPct: 49.6,
 };
 
-export type CampaignHistoryEntry = { id: string; trackTitle: string; metric: string; completedLabel: string; reach: number };
+export type CampaignHistoryEntry = { id: string; trackTitle: string; metric: LocalizedText; completedLabel: LocalizedText; reach: number };
 
 export const CAMPAIGN_HISTORY: CampaignHistoryEntry[] = [
-  { id: 'hist-vapor-trails', trackTitle: 'Vapor Trails', metric: '+42% streams', completedLabel: 'Completed Apr 28 · 10 days', reach: 34800 },
-  { id: 'hist-horizon', trackTitle: 'Horizon (album)', metric: '+1,850 fans', completedLabel: 'Completed Mar 14 · 14 days', reach: 52100 },
+  {
+    id: 'hist-vapor-trails',
+    trackTitle: 'Vapor Trails',
+    metric: { en: '+42% streams', ru: '+42% стримов' },
+    completedLabel: { en: 'Completed Apr 28 · 10 days', ru: 'Завершена 28 апр · 10 дней' },
+    reach: 34800,
+  },
+  {
+    id: 'hist-horizon',
+    trackTitle: 'Horizon (album)',
+    metric: { en: '+1,850 fans', ru: '+1 850 фанатов' },
+    completedLabel: { en: 'Completed Mar 14 · 14 days', ru: 'Завершена 14 мар · 14 дней' },
+    reach: 52100,
+  },
 ];
