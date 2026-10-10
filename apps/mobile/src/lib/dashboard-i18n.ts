@@ -94,7 +94,7 @@ const RU_STRINGS: Record<keyof typeof EN_STRINGS, string> = {
   campaignReach: 'Охват кампании',
   fanConversion: 'Конверсия в фанатов',
   liveLabel: 'АКТИВНО',
-  conversionRateAbbr: 'CR',
+  conversionRateAbbr: 'конв.',
   studioPlans: 'Тарифы Mmusic Studio',
   studioPlansHint: 'Выберите уровень для управления дискографией, монетизацией и расширенной аналитикой',
   monthly: 'Помесячно',
