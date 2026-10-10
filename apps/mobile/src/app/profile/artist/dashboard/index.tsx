@@ -1,5 +1,5 @@
-import { router, Stack } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { router, useNavigation } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -45,8 +45,30 @@ export default function ArtistDashboardScreen() {
   const entries = useArtistStore((s) => s.entries);
   const play = usePlayerStore((s) => s.play);
   const { t, locale, setLocale } = useDashboardStrings();
+  const navigation = useNavigation();
 
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>('All');
+
+  useEffect(() => {
+    if (!artist) return;
+    // Overview lives inside the dashboard's own Tabs navigator (headerShown: false);
+    // the public-profile button must reach the parent profile Stack's header instead.
+    const parent = navigation.getParent();
+    if (!parent) return;
+    parent.setOptions({
+      headerRight: () => (
+        <IconButton
+          icon="person"
+          size={40}
+          accessibilityLabel="View public artist profile"
+          onPress={() => router.push({ pathname: '/artist/[id]', params: { id: artist.id } })}
+        />
+      ),
+    });
+    return () => {
+      parent.setOptions({ headerRight: undefined });
+    };
+  }, [artist, navigation]);
 
   const visibleEntries = useMemo(() => {
     if (filter === 'All') return entries;
@@ -71,19 +93,6 @@ export default function ArtistDashboardScreen() {
 
   return (
     <ThemedView surface="canvas" style={styles.flex}>
-      {/* Stitch S-27 puts the public-profile shortcut in the header, not beside the CTA. */}
-      <Stack.Screen
-        options={{
-          headerRight: () => (
-            <IconButton
-              icon="person"
-              size={40}
-              accessibilityLabel="View public artist profile"
-              onPress={() => router.push({ pathname: '/artist/[id]', params: { id: artist.id } })}
-            />
-          ),
-        }}
-      />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.localeRow}>
           <Chip label="EN" selected={locale === 'en'} onPress={() => setLocale('en')} />
@@ -114,8 +123,8 @@ export default function ArtistDashboardScreen() {
           {visibleEntries.length === 0 ? (
             <EmptyState
               icon="upload"
-              title={entries.length === 0 ? 'Upload your first track' : 'Nothing in this filter yet'}
-              hint={entries.length === 0 ? 'Published and draft tracks will appear here.' : undefined}
+              title={entries.length === 0 ? t('uploadFirstTrackTitle') : t('emptyFilterTitle')}
+              hint={entries.length === 0 ? t('uploadFirstTrackHint') : undefined}
               actionLabel={entries.length === 0 ? t('uploadTrack') : undefined}
               onActionPress={entries.length === 0 ? () => router.push('/profile/artist/upload-track') : undefined}
             />
