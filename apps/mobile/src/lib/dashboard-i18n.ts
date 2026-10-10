@@ -56,6 +56,9 @@ const EN_STRINGS = {
   perkDonationsBody: 'Fan support pays out automatically, directly to your MBANK account.',
   perkLegalTitle: 'Legal protection',
   perkLegalBody: 'Official copyright and related-rights registration in the Kyrgyz Republic.',
+  perYear: 'year',
+  perMonth: 'month',
+  forever: 'forever',
 } as const;
 
 const RU_STRINGS: Record<keyof typeof EN_STRINGS, string> = {
@@ -110,6 +113,9 @@ const RU_STRINGS: Record<keyof typeof EN_STRINGS, string> = {
   perkDonationsBody: 'Автоматическая прямая выплата донатов от фанатов прямо на ваш расчётный счёт в MBANK.',
   perkLegalTitle: 'Юридическая защита',
   perkLegalBody: 'Официальная фиксация авторских и смежных прав на территории Кыргызской Республики.',
+  perYear: 'год',
+  perMonth: 'месяц',
+  forever: 'навсегда',
 };
 
 export type DashboardLocale = 'en' | 'ru';
