@@ -31,7 +31,7 @@ export default function PromotionScreen() {
   return (
     <ThemedView surface="canvas" style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
-        {published.length > 0 && (
+        {activeTrack !== undefined && (
           <View style={styles.card}>
             <ThemedText variant="label-sm" style={{ color: Colors.primary }}>
               {t('liveLabel')} · {ACTIVE_CAMPAIGN.dayOfTotal[locale]}
