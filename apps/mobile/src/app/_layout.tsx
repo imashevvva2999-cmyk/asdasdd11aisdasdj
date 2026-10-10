@@ -12,6 +12,7 @@ import { PlayerExpandPreview } from '@/components/player/expand-preview';
 import { iconFonts } from '@/components/ui/icon';
 import { RouteTitle } from '@/components/web/route-title';
 import { PlayerSurfaceSync } from '@/state/player-surface';
+import { usePlayerStore } from '@/state/player-store';
 import { loadedFonts } from '@/constants/fonts';
 import { Colors } from '@/constants/theme';
 import { MAX_CONTENT_WIDTH } from '@/hooks/use-content-width';
@@ -52,6 +53,13 @@ export default function RootLayout() {
   // Real audio (Фаза 2): created on the client only — static web rendering has no audio.
   useEffect(() => {
     startAudio();
+  }, []);
+
+  // likedTrackIds persistence (Phase 0, item 5): `skipHydration: true` on the
+  // store keeps the first paint matching the static export's server HTML;
+  // rehydrating here, client-only and after mount, avoids a hydration mismatch.
+  useEffect(() => {
+    usePlayerStore.persist.rehydrate();
   }, []);
 
   if (!fontsLoaded && !fontError) {

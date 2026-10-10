@@ -67,7 +67,7 @@ export default function AlbumScreen() {
             {album.artistName}
           </ThemedText>
           <ThemedText variant="body-sm" emphasis="medium">
-            {album.year} • {typeLabel} • {trackList.length || album.trackCount} tracks
+            {album.year} • {typeLabel} • {trackList.length || album.trackCount} {(trackList.length || album.trackCount) === 1 ? 'track' : 'tracks'}
           </ThemedText>
 
           <View style={styles.actionsRow}>
@@ -95,12 +95,18 @@ export default function AlbumScreen() {
               onPress={() => router.push({ pathname: '/sheets/options', params: { kind: 'album', id: album.id } })}
             />
             <View style={styles.spacer} />
-            <IconButton icon="shuffle" accessibilityLabel="Shuffle" onPress={() => playShuffled(trackList.map((t) => t!.id))} />
+            <IconButton
+              icon="shuffle"
+              accessibilityLabel="Shuffle"
+              disabled={trackList.length === 0}
+              onPress={() => playShuffled(trackList.map((t) => t!.id))}
+            />
             <CircleButton
               icon="play-arrow"
               accessibilityLabel="Play album"
               size={56}
               iconSize={26}
+              disabled={trackList.length === 0}
               onPress={() => trackList.length > 0 && play(trackList[0]!.id, trackList.map((t) => t!.id))}
             />
           </View>
@@ -110,23 +116,29 @@ export default function AlbumScreen() {
           <ThemedText variant="label-sm" emphasis="medium" style={styles.overline}>
             Tracks
           </ThemedText>
-          {trackList.map((track, index) => (
-            <TrackRow
-              key={track!.id}
-              index={index + 1}
-              active={currentTrackId === track!.id}
-              title={track!.title}
-              artist={track!.artistName}
-              durationLabel={formatDuration(track!.durationSec)}
-              explicit={track!.explicit}
-              lossless={track!.lossless}
-              isPlaying={currentTrackId === track!.id && isPlaying}
-              liked={isLiked(track!.id)}
-              onPress={() => play(track!.id, trackList.map((t) => t!.id))}
-              onToggleLike={() => toggleLike(track!.id)}
-              onOptionsPress={() => router.push({ pathname: '/sheets/options', params: { kind: 'track', id: track!.id } })}
-            />
-          ))}
+          {trackList.length === 0 ? (
+            <ThemedText variant="body-sm" emphasis="medium" style={styles.emptyTracks}>
+              No tracks available in this preview.
+            </ThemedText>
+          ) : (
+            trackList.map((track, index) => (
+              <TrackRow
+                key={track!.id}
+                index={index + 1}
+                active={currentTrackId === track!.id}
+                title={track!.title}
+                artist={track!.artistName}
+                durationLabel={formatDuration(track!.durationSec)}
+                explicit={track!.explicit}
+                lossless={track!.lossless}
+                isPlaying={currentTrackId === track!.id && isPlaying}
+                liked={isLiked(track!.id)}
+                onPress={() => play(track!.id, trackList.map((t) => t!.id))}
+                onToggleLike={() => toggleLike(track!.id)}
+                onOptionsPress={() => router.push({ pathname: '/sheets/options', params: { kind: 'track', id: track!.id } })}
+              />
+            ))
+          )}
         </View>
 
         <View style={styles.footerBlock}>
@@ -202,6 +214,9 @@ const styles = StyleSheet.create({
   },
   footer: {
     textAlign: 'center',
+    color: Colors.text.low,
+  },
+  emptyTracks: {
     color: Colors.text.low,
   },
 });

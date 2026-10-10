@@ -58,8 +58,8 @@ export const trendingNowAlbumIds = albums.slice(0, 4).map((album) => album.id);
 /** New Releases carousel — album references with a release-state label. */
 export const newReleases = [
   { albumId: 'refraction-horizon', label: 'Single • Out Today' },
-  { albumId: 'resonant-field', label: 'EP • 5 Tracks' },
-  { albumId: 'solitary-echo', label: 'Album • 11 Tracks' },
+  { albumId: 'resonant-field', label: 'EP' },
+  { albumId: 'solitary-echo', label: 'Album' },
 ];
 
 /** Jump Back In — recently played tracks, first one marked as currently playing. */

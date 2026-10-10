@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -9,6 +10,7 @@ import { AvatarCard, Chip, CoverCard, Icon, IconButton, LibraryRow, PressableSca
 import type { LocalOrRemoteImage } from '@/constants/stitch-artwork';
 import { Colors, Spacing } from '@/constants/theme';
 import { useContentWidth } from '@/hooks/use-content-width';
+import { useTabEntrance } from '@/hooks/use-tab-entrance';
 import { matchesQuery, normalizeQuery } from '@/lib/search-match';
 import { getAlbumById, getArtistById, getTrackById, type LibraryItem, type Track } from '@/mocks';
 import { useLibraryStore } from '@/state/library-store';
@@ -48,6 +50,7 @@ export default function LibraryScreen() {
   const q = normalizeQuery(query);
   const windowWidth = useContentWidth();
   const gridItemWidth = Math.floor((Math.min(windowWidth, 800) - Spacing.margin * 2 - Spacing.md) / 2);
+  const entrance = useTabEntrance('library');
 
   const likedTrackIds = usePlayerStore((s) => s.likedTrackIds);
   const play = usePlayerStore((s) => s.play);
@@ -127,6 +130,7 @@ export default function LibraryScreen() {
         </View>
       </SafeAreaView>
 
+      <Animated.View style={[styles.flex, entrance.style]}>
       <ScrollView contentContainerStyle={styles.content}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
           {FILTERS.map((item) => (
@@ -283,6 +287,7 @@ export default function LibraryScreen() {
           </View>
         )}
       </ScrollView>
+      </Animated.View>
     </ThemedView>
   );
 }

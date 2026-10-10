@@ -1,7 +1,7 @@
 import type { Tabs } from 'expo-router';
-import type { ComponentProps } from 'react';
+import { useEffect, useRef, useState, type ComponentProps, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
-import Animated, { useAnimatedStyle, useReducedMotion } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -37,9 +37,42 @@ export function FloatingTabBar({ state, descriptors, navigation }: TabBarProps) 
     transform: [{ translateY: pillSinkOffset(expandProgress.value, expandOrigin.value, reduceMotion, sinkDistance) }],
   }));
 
+  const indicatorX = useSharedValue(0);
+  const indicatorW = useSharedValue(0);
+  const layouts = useRef<Record<number, { x: number; width: number }>>({});
+  const [ready, setReady] = useState(false);
+
+  const indicatorStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: indicatorX.value }],
+    width: indicatorW.value,
+    opacity: ready ? 1 : 0,
+  }));
+
+  const measure = (index: number, x: number, width: number) => {
+    layouts.current[index] = { x, width };
+    if (index === state.index) {
+      indicatorX.value = x;
+      indicatorW.value = width;
+      setReady(true);
+    }
+  };
+
+  useEffect(() => {
+    const box = layouts.current[state.index];
+    if (!box) return;
+    if (reduceMotion) {
+      indicatorX.value = box.x;
+      indicatorW.value = box.width;
+    } else {
+      indicatorX.value = withTiming(box.x, { duration: 220 });
+      indicatorW.value = withTiming(box.width, { duration: 220 });
+    }
+  }, [state.index, reduceMotion, indicatorX, indicatorW]);
+
   return (
     <View pointerEvents="box-none" style={[styles.slot, { bottom: insets.bottom + PILL_BOTTOM_GAP }]}>
       <Animated.View style={[styles.pill, sinkStyle]} accessibilityRole="tablist">
+        <Animated.View style={[styles.indicator, indicatorStyle]} pointerEvents="none" />
         {state.routes.map((route, index) => {
           const { options } = descriptors[route.key];
           const focused = state.index === index;
@@ -56,10 +89,13 @@ export function FloatingTabBar({ state, descriptors, navigation }: TabBarProps) 
               accessibilityState={{ selected: focused }}
               accessibilityLabel={label}
               onPress={onPress}
+              onLayout={(e) => measure(index, e.nativeEvent.layout.x, e.nativeEvent.layout.width)}
               style={styles.item}
               testID={`tab-${route.name}`}
             >
-              {options.tabBarIcon?.({ focused, color, size: TAB_ICON_SIZE })}
+              <TabIcon focused={focused} reduceMotion={reduceMotion}>
+                {options.tabBarIcon?.({ focused, color, size: TAB_ICON_SIZE })}
+              </TabIcon>
               <ThemedText variant="label-sm" style={{ color }}>
                 {label}
               </ThemedText>
@@ -71,12 +107,29 @@ export function FloatingTabBar({ state, descriptors, navigation }: TabBarProps) 
   );
 }
 
+function TabIcon({ focused, reduceMotion, children }: { focused: boolean; reduceMotion: boolean; children: ReactNode }) {
+  const scale = useSharedValue(focused ? 1 : 0.92);
+  useEffect(() => {
+    scale.value = reduceMotion ? (focused ? 1 : 0.92) : withTiming(focused ? 1 : 0.92, { duration: 180 });
+  }, [focused, reduceMotion, scale]);
+  const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }], opacity: 0.75 + scale.value * 0.25 }));
+  return <Animated.View style={style}>{children}</Animated.View>;
+}
+
 const styles = StyleSheet.create({
   slot: {
     position: 'absolute',
     left: 0,
     right: 0,
     alignItems: 'center',
+  },
+  indicator: {
+    position: 'absolute',
+    left: 0,
+    top: 4,
+    bottom: 4,
+    borderRadius: Radii.full,
+    backgroundColor: 'rgba(255, 122, 89, 0.14)',
   },
   pill: {
     height: PILL_HEIGHT,

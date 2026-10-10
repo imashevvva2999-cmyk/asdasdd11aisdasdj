@@ -5,6 +5,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Artwork, Icon, PillButton, SheetScreen, TextLinkButton } from '@/components/ui';
 import { DemoNotice } from '@/components/demo-notice';
 import { Colors, Radii, Spacing } from '@/constants/theme';
+import { formatKgsAmount } from '@/lib/format-currency';
 import { goBack } from '@/lib/navigation';
 import { getArtistById } from '@/mocks';
 import { useSupportStore } from '@/state/support-store';
@@ -53,7 +54,7 @@ export default function SupportSuccessSheet() {
           Direct Patronage Complete
         </ThemedText>
         <ThemedText variant="display-lg" style={styles.centerText}>
-          Supported {amount} {currency === 'KGS' ? 'сом' : currency}
+          Supported {formatKgsAmount(amount)} {currency === 'KGS' ? 'сом' : currency}
         </ThemedText>
 
         <View style={styles.artistChip}>

@@ -6,6 +6,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Artwork, Chip, EmptyState, Icon, IconButton, PillButton, PressableScale, StatCard } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
+import { formatKgsAmount } from '@/lib/format-currency';
 import { usePlayerStore } from '@/state/player-store';
 import { useArtistStore, type UploadStatus } from '@/state/artist-store';
 
@@ -92,7 +93,7 @@ export default function ArtistDashboardScreen() {
         <View style={styles.statsRow}>
           <StatCard label="Listeners" value={String(artist.monthlyListeners ?? 0)} icon="groups" iconColor={Colors.primary} />
           <StatCard label="Streams" value="0" icon="play-circle-outline" iconColor={Colors.tertiary} />
-          <StatCard label="Support" value="0 сом" icon="volunteer-activism" iconColor={Colors.secondary} />
+          <StatCard label="Support" value={`${formatKgsAmount(0)} сом`} icon="volunteer-activism" iconColor={Colors.secondary} />
         </View>
 
         <View style={styles.section}>

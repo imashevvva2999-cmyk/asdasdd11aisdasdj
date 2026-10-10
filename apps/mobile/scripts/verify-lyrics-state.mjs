@@ -7,8 +7,8 @@
  *
  * Usage: npx tsx scripts/verify-lyrics-state.mjs
  */
-import { hasDemoAudio } from '../src/audio/demo-audio.ts';
-import { LYRICS_EMPTY, SAMPLE_LYRICS_NOTE, activeLineIndex, lyricPreview, lyricsStateFor } from '../src/lib/lyrics-state.ts';
+import { hasDemoAudio, isDemoAudioInstrumental } from '../src/audio/demo-audio.ts';
+import { LYRICS_EMPTY, SAMPLE_LYRICS_NOTE, activeLineIndex, lyricPreview, lyricsState, lyricsStateFor } from '../src/lib/lyrics-state.ts';
 import { getLyricsForTrack, tracks } from '../src/mocks/index.ts';
 
 let failures = 0;
@@ -21,17 +21,44 @@ function check(label, condition) {
   }
 }
 
-const mirage = lyricsStateFor('midnight-mirage');
-check('Midnight Mirage keeps its timestamped lyrics (OQ-W3-1)', mirage.kind === 'synced' && mirage.lines.length === 11);
-check('…marked as sample text, not catalog lyrics', mirage.kind === 'synced' && mirage.source === 'sample');
+// Lyrics Demo Experience: Midnight Mirage's demo recording ("Chill Wave") is
+// instrumental, so it must show the instrumental empty state even though it
+// still carries sample lyrics data (kept for future development, OQ-W3-1) —
+// mock lyrics are never surfaced for a recording that actually has no vocals.
+check('Midnight Mirage has its demo recording flagged instrumental', isDemoAudioInstrumental('midnight-mirage'));
+check('…so it shows the instrumental empty state, not its sample lyrics', lyricsStateFor('midnight-mirage').kind === 'demo-instrumental');
+const mirageLyrics = getLyricsForTrack('midnight-mirage');
+check('…while the underlying sample lyrics data is kept, untouched, for future use (OQ-W3-1)', mirageLyrics?.source === 'sample' && mirageLyrics?.lines.length === 11);
 check('every lyrics entry in the data names its source', tracks.every((t) => {
   const lyrics = getLyricsForTrack(t.id);
   return lyrics === undefined || lyrics.source === 'catalog' || lyrics.source === 'sample';
 }));
 check('sample lyrics carry a visible label', SAMPLE_LYRICS_NOTE.label === 'Sample lyrics' && SAMPLE_LYRICS_NOTE.hint.length > 0);
 check('demo audio without lyrics → instrumental empty state', lyricsStateFor('horizon').kind === 'demo-instrumental');
-const plain = tracks.find((t) => !hasDemoAudio(t.id) && !getLyricsForTrack(t.id));
-check(`no lyrics, no demo audio → none (${plain?.id})`, plain !== undefined && lyricsStateFor(plain.id).kind === 'none');
+check('all 13 catalog demo recordings are currently flagged instrumental', tracks.filter((t) => hasDemoAudio(t.id)).every((t) => isDemoAudioInstrumental(t.id)));
+
+// The pure core, directly: proves a future NON-instrumental recording would
+// surface real lyrics data instead of being forced into the instrumental
+// state — the guarantee "Implement the condition based on the currently
+// playing audio recording... so future vocal recordings can display real
+// lyrics when properly available" asks for.
+const fakeLyrics = { source: 'catalog', lines: [{ timeMs: 0, text: 'a real sung line' }] };
+check('instrumental recording → demo-instrumental, even with lyrics data present', lyricsState(true, fakeLyrics).kind === 'demo-instrumental');
+check('non-instrumental recording with lyrics data → synced, showing the real lyrics', (() => {
+  const s = lyricsState(false, fakeLyrics);
+  return s.kind === 'synced' && s.source === 'catalog' && s.lines[0].text === 'a real sung line';
+})());
+check('non-instrumental recording with no lyrics data yet → none (honestly unavailable, not mislabeled instrumental)', lyricsState(false, undefined).kind === 'none');
+
+// Demo Audio Experience gives every real catalog track demo audio, so no
+// catalog track can demonstrate "no lyrics, no demo audio" any more — a
+// synthetic id (absent from both the lyrics data and demoAudioCredits)
+// exercises the same lyricsStateFor() code path a real one would.
+const NO_LYRICS_NO_AUDIO_ID = 'qa-no-lyrics-no-audio-fixture';
+check(
+  'no lyrics, no demo audio → none',
+  !hasDemoAudio(NO_LYRICS_NO_AUDIO_ID) && !getLyricsForTrack(NO_LYRICS_NO_AUDIO_ID) && lyricsStateFor(NO_LYRICS_NO_AUDIO_ID).kind === 'none',
+);
 check('nothing playing → none', lyricsStateFor(undefined).kind === 'none');
 check(
   'approved demo copy, verbatim',

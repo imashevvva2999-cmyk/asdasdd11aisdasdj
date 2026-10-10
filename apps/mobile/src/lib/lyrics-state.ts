@@ -1,11 +1,15 @@
-import { hasDemoAudio } from '@/audio/demo-audio';
-import { getLyricsForTrack, type LyricLine, type LyricsSource, type TrackId } from '@/mocks';
+import { isDemoAudioInstrumental } from '@/audio/demo-audio';
+import { getLyricsForTrack, type LyricLine, type LyricsSource, type TrackId, type TrackLyrics } from '@/mocks';
 
 /**
- * Which lyrics a track may show (W3 spec §2.4): only text from the catalog
- * data, never invented text, and sample text always labelled as such
- * (decision OQ-W3-1). Demo recordings are instrumental, so a demo track
- * without lyrics says so instead of the generic message.
+ * Which lyrics a track may show (W3 spec §2.4, extended by Lyrics Demo
+ * Experience): only text from the catalog data, never invented text, sample
+ * text always labelled as such (decision OQ-W3-1), and — critically — gated
+ * on whether the *recording that's actually playing* has vocals at all, not
+ * on whether mock/catalog lyrics data happens to exist for that track id. An
+ * instrumental demo recording always shows the "Lyrics unavailable for demo
+ * audio" state, even for a track that has sample lyrics kept around for
+ * future development (see src/mocks/lyrics.ts).
  */
 export type LyricsState =
   | { kind: 'synced'; source: LyricsSource; lines: LyricLine[] }
@@ -23,11 +27,23 @@ export const SAMPLE_LYRICS_NOTE = {
   hint: 'Placeholder text for the demo, not the official lyrics.',
 } as const;
 
+/**
+ * Pure core (Lyrics Demo Experience): gated on whether the *currently playing
+ * recording itself* has no vocals, not on whether the catalog track happens
+ * to have lyrics data. An instrumental recording never shows lyrics even if
+ * sample/catalog lines exist for that track id — once a future recording is
+ * marked vocal (`isInstrumental: false`) and has real lyrics, this is what
+ * lets them appear.
+ */
+export function lyricsState(isInstrumental: boolean, lyrics: TrackLyrics | undefined): LyricsState {
+  if (isInstrumental) return { kind: 'demo-instrumental' };
+  if (lyrics && lyrics.lines.length > 0) return { kind: 'synced', source: lyrics.source, lines: lyrics.lines };
+  return { kind: 'none' };
+}
+
 export function lyricsStateFor(trackId: TrackId | undefined): LyricsState {
   if (!trackId) return { kind: 'none' };
-  const lyrics = getLyricsForTrack(trackId);
-  if (lyrics && lyrics.lines.length > 0) return { kind: 'synced', source: lyrics.source, lines: lyrics.lines };
-  return hasDemoAudio(trackId) ? { kind: 'demo-instrumental' } : { kind: 'none' };
+  return lyricsState(isDemoAudioInstrumental(trackId), getLyricsForTrack(trackId));
 }
 
 /**

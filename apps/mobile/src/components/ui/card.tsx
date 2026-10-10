@@ -8,6 +8,7 @@ import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useHydrated } from '@/hooks/use-hydrated';
 
 import { Icon } from './icon';
+import { IconButton } from './button';
 import { AnimatedIcon } from './animated-icon';
 import { ParticleWaveArtwork } from './particle-wave/particle-wave-artwork';
 import { MoodVisual, type MoodVisualKind } from './mood-visual';
@@ -86,7 +87,7 @@ export function CoverCard({
 
   const cover = (
     <View style={[cardStyles.coverBase, { width: coverWidth, height: coverHeight }, layout === 'overlay' && cardStyles.justifyEnd]}>
-      {coverUri && hydrated ? <Image source={toImageSource(coverUri)} style={StyleSheet.absoluteFill} contentFit="cover" /> : <CoverFallback seed={title} />}
+      {coverUri && hydrated ? <Image source={toImageSource(coverUri)} style={[StyleSheet.absoluteFill, { borderRadius: Radii.md }]} contentFit="cover" /> : <CoverFallback seed={title} />}
       {layout === 'overlay' && (
         <>
           <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={StyleSheet.absoluteFill} />
@@ -182,12 +183,21 @@ export type FeaturedBannerProps = {
   paused?: boolean;
   /** The banner's playlist is currently playing (pause glyph on the play button). */
   active?: boolean;
+  /** 'footer' layout only — the track to react to (colour + audio bands): whatever is actually
+   * playing anywhere in the app, not only while this banner's own playlist is loaded. */
+  trackId?: string;
+  /** 'footer' layout only — whether that track is actually playing right now, for audio bands.
+   * Independent of `active` (which only reflects whether THIS playlist is the loaded one, for
+   * the Play/Pause glyph) — the wave reacts to the app's real audio, not to this banner's state. */
+  audioPlaying?: boolean;
+  /** 'footer' layout only — shows a secondary skip-next button next to Play/Pause. */
+  onNextPress?: () => void;
   style?: ViewStyle;
 };
 
 /** Hero banner (DESIGN.md "Album & Playlist Cards"; docs/screens.md §3.4). Defaults
  * to 16:9; pass `height` for the fixed-height heroes used on Home/Search/Genre. */
-export function FeaturedBanner({ coverUri, title, subtitle, height, layout = 'overlay', onPlayPress, onPress, animated = false, paused = false, active = false, style }: FeaturedBannerProps) {
+export function FeaturedBanner({ coverUri, title, subtitle, height, layout = 'overlay', onPlayPress, onPress, animated = false, paused = false, active = false, trackId, audioPlaying = false, onNextPress, style }: FeaturedBannerProps) {
   const hydrated = useHydrated();
 
   if (layout === 'footer') {
@@ -196,9 +206,13 @@ export function FeaturedBanner({ coverUri, title, subtitle, height, layout = 'ov
         <View style={[cardStyles.footerBannerImage, { height: height ?? 224 }]}>
           {coverUri && hydrated ? (
             animated ? (
-              <ParticleWaveArtwork uri={coverUri} paused={paused} />
+              <ParticleWaveArtwork uri={coverUri} paused={paused} trackId={trackId} playing={audioPlaying} />
             ) : (
-              <Image source={toImageSource(coverUri)} style={StyleSheet.absoluteFill} contentFit="cover" />
+              <Image
+                source={toImageSource(coverUri)}
+                style={[StyleSheet.absoluteFill, { borderTopLeftRadius: Radii.lg, borderTopRightRadius: Radii.lg }]}
+                contentFit="cover"
+              />
             )
           ) : (
             <CoverFallback seed={title} iconSize={40} />
@@ -227,6 +241,16 @@ export function FeaturedBanner({ coverUri, title, subtitle, height, layout = 'ov
               <AnimatedIcon name={active ? 'pause' : 'play-arrow'} size={28} color={Colors.text.high} />
             </PressableScale>
           )}
+          {onNextPress && (
+            <IconButton
+              variant="surface"
+              icon="skip-next"
+              size={44}
+              accessibilityLabel="Next track"
+              onPress={onNextPress}
+              style={cardStyles.footerBannerNextButton}
+            />
+          )}
         </View>
       </PressableScale>
     );
@@ -235,7 +259,7 @@ export function FeaturedBanner({ coverUri, title, subtitle, height, layout = 'ov
   return (
     <PressableScale onPress={onPress} style={style} accessibilityRole="button">
       <View style={[cardStyles.banner, height !== undefined && { aspectRatio: undefined, height }]}>
-        {coverUri && hydrated ? <Image source={toImageSource(coverUri)} style={StyleSheet.absoluteFill} contentFit="cover" /> : <CoverFallback seed={title} iconSize={36} />}
+        {coverUri && hydrated ? <Image source={toImageSource(coverUri)} style={[StyleSheet.absoluteFill, { borderRadius: Radii.lg }]} contentFit="cover" /> : <CoverFallback seed={title} iconSize={36} />}
         <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={StyleSheet.absoluteFill} />
         <View style={cardStyles.coverTextOverlay}>
           <ThemedText variant="headline-md" numberOfLines={1}>
@@ -378,7 +402,15 @@ export function QuickTile({ coverUri, title, onPress, onPlayPress, onMorePress, 
   return (
     <PressableScale onPress={onPress} accessibilityRole={onPlayPress || onMorePress ? undefined : 'button'} style={[quickTileStyles.row, style]}>
       <View style={quickTileStyles.cover}>
-        {coverUri && hydrated ? <Image source={toImageSource(coverUri)} style={StyleSheet.absoluteFill} contentFit="cover" /> : <CoverFallback seed={title} iconSize={18} />}
+        {coverUri && hydrated ? (
+          <Image
+            source={toImageSource(coverUri)}
+            style={[StyleSheet.absoluteFill, { borderTopLeftRadius: Radii.DEFAULT, borderBottomLeftRadius: Radii.DEFAULT }]}
+            contentFit="cover"
+          />
+        ) : (
+          <CoverFallback seed={title} iconSize={18} />
+        )}
       </View>
       <ThemedText variant="label-md" numberOfLines={1} style={quickTileStyles.title}>
         {title}
@@ -508,6 +540,9 @@ const cardStyles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     gap: 2,
+  },
+  footerBannerNextButton: {
+    flexShrink: 0,
   },
   footerBannerPlayButton: {
     width: 56,

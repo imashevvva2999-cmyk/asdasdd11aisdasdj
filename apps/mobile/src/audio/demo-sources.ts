@@ -10,4 +10,15 @@ import type { TrackId } from '@/mocks';
 export const DEMO_SOURCES: Partial<Record<TrackId, AudioSource>> = {
   'midnight-mirage': require('../../assets/audio/chill-wave.mp3'),
   horizon: require('../../assets/audio/floating-cities.mp3'),
+  'vapor-trails': require('../../assets/audio/windswept.mp3'),
+  'abyssal-bloom': require('../../assets/audio/reminiscing.mp3'),
+  'tape-saturation-4': require('../../assets/audio/comfortable-mystery.mp3'),
+  'abyssal-bloom-feat': require('../../assets/audio/eternity.mp3'),
+  'obsidian-frequencies': require('../../assets/audio/spellbound.mp3'),
+  'ember-tide': require('../../assets/audio/one-sly-move.mp3'),
+  'resonant-field-reprise': require('../../assets/audio/deliberate-thought.mp3'),
+  'nebula-dreams-t1': require('../../assets/audio/equatorial-complex.mp3'),
+  'lost-frequencies-t1': require('../../assets/audio/late-night-radio.mp3'),
+  'velvet-skyline-t1': require('../../assets/audio/airship-serenity.mp3'),
+  'chronos-echoes-t1': require('../../assets/audio/winter-reflections.mp3'),
 };

@@ -6,6 +6,7 @@ import { Colors, Radii } from '@/constants/theme';
 import { useHydrated } from '@/hooks/use-hydrated';
 
 import { Icon } from './icon';
+import { PressableScale } from './pressable-scale';
 
 export type ArtworkProps = {
   uri?: LocalOrRemoteImage;
@@ -20,6 +21,11 @@ export type ArtworkProps = {
   style?: ViewStyle;
   /** The real image has loaded (e.g. to reveal a cover only once it can paint). */
   onLoad?: () => void;
+  /** Makes the artwork itself tappable (e.g. an avatar opening its own edit
+   * flow) — omit for every non-interactive use (Now Playing art, album/playlist
+   * headers, artist hero). */
+  onPress?: () => void;
+  accessibilityLabel?: string;
 };
 
 /**
@@ -33,11 +39,11 @@ export type ArtworkProps = {
  * plain surface-colored box with a music-note glyph — a clearly-identified
  * placeholder, not invented artwork.
  */
-export function Artwork({ uri, size = 160, aspectRatio, radius = Radii.lg, shape = 'square', placeholderIcon = 'music-note', style, onLoad }: ArtworkProps) {
+export function Artwork({ uri, size = 160, aspectRatio, radius = Radii.lg, shape = 'square', placeholderIcon = 'music-note', style, onLoad, onPress, accessibilityLabel }: ArtworkProps) {
   const height = aspectRatio ? size / aspectRatio : size;
   const hydrated = useHydrated();
 
-  return (
+  const content = (
     <View
       style={[
         styles.base,
@@ -57,6 +63,13 @@ export function Artwork({ uri, size = 160, aspectRatio, radius = Radii.lg, shape
         </View>
       )}
     </View>
+  );
+
+  if (!onPress) return content;
+  return (
+    <PressableScale onPress={onPress} accessibilityRole="button" accessibilityLabel={accessibilityLabel}>
+      {content}
+    </PressableScale>
   );
 }
 

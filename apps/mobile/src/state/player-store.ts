@@ -1,8 +1,10 @@
 import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 
 import { silentEngine, type AudioEngine, type EngineStatus } from '@/audio/audio-engine';
 import { hasDemoAudio } from '@/audio/demo-audio';
-import { getTrackById, tracks as allTracks, type Track, type TrackId } from '@/mocks';
+import { deserializeLikedTrackIds, serializeLikedTrackIds } from '@/lib/liked-tracks-storage';
+import { currentUser, getTrackById, tracks as allTracks, type Track, type TrackId } from '@/mocks';
 
 export type RepeatMode = 'off' | 'all' | 'one';
 
@@ -92,6 +94,11 @@ let loadedTrackId: TrackId | undefined;
 /** A deferred (swipe) audio start that hasn't run yet. */
 let pendingStart: ReturnType<typeof setTimeout> | null = null;
 
+/** No-ops on native (this app's persistence target is the web CEO demo) and in any
+ * environment without a real `localStorage` (SSR/tests), instead of throwing. */
+const noopStorage = { getItem: () => null, setItem: () => {}, removeItem: () => {} };
+const likeStorage = typeof window !== 'undefined' && window.localStorage ? window.localStorage : noopStorage;
+
 function cancelPendingStart() {
   if (pendingStart) {
     clearTimeout(pendingStart);
@@ -126,7 +133,9 @@ export function playPosition(state: Pick<PlayerState, 'order' | 'currentIndex' |
   return state.order.indexOf(state.currentIndex) + state.laps * state.order.length;
 }
 
-export const usePlayerStore = create<PlayerState>((set, get) => {
+export const usePlayerStore = create<PlayerState>()(
+  persist(
+    (set, get) => {
   /**
    * Starts the current track from the top: real audio, or honestly
    * unavailable. `deferMs` (swipes) stops the old audio now but loads the new
@@ -345,7 +354,27 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
       startCurrent();
     },
   };
-});
+    },
+    {
+      name: `mmusic:liked-tracks:${currentUser.username}`,
+      storage: createJSONStorage(() => likeStorage),
+      // Static web export (app.json web.output: "static") pre-renders with the
+      // store's defaults; rehydrating synchronously on module load would diverge
+      // from that server HTML and trigger a React hydration mismatch. Skipping
+      // here and rehydrating from a client-only effect (root _layout.tsx) keeps
+      // the first paint SSR-safe.
+      skipHydration: true,
+      partialize: (state) => ({ likedTrackIds: serializeLikedTrackIds(state.likedTrackIds) }),
+      // No persisted key yet (first-ever load): keep currentState's own default
+      // likedTrackIds rather than overwriting them with an empty Set.
+      merge: (persistedState, currentState) => {
+        const persisted = persistedState as { likedTrackIds?: unknown } | undefined;
+        if (persisted?.likedTrackIds === undefined) return currentState;
+        return { ...currentState, likedTrackIds: deserializeLikedTrackIds(persisted.likedTrackIds) };
+      },
+    },
+  ),
+);
 
 /** Applies one engine status update to the store. */
 function handleEngineStatus(status: EngineStatus) {

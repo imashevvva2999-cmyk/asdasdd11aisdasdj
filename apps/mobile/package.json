@@ -54,11 +54,16 @@
     "preview:web": "node scripts/serve-web.mjs dist",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
-    "test": "node scripts/verify-routes.mjs && node scripts/verify-web-server.mjs && tsx scripts/verify-player-store.mjs && tsx scripts/verify-support-store.mjs && tsx scripts/verify-artist-store.mjs && tsx scripts/verify-library-store.mjs && tsx scripts/verify-search-match.mjs && tsx scripts/verify-palettes.mjs && tsx scripts/verify-gesture-math.mjs && tsx scripts/verify-browser-audio.mjs && tsx scripts/verify-artwork-coverage.mjs && tsx scripts/verify-stage-tones.mjs && tsx scripts/verify-stage-math.mjs && tsx scripts/verify-lyrics-state.mjs && tsx scripts/verify-home-ui.mjs && tsx scripts/verify-particle-wave.mjs && node scripts/verify-vercel-config.mjs && tsx scripts/verify-support-dates.mjs",
+    "test": "node scripts/verify-routes.mjs && node scripts/verify-web-server.mjs && tsx scripts/verify-player-store.mjs && tsx scripts/verify-support-store.mjs && tsx scripts/verify-artist-store.mjs && tsx scripts/verify-library-store.mjs && tsx scripts/verify-search-match.mjs && tsx scripts/verify-palettes.mjs && tsx scripts/verify-gesture-math.mjs && tsx scripts/verify-browser-audio.mjs && tsx scripts/verify-artwork-coverage.mjs && tsx scripts/verify-stage-tones.mjs && tsx scripts/verify-stage-math.mjs && tsx scripts/verify-lyrics-state.mjs && tsx scripts/verify-home-ui.mjs && tsx scripts/verify-particle-wave.mjs && tsx scripts/verify-audio-reactive-wave.mjs && node scripts/verify-vercel-config.mjs && tsx scripts/verify-support-dates.mjs && tsx scripts/verify-format-currency.mjs && tsx scripts/verify-album-tracks.mjs && tsx scripts/verify-liked-tracks-storage.mjs && tsx scripts/verify-demo-audio-coverage.mjs",
     "verify:routes": "node scripts/verify-routes.mjs",
     "verify:player-store": "tsx scripts/verify-player-store.mjs",
     "verify:support-store": "tsx scripts/verify-support-store.mjs",
     "verify:artist-store": "tsx scripts/verify-artist-store.mjs",
-    "verify:artwork-coverage": "tsx scripts/verify-artwork-coverage.mjs"
+    "verify:artwork-coverage": "tsx scripts/verify-artwork-coverage.mjs",
+    "verify:audio-reactive-wave": "tsx scripts/verify-audio-reactive-wave.mjs",
+    "verify:format-currency": "tsx scripts/verify-format-currency.mjs",
+    "verify:album-tracks": "tsx scripts/verify-album-tracks.mjs",
+    "verify:liked-tracks-storage": "tsx scripts/verify-liked-tracks-storage.mjs",
+    "verify:demo-audio-coverage": "tsx scripts/verify-demo-audio-coverage.mjs"
   }
 }

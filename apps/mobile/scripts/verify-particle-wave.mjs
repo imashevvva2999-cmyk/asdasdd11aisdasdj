@@ -9,6 +9,7 @@ import {
   APPROVED_DENSITY,
   APPROVED_SPEED,
   BASE_STRAND_PARTICLES,
+  DEFAULT_TINT,
   GHOSTS,
   INITIAL_QUALITY,
   buildParticles,
@@ -63,6 +64,11 @@ run(30, 30);
 run(30, 16.7);
 run(30, 30);
 check('an occasional slow frame does not degrade quality', q.dprCap === 2 && q.density === 1);
+
+check('DEFAULT_TINT is a valid 0..1 RGB triple close to the approved peach', (() => {
+  const [r, g, b] = DEFAULT_TINT;
+  return r >= 0 && r <= 1 && g >= 0 && g <= 1 && b >= 0 && b <= 1 && r > g && g > b;
+})());
 
 if (failures > 0) {
   console.error(`\n${failures} particle-wave check(s) failed.`);

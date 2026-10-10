@@ -5,6 +5,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Artwork, Icon, PillButton, SheetScreen, TextLinkButton } from '@/components/ui';
 import { DemoNotice } from '@/components/demo-notice';
 import { Colors, Radii, Spacing } from '@/constants/theme';
+import { formatKgsAmount } from '@/lib/format-currency';
 import { goBack } from '@/lib/navigation';
 import { getArtistById } from '@/mocks';
 import { useSupportStore } from '@/state/support-store';
@@ -60,7 +61,7 @@ export default function SupportConfirmSheet() {
             Contribution Amount
           </ThemedText>
           <View style={styles.amountRow}>
-            <ThemedText variant="display-lg">{amount}</ThemedText>
+            <ThemedText variant="display-lg">{formatKgsAmount(amount)}</ThemedText>
             <ThemedText variant="headline-sm" emphasis="medium">
               сом
             </ThemedText>
@@ -84,7 +85,7 @@ export default function SupportConfirmSheet() {
         <DemoNotice text="Demo — no money is sent" style={styles.demoNotice} />
 
         <PillButton
-          label={`Confirm & Send ${amount} сом`}
+          label={`Confirm & Send ${formatKgsAmount(amount)} сом`}
           trailingIcon="bolt"
           loading={stage === 'processing'}
           onPress={handleConfirm}

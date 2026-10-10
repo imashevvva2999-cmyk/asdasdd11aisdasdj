@@ -52,12 +52,16 @@ function createTestEngine() {
 const engine = createTestEngine();
 bindAudioEngine(engine);
 const store = () => usePlayerStore.getState();
-const QUEUE = ['midnight-mirage', 'horizon', 'obsidian-frequencies'];
+// Demo Audio Experience gives every real catalog track demo audio, so the
+// "track without audio" code path needs a synthetic id — any string with no
+// `demoAudioCredits` entry exercises the same store logic a real one would.
+const NO_AUDIO_ID = 'qa-no-audio-fixture';
+const QUEUE = ['midnight-mirage', 'horizon', NO_AUDIO_ID];
 
-// Demo audio mapping (approved: Midnight Mirage + Horizon only).
+// Demo audio mapping (Demo Audio Experience: all 13 catalog tracks).
 check('Midnight Mirage has demo audio', hasDemoAudio('midnight-mirage'));
 check('Horizon has demo audio', hasDemoAudio('horizon'));
-check('Obsidian Frequencies has no audio', !hasDemoAudio('obsidian-frequencies'));
+check('a synthetic id with no credit entry has no audio', !hasDemoAudio(NO_AUDIO_ID));
 check('catalog duration of Midnight Mirage matches its audio (4:00)', getTrackById('midnight-mirage')?.durationSec === 240);
 check('catalog duration of Horizon matches its audio (3:04)', getTrackById('horizon')?.durationSec === 184);
 
@@ -116,7 +120,7 @@ check('seekTo() clamps negative values to 0', store().progressSec === 0);
 
 // A track without audio: no simulated playback.
 engine.reset();
-store().play('obsidian-frequencies', QUEUE);
+store().play(NO_AUDIO_ID, QUEUE);
 check('track without audio → "unavailable"', store().playback === 'unavailable');
 check('track without audio is not loaded into the engine', !engine.called('load'));
 check('track without audio stops the engine', engine.called('pause'));
@@ -140,7 +144,7 @@ check('next() loads and plays it', engine.called('load', 'horizon') && engine.ca
 engine.emit({ playing: true, currentTime: 1 });
 engine.reset();
 store().next();
-check('next() onto a track without audio stops there (no auto-skip)', store().currentTrackId() === 'obsidian-frequencies' && store().playback === 'unavailable');
+check('next() onto a track without audio stops there (no auto-skip)', store().currentTrackId() === NO_AUDIO_ID && store().playback === 'unavailable');
 check('next() onto a track without audio stops the sound', engine.called('pause') && !engine.called('play'));
 engine.reset();
 store().previous();
@@ -282,7 +286,7 @@ check('repeat off: the last track has no next', store().peekNeighbors().nextId =
 
 // ---- Swipe: the track changes at once, audio starts after a short settle (no churn on fast flicks).
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
-store().play('midnight-mirage', ['midnight-mirage', 'horizon', 'obsidian-frequencies']);
+store().play('midnight-mirage', ['midnight-mirage', 'horizon', NO_AUDIO_ID]);
 engine.emit({ playing: true, currentTime: 30 });
 engine.reset();
 store().swipeTo(1);
@@ -304,7 +308,7 @@ check('rapid swipes load only the final track, once', loads.length === 1 && load
 
 engine.reset();
 store().swipeTo(1);
-check('swipe onto a track without audio is "unavailable" at once, nothing loads', store().playback === 'unavailable' && store().currentTrackId() === 'obsidian-frequencies');
+check('swipe onto a track without audio is "unavailable" at once, nothing loads', store().playback === 'unavailable' && store().currentTrackId() === NO_AUDIO_ID);
 await wait(260);
 check('…and nothing loads later either', !engine.called('load'));
 

@@ -1,6 +1,7 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { releaseStageOpen } from '@/components/home/home-stage';
@@ -9,6 +10,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { CoverCard, FeaturedBanner, IconButton, MoodCard, QuickTile, SectionHeader, TrackRow, type MoodVisualKind } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
+import { useTabEntrance } from '@/hooks/use-tab-entrance';
 import { useToast } from '@/hooks/use-toast';
 import {
   forYouTiles,
@@ -37,6 +39,7 @@ const MOOD_VISUALS: Record<string, MoodVisualKind> = {
 export default function HomeScreen() {
   const hero = getPlaylistById(heroPlaylistId);
   const play = usePlayerStore((s) => s.play);
+  const next = usePlayerStore((s) => s.next);
   const currentTrackId = usePlayerStore((s) => s.currentTrackId());
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const togglePlayPause = usePlayerStore((s) => s.togglePlayPause);
@@ -48,6 +51,7 @@ export default function HomeScreen() {
   const toggleSaved = useLibraryStore((s) => s.toggleSaved);
   const isAlbumSaved = (albumId: string) => libraryItems.some((item) => item.kind === 'album' && item.refId === albumId);
   const { showToast, toast } = useToast();
+  const entrance = useTabEntrance('home');
 
   // The living Late Night Flow wave runs only while Home is in front.
   const [homeFocused, setHomeFocused] = useState(false);
@@ -67,7 +71,8 @@ export default function HomeScreen() {
   return (
     <ThemedView surface="canvas" style={styles.flex}>
       <Header />
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <Animated.View style={[styles.flex, entrance.style]}>
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Section title="For you">
           <View style={styles.forYouGrid}>
             {forYouTiles.map((tile) => (
@@ -104,6 +109,9 @@ export default function HomeScreen() {
               subtitle={hero.curator}
               coverUri={hero.coverUri}
               height={224}
+              trackId={currentTrackId ?? hero.trackIds?.[0]}
+              audioPlaying={isPlaying}
+              onNextPress={heroInPlayer ? next : undefined}
               onPress={() => router.push({ pathname: '/playlist/[id]', params: { id: hero.id } })}
               onPlayPress={() => {
                 if (heroInPlayer) {
@@ -227,6 +235,7 @@ export default function HomeScreen() {
           </View>
         </View>
       </ScrollView>
+      </Animated.View>
       {toast}
     </ThemedView>
   );

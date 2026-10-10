@@ -2,12 +2,17 @@ import { Image } from 'expo-image';
 import { StyleSheet } from 'react-native';
 
 import { type LocalOrRemoteImage, toImageSource } from '@/constants/stitch-artwork';
+import type { TrackId } from '@/mocks';
 
 export type ParticleWaveArtworkProps = {
   /** The approved still artwork. */
   uri: LocalOrRemoteImage;
   /** Web only (the particle wave pauses); ignored here. */
   paused?: boolean;
+  /** Web only (audio-reactive colour); ignored here. */
+  trackId?: TrackId;
+  /** Web only (audio-reactive bands); ignored here. */
+  playing?: boolean;
 };
 
 /** Native builds show the approved still artwork; the particle wave is WebGL on the web (particle-wave-artwork.web.tsx). */

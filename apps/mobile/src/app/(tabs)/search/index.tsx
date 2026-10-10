@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MmusicBrand } from '@/components/mmusic-brand';
@@ -9,6 +10,7 @@ import { ThemedView } from '@/components/themed-view';
 import { CoverCard, FeaturedBanner, Icon, IconButton, RankedTile, RemovableChip, TextField, TextLinkButton } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
 import { useContentWidth } from '@/hooks/use-content-width';
+import { useTabEntrance } from '@/hooks/use-tab-entrance';
 import { useToast } from '@/hooks/use-toast';
 import { featuredGenre, genres, initialRecentSearches, trendingSearches } from '@/mocks';
 import { countUnread, useNotificationsStore } from '@/state/notifications-store';
@@ -24,6 +26,7 @@ export default function SearchScreen() {
   // pass finding, verified directly in Chrome DevTools.
   const genreRows = chunkPairs(genres);
   const { showToast, toast } = useToast();
+  const entrance = useTabEntrance('search');
   const unreadCount = useNotificationsStore((st) => countUnread(st.items));
   const openResults = (query?: string) =>
     router.push(query ? { pathname: '/search/results', params: { q: query } } : '/search/results');
@@ -47,6 +50,7 @@ export default function SearchScreen() {
         </View>
       </SafeAreaView>
 
+      <Animated.View style={[styles.flex, entrance.style]}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <TextField
           variant="search"
@@ -135,6 +139,7 @@ export default function SearchScreen() {
           ))}
         </View>
       </ScrollView>
+      </Animated.View>
       {toast}
     </ThemedView>
   );

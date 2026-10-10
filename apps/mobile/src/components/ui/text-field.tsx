@@ -34,7 +34,10 @@ export function TextField({ style, leftAccessory, rightAccessory, label, raised 
           styles.input,
           {
             fontFamily: resolveFontFamily(bodyToken.fontFamily, bodyToken.fontWeight),
-            fontSize: bodyToken.fontSize,
+            // iOS Safari auto-zooms the page on focus when an input's font-size is below
+            // 16px — bumping it web-only (native has no such browser behavior, and the
+            // viewport's own `user-scalable`/accessibility pinch-zoom stays untouched).
+            fontSize: Platform.OS === 'web' ? Math.max(bodyToken.fontSize, 16) : bodyToken.fontSize,
           },
           rest.multiline && styles.inputMultiline,
           style,

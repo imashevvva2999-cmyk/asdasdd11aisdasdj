@@ -6,6 +6,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Artwork, Icon, IconButton, MenuRow, PressableScale, StatCard } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useToast } from '@/hooks/use-toast';
+import { formatKgsAmount } from '@/lib/format-currency';
 import { currentUser } from '@/mocks';
 import { useArtistStore } from '@/state/artist-store';
 import { useLibraryStore } from '@/state/library-store';
@@ -46,7 +47,15 @@ export default function ProfileScreen() {
           <View style={[styles.heroGlow, styles.heroGlowSecondary]} pointerEvents="none" />
           <View style={styles.avatarWrap}>
             <View style={styles.avatarGlow} />
-            <Artwork shape="circle" size={96} radius={48} uri={currentUser.photoUri} placeholderIcon="person" />
+            <Artwork
+              shape="circle"
+              size={96}
+              radius={48}
+              uri={currentUser.photoUri}
+              placeholderIcon="person"
+              onPress={() => showToast("Changing your photo isn't available yet", 'edit')}
+              accessibilityLabel="Change profile photo"
+            />
             <IconButton
               icon="edit"
               accessibilityLabel="Edit profile photo"
@@ -73,7 +82,7 @@ export default function ProfileScreen() {
         <View style={styles.statsRow}>
           <StatCard variant="metric" label="Saved" value={String(currentUser.savedCount)} />
           <StatCard variant="metric" label="Playlists" value={String(currentUser.playlistsCount)} />
-          <StatCard variant="metric" label="Supported" value={String(totalSupported)} unit="сом" style={styles.supportedStat} />
+          <StatCard variant="metric" label="Supported" value={formatKgsAmount(totalSupported)} unit="сом" style={styles.supportedStat} />
         </View>
 
         <View style={styles.section}>
@@ -82,7 +91,7 @@ export default function ProfileScreen() {
             <MenuRow
               icon="volunteer-activism"
               title="Support History"
-              subtitle={`${totalSupported} сом supported • ${distinctArtistCount} artists`}
+              subtitle={`${formatKgsAmount(totalSupported)} сом supported • ${distinctArtistCount} artists`}
               onPress={() => router.push('/profile/support-history')}
             />
             <MenuRow

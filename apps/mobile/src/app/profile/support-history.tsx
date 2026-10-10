@@ -8,6 +8,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Artwork, Chip, EmptyState, Icon, PressableScale } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useHydrated } from '@/hooks/use-hydrated';
+import { formatKgsAmount } from '@/lib/format-currency';
 import { groupSupportHistory, supportDateLabel, type SupportDateMode } from '@/lib/support-dates';
 import { getArtistById, type SupportHistoryEntry } from '@/mocks';
 import { useSupportStore } from '@/state/support-store';
@@ -51,7 +52,7 @@ export default function SupportHistoryScreen() {
             Total Supported
           </ThemedText>
           <View style={styles.totalRow}>
-            <ThemedText variant="display-lg">{totalSupported}</ThemedText>
+            <ThemedText variant="display-lg">{formatKgsAmount(totalSupported)}</ThemedText>
             <ThemedText variant="headline-sm" emphasis="medium">
               сом
             </ThemedText>
@@ -130,7 +131,7 @@ function SupportHistoryRow({ entry, dateMode }: { entry: SupportHistoryEntry; da
       <View style={styles.rowFooter}>
         <View style={styles.statusDot} />
         <ThemedText variant="label-md" style={styles.rowFooterText}>
-          {entry.amount} сом • Completed
+          {formatKgsAmount(entry.amount)} сом • Completed
         </ThemedText>
         <ThemedText variant="label-md" emphasis="medium">
           {supportDateLabel(entry.createdAt, dateMode)}

@@ -6,6 +6,7 @@ import { ThemedText } from '@/components/themed-text';
 import { AmountChip, Icon, IconButton, PillButton, SheetScreen, TextField } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
 import { useHydratedSearchParams } from '@/hooks/use-hydrated-search-params';
+import { formatKgsAmount } from '@/lib/format-currency';
 import { goBack } from '@/lib/navigation';
 import { getArtistById, quickDonationAmountsKgs } from '@/mocks';
 import { useSupportStore } from '@/state/support-store';
@@ -130,7 +131,7 @@ function SupportSheetContent({ artistId }: { artistId: string | undefined }) {
         )}
 
         <PillButton
-          label={amount ? `Support with ${amount} сом` : 'Select an amount'}
+          label={amount ? `Support with ${formatKgsAmount(amount)} сом` : 'Select an amount'}
           leadingIcon="bolt"
           disabled={!amount}
           onPress={handleContinue}

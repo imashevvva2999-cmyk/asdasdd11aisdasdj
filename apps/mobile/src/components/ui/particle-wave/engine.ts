@@ -16,6 +16,12 @@
 
 export type WaveOptions = { density: number; speed: number; paused: boolean };
 
+/** Live, per-frame-updated values that don't go through `set()` — see `ParticleWave`'s `getReactive`. */
+export type ReactiveInput = { tint: [number, number, number]; bass: number; mid: number; high: number };
+
+/** The approved palette's own peach, as the shader's default — a no-op tint when nothing reactive is wired (native, tests, first frame). */
+export const DEFAULT_TINT: [number, number, number] = [1, 0.76, 0.64];
+
 /** The approved configuration: preview default density, speed set to 1.90×. */
 export const APPROVED_SPEED = 1.9;
 export const APPROVED_DENSITY = 1;
@@ -58,6 +64,10 @@ attribute vec2 a3; // ghost index, kind (0 strand, 1 shard, 2 haze, 3 dust)
 uniform float uTime;
 uniform vec2 uRes;
 uniform vec3 uCover; // artwork px -> canvas (device) px: scale, offset x, offset y
+uniform vec3 uTint;
+uniform float uBass;
+uniform float uMid;
+uniform float uHigh;
 varying vec4 vColor;
 varying float vKind;
 
@@ -123,10 +133,10 @@ void main() {
     float u = fract(a0.x + a2.y * t);
     float env = envelope(u, t);
     float pulse = gauss(u - pulseC, 0.08);
-    float amp = env * breath * (1.0 + 0.22 * pulse);
+    float amp = env * breath * (1.0 + 0.22 * pulse) * (1.0 + uBass * 0.32);
     // Each strand: own cycles, phase, speed and a phase-shifted second harmonic.
-    float w1 = sin(TAU * a1.y * u - a1.z * t + a1.x);
-    float w2 = sin(TAU * a1.y * 2.07 * u + 1.6 * a1.z * t + a2.z);
+    float w1 = sin(TAU * a1.y * u - a1.z * t * (1.0 + uMid * 0.12) + a1.x);
+    float w2 = sin(TAU * a1.y * 2.07 * u + 1.6 * a1.z * t * (1.0 + uMid * 0.12) + a2.z);
     float n = snoise(vec2(u * 2.3 + a1.x, t * 0.11 + a2.z));
     float y = 84.0 * amp * (a1.w * w1 + 0.15 * w2) + 3.0 * n * env;
     // Ribbon thickness: a thin band of particles across the strand, a little wider in the lobes.
@@ -154,9 +164,10 @@ void main() {
     } else if (kind > 0.5) {
       // Shards: rare bright glints, like the crystal edges of the artwork.
       col = mix(col, vec3(1.0, 0.92, 0.86), 0.7);
-      alpha *= 1.3 * (0.55 + 0.45 * sin(t * 2.3 + a0.w * 30.0));
-      size *= 1.9;
+      alpha *= 1.3 * (0.55 + 0.45 * sin(t * 2.3 + a0.w * 30.0)) * (1.0 + uHigh * 0.5);
+      size *= 1.9 * (1.0 + uHigh * 0.15);
     }
+    col = mix(col, uTint, 0.35);
   }
   // Light trails: each ghost is an earlier instant, fainter.
   alpha *= ghost < 0.5 ? 1.0 : (ghost < 1.5 ? 0.38 : 0.14);
@@ -282,11 +293,13 @@ export class ParticleWave {
   private observer: IntersectionObserver | null = null;
   private restoreTimer = 0;
   private destroyed = false;
+  private reactive: ReactiveInput = { tint: DEFAULT_TINT, bass: 0, mid: 0, high: 0 };
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
     private opts: WaveOptions,
     private readonly onFallback: () => void,
+    private readonly getReactive?: () => ReactiveInput,
   ) {
     canvas.addEventListener('webglcontextlost', this.lost);
     canvas.addEventListener('webglcontextrestored', this.restored);
@@ -411,6 +424,10 @@ export class ParticleWave {
     gl.uniform1f(gl.getUniformLocation(p, 'uTime'), this.reduceMotion ? STILL_TIME : this.time + STILL_TIME);
     gl.uniform2f(gl.getUniformLocation(p, 'uRes'), width, height);
     gl.uniform3f(gl.getUniformLocation(p, 'uCover'), scale, offX, offY);
+    gl.uniform3f(gl.getUniformLocation(p, 'uTint'), ...this.reactive.tint);
+    gl.uniform1f(gl.getUniformLocation(p, 'uBass'), this.reactive.bass);
+    gl.uniform1f(gl.getUniformLocation(p, 'uMid'), this.reactive.mid);
+    gl.uniform1f(gl.getUniformLocation(p, 'uHigh'), this.reactive.high);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE);
     gl.drawArrays(gl.POINTS, 0, this.count);
@@ -423,6 +440,7 @@ export class ParticleWave {
     const dt = Math.min(ms, 50) / 1000;
     this.last = now;
     this.time += dt * this.opts.speed;
+    if (this.getReactive) this.reactive = this.getReactive();
     this.draw();
     const before = this.quality;
     this.quality = nextQuality(this.quality, ms);

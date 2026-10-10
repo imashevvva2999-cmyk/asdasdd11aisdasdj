@@ -87,7 +87,7 @@ const URIS = { 'midnight-mirage': '/audio/chill-wave.mp3', horizon: '/audio/floa
   check('load() points the single element at the track', media.src === '/audio/chill-wave.mp3');
   engine.load('horizon');
   check('the next track reuses the same element (src swapped, no new element)', media.src === '/audio/floating-cities.mp3');
-  engine.load('obsidian-frequencies');
+  engine.load('qa-no-audio-fixture'); // Demo Audio Experience gives every real catalog track audio — a synthetic id exercises this path.
   check('a track without audio leaves the element alone', media.src === '/audio/floating-cities.mp3');
   engine.dispose();
 }

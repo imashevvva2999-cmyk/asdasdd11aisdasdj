@@ -7,6 +7,11 @@ export type DemoAudioCredit = {
   sourceUrl: string;
   licenseName: string;
   licenseUrl: string;
+  /** Whether this specific recording has no vocals — gates whether lyrics can
+   * ever be shown for it (Lyrics Demo Experience). Keyed to the recording
+   * itself, not the catalog track, so a future vocal demo recording (or a
+   * real licensed track) can be added with `false` and show real lyrics. */
+  isInstrumental: boolean;
 };
 
 /**
@@ -23,6 +28,7 @@ export const demoAudioCredits: Partial<Record<TrackId, DemoAudioCredit>> = {
     sourceUrl: 'https://incompetech.com',
     licenseName: 'Creative Commons: By Attribution 4.0 License',
     licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
+    isInstrumental: true,
   },
   horizon: {
     originalTitle: 'Floating Cities',
@@ -30,9 +36,105 @@ export const demoAudioCredits: Partial<Record<TrackId, DemoAudioCredit>> = {
     sourceUrl: 'https://incompetech.com',
     licenseName: 'Creative Commons: By Attribution 4.0 License',
     licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
+    isInstrumental: true,
+  },
+  'vapor-trails': {
+    originalTitle: 'Windswept',
+    author: 'Kevin MacLeod',
+    sourceUrl: 'https://incompetech.com',
+    licenseName: 'Creative Commons: By Attribution 4.0 License',
+    licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
+    isInstrumental: true,
+  },
+  'abyssal-bloom': {
+    originalTitle: 'Reminiscing',
+    author: 'Kevin MacLeod',
+    sourceUrl: 'https://incompetech.com',
+    licenseName: 'Creative Commons: By Attribution 4.0 License',
+    licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
+    isInstrumental: true,
+  },
+  'tape-saturation-4': {
+    originalTitle: 'Comfortable Mystery',
+    author: 'Kevin MacLeod',
+    sourceUrl: 'https://incompetech.com',
+    licenseName: 'Creative Commons: By Attribution 4.0 License',
+    licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
+    isInstrumental: true,
+  },
+  'abyssal-bloom-feat': {
+    originalTitle: 'Eternity',
+    author: 'Kevin MacLeod',
+    sourceUrl: 'https://incompetech.com',
+    licenseName: 'Creative Commons: By Attribution 4.0 License',
+    licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
+    isInstrumental: true,
+  },
+  'obsidian-frequencies': {
+    originalTitle: 'Spellbound',
+    author: 'Kevin MacLeod',
+    sourceUrl: 'https://incompetech.com',
+    licenseName: 'Creative Commons: By Attribution 4.0 License',
+    licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
+    isInstrumental: true,
+  },
+  'ember-tide': {
+    originalTitle: 'One Sly Move',
+    author: 'Kevin MacLeod',
+    sourceUrl: 'https://incompetech.com',
+    licenseName: 'Creative Commons: By Attribution 4.0 License',
+    licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
+    isInstrumental: true,
+  },
+  'resonant-field-reprise': {
+    originalTitle: 'Deliberate Thought',
+    author: 'Kevin MacLeod',
+    sourceUrl: 'https://incompetech.com',
+    licenseName: 'Creative Commons: By Attribution 4.0 License',
+    licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
+    isInstrumental: true,
+  },
+  'nebula-dreams-t1': {
+    originalTitle: 'Equatorial Complex',
+    author: 'Kevin MacLeod',
+    sourceUrl: 'https://incompetech.com',
+    licenseName: 'Creative Commons: By Attribution 4.0 License',
+    licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
+    isInstrumental: true,
+  },
+  'lost-frequencies-t1': {
+    originalTitle: 'Late Night Radio',
+    author: 'Kevin MacLeod',
+    sourceUrl: 'https://incompetech.com',
+    licenseName: 'Creative Commons: By Attribution 4.0 License',
+    licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
+    isInstrumental: true,
+  },
+  'velvet-skyline-t1': {
+    originalTitle: 'Airship Serenity',
+    author: 'Kevin MacLeod',
+    sourceUrl: 'https://incompetech.com',
+    licenseName: 'Creative Commons: By Attribution 4.0 License',
+    licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
+    isInstrumental: true,
+  },
+  'chronos-echoes-t1': {
+    originalTitle: 'Winter Reflections',
+    author: 'Kevin MacLeod',
+    sourceUrl: 'https://incompetech.com',
+    licenseName: 'Creative Commons: By Attribution 4.0 License',
+    licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
+    isInstrumental: true,
   },
 };
 
 export function hasDemoAudio(trackId: TrackId | undefined): boolean {
   return trackId !== undefined && demoAudioCredits[trackId] !== undefined;
+}
+
+/** True only when the track's demo recording itself has no vocals — the
+ * condition lyrics availability is gated on (Lyrics Demo Experience). */
+export function isDemoAudioInstrumental(trackId: TrackId | undefined): boolean {
+  if (trackId === undefined) return false;
+  return demoAudioCredits[trackId]?.isInstrumental === true;
 }
