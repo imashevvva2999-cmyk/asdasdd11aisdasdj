@@ -59,6 +59,11 @@ const EN_STRINGS = {
   perYear: 'year',
   perMonth: 'month',
   forever: 'forever',
+  uploadFirstTrackTitle: 'Upload your first track',
+  uploadFirstTrackHint: 'Published and draft tracks will appear here.',
+  emptyFilterTitle: 'Nothing in this filter yet',
+  analyticsEmptyTitle: 'No analytics yet',
+  analyticsEmptyHint: 'Publish your first track to see streaming analytics here.',
 } as const;
 
 const RU_STRINGS: Record<keyof typeof EN_STRINGS, string> = {
@@ -116,7 +121,16 @@ const RU_STRINGS: Record<keyof typeof EN_STRINGS, string> = {
   perYear: 'год',
   perMonth: 'месяц',
   forever: 'навсегда',
+  uploadFirstTrackTitle: 'Загрузите свой первый трек',
+  uploadFirstTrackHint: 'Опубликованные и черновые треки появятся здесь.',
+  emptyFilterTitle: 'Здесь пока ничего нет',
+  analyticsEmptyTitle: 'Пока нет аналитики',
+  analyticsEmptyHint: 'Опубликуйте первый трек, чтобы увидеть статистику прослушиваний.',
 };
+
+/** Per-item localized content for data arrays (tiers, promo tools,
+ * geography/channel names) that don't fit the flat `t(key)` string table. */
+export type LocalizedText = { en: string; ru: string };
 
 export type DashboardLocale = 'en' | 'ru';
 export type DashboardStringKey = keyof typeof EN_STRINGS;

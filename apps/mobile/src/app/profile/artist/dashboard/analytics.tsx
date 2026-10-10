@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { ListenTrendChart } from '@/components/dashboard/listen-trend-chart';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Artwork, Chip, StatCard } from '@/components/ui';
+import { Artwork, Chip, EmptyState, StatCard } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { getTrackAnalytics, type TimePeriod } from '@/lib/analytics-mock';
 import { useDashboardStrings } from '@/state/dashboard-locale-store';
@@ -21,14 +21,25 @@ const PERIOD_KEYS: { id: TimePeriod; key: DashboardStringKey }[] = [
 /** Artist Dashboard — Analytics tab (Stitch "midnight_mirage"). Mock data
  * only (src/lib/analytics-mock.ts) — clearly not real telemetry. */
 export default function AnalyticsScreen() {
-  const { t } = useDashboardStrings();
+  const { t, locale } = useDashboardStrings();
   const entries = useArtistStore((s) => s.entries);
   const published = useMemo(() => entries.filter((e) => e.status === 'published'), [entries]);
-  const [trackId, setTrackId] = useState(published[0]?.track.id ?? 'midnight-mirage');
+  const [rawTrackId, setRawTrackId] = useState(published[0]?.track.id);
+  const trackId = published.some((e) => e.track.id === rawTrackId) ? rawTrackId : published[0]?.track.id;
   const [period, setPeriod] = useState<TimePeriod>('28d');
 
-  const track = published.find((e) => e.track.id === trackId)?.track;
-  const data = getTrackAnalytics(trackId, period);
+  if (published.length === 0) {
+    return (
+      <ThemedView surface="canvas" style={styles.flex}>
+        <EmptyState icon="show-chart" title={t('analyticsEmptyTitle')} hint={t('analyticsEmptyHint')} />
+      </ThemedView>
+    );
+  }
+
+  // published.length > 0 guarantees trackId resolves to a real track id above.
+  const activeTrackId = trackId as string;
+  const track = published.find((e) => e.track.id === activeTrackId)?.track;
+  const data = getTrackAnalytics(activeTrackId, period);
   const periodLabel = t(PERIOD_KEYS.find((p) => p.id === period)!.key);
 
   return (
@@ -49,7 +60,7 @@ export default function AnalyticsScreen() {
         {published.length > 1 && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
             {published.map((e) => (
-              <Chip key={e.track.id} label={e.track.title} selected={e.track.id === trackId} onPress={() => setTrackId(e.track.id)} />
+              <Chip key={e.track.id} label={e.track.title} selected={e.track.id === activeTrackId} onPress={() => setRawTrackId(e.track.id)} />
             ))}
           </ScrollView>
         )}
@@ -61,10 +72,10 @@ export default function AnalyticsScreen() {
         </ScrollView>
 
         <View style={styles.statsGrid}>
-          <StatCard label={t('streams')} value={data.streams.toLocaleString('en-US')} />
-          <StatCard label={t('listeners')} value={data.listeners.toLocaleString('en-US')} />
-          <StatCard label={t('completion')} value={`${data.completionPct}%`} />
-          <StatCard label={t('inPlaylists')} value={data.playlistAdds.toLocaleString('en-US')} />
+          <StatCard label={t('streams')} value={data.streams.toLocaleString('en-US')} style={styles.statTile} />
+          <StatCard label={t('listeners')} value={data.listeners.toLocaleString('en-US')} style={styles.statTile} />
+          <StatCard label={t('completion')} value={`${data.completionPct}%`} style={styles.statTile} />
+          <StatCard label={t('inPlaylists')} value={data.playlistAdds.toLocaleString('en-US')} style={styles.statTile} />
         </View>
 
         <View style={styles.chartCard}>
@@ -89,9 +100,9 @@ export default function AnalyticsScreen() {
           </ThemedText>
           <ThemedText variant="headline-sm">{t('listenerGeography')}</ThemedText>
           {data.geography.map((g) => (
-            <View key={g.city} style={styles.barRow}>
+            <View key={g.city.en} style={styles.barRow}>
               <ThemedText variant="body-sm">
-                {g.city} <ThemedText variant="body-sm" emphasis="medium">{g.country}</ThemedText>
+                {g.city[locale]} <ThemedText variant="body-sm" emphasis="medium">{g.country[locale]}</ThemedText>
               </ThemedText>
               <ThemedText variant="label-lg">{g.pct}%</ThemedText>
             </View>
@@ -105,7 +116,7 @@ export default function AnalyticsScreen() {
           <ThemedText variant="headline-sm">{t('discoverySources')}</ThemedText>
           <View style={styles.statsGrid}>
             {data.channels.map((c) => (
-              <StatCard key={c.name} label={c.name} value={`${c.pct}%`} />
+              <StatCard key={c.name.en} label={c.name[locale]} value={`${c.pct}%`} style={styles.statTile} />
             ))}
           </View>
         </View>
@@ -121,6 +132,7 @@ const styles = StyleSheet.create({
   trackText: { flex: 1, minWidth: 0, gap: 2 },
   filterRow: { gap: Spacing.xs },
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
+  statTile: { flexBasis: '47%' },
   chartCard: { backgroundColor: Colors.surface.l1, borderRadius: Radii.lg, padding: Spacing.md, gap: Spacing.sm },
   sectionLabel: { letterSpacing: 1, textTransform: 'uppercase' },
   chartFooter: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: Spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: Colors.surface.l3 },

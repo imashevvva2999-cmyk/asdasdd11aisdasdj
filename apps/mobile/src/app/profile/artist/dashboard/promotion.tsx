@@ -17,10 +17,11 @@ const BUDGETS = [1000, 2500, 5000];
  * ever launches — "Launch via MBANK" is explicitly disabled, same honest
  * pattern as the listener Support flow. */
 export default function PromotionScreen() {
-  const { t } = useDashboardStrings();
+  const { t, locale } = useDashboardStrings();
   const entries = useArtistStore((s) => s.entries);
   const published = useMemo(() => entries.filter((e) => e.status === 'published'), [entries]);
-  const [campaignTrackId, setCampaignTrackId] = useState(published[0]?.track.id);
+  const [rawCampaignTrackId, setRawCampaignTrackId] = useState(published[0]?.track.id);
+  const campaignTrackId = published.some((e) => e.track.id === rawCampaignTrackId) ? rawCampaignTrackId : published[0]?.track.id;
   const [budget, setBudget] = useState(BUDGETS[1]);
   const { showToast, toast } = useToast();
 
@@ -30,40 +31,42 @@ export default function PromotionScreen() {
   return (
     <ThemedView surface="canvas" style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.card}>
-          <ThemedText variant="label-sm" style={{ color: Colors.primary }}>
-            {t('liveLabel')} · {ACTIVE_CAMPAIGN.dayOfTotal}
-          </ThemedText>
-          <View style={styles.activeRow}>
-            <Artwork uri={activeTrack?.coverUri} size={48} radius={Radii.DEFAULT} />
-            <ThemedText variant="headline-sm" numberOfLines={1} style={styles.flexText}>
-              {activeTrack?.title ?? ACTIVE_CAMPAIGN.trackId}
+        {published.length > 0 && (
+          <View style={styles.card}>
+            <ThemedText variant="label-sm" style={{ color: Colors.primary }}>
+              {t('liveLabel')} · {ACTIVE_CAMPAIGN.dayOfTotal[locale]}
             </ThemedText>
-          </View>
-          <View style={styles.statsRow}>
-            <View>
-              <ThemedText variant="body-sm" emphasis="medium">{t('campaignReach')}</ThemedText>
-              <ThemedText variant="headline-md">{ACTIVE_CAMPAIGN.reach.toLocaleString('en-US')} / {(ACTIVE_CAMPAIGN.reachGoal / 1000).toFixed(0)}k</ThemedText>
+            <View style={styles.activeRow}>
+              <Artwork uri={activeTrack?.coverUri} size={48} radius={Radii.DEFAULT} />
+              <ThemedText variant="headline-sm" numberOfLines={1} style={styles.flexText}>
+                {activeTrack?.title ?? ACTIVE_CAMPAIGN.trackId}
+              </ThemedText>
             </View>
-            <View>
-              <ThemedText variant="body-sm" emphasis="medium">{t('fanConversion')}</ThemedText>
-              <ThemedText variant="headline-md">{ACTIVE_CAMPAIGN.conversionRatePct}% {t('conversionRateAbbr')}</ThemedText>
+            <View style={styles.statsRow}>
+              <View>
+                <ThemedText variant="body-sm" emphasis="medium">{t('campaignReach')}</ThemedText>
+                <ThemedText variant="headline-md">{ACTIVE_CAMPAIGN.reach.toLocaleString('en-US')} / {(ACTIVE_CAMPAIGN.reachGoal / 1000).toFixed(0)}k</ThemedText>
+              </View>
+              <View>
+                <ThemedText variant="body-sm" emphasis="medium">{t('fanConversion')}</ThemedText>
+                <ThemedText variant="headline-md">{ACTIVE_CAMPAIGN.conversionRatePct}% {t('conversionRateAbbr')}</ThemedText>
+              </View>
+            </View>
+            <View style={styles.progressTrack}>
+              <View style={[styles.progressFill, { width: `${ACTIVE_CAMPAIGN.progressPct}%` }]} />
             </View>
           </View>
-          <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: `${ACTIVE_CAMPAIGN.progressPct}%` }]} />
-          </View>
-        </View>
+        )}
 
         <View style={styles.section}>
           <ThemedText variant="headline-md">{t('promotionTools')}</ThemedText>
           {PROMO_TOOLS.map((tool) => (
             <View key={tool.id} style={styles.toolCard}>
               <View style={styles.toolHeader}>
-                <ThemedText variant="label-lg" style={styles.flexText}>{tool.name}</ThemedText>
+                <ThemedText variant="label-lg" style={styles.flexText}>{tool.name[locale]}</ThemedText>
                 <ThemedText variant="body-sm" style={{ color: Colors.secondary }}>{tool.priceLabel}</ThemedText>
               </View>
-              <ThemedText variant="body-sm" emphasis="medium">{tool.description}</ThemedText>
+              <ThemedText variant="body-sm" emphasis="medium">{tool.description[locale]}</ThemedText>
             </View>
           ))}
         </View>
@@ -73,7 +76,7 @@ export default function PromotionScreen() {
           {published.length > 0 && (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
               {published.map((e) => (
-                <Chip key={e.track.id} label={e.track.title} selected={e.track.id === campaignTrackId} onPress={() => setCampaignTrackId(e.track.id)} />
+                <Chip key={e.track.id} label={e.track.title} selected={e.track.id === campaignTrackId} onPress={() => setRawCampaignTrackId(e.track.id)} />
               ))}
             </ScrollView>
           )}
@@ -105,9 +108,9 @@ export default function PromotionScreen() {
             <View key={h.id} style={styles.historyRow}>
               <View style={styles.flexText}>
                 <ThemedText variant="label-lg">{h.trackTitle}</ThemedText>
-                <ThemedText variant="body-sm" emphasis="medium">{h.completedLabel}</ThemedText>
+                <ThemedText variant="body-sm" emphasis="medium">{h.completedLabel[locale]}</ThemedText>
               </View>
-              <ThemedText variant="label-lg" style={{ color: Colors.tertiary }}>{h.metric}</ThemedText>
+              <ThemedText variant="label-lg" style={{ color: Colors.tertiary }}>{h.metric[locale]}</ThemedText>
             </View>
           ))}
         </View>
