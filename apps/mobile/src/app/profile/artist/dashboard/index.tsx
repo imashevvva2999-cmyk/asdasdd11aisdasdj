@@ -9,6 +9,7 @@ import { Colors, Radii, Spacing } from '@/constants/theme';
 import { formatKgsAmount } from '@/lib/format-currency';
 import { usePlayerStore } from '@/state/player-store';
 import { useArtistStore, type UploadStatus } from '@/state/artist-store';
+import { useDashboardStrings } from '@/state/dashboard-locale-store';
 
 const FILTERS = ['All', 'Published', 'In Review', 'Draft'] as const;
 
@@ -43,6 +44,7 @@ export default function ArtistDashboardScreen() {
   const artist = useArtistStore((s) => s.artist);
   const entries = useArtistStore((s) => s.entries);
   const play = usePlayerStore((s) => s.play);
+  const { t, locale, setLocale } = useDashboardStrings();
 
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>('All');
 
@@ -83,21 +85,26 @@ export default function ArtistDashboardScreen() {
         }}
       />
       <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.localeRow}>
+          <Chip label="EN" selected={locale === 'en'} onPress={() => setLocale('en')} />
+          <Chip label="RU" selected={locale === 'ru'} onPress={() => setLocale('ru')} />
+        </View>
+
         <PillButton
-          label="Upload Track"
+          label={t('uploadTrack')}
           leadingIcon="add-circle-outline"
           onPress={() => router.push('/profile/artist/upload-track')}
           style={styles.uploadButton}
         />
 
         <View style={styles.statsRow}>
-          <StatCard label="Listeners" value={String(artist.monthlyListeners ?? 0)} icon="groups" iconColor={Colors.primary} />
-          <StatCard label="Streams" value="0" icon="play-circle-outline" iconColor={Colors.tertiary} />
+          <StatCard label={t('listeners')} value={String(artist.monthlyListeners ?? 0)} icon="groups" iconColor={Colors.primary} />
+          <StatCard label={t('streams')} value="0" icon="play-circle-outline" iconColor={Colors.tertiary} />
           <StatCard label="Support" value={`${formatKgsAmount(0)} сом`} icon="volunteer-activism" iconColor={Colors.secondary} />
         </View>
 
         <View style={styles.section}>
-          <ThemedText variant="headline-md">Your Releases</ThemedText>
+          <ThemedText variant="headline-md">{t('yourReleases')}</ThemedText>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
             {FILTERS.map((item) => (
               <Chip key={item} label={item} selected={item === filter} onPress={() => setFilter(item)} />
@@ -109,7 +116,7 @@ export default function ArtistDashboardScreen() {
               icon="upload"
               title={entries.length === 0 ? 'Upload your first track' : 'Nothing in this filter yet'}
               hint={entries.length === 0 ? 'Published and draft tracks will appear here.' : undefined}
-              actionLabel={entries.length === 0 ? 'Upload Track' : undefined}
+              actionLabel={entries.length === 0 ? t('uploadTrack') : undefined}
               onActionPress={entries.length === 0 ? () => router.push('/profile/artist/upload-track') : undefined}
             />
           ) : (
@@ -174,6 +181,10 @@ const styles = StyleSheet.create({
     padding: Spacing.margin,
     gap: Spacing.lg,
     paddingBottom: Spacing.xl * 3,
+  },
+  localeRow: {
+    flexDirection: 'row',
+    gap: Spacing.xs,
   },
   uploadButton: {
     borderRadius: Radii.md,

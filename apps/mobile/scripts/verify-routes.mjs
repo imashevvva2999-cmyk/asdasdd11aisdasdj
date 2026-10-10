@@ -71,7 +71,7 @@ const expectations = [
   // is exercised directly against the store in scripts/verify-artist-store.mjs.
   { path: 'profile/artist/become-artist.html', mustContain: ['Share Your Sound with the World', 'Share Your Music', 'Fan Support', 'Artist Insights', 'BECOME AN ARTIST'], mustNotContain: ['PLACEHOLDER'], label: 'Become an Artist (S-25)' },
   { path: 'profile/artist/setup.html', mustContain: ['Primary Genre', 'Electronic', 'Create Artist Profile'], mustNotContain: ['PLACEHOLDER'], label: 'Artist Setup (S-26)' },
-  { path: 'profile/artist/dashboard.html', mustContain: ['No artist profile yet', 'Set up your artist profile to start uploading tracks.'], mustNotContain: ['PLACEHOLDER'], label: 'Artist Dashboard (S-27, no local artist yet)' },
+  { path: 'profile/artist/dashboard/index.html', mustContain: ['No artist profile yet', 'Set up your artist profile to start uploading tracks.'], mustNotContain: ['PLACEHOLDER'], label: 'Artist Dashboard (S-27, no local artist yet)' },
   { path: 'profile/artist/upload-track.html', mustContain: ['Upload Audio', 'Browse File', 'Track Details', 'Cover Artwork', 'Release Settings', 'Publish Track', 'Save as Draft'], mustNotContain: ['PLACEHOLDER'], label: 'Upload Track (S-28)' },
   // W1 — the website's own 404 page (served by the host for unknown URLs).
   { path: '+not-found.html', mustContain: ['Page not found', 'Go to Home'], mustNotContain: ['PLACEHOLDER'], label: '404 page (W1)' },
