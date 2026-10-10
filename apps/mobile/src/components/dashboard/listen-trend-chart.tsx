@@ -43,7 +43,7 @@ export function ListenTrendChart({ points, peakLabel }: { points: TrendPoint[]; 
           {points[0]?.label}
         </ThemedText>
         <ThemedText variant="body-sm" style={styles.peak}>
-          Peak: {peakLabel}
+          {peakLabel}
         </ThemedText>
         <ThemedText variant="body-sm" emphasis="medium">
           {points[points.length - 1]?.label}

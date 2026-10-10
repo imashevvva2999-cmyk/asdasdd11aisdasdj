@@ -72,7 +72,7 @@ export default function AnalyticsScreen() {
             {t('trendSection')}
           </ThemedText>
           <ThemedText variant="headline-sm">{t('listensOver')} {periodLabel.toLowerCase()}</ThemedText>
-          <ListenTrendChart points={data.trend} peakLabel={data.peak.toLocaleString('en-US')} />
+          <ListenTrendChart points={data.trend} peakLabel={`${t('peakLabel')} ${data.peak.toLocaleString('en-US')}`} />
           <View style={styles.chartFooter}>
             <ThemedText variant="body-sm" emphasis="medium">
               {t('averageListenTime')}
