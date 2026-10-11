@@ -6,6 +6,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { LivingMoodScene } from '@/components/living-moods/living-mood-scene';
+import { GalaxyScene } from '@/components/living-moods/scenes/galaxy-scene';
 import { LiquidChromeScene } from '@/components/living-moods/scenes/liquid-chrome-scene';
 import { MetaBallsScene } from '@/components/living-moods/scenes/meta-balls-scene';
 import { OrbScene } from '@/components/living-moods/scenes/orb-scene';
@@ -22,11 +23,10 @@ const CARDS: { id: CardId; title: string; description: string; colors: [string, 
 /**
  * Dev-only prototype — Mood & Vibes: Living Moods (W3 exploration). NOT
  * linked from any production screen; excluded from the web export the same
- * way `dev-ui-kit.tsx` is (see `scripts/web-postexport.mjs`). The Liquid
- * Chrome, Meta Balls, and Orb cards are provisionally wired to their real
- * WebGL scenes (Tasks 2-4) for review; the remaining card stays an inert
- * gradient placeholder until Task 6 wires the full grid (including these
- * cards' final, non-always-active mounting).
+ * way `dev-ui-kit.tsx` is (see `scripts/web-postexport.mjs`). All four cards
+ * (Liquid Chrome, Meta Balls, Orb, Galaxy — Tasks 2-5) are provisionally
+ * wired to their real WebGL scenes for review; Task 6 wires the full grid's
+ * final, non-always-active mounting.
  */
 export default function DevLivingMoodsScreen() {
   const [expanded, setExpanded] = useState<CardId | null>(null);
@@ -43,7 +43,7 @@ export default function DevLivingMoodsScreen() {
           ) : expandedCard.id === 'orb' ? (
             <LivingMoodScene engine={OrbScene} active fallbackColors={expandedCard.colors} style={styles.expandedScene} />
           ) : (
-            <View style={[styles.expandedScene, { backgroundColor: expandedCard.colors[0] }]} />
+            <LivingMoodScene engine={GalaxyScene} active fallbackColors={expandedCard.colors} style={styles.expandedScene} />
           )}
           <Pressable
             accessibilityRole="button"
@@ -90,7 +90,7 @@ export default function DevLivingMoodsScreen() {
                 ) : card.id === 'orb' ? (
                   <LivingMoodScene engine={OrbScene} active fallbackColors={card.colors} style={styles.cardScene} />
                 ) : (
-                  <View style={[styles.cardScene, { backgroundColor: card.colors[0] }]} />
+                  <LivingMoodScene engine={GalaxyScene} active fallbackColors={card.colors} style={styles.cardScene} />
                 )}
                 <View style={styles.cardCaption}>
                   <ThemedText variant="label-lg">{card.title}</ThemedText>
