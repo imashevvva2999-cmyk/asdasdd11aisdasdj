@@ -7,6 +7,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { LivingMoodScene } from '@/components/living-moods/living-mood-scene';
 import { LiquidChromeScene } from '@/components/living-moods/scenes/liquid-chrome-scene';
+import { MetaBallsScene } from '@/components/living-moods/scenes/meta-balls-scene';
 
 type CardId = 'liquid-chrome' | 'meta-balls' | 'orb' | 'galaxy';
 
@@ -21,10 +22,10 @@ const CARDS: { id: CardId; title: string; description: string; colors: [string, 
  * Dev-only prototype — Mood & Vibes: Living Moods (W3 exploration). NOT
  * linked from any production screen; excluded from the web export the same
  * way `dev-ui-kit.tsx` is (see `scripts/web-postexport.mjs`). The Liquid
- * Chrome card is provisionally wired to its real WebGL scene (Task 2) for
- * review; the other three stay inert gradient placeholders until Task 6
- * wires the full grid (including this card's final, non-always-active
- * mounting).
+ * Chrome and Meta Balls cards are provisionally wired to their real WebGL
+ * scenes (Tasks 2-3) for review; the other two stay inert gradient
+ * placeholders until Task 6 wires the full grid (including these cards'
+ * final, non-always-active mounting).
  */
 export default function DevLivingMoodsScreen() {
   const [expanded, setExpanded] = useState<CardId | null>(null);
@@ -36,6 +37,8 @@ export default function DevLivingMoodsScreen() {
         <SafeAreaView style={styles.flex} edges={['top', 'bottom']}>
           {expandedCard.id === 'liquid-chrome' ? (
             <LivingMoodScene engine={LiquidChromeScene} active fallbackColors={expandedCard.colors} style={styles.expandedScene} />
+          ) : expandedCard.id === 'meta-balls' ? (
+            <LivingMoodScene engine={MetaBallsScene} active fallbackColors={expandedCard.colors} style={styles.expandedScene} />
           ) : (
             <View style={[styles.expandedScene, { backgroundColor: expandedCard.colors[0] }]} />
           )}
@@ -79,6 +82,8 @@ export default function DevLivingMoodsScreen() {
               >
                 {card.id === 'liquid-chrome' ? (
                   <LivingMoodScene engine={LiquidChromeScene} active fallbackColors={card.colors} style={styles.cardScene} />
+                ) : card.id === 'meta-balls' ? (
+                  <LivingMoodScene engine={MetaBallsScene} active fallbackColors={card.colors} style={styles.cardScene} />
                 ) : (
                   <View style={[styles.cardScene, { backgroundColor: card.colors[0] }]} />
                 )}
