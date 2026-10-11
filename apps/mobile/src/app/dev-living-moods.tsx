@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors, Radii, Spacing } from '@/constants/theme';
-import { LivingMoodScene } from '@/components/living-moods/living-mood-scene';
+import { LivingMoodScene, type SceneEngineCtor } from '@/components/living-moods/living-mood-scene';
 import { GalaxyScene } from '@/components/living-moods/scenes/galaxy-scene';
 import { LiquidChromeScene } from '@/components/living-moods/scenes/liquid-chrome-scene';
 import { MetaBallsScene } from '@/components/living-moods/scenes/meta-balls-scene';
@@ -20,13 +20,21 @@ const CARDS: { id: CardId; title: string; description: string; colors: [string, 
   { id: 'galaxy', title: 'Galaxy', description: 'A deep particle environment', colors: ['#0a0e16', '#162038'] },
 ];
 
+const SCENE_BY_ID: Record<CardId, SceneEngineCtor> = {
+  'liquid-chrome': LiquidChromeScene,
+  'meta-balls': MetaBallsScene,
+  orb: OrbScene,
+  galaxy: GalaxyScene,
+};
+
 /**
  * Dev-only prototype — Mood & Vibes: Living Moods (W3 exploration). NOT
  * linked from any production screen; excluded from the web export the same
  * way `dev-ui-kit.tsx` is (see `scripts/web-postexport.mjs`). All four cards
- * (Liquid Chrome, Meta Balls, Orb, Galaxy — Tasks 2-5) are provisionally
- * wired to their real WebGL scenes for review; Task 6 wires the full grid's
- * final, non-always-active mounting.
+ * (Liquid Chrome, Meta Balls, Orb, Galaxy) are wired to their real WebGL
+ * scenes via `SCENE_BY_ID`; the grid/expanded early-return structure below
+ * guarantees at most one scene runs at expanded size and at most four run
+ * at card size, never both simultaneously.
  */
 export default function DevLivingMoodsScreen() {
   const [expanded, setExpanded] = useState<CardId | null>(null);
@@ -36,15 +44,12 @@ export default function DevLivingMoodsScreen() {
     return (
       <ThemedView surface="canvas" style={styles.flex}>
         <SafeAreaView style={styles.flex} edges={['top', 'bottom']}>
-          {expandedCard.id === 'liquid-chrome' ? (
-            <LivingMoodScene engine={LiquidChromeScene} active fallbackColors={expandedCard.colors} style={styles.expandedScene} />
-          ) : expandedCard.id === 'meta-balls' ? (
-            <LivingMoodScene engine={MetaBallsScene} active fallbackColors={expandedCard.colors} style={styles.expandedScene} />
-          ) : expandedCard.id === 'orb' ? (
-            <LivingMoodScene engine={OrbScene} active fallbackColors={expandedCard.colors} style={styles.expandedScene} />
-          ) : (
-            <LivingMoodScene engine={GalaxyScene} active fallbackColors={expandedCard.colors} style={styles.expandedScene} />
-          )}
+          <LivingMoodScene
+            engine={SCENE_BY_ID[expandedCard.id]}
+            active
+            fallbackColors={expandedCard.colors}
+            style={styles.expandedScene}
+          />
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Back to overview"
@@ -83,15 +88,12 @@ export default function DevLivingMoodsScreen() {
                 onPress={() => setExpanded(card.id)}
                 style={styles.card}
               >
-                {card.id === 'liquid-chrome' ? (
-                  <LivingMoodScene engine={LiquidChromeScene} active fallbackColors={card.colors} style={styles.cardScene} />
-                ) : card.id === 'meta-balls' ? (
-                  <LivingMoodScene engine={MetaBallsScene} active fallbackColors={card.colors} style={styles.cardScene} />
-                ) : card.id === 'orb' ? (
-                  <LivingMoodScene engine={OrbScene} active fallbackColors={card.colors} style={styles.cardScene} />
-                ) : (
-                  <LivingMoodScene engine={GalaxyScene} active fallbackColors={card.colors} style={styles.cardScene} />
-                )}
+                <LivingMoodScene
+                  engine={SCENE_BY_ID[card.id]}
+                  active
+                  fallbackColors={card.colors}
+                  style={styles.cardScene}
+                />
                 <View style={styles.cardCaption}>
                   <ThemedText variant="label-lg">{card.title}</ThemedText>
                   <ThemedText variant="body-sm" emphasis="medium">
