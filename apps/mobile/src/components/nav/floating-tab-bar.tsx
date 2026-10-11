@@ -86,7 +86,7 @@ export function TabPill({ items }: { items: TabPillItem[] }) {
   return (
     <View pointerEvents="box-none" style={[styles.slot, { bottom: insets.bottom + PILL_BOTTOM_GAP }]}>
       <Animated.View style={[styles.pill, sinkStyle]} accessibilityRole="tablist">
-        <BlurView intensity={Blur.card} tint="dark" style={styles.pillBlur} />
+        <BlurView intensity={Blur.overlay} tint="dark" style={styles.pillBlur} />
         <Animated.View style={[styles.indicator, indicatorStyle]} pointerEvents="none" />
         {items.map((item, index) => (
           <PressableScale
@@ -164,14 +164,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: Spacing.xs,
     borderRadius: Radii.full,
-    backgroundColor: 'rgba(20, 20, 24, 0.55)',
+    backgroundColor: 'rgba(20, 20, 24, 0.4)',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255, 255, 255, 0.14)',
-    borderTopColor: 'rgba(255, 255, 255, 0.22)',
+    borderColor: 'rgba(255, 255, 255, 0.16)',
+    borderTopColor: 'rgba(255, 255, 255, 0.4)',
+    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.32,
-    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.34,
+    shadowRadius: 24,
     elevation: 12,
     overflow: 'hidden',
   },
