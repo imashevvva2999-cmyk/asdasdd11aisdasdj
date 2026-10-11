@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { nextSortMode, sortTracks, type TrackSortMode } from '@/lib/sort-tracks';
 import { getTrackById, type Track } from '@/mocks';
 import { useLibraryStore } from '@/state/library-store';
+import { useAppStrings } from '@/state/locale-store';
 import { usePlayerStore } from '@/state/player-store';
 
 const LIKED_SONGS_ID = 'liked-songs';
@@ -30,6 +31,7 @@ export default function LikedSongsScreen() {
   const toggleDownloaded = useLibraryStore((s) => s.toggleDownloaded);
   const [sortMode, setSortMode] = useState<TrackSortMode>('Default order');
   const { showToast, toast } = useToast();
+  const { t } = useAppStrings();
 
   const likedTracks = useMemo(
     () =>
@@ -56,7 +58,7 @@ export default function LikedSongsScreen() {
             <ThemedText variant="label-sm" emphasis="primary" style={styles.eyebrow}>
               Auto Playlist
             </ThemedText>
-            <ThemedText variant="display-lg-mobile">Liked Songs</ThemedText>
+            <ThemedText variant="display-lg-mobile">{t('likedSongs')}</ThemedText>
             <ThemedText variant="body-sm" emphasis="medium">
               {likedTracks.length} {likedTracks.length === 1 ? 'saved track' : 'saved tracks'}
             </ThemedText>
@@ -78,10 +80,10 @@ export default function LikedSongsScreen() {
             size={40}
             icon={isDownloaded ? 'download-done' : 'download'}
             color={isDownloaded ? Colors.secondary : Colors.text.medium}
-            accessibilityLabel={isDownloaded ? 'Remove download' : 'Download offline'}
+            accessibilityLabel={isDownloaded ? t('removeDownloadLabel') : t('downloadOfflineLabel')}
             onPress={() => {
               toggleDownloaded(LIKED_SONGS_ID);
-              showToast(isDownloaded ? 'Download removed' : 'Marked for offline (demo — no audio is stored yet)', 'download');
+              showToast(isDownloaded ? t('toastDownloadRemoved') : t('toastMarkedForOffline'), 'download');
             }}
           />
           <IconButton

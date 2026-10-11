@@ -171,6 +171,10 @@ const EN_STRINGS = {
   libraryNoMatchesPrefix: 'No matches for',
   libraryNoMatchesSuffix: 'in your library.',
   songsHeader: 'Songs',
+  removeDownloadLabel: 'Remove download',
+  downloadOfflineLabel: 'Download offline',
+  toastDownloadRemoved: 'Download removed',
+  toastMarkedForOffline: 'Marked for offline (demo — no audio is stored yet)',
 
   // Player
   playingFromAlbum: 'PLAYING FROM ALBUM',
@@ -339,6 +343,10 @@ const RU_STRINGS: Record<keyof typeof EN_STRINGS, string> = {
   libraryNoMatchesPrefix: 'Нет совпадений с',
   libraryNoMatchesSuffix: 'в вашей библиотеке.',
   songsHeader: 'Треки',
+  removeDownloadLabel: 'Удалить загрузку',
+  downloadOfflineLabel: 'Скачать офлайн',
+  toastDownloadRemoved: 'Загрузка удалена',
+  toastMarkedForOffline: 'Отмечено для офлайна (демо — аудио пока не сохраняется)',
 
   playingFromAlbum: 'ИГРАЕТ ИЗ АЛЬБОМА',
   playingLabel: 'ИГРАЕТ',
