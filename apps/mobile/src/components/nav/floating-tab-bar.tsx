@@ -20,15 +20,26 @@ export const PILL_BOTTOM_GAP = Spacing.sm;
 export const CAPSULE_GAP = Spacing.sm;
 const TAB_ICON_SIZE = 22;
 
+/** One destination on the floating pill. `FloatingTabBar` (inside the Tabs
+ * navigator) and `RootNavBar` (on Artist/Album/Playlist, outside it) each
+ * build this shape from their own source of truth, so both render the same
+ * `TabPill` instead of two separate nav bars. */
+export type TabPillItem = {
+  key: string;
+  label: string;
+  icon: (props: { color: string; size: number }) => ReactNode;
+  focused: boolean;
+  onPress: () => void;
+};
+
 /**
  * Floating navigation pill — Home / Search / Library (W3 Этап 1, Concept D,
  * iphone/home.png): a solid surface with a hairline border floating above the
- * content, no glass or blur. Replaces the full-width tab bar; the tabs, their
- * stacks and the tabPress behaviour (re-tap pops to the stack's root) are the
- * same as before. Screens keep `Spacing.miniPlayerClearance` bottom padding so
- * the pill and the capsule never cover the end of a list.
+ * content, no glass or blur. The sliding focus indicator, per-icon scale, and
+ * the sink-under-the-Home-stage animation all live here so every renderer of
+ * the pill shares one implementation.
  */
-export function FloatingTabBar({ state, descriptors, navigation }: TabBarProps) {
+export function TabPill({ items }: { items: TabPillItem[] }) {
   const insets = useSafeAreaInsets();
   // While the Home stage grows into Now Playing, the pill sinks below the edge.
   const reduceMotion = useReducedMotion();
@@ -41,6 +52,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: TabBarProps) 
   const indicatorW = useSharedValue(0);
   const layouts = useRef<Record<number, { x: number; width: number }>>({});
   const [ready, setReady] = useState(false);
+  const focusedIndex = items.findIndex((item) => item.focused);
 
   const indicatorStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: indicatorX.value }],
@@ -50,7 +62,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: TabBarProps) 
 
   const measure = (index: number, x: number, width: number) => {
     layouts.current[index] = { x, width };
-    if (index === state.index) {
+    if (index === focusedIndex) {
       indicatorX.value = x;
       indicatorW.value = width;
       setReady(true);
@@ -58,7 +70,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: TabBarProps) 
   };
 
   useEffect(() => {
-    const box = layouts.current[state.index];
+    const box = layouts.current[focusedIndex];
     if (!box) return;
     if (reduceMotion) {
       indicatorX.value = box.x;
@@ -67,44 +79,56 @@ export function FloatingTabBar({ state, descriptors, navigation }: TabBarProps) 
       indicatorX.value = withTiming(box.x, { duration: 220 });
       indicatorW.value = withTiming(box.width, { duration: 220 });
     }
-  }, [state.index, reduceMotion, indicatorX, indicatorW]);
+  }, [focusedIndex, reduceMotion, indicatorX, indicatorW]);
 
   return (
     <View pointerEvents="box-none" style={[styles.slot, { bottom: insets.bottom + PILL_BOTTOM_GAP }]}>
       <Animated.View style={[styles.pill, sinkStyle]} accessibilityRole="tablist">
         <Animated.View style={[styles.indicator, indicatorStyle]} pointerEvents="none" />
-        {state.routes.map((route, index) => {
-          const { options } = descriptors[route.key];
-          const focused = state.index === index;
-          const color = focused ? Colors.primary : Colors.text.medium;
-          const label = typeof options.title === 'string' ? options.title : route.name;
-          const onPress = () => {
-            const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-            if (!focused && !event.defaultPrevented) navigation.navigate(route.name, route.params);
-          };
-          return (
-            <PressableScale
-              key={route.key}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: focused }}
-              accessibilityLabel={label}
-              onPress={onPress}
-              onLayout={(e) => measure(index, e.nativeEvent.layout.x, e.nativeEvent.layout.width)}
-              style={styles.item}
-              testID={`tab-${route.name}`}
-            >
-              <TabIcon focused={focused} reduceMotion={reduceMotion}>
-                {options.tabBarIcon?.({ focused, color, size: TAB_ICON_SIZE })}
-              </TabIcon>
-              <ThemedText variant="label-sm" style={{ color }}>
-                {label}
-              </ThemedText>
-            </PressableScale>
-          );
-        })}
+        {items.map((item, index) => (
+          <PressableScale
+            key={item.key}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: item.focused }}
+            accessibilityLabel={item.label}
+            onPress={item.onPress}
+            onLayout={(e) => measure(index, e.nativeEvent.layout.x, e.nativeEvent.layout.width)}
+            style={styles.item}
+            testID={`tab-${item.key}`}
+          >
+            <TabIcon focused={item.focused} reduceMotion={reduceMotion}>
+              {item.icon({ color: item.focused ? Colors.primary : Colors.text.medium, size: TAB_ICON_SIZE })}
+            </TabIcon>
+            <ThemedText variant="label-sm" style={{ color: item.focused ? Colors.primary : Colors.text.medium }}>
+              {item.label}
+            </ThemedText>
+          </PressableScale>
+        ))}
       </Animated.View>
     </View>
   );
+}
+
+/** Tabs' own tab bar — builds the shared `TabPill` from the Tabs
+ * navigator's state; the tabs, their stacks and the tabPress behaviour
+ * (re-tap pops to the stack's root) are unchanged. */
+export function FloatingTabBar({ state, descriptors, navigation }: TabBarProps) {
+  const items: TabPillItem[] = state.routes.map((route, index) => {
+    const { options } = descriptors[route.key];
+    const focused = state.index === index;
+    const label = typeof options.title === 'string' ? options.title : route.name;
+    return {
+      key: route.key,
+      label,
+      focused,
+      icon: ({ color, size }) => options.tabBarIcon?.({ focused, color, size }),
+      onPress: () => {
+        const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+        if (!focused && !event.defaultPrevented) navigation.navigate(route.name, route.params);
+      },
+    };
+  });
+  return <TabPill items={items} />;
 }
 
 function TabIcon({ focused, reduceMotion, children }: { focused: boolean; reduceMotion: boolean; children: ReactNode }) {
