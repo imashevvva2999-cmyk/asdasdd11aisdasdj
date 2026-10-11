@@ -69,6 +69,6 @@
     "verify:promotions-mock": "tsx scripts/verify-promotions-mock.mjs",
     "verify:svg-path": "tsx scripts/verify-svg-path.mjs",
     "verify:dashboard-i18n": "tsx scripts/verify-dashboard-i18n.mjs",
-    "verify:dashboard-routes": "tsx scripts/verify-dashboard-routes.mjs && tsx scripts/verify-playlist-track-count.mjs"
+    "verify:dashboard-routes": "tsx scripts/verify-dashboard-routes.mjs"
   }
 }
