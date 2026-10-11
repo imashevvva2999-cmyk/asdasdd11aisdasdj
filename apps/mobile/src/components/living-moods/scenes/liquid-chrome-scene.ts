@@ -114,8 +114,16 @@ const COLOR_C: readonly [number, number, number] = [1.0, 0.4784, 0.349]; // #FF7
 
 /** Device-pixel canvas width above which the scene treats itself as the
  * expanded (near-fullscreen) card rather than the grid thumbnail — there is
- * no explicit "expanded" flag from the host, so size is the signal. */
-const EXPANDED_WIDTH_PX = 500;
+ * no explicit "expanded" flag from the host, so size is the signal.
+ * Measured against the real 4-card grid (`WebGLSceneController.resize()`
+ * clamps effective DPR to 2): grid-card device-pixel width ranges ~207
+ * (desktop, DPR 1) to 414 (desktop, DPR 2); the expanded view — capped by
+ * this web build's fixed mobile-frame max content width — ranges 480
+ * (DPR 1) to 960 (DPR 2, or an iPhone's DPR 3 clamped to 2). 500 sat above
+ * the expanded view's own DPR-1 minimum (480), so a non-Retina desktop
+ * expanded view never crossed it and stayed on CARD_TUNING. 450 sits in the
+ * gap between the card maximum (414) and the expanded minimum (480). */
+const EXPANDED_WIDTH_PX = 450;
 
 /** Idle/calm tuning for the card-grid thumbnail: lower amplitude and
  * frequency so the surface reads as a slow, composed metallic drift, with a
