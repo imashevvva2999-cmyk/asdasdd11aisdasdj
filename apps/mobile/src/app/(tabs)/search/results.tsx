@@ -8,8 +8,10 @@ import { Artwork, AvatarCard, Chip, CircleButton, CoverCard, EmptyState, Icon, I
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useContentWidth } from '@/hooks/use-content-width';
 import { useHydratedSearchParams } from '@/hooks/use-hydrated-search-params';
+import { playArtistTopTracksLabel } from '@/lib/i18n';
 import { matchesQuery, normalizeQuery } from '@/lib/search-match';
 import { albums, artists, tracks, trendingSearches } from '@/mocks';
+import { useAppStrings } from '@/state/locale-store';
 import { usePlayerStore } from '@/state/player-store';
 import { usePlaylistsStore } from '@/state/playlists-store';
 
@@ -39,6 +41,16 @@ function SearchResultsContent({ initialQuery }: { initialQuery: string }) {
   const play = usePlayerStore((s) => s.play);
   const currentTrackId = usePlayerStore((s) => s.currentTrackId());
   const isPlaying = usePlayerStore((s) => s.isPlaying);
+  const { locale, t } = useAppStrings();
+  // FILTERS stay English internally (compared against `filter` state); only the
+  // displayed Chip label is translated.
+  const filterLabels: Record<(typeof FILTERS)[number], string> = {
+    All: t('filterAll'),
+    Songs: t('songsHeader'),
+    Artists: t('filterArtists'),
+    Albums: t('filterAlbums'),
+    Playlists: t('filterPlaylists'),
+  };
 
   const q = normalizeQuery(query);
   const matchedArtists = useMemo(() => artists.filter((a) => matchesQuery(q, a.name)), [q]);
@@ -71,17 +83,17 @@ function SearchResultsContent({ initialQuery }: { initialQuery: string }) {
           onChangeText={setQuery}
           autoFocus={initialQuery === ''}
           returnKeyType="search"
-          placeholder="Songs, artists, or albums..."
+          placeholder={t('searchResultsPlaceholder')}
           leftAccessory={<Icon name="search" color={Colors.text.medium} />}
           rightAccessory={
             query.length > 0 ? (
-              <IconButton icon="close" size={32} color={Colors.text.medium} accessibilityLabel="Clear search" onPress={() => setQuery('')} />
+              <IconButton icon="close" size={32} color={Colors.text.medium} accessibilityLabel={t('searchClearLabel')} onPress={() => setQuery('')} />
             ) : undefined
           }
         />
         <View style={styles.filterRow}>
           {FILTERS.map((item) => (
-            <Chip key={item} label={item} selected={item === filter} onPress={() => setFilter(item)} />
+            <Chip key={item} label={filterLabels[item]} selected={item === filter} onPress={() => setFilter(item)} />
           ))}
         </View>
       </View>
@@ -91,9 +103,9 @@ function SearchResultsContent({ initialQuery }: { initialQuery: string }) {
           {q === '' ? (
             <EmptyState
               icon="search"
-              title="Search Mmusic"
-              hint="Find songs, artists, albums and playlists."
-              actionLabel="Explore All Genres"
+              title={t('searchEmptyTitle')}
+              hint={t('searchEmptyHint')}
+              actionLabel={t('exploreAllGenres')}
               onActionPress={() => router.push('/search/all-genres')}
             />
           ) : (
@@ -101,16 +113,16 @@ function SearchResultsContent({ initialQuery }: { initialQuery: string }) {
               icon="search-off"
               variant="hero"
               actionIcon="explore"
-              title={`No results for "${query}"`}
-              hint="Please check your spelling or try searching for another artist, track, album, or genre."
-              actionLabel="Explore All Genres"
+              title={`${t('searchNoResultsPrefix')} “${query}”`}
+              hint={t('searchNoResultsHint')}
+              actionLabel={t('exploreAllGenres')}
               onActionPress={() => router.push('/search/all-genres')}
             />
           )}
           <View style={styles.trendingNow}>
             <View style={styles.trendingHeader}>
               <Icon name="trending-up" size={16} color={Colors.secondary} />
-              <ThemedText variant="label-lg">Trending right now</ThemedText>
+              <ThemedText variant="label-lg">{t('genreTrendingNow')}</ThemedText>
             </View>
             <View style={styles.trendingChips}>
               {trendingSearches.map((item) => (
@@ -131,7 +143,7 @@ function SearchResultsContent({ initialQuery }: { initialQuery: string }) {
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           {(filter === 'All' || filter === 'Artists') && topResult && (
             <View style={styles.section}>
-              <ThemedText variant="headline-sm">Top Result</ThemedText>
+              <ThemedText variant="headline-sm">{t('searchTopResult')}</ThemedText>
               <View style={styles.topResultCard}>
                 <View style={styles.topResultInfo}>
                   <Artwork shape="circle" size={56} uri={topResult.photoUri} />
@@ -143,7 +155,7 @@ function SearchResultsContent({ initialQuery }: { initialQuery: string }) {
                       {topResult.verified && <Icon name="verified" size={16} color={Colors.primary} />}
                     </View>
                     <ThemedText variant="body-sm" emphasis="medium" numberOfLines={1}>
-                      {`Artist${topResult.monthlyListeners ? ` • ${formatListeners(topResult.monthlyListeners)} monthly listeners` : ''}`}
+                      {`${t('artistLabel')}${topResult.monthlyListeners ? ` • ${formatListeners(topResult.monthlyListeners)} ${t('monthlyListenersSuffix')}` : ''}`}
                     </ThemedText>
                   </View>
                 </View>
@@ -151,7 +163,7 @@ function SearchResultsContent({ initialQuery }: { initialQuery: string }) {
                   icon="play-arrow"
                   size={44}
                   iconSize={22}
-                  accessibilityLabel={`Play ${topResult.name} top tracks`}
+                  accessibilityLabel={playArtistTopTracksLabel(locale, topResult.name)}
                   onPress={playTopResult}
                 />
               </View>
@@ -160,7 +172,7 @@ function SearchResultsContent({ initialQuery }: { initialQuery: string }) {
 
           {(filter === 'All' || filter === 'Songs') && matchedTracks.length > 0 && (
             <View style={styles.section}>
-              <ThemedText variant="headline-sm">Songs</ThemedText>
+              <ThemedText variant="headline-sm">{t('songsHeader')}</ThemedText>
               <View style={styles.trackList}>
                 {matchedTracks.map((track) => (
                   <TrackRow
@@ -182,7 +194,7 @@ function SearchResultsContent({ initialQuery }: { initialQuery: string }) {
 
           {(filter === 'All' || filter === 'Artists') && matchedArtists.length > 0 && (
             <View style={styles.section}>
-              <ThemedText variant="headline-sm">Artists</ThemedText>
+              <ThemedText variant="headline-sm">{t('filterArtists')}</ThemedText>
               <View style={styles.grid}>
                 {chunkPairs(matchedArtists).map((row, rowIndex) => (
                   <View key={rowIndex} style={styles.gridRow}>
@@ -192,7 +204,7 @@ function SearchResultsContent({ initialQuery }: { initialQuery: string }) {
                           photoUri={artist.photoUri}
                           name={artist.name}
                           verified={artist.verified}
-                          metaLabel="Artist"
+                          metaLabel={t('artistLabel')}
                           size={80}
                           style={styles.artistCardInner}
                           onPress={() => router.push({ pathname: '/artist/[id]', params: { id: artist.id } })}
@@ -208,7 +220,7 @@ function SearchResultsContent({ initialQuery }: { initialQuery: string }) {
 
           {(filter === 'All' || filter === 'Albums') && matchedAlbums.length > 0 && (
             <View style={styles.section}>
-              <ThemedText variant="headline-sm">Albums & EPs</ThemedText>
+              <ThemedText variant="headline-sm">{t('searchAlbumsHeader')}</ThemedText>
               <View style={styles.grid}>
                 {chunkPairs(matchedAlbums).map((row, rowIndex) => (
                   <View key={rowIndex} style={styles.gridRow}>
@@ -219,7 +231,7 @@ function SearchResultsContent({ initialQuery }: { initialQuery: string }) {
                         layout="below"
                         width={columnWidth}
                         title={album.title}
-                        subtitle={`${album.year} • ${album.type === 'ep' ? 'EP' : album.type === 'single' ? 'Single' : 'Album'}`}
+                        subtitle={`${album.year} • ${album.type === 'ep' ? t('albumTypeEp') : album.type === 'single' ? t('albumTypeSingle') : t('albumTypeAlbum')}`}
                         onPress={() => router.push({ pathname: '/album/[id]', params: { id: album.id } })}
                       />
                     ))}
@@ -231,18 +243,18 @@ function SearchResultsContent({ initialQuery }: { initialQuery: string }) {
 
           {(filter === 'All' || filter === 'Playlists') && matchedPlaylists.length > 0 && (
             <View style={styles.section}>
-              <ThemedText variant="headline-sm">Featured Playlists</ThemedText>
+              <ThemedText variant="headline-sm">{t('searchFeaturedPlaylists')}</ThemedText>
               {matchedPlaylists.map((playlist) => (
                 <View key={playlist.id} style={styles.playlistCard}>
                   {playlist.editorial && (
                     <ThemedText variant="label-sm" emphasis="primary" style={styles.eyebrow}>
-                      Official Playlist
+                      {t('officialPlaylistLabel')}
                     </ThemedText>
                   )}
                   <LibraryRow
                   coverUri={playlist.coverUri}
                   title={playlist.title}
-                  subtitle={`Playlist • ${playlist.trackCount} ${playlist.trackCount === 1 ? 'song' : 'songs'}${playlist.durationLabel ? ` • ${playlist.durationLabel}` : ''}`}
+                  subtitle={`${t('playlistLabel')} • ${playlist.trackCount} ${playlist.trackCount === 1 ? t('playlistSongSingular') : t('playlistSongPlural')}${playlist.durationLabel ? ` • ${playlist.durationLabel}` : ''}`}
                   trailing="chevron"
                   onPress={() => router.push({ pathname: '/playlist/[id]', params: { id: playlist.id } })}
                   />

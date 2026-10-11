@@ -12,6 +12,7 @@ import { Colors, Spacing } from '@/constants/theme';
 import { useContentWidth } from '@/hooks/use-content-width';
 import { useTabEntrance } from '@/hooks/use-tab-entrance';
 import { useToast } from '@/hooks/use-toast';
+import { notificationsUnreadLabel } from '@/lib/i18n';
 import { featuredGenre, genres, initialRecentSearches, trendingSearches } from '@/mocks';
 import { useAppStrings } from '@/state/locale-store';
 import { countUnread, useNotificationsStore } from '@/state/notifications-store';
@@ -27,7 +28,7 @@ export default function SearchScreen() {
   // pass finding, verified directly in Chrome DevTools.
   const genreRows = chunkPairs(genres);
   const { showToast, toast } = useToast();
-  const { t } = useAppStrings();
+  const { locale, t } = useAppStrings();
   const entrance = useTabEntrance('search');
   const unreadCount = useNotificationsStore((st) => countUnread(st.items));
   const openResults = (query?: string) =>
@@ -42,7 +43,7 @@ export default function SearchScreen() {
             <View>
               <IconButton
                 icon={unreadCount > 0 ? 'notifications-active' : 'notifications'}
-                accessibilityLabel={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
+                accessibilityLabel={unreadCount > 0 ? notificationsUnreadLabel(locale, unreadCount) : t('notificationsLabel')}
                 onPress={() => router.push('/sheets/notifications')}
                 size={40}
               />
@@ -63,8 +64,8 @@ export default function SearchScreen() {
               icon="mic"
               size={36}
               color={Colors.text.medium}
-              accessibilityLabel="Voice search"
-              onPress={() => showToast('Voice Search is coming soon', 'mic')}
+              accessibilityLabel={t('voiceSearchLabel')}
+              onPress={() => showToast(t('voiceSearchComingSoon'), 'mic')}
             />
           }
           onFocus={() => openResults()}

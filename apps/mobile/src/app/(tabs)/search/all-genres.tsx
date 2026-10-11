@@ -8,6 +8,7 @@ import { Chip, CoverCard, FeaturedBanner } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useContentWidth } from '@/hooks/use-content-width';
 import { featuredGenre, genres } from '@/mocks';
+import { useAppStrings } from '@/state/locale-store';
 
 const FILTERS = ['All', 'Genres', 'Moods & Activities', 'Regional & Heritage'] as const;
 
@@ -16,20 +17,29 @@ export default function AllGenresScreen() {
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>('All');
   const windowWidth = useContentWidth();
   const tileWidth = Math.floor((windowWidth - Spacing.margin * 2 - Spacing.sm) / 2);
+  const { t } = useAppStrings();
+  // FILTERS stay English internally (compared against `filter` state); only the
+  // displayed Chip label is translated.
+  const filterLabels: Record<(typeof FILTERS)[number], string> = {
+    All: t('filterAll'),
+    Genres: t('filterGenres'),
+    'Moods & Activities': t('filterMoodsActivities'),
+    'Regional & Heritage': t('filterRegionalHeritage'),
+  };
 
   return (
     <ThemedView surface="canvas" style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.titleBlock}>
-          <ThemedText variant="display-lg-mobile">All Genres &amp; Moods</ThemedText>
+          <ThemedText variant="display-lg-mobile">{t('allGenresTitle')}</ThemedText>
           <ThemedText variant="body-md" emphasis="medium">
-            Explore 24+ sonic realms &amp; curated cultures
+            {t('allGenresSubtitle')}
           </ThemedText>
         </View>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
           {FILTERS.map((item) => (
-            <Chip key={item} label={item} selected={item === filter} onPress={() => setFilter(item)} />
+            <Chip key={item} label={filterLabels[item]} selected={item === filter} onPress={() => setFilter(item)} />
           ))}
         </ScrollView>
 
@@ -43,7 +53,7 @@ export default function AllGenresScreen() {
 
         <View style={styles.sectionHeaderRow}>
           <View style={styles.sectionTitle}>
-            <ThemedText variant="headline-md">Curated Realms</ThemedText>
+            <ThemedText variant="headline-md">{t('curatedRealmsTitle')}</ThemedText>
             <View style={styles.countPill}>
               <ThemedText variant="mono-num" emphasis="medium">
                 {genres.length}
@@ -51,7 +61,7 @@ export default function AllGenresScreen() {
             </View>
           </View>
           <ThemedText variant="label-sm" emphasis="medium" style={styles.upperLabel}>
-            Tap to dive
+            {t('tapToDiveLabel')}
           </ThemedText>
         </View>
         {/* Explicit rows with a computed tile width: flexGrow wrapping left

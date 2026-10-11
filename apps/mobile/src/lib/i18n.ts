@@ -103,6 +103,50 @@ const EN_STRINGS = {
   trendingSearches: 'Trending Searches',
   recentSearches: 'Recent Searches',
   browseAll: 'Browse All',
+  searchResultsPlaceholder: 'Songs, artists, or albums...',
+  searchClearLabel: 'Clear search',
+  searchEmptyTitle: 'Search Mmusic',
+  searchEmptyHint: 'Find songs, artists, albums and playlists.',
+  searchNoResultsPrefix: 'No results for',
+  searchNoResultsHint: 'Please check your spelling or try searching for another artist, track, album, or genre.',
+  exploreAllGenres: 'Explore All Genres',
+  genreTrendingNow: 'Trending right now',
+  searchTopResult: 'Top Result',
+  artistLabel: 'Artist',
+  monthlyListenersSuffix: 'monthly listeners',
+  searchAlbumsHeader: 'Albums & EPs',
+  albumTypeAlbum: 'Album',
+  albumTypeSingle: 'Single',
+  albumTypeEp: 'EP',
+  searchFeaturedPlaylists: 'Featured Playlists',
+  officialPlaylistLabel: 'Official Playlist',
+  playlistLabel: 'Playlist',
+  playlistSongSingular: 'song',
+  playlistSongPlural: 'songs',
+  notificationsLabel: 'Notifications',
+  voiceSearchLabel: 'Voice search',
+  voiceSearchComingSoon: 'Voice Search is coming soon',
+  thisGenreFallback: 'this genre',
+  genreFallback: 'Genre',
+  listenNow: 'Listen Now',
+  followLabel: 'Follow',
+  followingLabel: 'Following',
+  genreCompilationsTitle: 'Essential Compilations',
+  genreCompilationsSubtitle: 'Signature soundscapes and journeys',
+  tracksCountSuffix: 'tracks',
+  genrePioneeringArtistsTitle: 'Pioneering Artists',
+  genrePioneeringArtistsSubtitle: 'The artists shaping the sound',
+  fansSuffix: 'fans',
+  genreTrendingLiveTopPrefix: 'Trending — Live Top',
+  mostPlayedRightNow: 'Most played right now',
+  recentReleasesSubtitle: 'Recent releases',
+  allGenresTitle: 'All Genres & Moods',
+  allGenresSubtitle: 'Explore 24+ sonic realms & curated cultures',
+  curatedRealmsTitle: 'Curated Realms',
+  tapToDiveLabel: 'Tap to dive',
+  filterGenres: 'Genres',
+  filterMoodsActivities: 'Moods & Activities',
+  filterRegionalHeritage: 'Regional & Heritage',
 
   // Library
   yourLibrary: 'Your Library',
@@ -222,6 +266,50 @@ const RU_STRINGS: Record<keyof typeof EN_STRINGS, string> = {
   trendingSearches: 'Популярные запросы',
   recentSearches: 'Недавние запросы',
   browseAll: 'Все категории',
+  searchResultsPlaceholder: 'Песни, артисты или альбомы...',
+  searchClearLabel: 'Очистить поиск',
+  searchEmptyTitle: 'Искать в Mmusic',
+  searchEmptyHint: 'Находите песни, артистов, альбомы и плейлисты.',
+  searchNoResultsPrefix: 'Нет результатов по запросу',
+  searchNoResultsHint: 'Проверьте написание или попробуйте другого артиста, трек, альбом или жанр.',
+  exploreAllGenres: 'Все жанры',
+  genreTrendingNow: 'В тренде сейчас',
+  searchTopResult: 'Лучший результат',
+  artistLabel: 'Артист',
+  monthlyListenersSuffix: 'слушателей в месяц',
+  searchAlbumsHeader: 'Альбомы и EP',
+  albumTypeAlbum: 'Альбом',
+  albumTypeSingle: 'Сингл',
+  albumTypeEp: 'EP',
+  searchFeaturedPlaylists: 'Подборки плейлистов',
+  officialPlaylistLabel: 'Официальный плейлист',
+  playlistLabel: 'Плейлист',
+  playlistSongSingular: 'трек',
+  playlistSongPlural: 'треков',
+  notificationsLabel: 'Уведомления',
+  voiceSearchLabel: 'Голосовой поиск',
+  voiceSearchComingSoon: 'Голосовой поиск скоро появится',
+  thisGenreFallback: 'этот жанр',
+  genreFallback: 'Жанр',
+  listenNow: 'Слушать',
+  followLabel: 'Подписаться',
+  followingLabel: 'Подписан',
+  genreCompilationsTitle: 'Знаковые сборники',
+  genreCompilationsSubtitle: 'Фирменное звучание и музыкальные путешествия',
+  tracksCountSuffix: 'треков',
+  genrePioneeringArtistsTitle: 'Пионеры жанра',
+  genrePioneeringArtistsSubtitle: 'Артисты, определившие звучание жанра',
+  fansSuffix: 'фанатов',
+  genreTrendingLiveTopPrefix: 'В тренде — топ',
+  mostPlayedRightNow: 'Популярно прямо сейчас',
+  recentReleasesSubtitle: 'Недавние релизы',
+  allGenresTitle: 'Все жанры и настроения',
+  allGenresSubtitle: 'Исследуйте более 24 звуковых миров и уникальных культур',
+  curatedRealmsTitle: 'Избранные направления',
+  tapToDiveLabel: 'Нажмите',
+  filterGenres: 'Жанры',
+  filterMoodsActivities: 'Настроение и активности',
+  filterRegionalHeritage: 'Регион и наследие',
 
   yourLibrary: 'Ваша библиотека',
   likedSongs: 'Любимые треки',
@@ -261,4 +349,22 @@ export const APP_STRINGS: Record<'en' | 'ru', Record<AppStringKey, string>> = { 
  * titles already are. */
 export function manageReleasesLabel(locale: 'en' | 'ru', artistName: string): string {
   return locale === 'ru' ? `Релизы артиста ${artistName}` : `Manage ${artistName}'s releases`;
+}
+
+/** "Play {artist}'s top tracks" — accessibility label on the Search top-result
+ * play button; word order differs enough between locales to need a function. */
+export function playArtistTopTracksLabel(locale: 'en' | 'ru', artistName: string): string {
+  return locale === 'ru' ? `Включить топ треков артиста ${artistName}` : `Play ${artistName} top tracks`;
+}
+
+/** "Notifications, {count} unread" accessibility label on the Search header bell. */
+export function notificationsUnreadLabel(locale: 'en' | 'ru', count: number): string {
+  return locale === 'ru' ? `Уведомления, ${count} непрочитанных` : `Notifications, ${count} unread`;
+}
+
+/** Genre follow/unfollow toast — `followed` is the state *before* the toggle,
+ * matching the call site in genre/[id].tsx. */
+export function genreFollowToggleToast(locale: 'en' | 'ru', followed: boolean, genreTitle: string): string {
+  if (locale === 'ru') return followed ? `Вы отписались от «${genreTitle}»` : `Вы подписаны на «${genreTitle}»`;
+  return followed ? `Unfollowed ${genreTitle}` : `Following ${genreTitle}`;
 }

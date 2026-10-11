@@ -8,8 +8,10 @@ import { Artwork, AvatarCard, CoverCard, PillButton, TrackRow } from '@/componen
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useContentWidth } from '@/hooks/use-content-width';
 import { useToast } from '@/hooks/use-toast';
+import { genreFollowToggleToast } from '@/lib/i18n';
 import { albums, artists, featuredGenre, genreDetails, genres, getGenreById, tracks } from '@/mocks';
 import { useLibraryStore } from '@/state/library-store';
+import { useAppStrings } from '@/state/locale-store';
 import { usePlayerStore } from '@/state/player-store';
 
 /** Compact enough that title, two lines of description and the actions sit
@@ -41,7 +43,8 @@ export default function GenreDetailScreen() {
   const followed = useLibraryStore((s) => s.followedGenreIds.has(id ?? ''));
   const toggleGenreFollowed = useLibraryStore((s) => s.toggleGenreFollowed);
   const { showToast, toast } = useToast();
-  const genreTitle = genre?.title ?? detail?.heroTitle ?? 'this genre';
+  const { locale, t } = useAppStrings();
+  const genreTitle = genre?.title ?? detail?.heroTitle ?? t('thisGenreFallback');
 
   function playTrending(trackId = trendingIds[0]) {
     if (!trackId) return;
@@ -73,22 +76,22 @@ export default function GenreDetailScreen() {
                 {detail.listeners}
               </ThemedText>
             )}
-            <ThemedText variant="display-lg-mobile" numberOfLines={2}>{detail?.heroTitle ?? genre?.title ?? 'Genre'}</ThemedText>
+            <ThemedText variant="display-lg-mobile" numberOfLines={2}>{detail?.heroTitle ?? genre?.title ?? t('genreFallback')}</ThemedText>
             {detail && (
               <ThemedText variant="body-sm" emphasis="medium" numberOfLines={2}>
                 {detail.description}
               </ThemedText>
             )}
           <View style={styles.heroActions}>
-            <PillButton label="Listen Now" leadingIcon="play-arrow" onPress={() => playTrending()} style={styles.heroButton} />
+            <PillButton label={t('listenNow')} leadingIcon="play-arrow" onPress={() => playTrending()} style={styles.heroButton} />
             <PillButton
-              label={followed ? 'Following' : 'Follow'}
+              label={followed ? t('followingLabel') : t('followLabel')}
               leadingIcon={followed ? 'check' : 'add'}
               variant="secondary"
               onPress={() => {
                 if (!id) return;
                 toggleGenreFollowed(id);
-                showToast(followed ? `Unfollowed ${genreTitle}` : `Following ${genreTitle}`, 'check');
+                showToast(genreFollowToggleToast(locale, followed, genreTitle), 'check');
               }}
               style={styles.heroButton}
             />
@@ -97,7 +100,7 @@ export default function GenreDetailScreen() {
         </View>
 
         <View style={styles.section}>
-          <SectionTitle title="Essential Compilations" subtitle="Signature soundscapes and journeys" />
+          <SectionTitle title={t('genreCompilationsTitle')} subtitle={t('genreCompilationsSubtitle')} />
           <View style={styles.grid}>
             {chunkPairs(compilations).map((row, rowIndex) => (
               <View key={rowIndex} style={styles.gridRow}>
@@ -109,7 +112,7 @@ export default function GenreDetailScreen() {
                     width={columnWidth}
                     coverUri={album.coverUri}
                     title={album.title}
-                    subtitle={`${album.trackCount} tracks`}
+                    subtitle={`${album.trackCount} ${t('tracksCountSuffix')}`}
                     onPress={() => router.push({ pathname: '/album/[id]', params: { id: album.id } })}
                   />
                 ))}
@@ -119,7 +122,7 @@ export default function GenreDetailScreen() {
         </View>
 
         <View style={styles.section}>
-          <SectionTitle title="Pioneering Artists" subtitle="The artists shaping the sound" />
+          <SectionTitle title={t('genrePioneeringArtistsTitle')} subtitle={t('genrePioneeringArtistsSubtitle')} />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.carouselBleed} contentContainerStyle={styles.carousel}>
             {pioneeringArtists.map((artist) => (
               <AvatarCard
@@ -127,7 +130,7 @@ export default function GenreDetailScreen() {
                 photoUri={artist.photoUri}
                 name={artist.name}
                 verified={artist.verified}
-                metaLabel={artist.monthlyListeners ? `${(artist.monthlyListeners / 1_000_000).toFixed(1)}M fans` : undefined}
+                metaLabel={artist.monthlyListeners ? `${(artist.monthlyListeners / 1_000_000).toFixed(1)}M ${t('fansSuffix')}` : undefined}
                 onPress={() => router.push({ pathname: '/artist/[id]', params: { id: artist.id } })}
               />
             ))}
@@ -135,7 +138,7 @@ export default function GenreDetailScreen() {
         </View>
 
         <View style={styles.section}>
-          <SectionTitle title={`Trending — Live Top ${trending.length}`} subtitle="Most played right now" />
+          <SectionTitle title={`${t('genreTrendingLiveTopPrefix')} ${trending.length}`} subtitle={t('mostPlayedRightNow')} />
           <View style={styles.trackList}>
             {trending.map((track, index) => (
               <TrackRow
@@ -155,7 +158,7 @@ export default function GenreDetailScreen() {
         </View>
 
         <View style={styles.section}>
-          <SectionTitle title="New Releases" subtitle="Recent releases" />
+          <SectionTitle title={t('newReleases')} subtitle={t('recentReleasesSubtitle')} />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.carouselBleed} contentContainerStyle={styles.carousel}>
             {newReleases.map((album) => (
               <CoverCard
