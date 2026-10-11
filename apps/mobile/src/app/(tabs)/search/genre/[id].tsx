@@ -8,7 +8,7 @@ import { Artwork, AvatarCard, CoverCard, PillButton, TrackRow } from '@/componen
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useContentWidth } from '@/hooks/use-content-width';
 import { useToast } from '@/hooks/use-toast';
-import { genreFollowToggleToast } from '@/lib/i18n';
+import { genreFollowToggleToast, genreTagLabel } from '@/lib/i18n';
 import { albums, artists, featuredGenre, genreDetails, genres, getGenreById, tracks } from '@/mocks';
 import { useLibraryStore } from '@/state/library-store';
 import { useAppStrings } from '@/state/locale-store';
@@ -66,7 +66,7 @@ export default function GenreDetailScreen() {
           {detail && (
             <View style={styles.kindPill}>
               <ThemedText variant="label-sm" emphasis="high">
-                {detail.label}
+                {genreTagLabel(locale, detail.label)}
               </ThemedText>
             </View>
           )}

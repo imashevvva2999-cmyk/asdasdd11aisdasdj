@@ -147,6 +147,12 @@ const EN_STRINGS = {
   filterGenres: 'Genres',
   filterMoodsActivities: 'Moods & Activities',
   filterRegionalHeritage: 'Regional & Heritage',
+  genreTagRegional: 'Regional',
+  genreTagPersonal: 'Personal',
+  genreTagCharts: 'Charts',
+  genreTagGenreKind: 'Genre',
+  genreTagMood: 'Mood',
+  genreTagDiscovery: 'Discovery',
 
   // Library
   yourLibrary: 'Your Library',
@@ -310,6 +316,12 @@ const RU_STRINGS: Record<keyof typeof EN_STRINGS, string> = {
   filterGenres: 'Жанры',
   filterMoodsActivities: 'Настроение и активности',
   filterRegionalHeritage: 'Регион и наследие',
+  genreTagRegional: 'Регион',
+  genreTagPersonal: 'Персонально',
+  genreTagCharts: 'Чарты',
+  genreTagGenreKind: 'Жанр',
+  genreTagMood: 'Настроение',
+  genreTagDiscovery: 'Открытие',
 
   yourLibrary: 'Ваша библиотека',
   likedSongs: 'Любимые треки',
@@ -367,4 +379,22 @@ export function notificationsUnreadLabel(locale: 'en' | 'ru', count: number): st
 export function genreFollowToggleToast(locale: 'en' | 'ru', followed: boolean, genreTitle: string): string {
   if (locale === 'ru') return followed ? `Вы отписались от «${genreTitle}»` : `Вы подписаны на «${genreTitle}»`;
   return followed ? `Unfollowed ${genreTitle}` : `Following ${genreTitle}`;
+}
+
+/** Genre hero "kind" pill (e.g. "Genre", "Mood", "Charts") — the English
+ * identifier lives in src/mocks/genres.ts `GenreDetail.label` (same pattern
+ * as `album.type`'s 'ep'/'single' enum); this maps the 6 known values to
+ * their localized display text. Unrecognized values pass through untouched. */
+const GENRE_TAG_KEYS: Record<string, AppStringKey> = {
+  Regional: 'genreTagRegional',
+  Personal: 'genreTagPersonal',
+  Charts: 'genreTagCharts',
+  Genre: 'genreTagGenreKind',
+  Mood: 'genreTagMood',
+  Discovery: 'genreTagDiscovery',
+};
+
+export function genreTagLabel(locale: 'en' | 'ru', label: string): string {
+  const key = GENRE_TAG_KEYS[label];
+  return key ? APP_STRINGS[locale][key] : label;
 }
