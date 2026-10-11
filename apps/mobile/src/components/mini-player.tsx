@@ -19,6 +19,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { Colors, Radii, Spacing } from '@/constants/theme';
+import { CAPSULE_GAP, PILL_BOTTOM_GAP, PILL_HEIGHT } from '@/components/nav/floating-tab-bar';
 import { useSmoothProgress } from '@/hooks/use-smooth-progress';
 import type { Track } from '@/mocks';
 import { useWindowSize } from '@/hooks/use-window-size';
@@ -338,14 +339,18 @@ function MiniPlayerBody({ track, respectStage }: { track: Track; respectStage: b
 
 /**
  * The same mini-player for full screens outside the tab navigator (Artist,
- * Album, Playlist — Stitch shows it there too), pinned above the bottom safe
- * area instead of above the tab bar. Pair with `MINI_PLAYER_OVERLAY_CLEARANCE`
- * bottom padding on the screen's scroll content.
+ * Album, Playlist — Stitch shows it there too), pinned above `RootNavBar`
+ * exactly as `MiniPlayer` sits above `FloatingTabBar` inside the Tabs
+ * layout. Pair with `MINI_PLAYER_OVERLAY_CLEARANCE` bottom padding on the
+ * screen's scroll content.
  */
 export function MiniPlayerOverlay() {
   const insets = useSafeAreaInsets();
   return (
-    <View style={[styles.overlaySlot, { bottom: insets.bottom + Spacing.sm }]} pointerEvents="box-none">
+    <View
+      style={[styles.overlaySlot, { bottom: insets.bottom + PILL_BOTTOM_GAP + PILL_HEIGHT + CAPSULE_GAP }]}
+      pointerEvents="box-none"
+    >
       <MiniPlayer />
     </View>
   );
@@ -359,8 +364,10 @@ const DRAG_TAP_GUARD_MS = 300;
 /** The capsule fades out/in as the Home stage leaves or returns. */
 const STAGE_SWAP_MS = 160;
 
-/** Scroll padding that keeps content clear of `MiniPlayerOverlay`. */
-export const MINI_PLAYER_OVERLAY_CLEARANCE = 96;
+/** Scroll padding that keeps content clear of `MiniPlayerOverlay` — the
+ * original 96px mini-player clearance plus the pill (`RootNavBar`) now
+ * sitting beneath it. */
+export const MINI_PLAYER_OVERLAY_CLEARANCE = 96 + PILL_HEIGHT + CAPSULE_GAP;
 
 const styles = StyleSheet.create({
   overlaySlot: {

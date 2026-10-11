@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { MINI_PLAYER_OVERLAY_CLEARANCE, MiniPlayerOverlay } from '@/components/mini-player';
+import { RootNavBar } from '@/components/nav/root-nav-bar';
 import { ThemedView } from '@/components/themed-view';
 import { Artwork, CircleButton, IconButton, TrackRow } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
@@ -151,6 +152,7 @@ export default function AlbumScreen() {
         </View>
       </ScrollView>
       {toast}
+      <RootNavBar />
       <MiniPlayerOverlay />
     </ThemedView>
   );

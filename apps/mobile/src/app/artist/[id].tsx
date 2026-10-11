@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { MINI_PLAYER_OVERLAY_CLEARANCE, MiniPlayerOverlay } from '@/components/mini-player';
+import { RootNavBar } from '@/components/nav/root-nav-bar';
 import { ThemedView } from '@/components/themed-view';
 import { Artwork, AvatarCard, CircleButton, CoverCard, Icon, IconButton, PillButton, SectionHeader, TrackRow } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
@@ -202,6 +203,7 @@ export default function ArtistProfileScreen() {
           </View>
         )}
       </ScrollView>
+      <RootNavBar />
       <MiniPlayerOverlay />
     </ThemedView>
   );
