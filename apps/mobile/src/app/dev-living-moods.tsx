@@ -5,6 +5,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors, Radii, Spacing } from '@/constants/theme';
+import { LivingMoodScene } from '@/components/living-moods/living-mood-scene';
+import { LiquidChromeScene } from '@/components/living-moods/scenes/liquid-chrome-scene';
 
 type CardId = 'liquid-chrome' | 'meta-balls' | 'orb' | 'galaxy';
 
@@ -18,9 +20,11 @@ const CARDS: { id: CardId; title: string; description: string; colors: [string, 
 /**
  * Dev-only prototype — Mood & Vibes: Living Moods (W3 exploration). NOT
  * linked from any production screen; excluded from the web export the same
- * way `dev-ui-kit.tsx` is (see `scripts/web-postexport.mjs`). The four real
- * WebGL scenes are wired in by Task 6 — this shell ships inert gradient
- * cards so the grid/expand-collapse mechanics can be reviewed on their own.
+ * way `dev-ui-kit.tsx` is (see `scripts/web-postexport.mjs`). The Liquid
+ * Chrome card is provisionally wired to its real WebGL scene (Task 2) for
+ * review; the other three stay inert gradient placeholders until Task 6
+ * wires the full grid (including this card's final, non-always-active
+ * mounting).
  */
 export default function DevLivingMoodsScreen() {
   const [expanded, setExpanded] = useState<CardId | null>(null);
@@ -30,7 +34,11 @@ export default function DevLivingMoodsScreen() {
     return (
       <ThemedView surface="canvas" style={styles.flex}>
         <SafeAreaView style={styles.flex} edges={['top', 'bottom']}>
-          <View style={[styles.expandedScene, { backgroundColor: expandedCard.colors[0] }]} />
+          {expandedCard.id === 'liquid-chrome' ? (
+            <LivingMoodScene engine={LiquidChromeScene} active fallbackColors={expandedCard.colors} style={styles.expandedScene} />
+          ) : (
+            <View style={[styles.expandedScene, { backgroundColor: expandedCard.colors[0] }]} />
+          )}
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Back to overview"
@@ -69,7 +77,11 @@ export default function DevLivingMoodsScreen() {
                 onPress={() => setExpanded(card.id)}
                 style={styles.card}
               >
-                <View style={[styles.cardScene, { backgroundColor: card.colors[0] }]} />
+                {card.id === 'liquid-chrome' ? (
+                  <LivingMoodScene engine={LiquidChromeScene} active fallbackColors={card.colors} style={styles.cardScene} />
+                ) : (
+                  <View style={[styles.cardScene, { backgroundColor: card.colors[0] }]} />
+                )}
                 <View style={styles.cardCaption}>
                   <ThemedText variant="label-lg">{card.title}</ThemedText>
                   <ThemedText variant="body-sm" emphasis="medium">
