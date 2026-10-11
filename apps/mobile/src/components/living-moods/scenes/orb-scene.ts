@@ -236,8 +236,16 @@ const SWIRL_SPEED = 0.12;
 /** Device-pixel canvas width above which the scene treats itself as the
  * expanded (near-fullscreen) card rather than the grid thumbnail — same
  * signal `liquid-chrome-scene.ts` uses, since there is no explicit
- * "expanded" flag from the host. */
-const EXPANDED_WIDTH_PX = 500;
+ * "expanded" flag from the host. Measured live against this scene's own
+ * card/expanded canvases (identical grid/expanded layout to the other three
+ * scenes): grid-card width is 207 (DPR 1) / 414 (DPR 2); the expanded
+ * view's own DPR-1 minimum is 480 — the old 500 sat above that minimum, so
+ * a non-Retina desktop's expanded view never crossed it and stayed on
+ * CARD_SCALE. 450 sits in the gap between the card maximum (414) and the
+ * expanded minimum (480), same as `liquid-chrome-scene.ts`'s own threshold.
+ * This is only correct while this web build's fixed mobile-frame column
+ * width (which both bounds derive from) stays at its current value. */
+const EXPANDED_WIDTH_PX = 450;
 
 /** `uScale` divides the UV before the boundary (radius ~0.8) is evaluated —
  * a smaller value zooms in. The thumbnail card wants the core filling more

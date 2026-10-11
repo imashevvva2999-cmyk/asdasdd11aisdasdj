@@ -196,8 +196,16 @@ const TWINKLE_SPEED = 0.5;
 /** Device-pixel canvas width above which the scene treats itself as the
  * expanded (near-fullscreen) card rather than the grid thumbnail — same
  * signal the other three scenes use, since there is no explicit "expanded"
- * flag from the host. */
-const EXPANDED_WIDTH_PX = 500;
+ * flag from the host. Measured live against this scene's own card/expanded
+ * canvases (identical grid/expanded layout to the other three scenes):
+ * grid-card width is 207 (DPR 1) / 414 (DPR 2); the expanded view's own
+ * DPR-1 minimum is 480 — the old 500 sat above that minimum, so a
+ * non-Retina desktop's expanded view never crossed it and stayed on
+ * CARD_TUNING. 450 sits in the gap between the card maximum (414) and the
+ * expanded minimum (480), same as `liquid-chrome-scene.ts`'s own threshold.
+ * This is only correct while this web build's fixed mobile-frame column
+ * width (which both bounds derive from) stays at its current value. */
+const EXPANDED_WIDTH_PX = 450;
 
 /** Card tuning stays deliberately sparse: fewer layers and a lower density
  * multiplier than the reference's own default (`density: 1`) — the direct
