@@ -12,13 +12,30 @@ import { Colors, Spacing } from '@/constants/theme';
 import { useContentWidth } from '@/hooks/use-content-width';
 import { useTabEntrance } from '@/hooks/use-tab-entrance';
 import { matchesQuery, normalizeQuery } from '@/lib/search-match';
+import type { AppStringKey } from '@/lib/i18n';
 import { getAlbumById, getArtistById, getTrackById, type LibraryItem, type Track } from '@/mocks';
 import { useLibraryStore } from '@/state/library-store';
+import { useAppStrings } from '@/state/locale-store';
 import { usePlayerStore } from '@/state/player-store';
 import { usePlaylistsStore } from '@/state/playlists-store';
 
 const FILTERS = ['All', 'Playlists', 'Artists', 'Albums', 'Downloaded'] as const;
 const SORT_MODES = ['Recently Added', 'Alphabetical'] as const;
+
+/** Internal filter/sort VALUES stay these fixed English strings (all the
+ * logic below compares against them) — only their on-screen LABEL is
+ * localized, via these lookup maps. */
+const FILTER_LABEL_KEYS: Record<(typeof FILTERS)[number], AppStringKey> = {
+  All: 'filterAll',
+  Playlists: 'filterPlaylists',
+  Artists: 'filterArtists',
+  Albums: 'filterAlbums',
+  Downloaded: 'filterDownloaded',
+};
+const SORT_LABEL_KEYS: Record<(typeof SORT_MODES)[number], AppStringKey> = {
+  'Recently Added': 'recentlyAdded',
+  Alphabetical: 'sortAlphabetical',
+};
 
 type ResolvedItem = {
   item: LibraryItem;
@@ -51,6 +68,7 @@ export default function LibraryScreen() {
   const windowWidth = useContentWidth();
   const gridItemWidth = Math.floor((Math.min(windowWidth, 800) - Spacing.margin * 2 - Spacing.md) / 2);
   const entrance = useTabEntrance('library');
+  const { t } = useAppStrings();
 
   const likedTrackIds = usePlayerStore((s) => s.likedTrackIds);
   const play = usePlayerStore((s) => s.play);
@@ -88,7 +106,7 @@ export default function LibraryScreen() {
   const likedSongsRow = showLikedSongs && (
     <LibraryRow
       coverIcon="favorite"
-      title="Liked Songs"
+      title={t('likedSongs')}
       subtitle={`Playlist • ${likedIds.length} ${likedIds.length === 1 ? 'song' : 'songs'}`}
       trailing="chevron"
       onPress={() => router.push('/library/liked-songs')}
@@ -112,7 +130,7 @@ export default function LibraryScreen() {
           {/* Page title: 28px at the heading weight (700), not the 800-weight
               display style, so it reads as a page title rather than a hero. */}
           <ThemedText variant="headline-lg" style={styles.pageTitle}>
-            Your Library
+            {t('yourLibrary')}
           </ThemedText>
           <View style={styles.headerActions}>
             <IconButton
@@ -134,7 +152,7 @@ export default function LibraryScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
           {FILTERS.map((item) => (
-            <Chip key={item} label={item} selected={item === filter} onPress={() => setFilter(item)} />
+            <Chip key={item} label={t(FILTER_LABEL_KEYS[item])} selected={item === filter} onPress={() => setFilter(item)} />
           ))}
         </ScrollView>
 
@@ -147,7 +165,7 @@ export default function LibraryScreen() {
           >
             <Icon name="swap-vert" size={18} color={Colors.text.medium} />
             <ThemedText variant="label-md" emphasis="medium">
-              {sortMode}
+              {t(SORT_LABEL_KEYS[sortMode])}
             </ThemedText>
             <Icon name="expand-more" size={16} color={Colors.text.low} />
           </PressableScale>
@@ -179,7 +197,7 @@ export default function LibraryScreen() {
               autoFocus
               value={query}
               onChangeText={setQuery}
-              placeholder="Search your library"
+              placeholder={t('librarySearchPlaceholder')}
               accessibilityLabel="Search your library"
               returnKeyType="search"
               leftAccessory={<Icon name="search" color={Colors.text.medium} />}
@@ -190,20 +208,20 @@ export default function LibraryScreen() {
               }
             />
             </View>
-            <TextLinkButton label="Cancel" tone="muted" onPress={closeSearch} />
+            <TextLinkButton label={t('cancel')} tone="muted" onPress={closeSearch} />
           </View>
         )}
 
 
         {noMatches ? (
           <ThemedText variant="body-md" emphasis="medium" style={styles.emptyHint}>
-            No matches for “{query.trim()}” in your library.
+            {t('libraryNoMatchesPrefix')} “{query.trim()}” {t('libraryNoMatchesSuffix')}
           </ThemedText>
         ) : (
           visibleItems.length === 0 &&
           q === '' && (
             <ThemedText variant="body-md" emphasis="medium" style={styles.emptyHint}>
-              {filter === 'Downloaded' ? 'Nothing downloaded yet.' : 'Nothing here yet.'}
+              {filter === 'Downloaded' ? t('libraryEmptyDownloaded') : t('libraryEmptyGeneric')}
             </ThemedText>
           )
         )}
@@ -266,7 +284,7 @@ export default function LibraryScreen() {
         {matchedSongs.length > 0 && (
           <View style={styles.list}>
             <ThemedText variant="label-lg" emphasis="medium">
-              Songs
+              {t('songsHeader')}
             </ThemedText>
             {matchedSongs.map((track) => (
               <TrackRow

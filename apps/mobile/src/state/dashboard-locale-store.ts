@@ -1,23 +1,17 @@
-import { create } from 'zustand';
+import { DASHBOARD_STRINGS, type DashboardStringKey } from '@/lib/dashboard-i18n';
+import { useLocaleStore } from '@/state/locale-store';
 
-import { DASHBOARD_STRINGS, type DashboardLocale, type DashboardStringKey } from '@/lib/dashboard-i18n';
-
-type DashboardLocaleState = {
-  locale: DashboardLocale;
-  setLocale: (locale: DashboardLocale) => void;
-};
-
-/** Shared across all four Dashboard tabs (not persisted — session-local for
- * this first pass; real persistence lands with the Phase 5 i18next rollout,
- * docs/mmusic-task-tracker.md H-1). */
-export const useDashboardLocaleStore = create<DashboardLocaleState>((set) => ({
-  locale: 'en',
-  setLocale: (locale) => set({ locale }),
-}));
-
+/**
+ * Thin adapter over the app-wide locale store (Settings > App Language —
+ * see src/state/locale-store.ts). The Dashboard used to keep its own
+ * session-local, unpersisted locale store; it now reads/writes the same
+ * global, persisted one as every other screen, but keeps this exact
+ * `useDashboardStrings()` shape so none of the four Dashboard tabs' call
+ * sites need to change.
+ */
 export function useDashboardStrings() {
-  const locale = useDashboardLocaleStore((s) => s.locale);
-  const setLocale = useDashboardLocaleStore((s) => s.setLocale);
+  const locale = useLocaleStore((s) => s.locale);
+  const setLocale = useLocaleStore((s) => s.setLocale);
   const t = (key: DashboardStringKey) => DASHBOARD_STRINGS[locale][key];
   return { locale, setLocale, t };
 }

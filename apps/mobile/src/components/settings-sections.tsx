@@ -4,10 +4,11 @@ import { ThemedText } from '@/components/themed-text';
 import { Icon, IconButton, ToggleRow, ValueRow } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useSettingsStore, type QualitySettingKey } from '@/state/settings-store';
+import { useAppStrings } from '@/state/locale-store';
 
 export type SettingsRow = { id: string; label: string; render: () => React.ReactNode };
 export type SettingsSection = { id: SettingsSectionId; title: string; icon: string; rows: SettingsRow[] };
-export type SettingsSectionId = 'audio' | 'playback' | 'downloads' | 'account';
+export type SettingsSectionId = 'general' | 'audio' | 'playback' | 'downloads' | 'account';
 
 type ShowToast = (message: string, icon?: string) => void;
 
@@ -20,6 +21,7 @@ type ShowToast = (message: string, icon?: string) => void;
  */
 export function useSettingsSections(showToast: ShowToast): Record<SettingsSectionId, SettingsSection> {
   const s = useSettingsStore();
+  const { t, locale, setLocale } = useAppStrings();
 
   const qualityRow = (id: QualitySettingKey, title: string): SettingsRow => ({
     id,
@@ -37,32 +39,50 @@ export function useSettingsSections(showToast: ShowToast): Record<SettingsSectio
   });
 
   return {
+    general: {
+      id: 'general',
+      title: t('sectionGeneral'),
+      icon: 'language',
+      rows: [
+        {
+          id: 'app-language',
+          label: t('appLanguage'),
+          render: () => (
+            <ValueRow
+              title={t('appLanguage')}
+              value={locale === 'ru' ? t('appLanguageRussian') : t('appLanguageEnglish')}
+              onPress={() => setLocale(locale === 'en' ? 'ru' : 'en')}
+            />
+          ),
+        },
+      ],
+    },
     audio: {
       id: 'audio',
-      title: 'Audio Streaming & Lossless',
+      title: t('sectionAudio'),
       icon: 'graphic-eq',
       rows: [
         {
           id: 'lossless',
-          label: 'Lossless',
+          label: t('rowLossless'),
           render: () => (
             <ToggleRow
-              title="Lossless"
-              subtitle="Preview setting — not yet applied to streams"
+              title={t('rowLossless')}
+              subtitle={t('losslessSubtitle')}
               value={s.lossless}
               onValueChange={(v) => s.setFlag('lossless', v)}
             />
           ),
         },
-        qualityRow('wifiQuality', 'Wi-Fi Quality'),
-        qualityRow('cellularQuality', 'Cellular Quality'),
+        qualityRow('wifiQuality', t('rowWifiQuality')),
+        qualityRow('cellularQuality', t('rowCellularQuality')),
         {
           id: 'dolby-atmos',
-          label: 'Dolby Atmos',
+          label: t('rowDolbyAtmos'),
           render: () => (
             <ToggleRow
-              title="Dolby Atmos"
-              subtitle="Preview setting — spatial audio isn't available yet"
+              title={t('rowDolbyAtmos')}
+              subtitle={t('dolbyAtmosSubtitle')}
               value={s.dolbyAtmos}
               onValueChange={(v) => s.setFlag('dolbyAtmos', v)}
             />
@@ -70,11 +90,11 @@ export function useSettingsSections(showToast: ShowToast): Record<SettingsSectio
         },
         {
           id: 'volume-normalization',
-          label: 'Volume Normalization',
+          label: t('rowVolumeNorm'),
           render: () => (
             <ToggleRow
-              title="Volume Normalization"
-              subtitle="Keep playback volume consistent between tracks"
+              title={t('rowVolumeNorm')}
+              subtitle={t('volumeNormSubtitle')}
               value={s.volumeNormalization}
               onValueChange={(v) => s.setFlag('volumeNormalization', v)}
             />
@@ -84,16 +104,16 @@ export function useSettingsSections(showToast: ShowToast): Record<SettingsSectio
     },
     playback: {
       id: 'playback',
-      title: 'Playback & Sound Engine',
+      title: t('sectionPlayback'),
       icon: 'tune',
       rows: [
         {
           id: 'crossfade',
-          label: 'Crossfade',
+          label: t('rowCrossfade'),
           render: () => (
             <View style={styles.crossfadeRow}>
               <ThemedText variant="label-lg" style={styles.crossfadeLabel}>
-                Crossfade
+                {t('rowCrossfade')}
               </ThemedText>
               <View style={styles.stepper}>
                 <IconButton icon="remove" accessibilityLabel="Decrease crossfade" size={32} onPress={() => s.setCrossfade(s.crossfadeSec - 1)} />
@@ -107,27 +127,27 @@ export function useSettingsSections(showToast: ShowToast): Record<SettingsSectio
         },
         {
           id: 'gapless',
-          label: 'Gapless',
+          label: t('rowGapless'),
           render: () => (
-            <ToggleRow title="Gapless" subtitle="Seamless transitions between tracks" value={s.gapless} onValueChange={(v) => s.setFlag('gapless', v)} />
+            <ToggleRow title={t('rowGapless')} subtitle={t('gaplessSubtitle')} value={s.gapless} onValueChange={(v) => s.setFlag('gapless', v)} />
           ),
         },
-        { id: 'equalizer', label: 'Equalizer', render: () => <ValueRow title="Equalizer" value="Flat" /> },
+        { id: 'equalizer', label: t('rowEqualizer'), render: () => <ValueRow title={t('rowEqualizer')} value="Flat" /> },
       ],
     },
     downloads: {
       id: 'downloads',
-      title: 'Downloads & Storage',
+      title: t('sectionDownloads'),
       icon: 'download',
       rows: [
-        qualityRow('downloadQuality', 'Download Quality'),
+        qualityRow('downloadQuality', t('rowDownloadQuality')),
         {
           id: 'download-cellular',
-          label: 'Download over Cellular',
+          label: t('rowDownloadCellular'),
           render: () => (
             <ToggleRow
-              title="Download over Cellular"
-              subtitle="Allow offline transfers over mobile data"
+              title={t('rowDownloadCellular')}
+              subtitle={t('downloadCellularSubtitle')}
               value={s.downloadOverCellular}
               onValueChange={(v) => s.setFlag('downloadOverCellular', v)}
             />
@@ -135,20 +155,20 @@ export function useSettingsSections(showToast: ShowToast): Record<SettingsSectio
         },
         {
           id: 'storage-used',
-          label: 'Storage Used',
+          label: t('rowStorageUsed'),
           render: () => (
             <ValueRow
-              title="Storage Used"
+              title={t('rowStorageUsed')}
               value={`${formatGb(s.musicStorageGb + s.cacheGb)} • cache ${formatGb(s.cacheGb)}`}
             />
           ),
         },
         {
           id: 'clear-cache',
-          label: 'Clear Cache',
+          label: t('rowClearCache'),
           render: () => (
             <ValueRow
-              title="Clear Cache"
+              title={t('rowClearCache')}
               value={s.cacheGb > 0 ? formatGb(s.cacheGb) : '0 B'}
               onPress={() => {
                 s.clearCache();
@@ -161,15 +181,15 @@ export function useSettingsSections(showToast: ShowToast): Record<SettingsSectio
     },
     account: {
       id: 'account',
-      title: 'Account & Payments',
+      title: t('sectionAccount'),
       icon: 'account-balance',
       rows: [
         {
           id: 'fast-pay',
-          label: 'MBANK Fast-Pay Authorization',
+          label: t('rowFastPay'),
           render: () => (
             <ToggleRow
-              title="MBANK Fast-Pay Authorization"
+              title={t('rowFastPay')}
               subtitle={s.fastPayAuth ? 'Biometric Active (demo)' : 'Disabled'}
               value={s.fastPayAuth}
               onValueChange={(v) => s.setFlag('fastPayAuth', v)}
@@ -178,11 +198,11 @@ export function useSettingsSections(showToast: ShowToast): Record<SettingsSectio
         },
         {
           id: 'support-receipts',
-          label: 'Artist Support Receipts',
+          label: t('rowSupportReceipts'),
           render: () => (
             <ToggleRow
-              title="Artist Support Receipts"
-              subtitle="Monthly email"
+              title={t('rowSupportReceipts')}
+              subtitle={t('supportReceiptsSubtitle')}
               value={s.supportReceipts}
               onValueChange={(v) => s.setFlag('supportReceipts', v)}
             />

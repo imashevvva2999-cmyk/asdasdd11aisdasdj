@@ -13,6 +13,7 @@ import { useContentWidth } from '@/hooks/use-content-width';
 import { useTabEntrance } from '@/hooks/use-tab-entrance';
 import { useToast } from '@/hooks/use-toast';
 import { featuredGenre, genres, initialRecentSearches, trendingSearches } from '@/mocks';
+import { useAppStrings } from '@/state/locale-store';
 import { countUnread, useNotificationsStore } from '@/state/notifications-store';
 
 /** S-03 Search / Explore — tab root (docs/screens.md §3.2). */
@@ -26,6 +27,7 @@ export default function SearchScreen() {
   // pass finding, verified directly in Chrome DevTools.
   const genreRows = chunkPairs(genres);
   const { showToast, toast } = useToast();
+  const { t } = useAppStrings();
   const entrance = useTabEntrance('search');
   const unreadCount = useNotificationsStore((st) => countUnread(st.items));
   const openResults = (query?: string) =>
@@ -54,7 +56,7 @@ export default function SearchScreen() {
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <TextField
           variant="search"
-          placeholder="What do you want to listen to?"
+          placeholder={t('searchPlaceholder')}
           leftAccessory={<Icon name="search" color={Colors.text.medium} />}
           rightAccessory={
             <IconButton
@@ -72,9 +74,9 @@ export default function SearchScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeaderRow}>
               <ThemedText variant="label-sm" emphasis="medium" style={styles.eyebrow}>
-                RECENT SEARCHES
+                {t('recentSearches').toUpperCase()}
               </ThemedText>
-              <TextLinkButton label="Clear all" tone="muted" onPress={() => setRecentSearches([])} />
+              <TextLinkButton label={t('clearAll')} tone="muted" onPress={() => setRecentSearches([])} />
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
               {recentSearches.map((query) => (
@@ -92,7 +94,7 @@ export default function SearchScreen() {
         <View style={styles.section}>
           <View style={styles.trendingTitleRow}>
             <Icon name="north-east" size={18} color={Colors.primary} />
-            <ThemedText variant="headline-sm">Trending Searches</ThemedText>
+            <ThemedText variant="headline-sm">{t('trendingSearches')}</ThemedText>
           </View>
           <View style={styles.trendingGrid}>
             {trendingSearches.map((item, index) => (
@@ -110,7 +112,7 @@ export default function SearchScreen() {
 
         <View style={styles.section}>
           <ThemedText variant="headline-md" style={styles.browseTitle}>
-            Browse All
+            {t('browseAll')}
           </ThemedText>
           <FeaturedBanner
             title={featuredGenre.title}

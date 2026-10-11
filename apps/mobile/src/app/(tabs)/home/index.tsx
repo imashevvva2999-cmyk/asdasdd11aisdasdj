@@ -24,6 +24,7 @@ import {
   trendingNowAlbumIds,
 } from '@/mocks';
 import { useLibraryStore } from '@/state/library-store';
+import { useAppStrings } from '@/state/locale-store';
 import { usePlayerStore } from '@/state/player-store';
 import { expandOrigin, stageVisible } from '@/state/player-surface';
 
@@ -51,6 +52,7 @@ export default function HomeScreen() {
   const toggleSaved = useLibraryStore((s) => s.toggleSaved);
   const isAlbumSaved = (albumId: string) => libraryItems.some((item) => item.kind === 'album' && item.refId === albumId);
   const { showToast, toast } = useToast();
+  const { t } = useAppStrings();
   const entrance = useTabEntrance('home');
 
   // The living Late Night Flow wave runs only while Home is in front.
@@ -73,7 +75,7 @@ export default function HomeScreen() {
       <Header />
       <Animated.View style={[styles.flex, entrance.style]}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Section title="For you">
+        <Section title={t('forYou')}>
           <View style={styles.forYouGrid}>
             {forYouTiles.map((tile) => (
               <QuickTile
@@ -126,7 +128,7 @@ export default function HomeScreen() {
         )}
 
         <View style={styles.section}>
-          <SectionHeader title="Trending Now" actionLabel="See All" onActionPress={() => router.push('/home/see-all')} />
+          <SectionHeader title={t('trendingNow')} actionLabel={t('seeAll')} onActionPress={() => router.push('/home/see-all')} />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.carouselBleed} contentContainerStyle={styles.carousel}>
             {trendingNowAlbumIds.map((albumId) => {
               const album = getAlbumById(albumId);
@@ -151,7 +153,7 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.section}>
-          <SectionHeader title="New Releases" actionLabel="Explore" onActionPress={() => router.push('/home/see-all')} />
+          <SectionHeader title={t('newReleases')} actionLabel={t('explore')} onActionPress={() => router.push('/home/see-all')} />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.carouselBleed} contentContainerStyle={styles.carousel}>
             {newReleases.map(({ albumId, label }) => {
               const album = getAlbumById(albumId);
@@ -176,9 +178,9 @@ export default function HomeScreen() {
 
         <View style={styles.section}>
           <SectionHeader
-            title="Jump Back In"
-            actionLabel="History"
-            onActionPress={() => showToast("Full listening history isn't available yet", 'history')}
+            title={t('jumpBackIn')}
+            actionLabel={t('historyAction')}
+            onActionPress={() => showToast(t('toastFullHistory'), 'history')}
           />
           <View style={styles.trackList}>
             {jumpBackInTrackIds.map((trackId) => {
@@ -208,7 +210,7 @@ export default function HomeScreen() {
 
         <View style={styles.sectionLast}>
           <View style={styles.moodHeader}>
-            <ThemedText variant="headline-md">Mood & Vibe Mixes</ThemedText>
+            <ThemedText variant="headline-md">{t('moodVibeMixes')}</ThemedText>
           </View>
           {/* Explicit 2-per-row chunking: RN-web doesn't wrap `flex: 1` cards with
               flexWrap, so all four were squeezed into one row (Stitch is 2×2). */}

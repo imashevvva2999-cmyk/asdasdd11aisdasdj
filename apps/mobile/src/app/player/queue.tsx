@@ -10,6 +10,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Artwork, EmptyState, EqualizerIndicator, Icon, IconButton, QueueRow, Toggle } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { getTrackById, type Track } from '@/mocks';
+import { useAppStrings } from '@/state/locale-store';
 import { usePlayerStore } from '@/state/player-store';
 
 /** Quiet surface for rows on the adaptive stage (no grey cards, W3 spec §1). */
@@ -40,6 +41,7 @@ export default function QueueScreen() {
 
   const likedTrackIds = usePlayerStore((s) => s.likedTrackIds);
   const toggleLike = usePlayerStore((s) => s.toggleLike);
+  const { t } = useAppStrings();
 
   const current = queueTracks[currentIndex];
   const currentLiked = current ? likedTrackIds.has(current.id) : false;
@@ -102,7 +104,7 @@ export default function QueueScreen() {
             <ThemedText variant="headline-md">Playing Next</ThemedText>
 
             {upcoming.length === 0 ? (
-              <EmptyState icon="queue-music" title="Queue is empty" hint="Play a track to start building your queue." />
+              <EmptyState icon="queue-music" title={t('queueEmpty')} hint={t('queueEmptyHint')} />
             ) : (
               upcoming.map((track, offset) => (
                 <QueueRow
@@ -121,7 +123,7 @@ export default function QueueScreen() {
           <View style={styles.autoplayRow}>
             <Icon name="all-inclusive" size={24} color={Colors.primary} />
             <View style={styles.autoplayText}>
-              <ThemedText variant="label-lg">Infinity Autoplay</ThemedText>
+              <ThemedText variant="label-lg">{t('infinityAutoplay')}</ThemedText>
               <ThemedText variant="body-sm" emphasis="medium">
                 Keep playing similar music
               </ThemedText>

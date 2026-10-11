@@ -7,6 +7,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Icon, PressableScale, TextField } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
 import { useToast } from '@/hooks/use-toast';
+import { useAppStrings } from '@/state/locale-store';
 
 /**
  * S-24 Settings — Audio & Account (docs/screens.md §3.11): the full approved
@@ -18,8 +19,10 @@ import { useToast } from '@/hooks/use-toast';
 export default function SettingsScreen() {
   const [query, setQuery] = useState('');
   const { showToast, toast } = useToast();
+  const { t } = useAppStrings();
   const byId = useSettingsSections(showToast);
-  const sections = [byId.audio, byId.downloads, byId.playback, byId.account];
+  const sections = [byId.general, byId.audio, byId.downloads, byId.playback, byId.account];
+  const footerLinks = [t('linkTerms'), t('linkPrivacy'), t('linkAudioLicenses')];
 
   const normalized = query.trim().toLowerCase();
   const filteredSections = normalized
@@ -32,7 +35,7 @@ export default function SettingsScreen() {
     <ThemedView surface="canvas" style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
         <TextField
-          placeholder="Search settings"
+          placeholder={t('settingsSearchPlaceholder')}
           value={query}
           onChangeText={setQuery}
           leftAccessory={<Icon name="search" size={18} color={Colors.text.medium} />}
@@ -40,7 +43,7 @@ export default function SettingsScreen() {
 
         {filteredSections.length === 0 ? (
           <ThemedText variant="body-md" emphasis="medium" style={styles.noResults}>
-            No settings match &quot;{query}&quot;.
+            {t('settingsNoResultsPrefix')} &quot;{query}&quot;.
           </ThemedText>
         ) : (
           filteredSections.map((section) => <SettingsSectionCard key={section.id} section={section} />)
@@ -51,10 +54,10 @@ export default function SettingsScreen() {
             Mmusic v0.1.0 (Фаза 4)
           </ThemedText>
           <ThemedText variant="body-sm" emphasis="medium" style={styles.centerText}>
-            Powered by MBANK Core Architecture
+            {t('footerPowered')}
           </ThemedText>
           <View style={styles.footerLinks}>
-            {['Terms', 'Privacy', 'Audio Licenses'].map((label) => (
+            {footerLinks.map((label) => (
               <PressableScale
                 key={label}
                 accessibilityRole="link"

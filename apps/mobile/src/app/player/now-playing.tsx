@@ -19,6 +19,7 @@ import { useWindowSize } from '@/hooks/use-window-size';
 import { lyricPreview, lyricsStateFor } from '@/lib/lyrics-state';
 import { goBack } from '@/lib/navigation';
 import { getAlbumById } from '@/mocks';
+import { useAppStrings } from '@/state/locale-store';
 import { usePlayerStore } from '@/state/player-store';
 import { PLAYER_ARTWORK_TOP_GAP, PLAYER_HEADER_HEIGHT, playerArtworkSize } from '@/state/player-surface';
 
@@ -49,6 +50,7 @@ export default function NowPlayingScreen() {
   const liked = usePlayerStore((s) => (track ? s.isLiked(track.id) : false));
   const windowWidth = useContentWidth();
   const { height: windowHeight } = useWindowSize();
+  const { t } = useAppStrings();
   // Expand/collapse sheet (mini-player ↔ full player), Back/Escape handling.
   const { collapse, sheetStyle, backgroundStyle, chromeStyle, artStyle, markArtReady } = usePlayerSheet();
 
@@ -96,7 +98,7 @@ export default function NowPlayingScreen() {
           <IconButton variant="ghost" icon="keyboard-arrow-down" iconSize={28} accessibilityLabel="Collapse player" onPress={() => goBack()} />
           <View style={styles.headerCenter}>
             <ThemedText variant="label-sm" style={[styles.headerEyebrow, styles.onColorMedium]}>
-              {album ? 'PLAYING FROM ALBUM' : 'PLAYING'}
+              {album ? t('playingFromAlbum') : t('playingLabel')}
             </ThemedText>
             <ThemedText variant="label-md" numberOfLines={1}>
               {album?.title ?? track.title}
@@ -138,7 +140,7 @@ export default function NowPlayingScreen() {
                 >
                   <Icon name="info-outline" size={14} color={ON_COLOR_MEDIUM} />
                   <ThemedText variant="label-sm" style={styles.onColorMedium}>
-                    Demo audio
+                    {t('demoAudio')}
                   </ThemedText>
                 </PressableScale>
               )}
@@ -209,14 +211,14 @@ export default function NowPlayingScreen() {
         )}
 
         <View style={styles.actionBar}>
-          <PlayerTabButton label="Lyrics" icon="lyrics" onPress={() => router.push('/player/lyrics')} />
-          <PlayerTabButton label="Queue" icon="queue-music" onPress={() => router.push('/player/queue')} />
+          <PlayerTabButton label={t('lyricsTab')} icon="lyrics" onPress={() => router.push('/player/lyrics')} />
+          <PlayerTabButton label={t('queueTab')} icon="queue-music" onPress={() => router.push('/player/queue')} />
           <PlayerTabButton
-            label="Support"
+            label={t('supportTab')}
             icon="volunteer-activism"
             onPress={() => router.push({ pathname: '/sheets/support', params: { artistId: track.artistId } })}
           />
-          <PlayerTabButton label="Audio" icon="headphones" onPress={() => router.push('/profile/audio-quality')} />
+          <PlayerTabButton label={t('audioTab')} icon="headphones" onPress={() => router.push('/profile/audio-quality')} />
         </View>
         </Animated.View>
       </SafeAreaView>

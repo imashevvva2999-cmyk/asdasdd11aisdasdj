@@ -44,7 +44,7 @@ export default function ArtistDashboardScreen() {
   const artist = useArtistStore((s) => s.artist);
   const entries = useArtistStore((s) => s.entries);
   const play = usePlayerStore((s) => s.play);
-  const { t, locale, setLocale } = useDashboardStrings();
+  const { t } = useDashboardStrings();
   const navigation = useNavigation();
 
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>('All');
@@ -82,9 +82,9 @@ export default function ArtistDashboardScreen() {
       <ThemedView surface="canvas" style={styles.flex}>
         <EmptyState
           icon="mic"
-          title="No artist profile yet"
-          hint="Set up your artist profile to start uploading tracks."
-          actionLabel="Become an Artist"
+          title={t('noArtistTitle')}
+          hint={t('noArtistHint')}
+          actionLabel={t('becomeArtistAction')}
           onActionPress={() => router.push('/profile/artist/become-artist')}
         />
       </ThemedView>
@@ -94,11 +94,6 @@ export default function ArtistDashboardScreen() {
   return (
     <ThemedView surface="canvas" style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.localeRow}>
-          <Chip label="EN" selected={locale === 'en'} onPress={() => setLocale('en')} />
-          <Chip label="RU" selected={locale === 'ru'} onPress={() => setLocale('ru')} />
-        </View>
-
         <PillButton
           label={t('uploadTrack')}
           leadingIcon="add-circle-outline"
@@ -109,7 +104,7 @@ export default function ArtistDashboardScreen() {
         <View style={styles.statsRow}>
           <StatCard label={t('listeners')} value={String(artist.monthlyListeners ?? 0)} icon="groups" iconColor={Colors.primary} />
           <StatCard label={t('streams')} value="0" icon="play-circle-outline" iconColor={Colors.tertiary} />
-          <StatCard label="Support" value={`${formatKgsAmount(0)} сом`} icon="volunteer-activism" iconColor={Colors.secondary} />
+          <StatCard label={t('supportLabel')} value={`${formatKgsAmount(0)} сом`} icon="volunteer-activism" iconColor={Colors.secondary} />
         </View>
 
         <View style={styles.section}>
@@ -190,10 +185,6 @@ const styles = StyleSheet.create({
     padding: Spacing.margin,
     gap: Spacing.lg,
     paddingBottom: Spacing.xl * 3,
-  },
-  localeRow: {
-    flexDirection: 'row',
-    gap: Spacing.xs,
   },
   uploadButton: {
     borderRadius: Radii.md,

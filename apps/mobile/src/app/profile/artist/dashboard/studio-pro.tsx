@@ -131,7 +131,7 @@ export default function StudioProScreen() {
             <PillButton
               label={tier.current ? t('currentPlan') : `${t('chooseTier')} ${tier.name[locale]}`}
               disabled={tier.current}
-              onPress={tier.current ? undefined : () => showToast('Subscriptions aren\'t available in this preview', 'studio')}
+              onPress={tier.current ? undefined : () => showToast(t('subscriptionsToast'), 'studio')}
               style={styles.tierButton}
             />
           </View>

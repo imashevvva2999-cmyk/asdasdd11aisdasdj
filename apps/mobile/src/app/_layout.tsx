@@ -13,6 +13,7 @@ import { iconFonts } from '@/components/ui/icon';
 import { RouteTitle } from '@/components/web/route-title';
 import { PlayerSurfaceSync } from '@/state/player-surface';
 import { usePlayerStore } from '@/state/player-store';
+import { useLocaleStore } from '@/state/locale-store';
 import { loadedFonts } from '@/constants/fonts';
 import { Colors } from '@/constants/theme';
 import { MAX_CONTENT_WIDTH } from '@/hooks/use-content-width';
@@ -60,6 +61,12 @@ export default function RootLayout() {
   // rehydrating here, client-only and after mount, avoids a hydration mismatch.
   useEffect(() => {
     usePlayerStore.persist.rehydrate();
+  }, []);
+
+  // App Language (Settings > App Language, Priority 1): same skipHydration
+  // + client-only rehydrate pattern as likedTrackIds above.
+  useEffect(() => {
+    useLocaleStore.persist.rehydrate();
   }, []);
 
   if (!fontsLoaded && !fontError) {

@@ -64,6 +64,12 @@ const EN_STRINGS = {
   emptyFilterTitle: 'Nothing in this filter yet',
   analyticsEmptyTitle: 'No analytics yet',
   analyticsEmptyHint: 'Publish your first track to see streaming analytics here.',
+  launchCampaignToast: "Launching promotion campaigns isn't available in this preview",
+  subscriptionsToast: "Subscriptions aren't available in this preview",
+  noArtistTitle: 'No artist profile yet',
+  noArtistHint: 'Set up your artist profile to start uploading tracks.',
+  supportLabel: 'Support',
+  becomeArtistAction: 'Become an Artist',
 } as const;
 
 const RU_STRINGS: Record<keyof typeof EN_STRINGS, string> = {
@@ -126,6 +132,12 @@ const RU_STRINGS: Record<keyof typeof EN_STRINGS, string> = {
   emptyFilterTitle: 'Здесь пока ничего нет',
   analyticsEmptyTitle: 'Пока нет аналитики',
   analyticsEmptyHint: 'Опубликуйте первый трек, чтобы увидеть статистику прослушиваний.',
+  launchCampaignToast: 'Запуск промо-кампаний недоступен в этом демо',
+  subscriptionsToast: 'Подписки недоступны в этом демо',
+  noArtistTitle: 'Профиль артиста ещё не создан',
+  noArtistHint: 'Настройте профиль артиста, чтобы начать загрузку треков.',
+  supportLabel: 'Поддержка',
+  becomeArtistAction: 'Стать артистом',
 };
 
 /** Per-item localized content for data arrays (tiers, promo tools,

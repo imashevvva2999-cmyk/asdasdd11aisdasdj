@@ -8,8 +8,10 @@ import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useToast } from '@/hooks/use-toast';
 import { formatKgsAmount } from '@/lib/format-currency';
 import { currentUser } from '@/mocks';
+import { manageReleasesLabel } from '@/lib/i18n';
 import { useArtistStore } from '@/state/artist-store';
 import { useLibraryStore } from '@/state/library-store';
+import { useAppStrings } from '@/state/locale-store';
 import { useSettingsStore } from '@/state/settings-store';
 import { useSupportStore } from '@/state/support-store';
 
@@ -29,6 +31,7 @@ export default function ProfileScreen() {
   const cacheGb = useSettingsStore((s) => s.cacheGb);
   const downloadedCount = useLibraryStore((s) => s.downloadedIds.size);
   const { showToast, toast } = useToast();
+  const { t, locale } = useAppStrings();
 
   const totalSupported = history.reduce((sum, entry) => sum + entry.amount, 0);
   const distinctArtistCount = new Set(history.map((entry) => entry.artistId)).size;
@@ -36,7 +39,7 @@ export default function ProfileScreen() {
   /** No real account/session exists in the frontend-only build (MBANK auth is
    * a backend concern), so Log Out says so honestly instead of pretending. */
   function handleLogOut() {
-    showToast("Signing out isn't available in this preview", 'logout');
+    showToast(t('toastSignOut'), 'logout');
   }
 
   return (
@@ -53,7 +56,7 @@ export default function ProfileScreen() {
               radius={48}
               uri={currentUser.photoUri}
               placeholderIcon="person"
-              onPress={() => showToast("Changing your photo isn't available yet", 'edit')}
+              onPress={() => showToast(t('toastChangePhoto'), 'edit')}
               accessibilityLabel="Change profile photo"
             />
             <IconButton
@@ -61,7 +64,7 @@ export default function ProfileScreen() {
               accessibilityLabel="Edit profile photo"
               size={32}
               style={styles.editAvatarButton}
-              onPress={() => showToast("Changing your photo isn't available yet", 'edit')}
+              onPress={() => showToast(t('toastChangePhoto'), 'edit')}
             />
           </View>
           <View style={styles.nameRow}>
@@ -69,7 +72,7 @@ export default function ProfileScreen() {
             {currentUser.verified && <Icon name="verified" size={20} color={Colors.secondary} />}
           </View>
           <ThemedText variant="body-sm" emphasis="medium">
-            @{currentUser.username} • Member since {currentUser.memberSinceYear}
+            @{currentUser.username} • {t('memberSince')} {currentUser.memberSinceYear}
           </ThemedText>
           <View style={styles.vipBadge}>
             <Icon name="graphic-eq" size={14} color={Colors.secondary} />
@@ -80,45 +83,45 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.statsRow}>
-          <StatCard variant="metric" label="Saved" value={String(currentUser.savedCount)} />
-          <StatCard variant="metric" label="Playlists" value={String(currentUser.playlistsCount)} />
-          <StatCard variant="metric" label="Supported" value={formatKgsAmount(totalSupported)} unit="сом" style={styles.supportedStat} />
+          <StatCard variant="metric" label={t('statSaved')} value={String(currentUser.savedCount)} />
+          <StatCard variant="metric" label={t('statPlaylists')} value={String(currentUser.playlistsCount)} />
+          <StatCard variant="metric" label={t('statSupported')} value={formatKgsAmount(totalSupported)} unit="сом" style={styles.supportedStat} />
         </View>
 
         <View style={styles.section}>
-          <ThemedText variant="headline-md">Studio Sanctuary</ThemedText>
+          <ThemedText variant="headline-md">{t('studioSanctuary')}</ThemedText>
           <View style={styles.menuList}>
             <MenuRow
               icon="volunteer-activism"
-              title="Support History"
-              subtitle={`${formatKgsAmount(totalSupported)} сом supported • ${distinctArtistCount} artists`}
+              title={t('menuSupportHistory')}
+              subtitle={`${formatKgsAmount(totalSupported)} сом ${t('supportedSuffix')} • ${distinctArtistCount} ${t('artistsSuffix')}`}
               onPress={() => router.push('/profile/support-history')}
             />
             <MenuRow
               icon="high-quality"
               tone="secondary"
-              title="Audio Quality & Playback"
+              title={t('menuAudioQuality')}
               onPress={() => router.push('/profile/audio-quality')}
             />
             <MenuRow
               icon="cloud-download"
               tone="neutral"
-              title="Downloads & Offline"
-              subtitle={`${(musicStorageGb + cacheGb).toFixed(1)} GB used • ${downloadedCount} downloaded`}
+              title={t('menuDownloads')}
+              subtitle={`${(musicStorageGb + cacheGb).toFixed(1)} GB ${t('usedSuffix')} • ${downloadedCount} ${t('downloadedSuffix')}`}
               onPress={() => router.push('/profile/downloads')}
             />
             <MenuRow
               icon="verified-user"
               tone="neutral"
-              title="Account & Security"
+              title={t('menuAccount')}
               subtitle="MBANK Connected ID"
               onPress={() => router.push('/profile/account')}
             />
             <MenuRow
               icon="mic"
               tone="secondary"
-              title={myArtist ? 'Artist Dashboard' : 'Become an Artist'}
-              subtitle={myArtist ? `Manage ${myArtist.name}'s releases` : 'Publish and monetize your tracks on Mmusic'}
+              title={myArtist ? t('menuArtistDashboard') : t('menuBecomeArtist')}
+              subtitle={myArtist ? manageReleasesLabel(locale, myArtist.name) : t('becomeArtistSubtitle')}
               onPress={() => router.push(myArtist ? '/profile/artist/dashboard' : '/profile/artist/become-artist')}
             />
           </View>
@@ -127,7 +130,7 @@ export default function ProfileScreen() {
         <PressableScale accessibilityRole="button" onPress={handleLogOut} style={styles.logOut}>
           <Icon name="logout" size={20} color={Colors.primary} />
           <ThemedText variant="label-lg" emphasis="primary">
-            Log Out
+            {t('logOut')}
           </ThemedText>
         </PressableScale>
       </ScrollView>

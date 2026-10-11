@@ -6,6 +6,7 @@ import { Artwork, IconButton, PressableScale } from '@/components/ui';
 import { Radii, Spacing } from '@/constants/theme';
 import { goBack } from '@/lib/navigation';
 import { subHeaderBackLabel } from '@/lib/stage-rules';
+import { useAppStrings } from '@/state/locale-store';
 import { usePlayerStore } from '@/state/player-store';
 
 const ON_COLOR_MEDIUM = 'rgba(255, 255, 255, 0.74)';
@@ -23,6 +24,7 @@ export function PlayerSubHeader({ active }: { active: PlayerView }) {
   // Opened from Now Playing, ⌄ goes back to it; opened straight from Home, it closes.
   const stack = useNavigation().getState();
   const backLabel = subHeaderBackLabel(stack ? stack.routes[stack.index - 1]?.name : undefined);
+  const { t } = useAppStrings();
 
   return (
     <View style={styles.wrap}>
@@ -44,8 +46,8 @@ export function PlayerSubHeader({ active }: { active: PlayerView }) {
       </View>
 
       <View style={styles.switch} accessibilityRole="tablist">
-        <SwitchTab label="Lyrics" selected={active === 'lyrics'} onPress={() => router.replace('/player/lyrics')} />
-        <SwitchTab label="Queue" selected={active === 'queue'} onPress={() => router.replace('/player/queue')} />
+        <SwitchTab label={t('lyricsTab')} selected={active === 'lyrics'} onPress={() => router.replace('/player/lyrics')} />
+        <SwitchTab label={t('queueTab')} selected={active === 'queue'} onPress={() => router.replace('/player/queue')} />
       </View>
     </View>
   );

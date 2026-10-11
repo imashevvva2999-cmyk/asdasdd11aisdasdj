@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MiniPlayer } from '@/components/mini-player';
 import { CAPSULE_GAP, FloatingTabBar, PILL_BOTTOM_GAP, PILL_HEIGHT } from '@/components/nav/floating-tab-bar';
 import { Icon } from '@/components/ui/icon';
+import { useAppStrings } from '@/state/locale-store';
 
 const TAB_ICON_SIZE = 22;
 
@@ -24,6 +25,7 @@ const TAB_ICON_SIZE = 22;
  */
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
+  const { t } = useAppStrings();
 
   return (
     <View style={styles.flex}>
@@ -31,21 +33,21 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="home"
           options={{
-            title: 'Home',
+            title: t('homeTab'),
             tabBarIcon: ({ color }) => <Icon name="home" color={color} size={TAB_ICON_SIZE} />,
           }}
         />
         <Tabs.Screen
           name="search"
           options={{
-            title: 'Search',
+            title: t('searchTab'),
             tabBarIcon: ({ color }) => <Icon name="search" color={color} size={TAB_ICON_SIZE} />,
           }}
         />
         <Tabs.Screen
           name="library"
           options={{
-            title: 'Library',
+            title: t('libraryTab'),
             tabBarIcon: ({ color }) => <Icon name="library-music" color={color} size={TAB_ICON_SIZE} />,
           }}
         />

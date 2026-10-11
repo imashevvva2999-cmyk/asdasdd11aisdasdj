@@ -64,7 +64,7 @@ export default function PromotionScreen() {
             <View key={tool.id} style={styles.toolCard}>
               <View style={styles.toolHeader}>
                 <ThemedText variant="label-lg" style={styles.flexText}>{tool.name[locale]}</ThemedText>
-                <ThemedText variant="body-sm" style={{ color: Colors.secondary }}>{tool.priceLabel}</ThemedText>
+                <ThemedText variant="body-sm" style={{ color: Colors.secondary }}>{tool.priceLabel[locale]}</ThemedText>
               </View>
               <ThemedText variant="body-sm" emphasis="medium">{tool.description[locale]}</ThemedText>
             </View>
@@ -98,7 +98,7 @@ export default function PromotionScreen() {
             label={t('launchViaMbank')}
             trailingIcon="arrow-forward"
             style={styles.launchButton}
-            onPress={() => showToast('Launching promotion campaigns isn\'t available in this preview', 'campaign')}
+            onPress={() => showToast(t('launchCampaignToast'), 'campaign')}
           />
         </View>
 
