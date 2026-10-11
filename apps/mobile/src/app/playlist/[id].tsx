@@ -87,8 +87,8 @@ export default function PlaylistScreen() {
             {playlist.curator ? `Curated by ${playlist.curator}` : playlist.editorial ? 'Mmusic Editorial' : 'Your playlist'}
           </ThemedText>
           <ThemedText variant="body-sm" emphasis="medium">
-            {formatTrackCount(trackList.length || playlist.trackCount)}
-            {playlist.durationLabel ? ` • ${playlist.durationLabel}` : ''}
+            {formatTrackCount(trackList.length)}
+            {trackList.length > 0 && playlist.durationLabel ? ` • ${playlist.durationLabel}` : ''}
           </ThemedText>
 
           <View style={styles.actionsRow}>
