@@ -41,6 +41,7 @@ export default function HomeScreen() {
   const hero = getPlaylistById(heroPlaylistId);
   const play = usePlayerStore((s) => s.play);
   const next = usePlayerStore((s) => s.next);
+  const previous = usePlayerStore((s) => s.previous);
   const currentTrackId = usePlayerStore((s) => s.currentTrackId());
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const togglePlayPause = usePlayerStore((s) => s.togglePlayPause);
@@ -114,6 +115,7 @@ export default function HomeScreen() {
               trackId={currentTrackId ?? hero.trackIds?.[0]}
               audioPlaying={isPlaying}
               onNextPress={heroInPlayer ? next : undefined}
+              onPreviousPress={heroInPlayer ? previous : undefined}
               onPress={() => router.push({ pathname: '/playlist/[id]', params: { id: hero.id } })}
               onPlayPress={() => {
                 if (heroInPlayer) {

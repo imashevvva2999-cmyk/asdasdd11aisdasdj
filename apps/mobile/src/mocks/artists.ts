@@ -23,6 +23,8 @@ export const artists: Artist[] = [
   { id: 'sable-duo', name: 'Sable Duo', monthlyListeners: 320_000, genres: ['Electronic'] },
   { id: 'yuki-tanaka', name: 'Yuki Tanaka', monthlyListeners: 610_000, genres: ['Dream Pop'] },
   { id: 'elena-rostova', name: 'Elena Rostova', monthlyListeners: 275_000, genres: ['Ambient'] },
+  { id: 'analog-dreamers', name: 'Analog Dreamers', monthlyListeners: 198_000, genres: ['Lo-Fi'], popularTrackIds: ['tape-saturation-4'] },
+  { id: 'overcast-skies', name: 'Overcast Skies', monthlyListeners: 365_000, genres: ['Electronic'], popularTrackIds: ['vapor-trails'] },
   { id: 'nils-frahm', name: 'Nils Frahm', monthlyListeners: 4_500_000, genres: ['Neo-Classical'] },
 ];
 

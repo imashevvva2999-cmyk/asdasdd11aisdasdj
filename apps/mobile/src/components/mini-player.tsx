@@ -79,6 +79,9 @@ function MiniPlayerBody({ track, respectStage }: { track: Track; respectStage: b
   const engineDurationSec = usePlayerStore((s) => s.durationSec);
   const togglePlayPause = usePlayerStore((s) => s.togglePlayPause);
   const next = usePlayerStore((s) => s.next);
+  const previous = usePlayerStore((s) => s.previous);
+  const toggleLike = usePlayerStore((s) => s.toggleLike);
+  const liked = usePlayerStore((s) => s.isLiked(track.id));
   const swipeTo = usePlayerStore((s) => s.swipeTo);
   const reduceMotion = useReducedMotion();
   const { height } = useWindowSize();
@@ -275,12 +278,24 @@ function MiniPlayerBody({ track, respectStage }: { track: Track; respectStage: b
           <View style={styles.actions}>
             <IconButton
               variant="ghost"
-              icon="skip-next"
-              iconSize={26}
-              accessibilityLabel="Next track"
+              icon={liked ? 'favorite' : 'favorite-border'}
+              iconSize={22}
+              color={liked ? Colors.primary : undefined}
+              accessibilityLabel={liked ? 'Unlike' : 'Like'}
               onPress={(e) => {
                 e.stopPropagation();
-                next();
+                toggleLike(track.id);
+              }}
+              size={44}
+            />
+            <IconButton
+              variant="ghost"
+              icon="skip-previous"
+              iconSize={26}
+              accessibilityLabel="Previous track"
+              onPress={(e) => {
+                e.stopPropagation();
+                previous();
               }}
               size={44}
             />
@@ -296,6 +311,17 @@ function MiniPlayerBody({ track, respectStage }: { track: Track; respectStage: b
               size={44}
               iconSize={24}
               style={styles.playButton}
+            />
+            <IconButton
+              variant="ghost"
+              icon="skip-next"
+              iconSize={26}
+              accessibilityLabel="Next track"
+              onPress={(e) => {
+                e.stopPropagation();
+                next();
+              }}
+              size={44}
             />
           </View>
         </View>

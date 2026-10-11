@@ -192,12 +192,14 @@ export type FeaturedBannerProps = {
   audioPlaying?: boolean;
   /** 'footer' layout only — shows a secondary skip-next button next to Play/Pause. */
   onNextPress?: () => void;
+  /** 'footer' layout only — shows a secondary skip-previous button before Play/Pause. */
+  onPreviousPress?: () => void;
   style?: ViewStyle;
 };
 
 /** Hero banner (DESIGN.md "Album & Playlist Cards"; docs/screens.md §3.4). Defaults
  * to 16:9; pass `height` for the fixed-height heroes used on Home/Search/Genre. */
-export function FeaturedBanner({ coverUri, title, subtitle, height, layout = 'overlay', onPlayPress, onPress, animated = false, paused = false, active = false, trackId, audioPlaying = false, onNextPress, style }: FeaturedBannerProps) {
+export function FeaturedBanner({ coverUri, title, subtitle, height, layout = 'overlay', onPlayPress, onPress, animated = false, paused = false, active = false, trackId, audioPlaying = false, onNextPress, onPreviousPress, style }: FeaturedBannerProps) {
   const hydrated = useHydrated();
 
   if (layout === 'footer') {
@@ -231,6 +233,16 @@ export function FeaturedBanner({ coverUri, title, subtitle, height, layout = 'ov
               </ThemedText>
             )}
           </View>
+          {onPreviousPress && (
+            <IconButton
+              variant="surface"
+              icon="skip-previous"
+              size={44}
+              accessibilityLabel="Previous track"
+              onPress={onPreviousPress}
+              style={cardStyles.footerBannerNextButton}
+            />
+          )}
           {onPlayPress && (
             <PressableScale
               accessibilityRole="button"

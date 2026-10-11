@@ -7,7 +7,7 @@ export const tracks: Track[] = [
   { id: 'midnight-mirage', title: 'Midnight Mirage', artistId: 'solaris-echo', artistName: 'Solaris Echo', albumId: 'horizon-deluxe', durationSec: 240, lossless: true },
   { id: 'vapor-trails', title: 'Vapor Trails', artistId: 'overcast-skies', artistName: 'Overcast Skies', durationSec: 208, explicit: true },
   { id: 'abyssal-bloom', title: 'Abyssal Bloom', artistId: 'elena-rostova', artistName: 'Elena Rostova', albumId: 'still-water', durationSec: 152 },
-  { id: 'tape-saturation-4', title: 'Tape Saturation #4', artistId: 'analog-dreamers', artistName: 'Analog Dreamers', durationSec: 236 },
+  { id: 'tape-saturation-4', title: 'Tape Saturation', artistId: 'analog-dreamers', artistName: 'Analog Dreamers', durationSec: 236 },
   { id: 'horizon', title: 'Horizon', artistId: 'solaris-echo', artistName: 'Solaris Echo', albumId: 'horizon-deluxe', durationSec: 184 },
   { id: 'abyssal-bloom-feat', title: 'Abyssal Bloom', artistId: 'elena-rostova', artistName: 'Elena Rostova feat. Solaris Echo', durationSec: 198 },
   // Horizon (Deluxe) album — remaining tracklist (docs/screens.md §3.4 S-09).

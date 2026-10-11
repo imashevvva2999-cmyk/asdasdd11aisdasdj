@@ -11,6 +11,7 @@ import { shareEntity } from '@/lib/share';
 import { forYouMenuActions } from '@/lib/for-you-menu';
 import { forYouTiles, getAlbumById, getTrackById } from '@/mocks';
 import { useLibraryStore } from '@/state/library-store';
+import { useAppStrings } from '@/state/locale-store';
 import { usePlayerStore } from '@/state/player-store';
 import { usePlaylistsStore } from '@/state/playlists-store';
 
@@ -40,6 +41,7 @@ function OptionsSheetContent({ kind, id }: { kind: OptionsKind; id: string }) {
   const toggleSaved = useLibraryStore((s) => s.toggleSaved);
   const toggleDownloaded = useLibraryStore((s) => s.toggleDownloaded);
   const { showToast, toast } = useToast();
+  const { t } = useAppStrings();
 
   const playMix = usePlayerStore((s) => s.play);
   const shuffleMix = usePlayerStore((s) => s.playShuffled);
@@ -71,6 +73,11 @@ function OptionsSheetContent({ kind, id }: { kind: OptionsKind; id: string }) {
   function goTo(pathname: '/artist/[id]' | '/album/[id]', entityId: string) {
     goBack();
     router.push({ pathname, params: { id: entityId } });
+  }
+
+  function goToSupport(artistId: string) {
+    goBack();
+    router.push({ pathname: '/sheets/support', params: { artistId } });
   }
 
   if (!header) {
@@ -110,6 +117,7 @@ function OptionsSheetContent({ kind, id }: { kind: OptionsKind; id: string }) {
             />
             <MenuRow variant="flat" icon="person" title="View artist" onPress={() => goTo('/artist/[id]', track.artistId)} />
             {album && <MenuRow variant="flat" icon="album" title="Go to album" onPress={() => goTo('/album/[id]', album.id)} />}
+            <MenuRow variant="flat" icon="volunteer-activism" title={t('donate')} onPress={() => goToSupport(track.artistId)} />
             <MenuRow variant="flat" icon="share" title="Share track" onPress={handleShare} />
           </>
         )}

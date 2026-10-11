@@ -183,6 +183,11 @@ export const generatedArtworkByArtistId: Record<string, LocalOrRemoteImage | und
   'yuki-tanaka': safeRequire(() => require('../../assets/artwork/generated/yuki-tanaka.jpg')),
   'elena-rostova': safeRequire(() => require('../../assets/artwork/generated/elena-rostova.jpg')),
   'nils-frahm': safeRequire(() => require('../../assets/artwork/generated/nils-frahm.jpg')),
+  // analog-dreamers, overcast-skies: single-release mock artists added for the
+  // Donate/View Artist fix — no dedicated portrait exists, so each reuses
+  // their own (already-credited) track cover rather than a fabricated photo.
+  'analog-dreamers': safeRequire(() => require('../../assets/artwork/tracks/tape-saturation-4.jpg')),
+  'overcast-skies': safeRequire(() => require('../../assets/artwork/tracks/vapor-trails.jpg')),
 };
 
 /**
