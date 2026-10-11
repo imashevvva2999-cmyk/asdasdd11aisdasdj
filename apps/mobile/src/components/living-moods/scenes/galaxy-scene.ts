@@ -92,7 +92,7 @@ float Star(vec2 uv, float flare, float invReach) {
   float m = uGlow / d;
   float rays = smoothstep(0.0, 1.0, 1.0 - abs(uv.x * uv.y * 900.0));
   m += rays * flare * 0.6;
-  m *= smoothstep(1.0, 0.2, d * invReach);
+  m *= 1.0 - smoothstep(0.2, 1.0, d * invReach);
   return m;
 }
 
@@ -149,7 +149,7 @@ void main() {
     float i = float(k) / layers;
     float depthFrac = fract(i + uDepth);
     float scale = mix(20.0 * uDensity, 0.6 * uDensity, depthFrac);
-    float fade = depthFrac * smoothstep(1.0, 0.85, depthFrac);
+    float fade = depthFrac * (1.0 - smoothstep(0.85, 1.0, depthFrac));
     vec2 offset = vec2(i * 523.71);
     float spread = 1.0 / (scale * 0.2);
     float pushCells = uRepelStrength * scale * 0.05;
