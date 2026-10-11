@@ -10,7 +10,7 @@
 import { copyFileSync, existsSync, rmSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
-const DEV_ONLY_PAGES = ['dev-ui-kit.html', '_sitemap.html'];
+const DEV_ONLY_PAGES = ['dev-ui-kit.html', 'dev-living-moods.html', '_sitemap.html'];
 
 const dir = resolve(process.argv[2] ?? 'dist');
 if (!existsSync(join(dir, 'index.html'))) {
