@@ -22,21 +22,21 @@ export function RootNavBar() {
       label: t('homeTab'),
       focused: false,
       icon: ({ color, size }) => <Icon name="home" color={color} size={size} />,
-      onPress: () => router.push('/home'),
+      onPress: () => router.dismissTo('/home'),
     },
     {
       key: 'search',
       label: t('searchTab'),
       focused: false,
       icon: ({ color, size }) => <Icon name="search" color={color} size={size} />,
-      onPress: () => router.push('/search'),
+      onPress: () => router.dismissTo('/search'),
     },
     {
       key: 'library',
       label: t('libraryTab'),
       focused: false,
       icon: ({ color, size }) => <Icon name="library-music" color={color} size={size} />,
-      onPress: () => router.push('/library'),
+      onPress: () => router.dismissTo('/library'),
     },
   ];
   return <TabPill items={items} />;
