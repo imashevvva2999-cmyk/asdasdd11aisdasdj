@@ -74,7 +74,6 @@ export default function LibraryScreen() {
   const play = usePlayerStore((s) => s.play);
   const currentTrackId = usePlayerStore((s) => s.currentTrackId());
   const isPlaying = usePlayerStore((s) => s.isPlaying);
-  const toggleLike = usePlayerStore((s) => s.toggleLike);
   const items = useLibraryStore((s) => s.items);
   const downloadedIds = useLibraryStore((s) => s.downloadedIds);
   const playlists = usePlaylistsStore((s) => s.playlists);
@@ -296,9 +295,7 @@ export default function LibraryScreen() {
                 explicit={track.explicit}
                 lossless={track.lossless}
                 isPlaying={currentTrackId === track.id && isPlaying}
-                liked
                 onPress={() => playSong(track.id)}
-                onToggleLike={() => toggleLike(track.id)}
                 onOptionsPress={() => router.push({ pathname: '/sheets/options', params: { kind: 'track', id: track.id } })}
               />
             ))}

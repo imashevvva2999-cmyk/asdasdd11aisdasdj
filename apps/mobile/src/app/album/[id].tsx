@@ -32,11 +32,6 @@ export default function AlbumScreen() {
   const { showToast, toast } = useToast();
   const currentTrackId = usePlayerStore((s) => s.currentTrackId());
   const isPlaying = usePlayerStore((s) => s.isPlaying);
-  // Subscribe to the liked set itself (not the stable `isLiked` function) so
-  // the hearts re-render when a like is toggled.
-  const likedTrackIds = usePlayerStore((s) => s.likedTrackIds);
-  const isLiked = (trackId: string) => likedTrackIds.has(trackId);
-  const toggleLike = usePlayerStore((s) => s.toggleLike);
 
   if (!album) {
     return (
@@ -129,13 +124,10 @@ export default function AlbumScreen() {
                 active={currentTrackId === track!.id}
                 title={track!.title}
                 artist={track!.artistName}
-                durationLabel={formatDuration(track!.durationSec)}
                 explicit={track!.explicit}
                 lossless={track!.lossless}
                 isPlaying={currentTrackId === track!.id && isPlaying}
-                liked={isLiked(track!.id)}
                 onPress={() => play(track!.id, trackList.map((t) => t!.id))}
-                onToggleLike={() => toggleLike(track!.id)}
                 onOptionsPress={() => router.push({ pathname: '/sheets/options', params: { kind: 'track', id: track!.id } })}
               />
             ))
@@ -156,12 +148,6 @@ export default function AlbumScreen() {
       <MiniPlayerOverlay />
     </ThemedView>
   );
-}
-
-function formatDuration(totalSeconds: number): string {
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${minutes}:${String(seconds).padStart(2, '0')}`;
 }
 
 const styles = StyleSheet.create({

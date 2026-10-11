@@ -36,11 +36,6 @@ export default function PlaylistScreen() {
   const playShuffled = usePlayerStore((s) => s.playShuffled);
   const currentTrackId = usePlayerStore((s) => s.currentTrackId());
   const isPlaying = usePlayerStore((s) => s.isPlaying);
-  // Subscribe to the liked set itself (not the stable `isLiked` function) so
-  // the hearts re-render when a like is toggled.
-  const likedTrackIds = usePlayerStore((s) => s.likedTrackIds);
-  const isLiked = (trackId: string) => likedTrackIds.has(trackId);
-  const toggleLike = usePlayerStore((s) => s.toggleLike);
   const isSaved = useLibraryStore((s) => s.isSaved('playlist', id));
   const isDownloaded = useLibraryStore((s) => s.isDownloaded(id));
   const toggleSaved = useLibraryStore((s) => s.toggleSaved);
@@ -148,13 +143,10 @@ export default function PlaylistScreen() {
               active={currentTrackId === track.id}
               title={track.title}
               artist={track.artistName}
-              durationLabel={formatDuration(track.durationSec)}
               explicit={track.explicit}
               lossless={track.lossless}
               isPlaying={currentTrackId === track.id && isPlaying}
-              liked={isLiked(track.id)}
               onPress={() => play(track.id, trackIdsForPlayback)}
-              onToggleLike={() => toggleLike(track.id)}
               onOptionsPress={() => router.push({ pathname: '/sheets/options', params: { kind: 'track', id: track.id } })}
             />
           ))}
@@ -165,12 +157,6 @@ export default function PlaylistScreen() {
       <MiniPlayerOverlay />
     </ThemedView>
   );
-}
-
-function formatDuration(totalSeconds: number): string {
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${minutes}:${String(seconds).padStart(2, '0')}`;
 }
 
 function formatTrackCount(count: number): string {

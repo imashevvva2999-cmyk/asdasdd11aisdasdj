@@ -48,7 +48,6 @@ export default function DevUiKitScreen() {
 function DevUiKitGallery() {
   const [chipSelected, setChipSelected] = useState(true);
   const [toggleOn, setToggleOn] = useState(true);
-  const [liked, setLiked] = useState(false);
   const [amount, setAmount] = useState('100');
   const [toastVisible, setToastVisible] = useState(true);
   const sheetRef = useRef<BottomSheetModal>(null);
@@ -123,12 +122,9 @@ function DevUiKitGallery() {
               index={1}
               title="Midnight Mirage"
               artist="Solaris Echo"
-              durationLabel="4:18"
-              liked={liked}
-              onToggleLike={() => setLiked((v) => !v)}
               onOptionsPress={() => {}}
             />
-            <TrackRow index={2} title="Resonant Field" artist="Solaris Echo" durationLabel="3:24" isPlaying explicit />
+            <TrackRow index={2} title="Resonant Field" artist="Solaris Echo" isPlaying explicit />
             <QueueRow title="Obsidian Frequencies" artist="Solaris Echo" durationLabel="2:58" />
             <LibraryRow title="Late Night Flow" subtitle="Playlist • 28 tracks" />
             <PlaylistPickerRow title="Chill Vibes" trackCountLabel="12 tracks" selected />

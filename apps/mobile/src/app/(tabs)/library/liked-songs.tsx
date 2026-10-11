@@ -26,7 +26,6 @@ export default function LikedSongsScreen() {
   const playShuffled = usePlayerStore((s) => s.playShuffled);
   const currentTrackId = usePlayerStore((s) => s.currentTrackId());
   const isPlaying = usePlayerStore((s) => s.isPlaying);
-  const toggleLike = usePlayerStore((s) => s.toggleLike);
   const isDownloaded = useLibraryStore((s) => s.isDownloaded(LIKED_SONGS_ID));
   const toggleDownloaded = useLibraryStore((s) => s.toggleDownloaded);
   const [sortMode, setSortMode] = useState<TrackSortMode>('Default order');
@@ -111,13 +110,10 @@ export default function LikedSongsScreen() {
                 active={currentTrackId === track.id}
                 title={track.title}
                 artist={track.artistName}
-                durationLabel={formatDuration(track.durationSec)}
                 explicit={track.explicit}
                 lossless={track.lossless}
                 isPlaying={currentTrackId === track.id && isPlaying}
-                liked
                 onPress={() => play(track.id, likedTrackIdsOrdered)}
-                onToggleLike={() => toggleLike(track.id)}
                 onOptionsPress={() => router.push({ pathname: '/sheets/options', params: { kind: 'track', id: track.id } })}
               />
             ))}
@@ -127,12 +123,6 @@ export default function LikedSongsScreen() {
       {toast}
     </ThemedView>
   );
-}
-
-function formatDuration(totalSeconds: number): string {
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${minutes}:${String(seconds).padStart(2, '0')}`;
 }
 
 const styles = StyleSheet.create({

@@ -45,6 +45,8 @@ function OptionsSheetContent({ kind, id }: { kind: OptionsKind; id: string }) {
 
   const playMix = usePlayerStore((s) => s.play);
   const shuffleMix = usePlayerStore((s) => s.playShuffled);
+  const likedTrackIds = usePlayerStore((s) => s.likedTrackIds);
+  const toggleLike = usePlayerStore((s) => s.toggleLike);
   const mix = kind === 'mix' ? forYouTiles.find((tile) => tile.id === id) : undefined;
   const track = kind === 'track' ? getTrackById(id) : undefined;
   const album = kind === 'album' ? getAlbumById(id) : track?.albumId ? getAlbumById(track.albumId) : undefined;
@@ -109,6 +111,12 @@ function OptionsSheetContent({ kind, id }: { kind: OptionsKind; id: string }) {
       <ScrollView contentContainerStyle={styles.list}>
         {kind === 'track' && track && (
           <>
+            <MenuRow
+              variant="flat"
+              icon={likedTrackIds.has(track.id) ? 'favorite' : 'favorite-border'}
+              title={likedTrackIds.has(track.id) ? 'Unlike' : 'Like'}
+              onPress={() => toggleLike(track.id)}
+            />
             <MenuRow
               variant="flat"
               icon="playlist-add"

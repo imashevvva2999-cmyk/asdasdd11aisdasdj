@@ -46,16 +46,13 @@ export type TrackRowProps = {
   coverUri?: LocalOrRemoteImage;
   title: string;
   artist: string;
-  durationLabel?: string;
   explicit?: boolean;
   lossless?: boolean;
   isPlaying?: boolean;
   /** Current track (playing or paused): raised row + coral title, as every
    * Stitch track list highlights it. */
   active?: boolean;
-  liked?: boolean;
   onPress?: (event: GestureResponderEvent) => void;
-  onToggleLike?: () => void;
   onOptionsPress?: () => void;
   style?: ViewStyle;
 };
@@ -66,14 +63,11 @@ export function TrackRow({
   coverUri,
   title,
   artist,
-  durationLabel,
   explicit,
   lossless,
   isPlaying = false,
   active = false,
-  liked = false,
   onPress,
-  onToggleLike,
   onOptionsPress,
   style,
 }: TrackRowProps) {
@@ -85,7 +79,7 @@ export function TrackRow({
     <PressableScale
       onPress={onPress}
       style={[styles.row, active && styles.activeRow, style]}
-      accessibilityRole={onToggleLike || onOptionsPress ? undefined : 'button'}
+      accessibilityRole={onOptionsPress ? undefined : 'button'}
     >
       {index !== undefined && (
         <View style={showCover ? styles.indexSlot : styles.leadingSlot}>
@@ -123,21 +117,6 @@ export function TrackRow({
           {explicit && <Badge label="E" variant="explicit" />}
         </View>
       </View>
-      {onToggleLike && (
-        <IconButton
-          icon={liked ? 'favorite' : 'favorite-border'}
-          onPress={onToggleLike}
-          color={liked ? Colors.primary : Colors.text.medium}
-          size={36}
-          style={styles.transparentIconButton}
-          accessibilityLabel={liked ? 'Unlike' : 'Like'}
-        />
-      )}
-      {durationLabel && (
-        <ThemedText variant="mono-num" emphasis="medium" style={styles.duration}>
-          {durationLabel}
-        </ThemedText>
-      )}
       {onOptionsPress && (
         <IconButton
           icon="more-vert"

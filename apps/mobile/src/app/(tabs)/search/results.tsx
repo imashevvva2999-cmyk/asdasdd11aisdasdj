@@ -39,8 +39,6 @@ function SearchResultsContent({ initialQuery }: { initialQuery: string }) {
   const play = usePlayerStore((s) => s.play);
   const currentTrackId = usePlayerStore((s) => s.currentTrackId());
   const isPlaying = usePlayerStore((s) => s.isPlaying);
-  const likedTrackIds = usePlayerStore((s) => s.likedTrackIds);
-  const toggleLike = usePlayerStore((s) => s.toggleLike);
 
   const q = normalizeQuery(query);
   const matchedArtists = useMemo(() => artists.filter((a) => matchesQuery(q, a.name)), [q]);
@@ -172,11 +170,9 @@ function SearchResultsContent({ initialQuery }: { initialQuery: string }) {
                     artist={track.artistName}
                     lossless={track.lossless}
                     explicit={track.explicit}
-                    liked={likedTrackIds.has(track.id)}
                     active={currentTrackId === track.id}
                     isPlaying={currentTrackId === track.id && isPlaying}
                     onPress={() => router.push({ pathname: '/player/now-playing', params: { trackId: track.id } })}
-                    onToggleLike={() => toggleLike(track.id)}
                     onOptionsPress={() => router.push({ pathname: '/sheets/options', params: { kind: 'track', id: track.id } })}
                   />
                 ))}
