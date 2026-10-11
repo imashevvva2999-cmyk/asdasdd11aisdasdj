@@ -94,12 +94,14 @@ export default function ArtistDashboardScreen() {
   return (
     <ThemedView surface="canvas" style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
-        <PillButton
-          label={t('uploadTrack')}
-          leadingIcon="add-circle-outline"
-          onPress={() => router.push('/profile/artist/upload-track')}
-          style={styles.uploadButton}
-        />
+        {entries.length > 0 && (
+          <PillButton
+            label={t('uploadTrack')}
+            leadingIcon="add-circle-outline"
+            onPress={() => router.push('/profile/artist/upload-track')}
+            style={styles.uploadButton}
+          />
+        )}
 
         <View style={styles.statsRow}>
           <StatCard label={t('listeners')} value={String(artist.monthlyListeners ?? 0)} icon="groups" iconColor={Colors.primary} />

@@ -153,7 +153,7 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.section}>
-          <SectionHeader title={t('newReleases')} actionLabel={t('explore')} onActionPress={() => router.push('/home/see-all')} />
+          <SectionHeader title={t('newReleases')} actionLabel={t('seeAll')} onActionPress={() => router.push('/home/see-all')} />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.carouselBleed} contentContainerStyle={styles.carousel}>
             {newReleases.map(({ albumId, label }) => {
               const album = getAlbumById(albumId);

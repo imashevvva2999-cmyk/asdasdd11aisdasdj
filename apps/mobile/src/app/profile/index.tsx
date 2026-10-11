@@ -92,6 +92,12 @@ export default function ProfileScreen() {
           <ThemedText variant="headline-md">{t('studioSanctuary')}</ThemedText>
           <View style={styles.menuList}>
             <MenuRow
+              icon="settings"
+              title={t('menuSettings')}
+              subtitle={t('menuSettingsSubtitle')}
+              onPress={() => router.push('/profile/settings')}
+            />
+            <MenuRow
               icon="volunteer-activism"
               title={t('menuSupportHistory')}
               subtitle={`${formatKgsAmount(totalSupported)} сом ${t('supportedSuffix')} • ${distinctArtistCount} ${t('artistsSuffix')}`}
