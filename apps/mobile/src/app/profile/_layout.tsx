@@ -22,6 +22,7 @@ export default function ProfileStackLayout() {
     >
       <Stack.Screen name="index" options={{ title: t('profileTitle') }} />
       <Stack.Screen name="settings" options={{ title: t('settingsTitle') }} />
+      <Stack.Screen name="settings-language" options={{ title: t('appLanguage') }} />
       <Stack.Screen name="audio-quality" options={{ title: t('menuAudioQuality') }} />
       <Stack.Screen name="downloads" options={{ title: t('menuDownloads') }} />
       <Stack.Screen name="account" options={{ title: t('menuAccount') }} />

@@ -10,9 +10,7 @@ import { formatKgsAmount } from '@/lib/format-currency';
 import { currentUser } from '@/mocks';
 import { manageReleasesLabel } from '@/lib/i18n';
 import { useArtistStore } from '@/state/artist-store';
-import { useLibraryStore } from '@/state/library-store';
 import { useAppStrings } from '@/state/locale-store';
-import { useSettingsStore } from '@/state/settings-store';
 import { useSupportStore } from '@/state/support-store';
 
 /**
@@ -27,9 +25,6 @@ import { useSupportStore } from '@/state/support-store';
 export default function ProfileScreen() {
   const history = useSupportStore((s) => s.history);
   const myArtist = useArtistStore((s) => s.artist);
-  const musicStorageGb = useSettingsStore((s) => s.musicStorageGb);
-  const cacheGb = useSettingsStore((s) => s.cacheGb);
-  const downloadedCount = useLibraryStore((s) => s.downloadedIds.size);
   const { showToast, toast } = useToast();
   const { t, locale } = useAppStrings();
 
@@ -102,26 +97,6 @@ export default function ProfileScreen() {
               title={t('menuSupportHistory')}
               subtitle={`${formatKgsAmount(totalSupported)} сом ${t('supportedSuffix')} • ${distinctArtistCount} ${t('artistsSuffix')}`}
               onPress={() => router.push('/profile/support-history')}
-            />
-            <MenuRow
-              icon="high-quality"
-              tone="secondary"
-              title={t('menuAudioQuality')}
-              onPress={() => router.push('/profile/audio-quality')}
-            />
-            <MenuRow
-              icon="cloud-download"
-              tone="neutral"
-              title={t('menuDownloads')}
-              subtitle={`${(musicStorageGb + cacheGb).toFixed(1)} GB ${t('usedSuffix')} • ${downloadedCount} ${t('downloadedSuffix')}`}
-              onPress={() => router.push('/profile/downloads')}
-            />
-            <MenuRow
-              icon="verified-user"
-              tone="neutral"
-              title={t('menuAccount')}
-              subtitle="MBANK Connected ID"
-              onPress={() => router.push('/profile/account')}
             />
             <MenuRow
               icon="mic"

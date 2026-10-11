@@ -8,7 +8,7 @@ import { useAppStrings } from '@/state/locale-store';
 
 export type SettingsRow = { id: string; label: string; render: () => React.ReactNode };
 export type SettingsSection = { id: SettingsSectionId; title: string; icon: string; rows: SettingsRow[] };
-export type SettingsSectionId = 'general' | 'audio' | 'playback' | 'downloads' | 'account';
+export type SettingsSectionId = 'audio' | 'playback' | 'downloads' | 'account';
 
 type ShowToast = (message: string, icon?: string) => void;
 
@@ -21,7 +21,7 @@ type ShowToast = (message: string, icon?: string) => void;
  */
 export function useSettingsSections(showToast: ShowToast): Record<SettingsSectionId, SettingsSection> {
   const s = useSettingsStore();
-  const { t, locale, setLocale } = useAppStrings();
+  const { t } = useAppStrings();
 
   const qualityRow = (id: QualitySettingKey, title: string): SettingsRow => ({
     id,
@@ -39,24 +39,6 @@ export function useSettingsSections(showToast: ShowToast): Record<SettingsSectio
   });
 
   return {
-    general: {
-      id: 'general',
-      title: t('sectionGeneral'),
-      icon: 'language',
-      rows: [
-        {
-          id: 'app-language',
-          label: t('appLanguage'),
-          render: () => (
-            <ValueRow
-              title={t('appLanguage')}
-              value={locale === 'ru' ? t('appLanguageRussian') : t('appLanguageEnglish')}
-              onPress={() => setLocale(locale === 'en' ? 'ru' : 'en')}
-            />
-          ),
-        },
-      ],
-    },
     audio: {
       id: 'audio',
       title: t('sectionAudio'),
