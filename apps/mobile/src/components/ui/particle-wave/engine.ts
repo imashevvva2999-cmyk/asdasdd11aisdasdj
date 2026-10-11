@@ -29,25 +29,6 @@ export const APPROVED_DENSITY = 1;
 /** Rendering quality, lowered step by step only when frames stay slow. */
 export type Quality = { dprCap: number; density: number; slow: number };
 export const INITIAL_QUALITY: Quality = { dprCap: 2, density: APPROVED_DENSITY, slow: 0 };
-
-/**
- * TEMPORARY, development-only instrumentation (investigation only — not
- * part of the approved render path). Zero cost when `onDiagnostics` is not
- * provided: see the `if (this.onDiagnostics)` guard in `loop()` below,
- * which is the only place this adds any per-frame work. Remove this type,
- * `emitDiagnostics()`, `setForcedQuality()`, and the two constructor
- * params once the investigation is resolved.
- */
-export type WaveDiagnostics = {
-  dpr: number;
-  dprCap: number;
-  qualityDensity: number;
-  appliedDensity: number;
-  avgFrameMs: number;
-  fps: number;
-  degraded: boolean;
-  forced: boolean;
-};
 const SLOW_FRAME_MS = 22;
 const SLOW_FRAMES_TO_STEP = 46;
 const MIN_DENSITY = 0.55;
@@ -313,21 +294,12 @@ export class ParticleWave {
   private restoreTimer = 0;
   private destroyed = false;
   private reactive: ReactiveInput = { tint: DEFAULT_TINT, bass: 0, mid: 0, high: 0 };
-  // TEMPORARY diagnostics-only state — see WaveDiagnostics above. Untouched,
-  // and the frame-time array is never populated, unless onDiagnostics is set.
-  private forcedQuality: Quality | null = null;
-  private frameMsHistory: number[] = [];
-  private diagnosticsFrameCounter = 0;
-  private static readonly DIAGNOSTICS_FRAME_HISTORY_MAX = 60;
-  private static readonly DIAGNOSTICS_EMIT_EVERY_N_FRAMES = 20;
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
     private opts: WaveOptions,
     private readonly onFallback: () => void,
     private readonly getReactive?: () => ReactiveInput,
-    /** TEMPORARY — diagnostics investigation only, see WaveDiagnostics. */
-    private readonly onDiagnostics?: (d: WaveDiagnostics) => void,
   ) {
     canvas.addEventListener('webglcontextlost', this.lost);
     canvas.addEventListener('webglcontextrestored', this.restored);
@@ -353,20 +325,6 @@ export class ParticleWave {
     if (this.destroyed) return;
     this.opts = { ...this.opts, ...opts };
     this.schedule();
-  }
-
-  /** TEMPORARY, diagnostics-only — pins quality to a fixed value (bypassing
-   * the adaptive stepping in `loop()`) so the approved max-quality render
-   * can be A/B compared against whatever the adaptive system has settled
-   * on. `null` releases the pin and resumes normal adaptive behavior. Never
-   * called outside the debug overlay. */
-  setForcedQuality(q: Quality | null) {
-    if (this.destroyed) return;
-    this.forcedQuality = q;
-    if (q) {
-      this.quality = q;
-      this.upload();
-    }
   }
 
   /** Stops the loop, removes every listener and releases the GPU resources. */
@@ -484,40 +442,11 @@ export class ParticleWave {
     this.time += dt * this.opts.speed;
     if (this.getReactive) this.reactive = this.getReactive();
     this.draw();
-    if (!this.forcedQuality) {
-      const before = this.quality;
-      this.quality = nextQuality(this.quality, ms);
-      if (this.quality.density !== before.density) this.upload();
-    }
-    // TEMPORARY diagnostics — the only per-frame cost this adds is this one
-    // boolean check when onDiagnostics is not provided (the approved path).
-    if (this.onDiagnostics) {
-      this.frameMsHistory.push(ms);
-      if (this.frameMsHistory.length > ParticleWave.DIAGNOSTICS_FRAME_HISTORY_MAX) this.frameMsHistory.shift();
-      this.diagnosticsFrameCounter += 1;
-      if (this.diagnosticsFrameCounter >= ParticleWave.DIAGNOSTICS_EMIT_EVERY_N_FRAMES) {
-        this.diagnosticsFrameCounter = 0;
-        this.emitDiagnostics();
-      }
-    }
+    const before = this.quality;
+    this.quality = nextQuality(this.quality, ms);
+    if (this.quality.density !== before.density) this.upload();
     this.raf = requestAnimationFrame(this.loop);
   };
-
-  /** TEMPORARY, diagnostics-only — see WaveDiagnostics. */
-  private emitDiagnostics() {
-    if (!this.onDiagnostics) return;
-    const avgMs = this.frameMsHistory.length > 0 ? this.frameMsHistory.reduce((a, b) => a + b, 0) / this.frameMsHistory.length : 0;
-    this.onDiagnostics({
-      dpr: typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1,
-      dprCap: this.quality.dprCap,
-      qualityDensity: this.quality.density,
-      appliedDensity: Math.min(this.opts.density, this.quality.density),
-      avgFrameMs: avgMs,
-      fps: avgMs > 0 ? 1000 / avgMs : 0,
-      degraded: this.quality.dprCap < INITIAL_QUALITY.dprCap || this.quality.density < INITIAL_QUALITY.density,
-      forced: !!this.forcedQuality,
-    });
-  }
 
   private stop() {
     if (this.raf) cancelAnimationFrame(this.raf);
