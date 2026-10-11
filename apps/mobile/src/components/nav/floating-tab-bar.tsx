@@ -6,7 +6,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { PressableScale } from '@/components/ui/pressable-scale';
-import { Colors, Radii, Spacing } from '@/constants/theme';
+import { BlurView } from 'expo-blur';
+
+import { Blur, Colors, Radii, Spacing } from '@/constants/theme';
 import { pillSinkOffset } from '@/lib/stage-rules';
 import { expandOrigin, expandProgress } from '@/state/player-surface';
 
@@ -84,6 +86,7 @@ export function TabPill({ items }: { items: TabPillItem[] }) {
   return (
     <View pointerEvents="box-none" style={[styles.slot, { bottom: insets.bottom + PILL_BOTTOM_GAP }]}>
       <Animated.View style={[styles.pill, sinkStyle]} accessibilityRole="tablist">
+        <BlurView intensity={Blur.card} tint="dark" style={styles.pillBlur} />
         <Animated.View style={[styles.indicator, indicatorStyle]} pointerEvents="none" />
         {items.map((item, index) => (
           <PressableScale
@@ -161,14 +164,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: Spacing.xs,
     borderRadius: Radii.full,
-    backgroundColor: '#141418',
+    backgroundColor: 'rgba(20, 20, 24, 0.55)',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.14)',
+    borderTopColor: 'rgba(255, 255, 255, 0.22)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.32,
     shadowRadius: 20,
     elevation: 12,
+    overflow: 'hidden',
+  },
+  pillBlur: {
+    ...StyleSheet.absoluteFill,
+    borderRadius: Radii.full,
   },
   item: {
     minWidth: 76,
