@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Artwork, Chip, EmptyState, Icon, IconButton, PillButton, PressableScale, StatCard } from '@/components/ui';
+import { Artwork, Badge, Chip, EmptyState, Icon, IconButton, PillButton, PressableScale, StatCard } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { getArtistSupportTotalKgs } from '@/lib/artist-support-total';
 import { formatKgsAmount } from '@/lib/format-currency';
@@ -107,6 +107,7 @@ export default function ArtistDashboardScreen() {
           />
         )}
 
+        {demoStreams !== undefined && <Badge label={t('demoDataBadge')} style={styles.demoBadge} />}
         <View style={styles.statsRow}>
           <StatCard label={t('listeners')} value={(artist.monthlyListeners ?? 0).toLocaleString('en-US')} icon="groups" iconColor={Colors.primary} />
           <StatCard label={t('streams')} value={(demoStreams ?? 0).toLocaleString('en-US')} icon="play-circle-outline" iconColor={Colors.tertiary} />
@@ -199,6 +200,10 @@ const styles = StyleSheet.create({
   },
   uploadButton: {
     borderRadius: Radii.md,
+  },
+  demoBadge: {
+    alignSelf: 'flex-start',
+    marginBottom: -Spacing.sm,
   },
   statsRow: {
     flexDirection: 'row',

@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { ListenTrendChart } from '@/components/dashboard/listen-trend-chart';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Artwork, Chip, EmptyState, StatCard } from '@/components/ui';
+import { Artwork, Badge, Chip, EmptyState, StatCard } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { getTrackAnalytics, type TimePeriod } from '@/lib/analytics-mock';
 import { useDashboardStrings } from '@/state/dashboard-locale-store';
@@ -55,6 +55,8 @@ export default function AnalyticsScreen() {
               {track?.title ?? t('selectTrack')}
             </ThemedText>
           </View>
+          {/* Every figure on this tab is seeded mock data, never real telemetry. */}
+          <Badge label={t('demoDataBadge')} />
         </View>
 
         {published.length > 1 && (

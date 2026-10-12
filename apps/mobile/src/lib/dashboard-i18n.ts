@@ -69,6 +69,7 @@ const EN_STRINGS = {
   noArtistTitle: 'No artist profile yet',
   noArtistHint: 'Set up your artist profile to start uploading tracks.',
   supportLabel: 'Support',
+  demoDataBadge: 'Demo data',
   becomeArtistAction: 'Become an Artist',
 } as const;
 
@@ -137,6 +138,7 @@ const RU_STRINGS: Record<keyof typeof EN_STRINGS, string> = {
   noArtistTitle: 'Профиль артиста ещё не создан',
   noArtistHint: 'Настройте профиль артиста, чтобы начать загрузку треков.',
   supportLabel: 'Поддержка',
+  demoDataBadge: 'Демо-данные',
   becomeArtistAction: 'Стать артистом',
 };
 

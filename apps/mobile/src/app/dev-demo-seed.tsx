@@ -6,6 +6,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { PillButton } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
+import { getArtistDemoTotals } from '@/lib/analytics-mock';
 import { useArtistStore } from '@/state/artist-store';
 
 import NotFoundScreen from './+not-found';
@@ -24,6 +25,11 @@ export default function DevDemoSeedScreen() {
 function DevDemoSeedPanel() {
   const artist = useArtistStore((s) => s.artist);
   const seedDemoStats = useArtistStore((s) => s.seedDemoStats);
+  const entries = useArtistStore((s) => s.entries);
+  const publishedIds = entries.filter((e) => e.status === 'published').map((e) => e.track.id);
+  // Derived from the Analytics tab's own per-track figures, so Overview and
+  // Analytics reconcile. Re-press after publishing more tracks.
+  const totals = getArtistDemoTotals(publishedIds);
 
   return (
     <ThemedView surface="canvas" style={styles.flex}>
@@ -32,10 +38,13 @@ function DevDemoSeedPanel() {
         <ThemedText variant="body-md">
           {artist ? `Current artist: ${artist.name}` : 'No artist profile yet — complete Become an Artist first.'}
         </ThemedText>
+        <ThemedText variant="body-sm">
+          {`${publishedIds.length} published track(s) → ${totals.monthlyListeners.toLocaleString('en-US')} listeners / ${totals.streams.toLocaleString('en-US')} streams (from Analytics)`}
+        </ThemedText>
         <PillButton
-          label="Seed 12,400 listeners / 58,900 streams"
-          onPress={() => seedDemoStats(12_400, 58_900)}
-          disabled={!artist}
+          label="Seed demo stats from Analytics"
+          onPress={() => seedDemoStats(totals.monthlyListeners, totals.streams)}
+          disabled={!artist || publishedIds.length === 0}
         />
         <PillButton label="Back to Dashboard" onPress={() => router.push('/profile/artist/dashboard')} />
       </SafeAreaView>

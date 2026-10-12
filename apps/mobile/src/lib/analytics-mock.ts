@@ -106,3 +106,19 @@ export function getTrackAnalytics(trackId: string, period: TimePeriod): TrackAna
     ],
   };
 }
+
+/**
+ * DEMO ONLY — artist-level totals for the dashboard Overview, derived from the
+ * same seeded per-track figures the Analytics tab shows, so the two tabs
+ * reconcile: streams = Σ each track's "All time" streams; monthly listeners
+ * = Σ each track's 28-day listeners (an upper bound — no real de-duplication).
+ */
+export function getArtistDemoTotals(trackIds: string[]): { streams: number; monthlyListeners: number } {
+  return trackIds.reduce(
+    (totals, trackId) => ({
+      streams: totals.streams + getTrackAnalytics(trackId, 'all').streams,
+      monthlyListeners: totals.monthlyListeners + getTrackAnalytics(trackId, '28d').listeners,
+    }),
+    { streams: 0, monthlyListeners: 0 },
+  );
+}
