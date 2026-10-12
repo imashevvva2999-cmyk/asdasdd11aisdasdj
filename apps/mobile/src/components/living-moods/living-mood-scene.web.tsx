@@ -51,8 +51,9 @@ export function LivingMoodScene({ engine: Engine, active, fallbackColors, style 
         <View
           style={[
             styles.fallback,
-            // web-only CSS gradient, this file never runs on native
-            { backgroundImage: `linear-gradient(145deg, ${fallbackColors[0]}, ${fallbackColors[1]})` },
+            // web-only CSS gradient, this file never runs on native (RN's
+            // ViewStyle type doesn't model backgroundImage, hence the cast)
+            { backgroundImage: `linear-gradient(145deg, ${fallbackColors[0]}, ${fallbackColors[1]})` } as unknown as ViewStyle,
           ]}
         />
       ) : (
