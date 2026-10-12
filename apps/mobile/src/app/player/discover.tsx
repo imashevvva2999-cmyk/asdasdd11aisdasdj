@@ -45,22 +45,32 @@ export default function DiscoverScreen() {
   const genreIndex = useDiscoveryStore((s) => s.genreIndex);
   const genreId = genreIds[genreIndex];
   const firstRun = useRef(true);
+  // The song the user opened Discover from, and the genre it lives in. Kept in
+  // refs so the open survives the start-genre switch and React's dev
+  // double-invoked effects: runs for any other genre wait, and the entry is
+  // consumed once, on the start genre.
+  const entryRef = useRef<string | undefined>(undefined);
+  const startIndexRef = useRef<number | undefined>(undefined);
 
   // Genre change (or first open): play this genre's queue, resuming its last track.
   useEffect(() => {
     const discovery = useDiscoveryStore.getState();
     const player = usePlayerStore.getState();
-    let entryTrack: string | undefined;
     if (firstRun.current) {
       firstRun.current = false;
-      entryTrack = trackId || player.currentTrackId();
-      const startGenre = (entryTrack && getGenreIdForTrack(entryTrack)) || discovery.genreIds[0];
-      const startIndex = Math.max(0, discovery.genreIds.indexOf(startGenre));
-      if (startIndex !== discovery.genreIndex) {
-        discovery.setGenreIndex(startIndex);
+      entryRef.current = trackId || player.currentTrackId();
+      const entry = entryRef.current;
+      const startGenre = (entry && getGenreIdForTrack(entry)) || discovery.genreIds[0];
+      startIndexRef.current = Math.max(0, discovery.genreIds.indexOf(startGenre));
+      if (startIndexRef.current !== discovery.genreIndex) {
+        discovery.setGenreIndex(startIndexRef.current);
         return;
       }
     }
+    if (startIndexRef.current !== undefined && startIndexRef.current !== genreIndex) return;
+    startIndexRef.current = undefined;
+    const entryTrack = entryRef.current;
+    entryRef.current = undefined;
     const id = discovery.genreIds[genreIndex];
     const trackIds = id ? getTrackIdsForGenre(id) : [];
     if (trackIds.length === 0) {
@@ -68,14 +78,19 @@ export default function DiscoverScreen() {
       return;
     }
     const restored = discovery.lastTrackByGenre[id];
-    const target =
-      restored && trackIds.includes(restored)
-        ? restored
-        : entryTrack && trackIds.includes(entryTrack)
-          ? entryTrack
-          : trackIds[0];
+    const current = player.currentTrackId();
     const sameQueue = player.queue.length === trackIds.length && player.queue.every((q, i) => q === trackIds[i]);
-    if (!(sameQueue && player.currentTrackId() === target)) play(target, trackIds);
+    // On open, the song the user came from wins; if this genre's queue is
+    // already playing, keep its song; on genre swipes the remembered song wins.
+    const target =
+      entryTrack && trackIds.includes(entryTrack)
+        ? entryTrack
+        : sameQueue && current && trackIds.includes(current)
+          ? current
+          : restored && trackIds.includes(restored)
+            ? restored
+            : trackIds[0];
+    if (!(sameQueue && current === target)) play(target, trackIds);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [genreIndex]);
 
