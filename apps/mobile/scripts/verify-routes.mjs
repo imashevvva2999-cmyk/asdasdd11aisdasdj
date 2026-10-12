@@ -165,7 +165,7 @@ if (missingGlyphs.length === 0) {
 }
 
 // W1 — development-only pages are not part of the public website.
-for (const path of ['dev-ui-kit.html', 'dev-living-moods.html', '_sitemap.html']) {
+for (const path of ['dev-ui-kit.html', 'dev-living-moods.html', 'dev-demo-seed.html', '_sitemap.html']) {
   if (existsSync(join(distDir, path))) {
     console.error(`✗ FAIL     development page published: ${path}`);
     failures += 1;
