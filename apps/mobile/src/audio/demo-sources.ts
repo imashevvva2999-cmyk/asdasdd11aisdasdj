@@ -22,3 +22,18 @@ export const DEMO_SOURCES: Partial<Record<TrackId, AudioSource>> = {
   'velvet-skyline-t1': require('../../assets/audio/airship-serenity.mp3'),
   'chronos-echoes-t1': require('../../assets/audio/winter-reflections.mp3'),
 };
+
+/**
+ * Catalog tracks with no demo audio yet, by design (docs/superpowers/plans/
+ * 2026-10-12-kyrgyz-track-catalog.md) — real licensed audio pending, see
+ * assets/audio/kyrgyz/PENDING.md. Read by
+ * scripts/verify-demo-audio-coverage.mjs to exempt these ids from its
+ * "every catalog track has demo audio" check without weakening it for
+ * every other track.
+ */
+export const PENDING_AUDIO_TRACK_IDS: TrackId[] = [
+  'kyrgyzstanym', 'muras', 'ene-til', 'alai', 'kachan-kaitat', 'jazym-kelchi',
+  'kyrgyz-biyi', 'ne-segodnya', 'kirgiz-jeri', 'erke-kyz', 'chopo-choor-fantasy',
+  'kyrgyzstanym-remix', 'jashtyk-kez', 'kambarkan', 'esimde', 'kyrgyz-bala',
+  'taimuras', 'ananayyn', 'eto-lyubov', 'issyk-kulskiy-vaib',
+];

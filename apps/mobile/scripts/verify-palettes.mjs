@@ -14,6 +14,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { artworkPathsByMap } from '../src/constants/artwork-palettes.ts';
+import { PENDING_ARTWORK_TRACK_IDS } from '../src/constants/stitch-artwork.ts';
 import { DEFAULT_PALETTE, contrastRatio, paletteForTrack } from '../src/lib/palette.ts';
 import { tracks } from '../src/mocks/index.ts';
 
@@ -39,6 +40,10 @@ for (const [mapName, paths] of Object.entries(artworkPathsByMap)) {
 }
 
 for (const track of tracks) {
+  if (PENDING_ARTWORK_TRACK_IDS.includes(track.id)) {
+    check(`"${track.title}" (${track.id}) is pending artwork and uses the default palette`, paletteForTrack(track) === DEFAULT_PALETTE);
+    continue;
+  }
   const palette = paletteForTrack(track);
   check(`"${track.title}" (${track.id}) has its own artwork palette`, palette !== DEFAULT_PALETTE);
   check(`"${track.id}" palette colours are #rrggbb`, ['background', 'deep', 'mini', 'accent'].every((k) => HEX.test(palette[k])));

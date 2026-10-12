@@ -26,6 +26,27 @@ export const artists: Artist[] = [
   { id: 'analog-dreamers', name: 'Analog Dreamers', monthlyListeners: 198_000, genres: ['Lo-Fi'], popularTrackIds: ['tape-saturation-4'] },
   { id: 'overcast-skies', name: 'Overcast Skies', monthlyListeners: 365_000, genres: ['Electronic'], popularTrackIds: ['vapor-trails'] },
   { id: 'nils-frahm', name: 'Nils Frahm', monthlyListeners: 4_500_000, genres: ['Neo-Classical'] },
+  // Kyrgyz catalog — real artists, metadata only (docs/superpowers/plans/2026-10-12-kyrgyz-track-catalog.md).
+  // No audio exists for these yet; see Task 2 for the import workflow once licensed files are supplied.
+  { id: 'amirchik', name: 'Амирчик', genres: ['Kyrgyz Pop'], location: 'Kyrgyzstan' },
+  { id: 'mirbek-atabekov', name: 'Мирбек Атабеков', genres: ['Kyrgyz Pop'], location: 'Kyrgyzstan' },
+  { id: 'bayastan', name: 'Баястан', genres: ['Kyrgyz Rap'], location: 'Kyrgyzstan' },
+  { id: 'begish', name: 'Бегиш', genres: ['Kyrgyz Rap'], location: 'Kyrgyzstan' },
+  { id: 'gulnur-satylganova', name: 'Гульнур Сатылганова', genres: ['Kyrgyz Pop'], location: 'Kyrgyzstan' },
+  { id: 'sultan-sadyraliev', name: 'Султан Садыралиев', genres: ['Kyrgyz Pop'], location: 'Kyrgyzstan' },
+  { id: 'ulukmanapo', name: 'Улукманапо', genres: ['Kyrgyz Rap'], location: 'Kyrgyzstan' },
+  { id: 'salamat-sadikova', name: 'Саламат Садыкова', genres: ['Kyrgyz Folk'], location: 'Kyrgyzstan' },
+  { id: 'tengir-too', name: 'Тенгир-Тоо', genres: ['Kyrgyz Folk'], location: 'Kyrgyzstan' },
+  { id: 'nurlanbek-nyshanov', name: 'Нурланбек Нышанов', genres: ['Kyrgyz Folk'], location: 'Kyrgyzstan' },
+  { id: 'omar-zhanyshov', name: 'Омар Жанышов', genres: ['Kyrgyz Pop'], location: 'Kyrgyzstan' },
+  { id: 'kairat-kyrgyz', name: 'Кайрат Кыргыз', genres: ['Kyrgyz Pop'], location: 'Kyrgyzstan' },
+  { id: 'nurak-abdrakhmanov', name: 'Нурак Абдрахманов', genres: ['Kyrgyz Folk'], location: 'Kyrgyzstan' },
+  { id: 'toktobek-asanaliev', name: 'Toktobek Asanaliev', genres: ['Kyrgyz Folk'], location: 'Kyrgyzstan' },
+  { id: 'kiggaz', name: 'KIGGAZ', genres: ['Kyrgyz Rap'], location: 'Kyrgyzstan' },
+  { id: 'g-voo', name: 'G-VOO', genres: ['Kyrgyz Rap'], location: 'Kyrgyzstan' },
+  { id: 'tamga', name: 'Тамга', genres: ['Kyrgyz Rap'], location: 'Kyrgyzstan' },
+  { id: 'aibek-zamirov', name: 'Айбек Замиров', genres: ['Kyrgyz Pop'], location: 'Kyrgyzstan' },
+  { id: 'freeman996', name: 'FreeMan996', genres: ['Kyrgyz Rap'], location: 'Kyrgyzstan' },
 ];
 
 // Fill in recovered Stitch artwork (Фаза 4 restoration pass) — a plain id

@@ -28,6 +28,8 @@
  * Usage: npx tsx scripts/verify-artwork-coverage.mjs (or `pnpm run verify:artwork-coverage`)
  */
 import {
+  PENDING_ARTWORK_ARTIST_IDS,
+  PENDING_ARTWORK_TRACK_IDS,
   generatedArtworkByAlbumId,
   generatedArtworkByArtistId,
   generatedArtworkByGenreId,
@@ -66,7 +68,11 @@ for (const album of albums) {
 for (const track of tracks) {
   const ownArtwork = hasKey(track.id, stitchArtworkByTrackId, generatedArtworkByTrackId);
   const albumArtwork = Boolean(track.albumId) && albumHasArtwork(track.albumId);
-  check(`track "${track.title}" (${track.id}) has an artwork source`, ownArtwork || albumArtwork);
+  if (PENDING_ARTWORK_TRACK_IDS.includes(track.id)) {
+    check(`track "${track.title}" (${track.id}) is pending artwork and correctly has no artwork source`, !ownArtwork && !albumArtwork);
+  } else {
+    check(`track "${track.title}" (${track.id}) has an artwork source`, ownArtwork || albumArtwork);
+  }
 }
 
 for (const playlist of playlists) {
@@ -77,7 +83,12 @@ for (const playlist of playlists) {
 }
 
 for (const artist of artists) {
-  check(`artist "${artist.name}" (${artist.id}) has a photo source`, hasKey(artist.id, stitchArtworkByArtistId, generatedArtworkByArtistId));
+  const hasPhoto = hasKey(artist.id, stitchArtworkByArtistId, generatedArtworkByArtistId);
+  if (PENDING_ARTWORK_ARTIST_IDS.includes(artist.id)) {
+    check(`artist "${artist.name}" (${artist.id}) is pending artwork and correctly has no photo source`, !hasPhoto);
+  } else {
+    check(`artist "${artist.name}" (${artist.id}) has a photo source`, hasPhoto);
+  }
 }
 
 check(`featured genre "${featuredGenre.title}" has an artwork source`, hasKey(featuredGenre.id, stitchArtworkByGenreId, generatedArtworkByGenreId));
