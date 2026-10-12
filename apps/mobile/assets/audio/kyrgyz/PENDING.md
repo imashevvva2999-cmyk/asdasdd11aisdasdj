@@ -37,19 +37,19 @@ For each track you have a licensed file for:
    `PENDING_ARTWORK_ARTIST_IDS` in `apps/mobile/src/constants/stitch-artwork.ts`
    only when approved artwork is added to the artwork maps. Then re-run
    `cd apps/mobile && python3 scripts/generate-palettes.py`.
-7. Run `cd apps/mobile && pnpm test`. `verify-kyrgyz-catalog.mjs`'s "no
+7. Scope the license checks in `apps/mobile/scripts/verify-demo-audio-coverage.mjs`
+   as part of the first real licensed Kyrgyz import, before running the tests.
+   Right now that script asserts for every credit that `author` is
+   'Kevin MacLeod' and `licenseUrl` is CC BY 4.0, which was written for the original demo recordings. Those two
+   checks must apply only to the original 13 demo recordings, skipping any id
+   that is a Kyrgyz track. The non-empty `originalTitle` and `isInstrumental`
+   checks must still run for all credits. Do this in the first import task,
+   not in this runbook task.
+8. Run `cd apps/mobile && pnpm test`. `verify-kyrgyz-catalog.mjs`'s "no
    demo audio" check and `verify-demo-audio-coverage.mjs`'s pending-id
    exemption will now correctly fail for this track id (it has real audio
    now). Update `verify-kyrgyz-catalog.mjs` to drop the now-playable id from
    its `hasDemoAudio(trackId) === false` assertion list.
-8. Scope the license checks in `apps/mobile/scripts/verify-demo-audio-coverage.mjs`
-   before the first real licensed Kyrgyz import. Right now that script asserts
-   for every credit that `author` is 'Kevin MacLeod' and `licenseUrl` is
-   CC BY 4.0, which was written for the original demo recordings. Those two
-   checks must apply only to the original 13 demo recordings, skipping any id
-   that is a Kyrgyz track. The non-empty `originalTitle` and `isInstrumental`
-   checks must still run for all credits. Do this as part of the first import
-   task; do not change the script in this runbook task.
 9. Manually verify playback: `npx expo start --web`, open the track from
    its artist/genre page, confirm it plays and `now-playing.tsx`'s credits
    sheet reads correctly.
