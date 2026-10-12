@@ -116,7 +116,17 @@ export default function HomeScreen() {
               audioPlaying={isPlaying}
               onNextPress={heroInPlayer ? next : undefined}
               onPreviousPress={heroInPlayer ? previous : undefined}
-              onPress={() => router.push({ pathname: '/playlist/[id]', params: { id: hero.id } })}
+              onPress={() => {
+                let targetTrackId = currentTrackId;
+                if (!heroInPlayer) {
+                  const trackIds = hero.trackIds;
+                  if (trackIds && trackIds.length > 0) {
+                    targetTrackId = trackIds[0]!;
+                    play(targetTrackId, trackIds);
+                  }
+                }
+                router.push({ pathname: '/player/discover', params: { trackId: targetTrackId ?? hero.trackIds?.[0] ?? '' } });
+              }}
               onPlayPress={() => {
                 if (heroInPlayer) {
                   togglePlayPause();
