@@ -5,6 +5,7 @@
  * Usage: npx tsx scripts/verify-genre-tracks.mjs
  */
 import { getPlayableGenreIds, getTrackIdsForGenre } from '../src/lib/genre-tracks.ts';
+import { genreNameLabel } from '../src/lib/i18n.ts';
 
 let failures = 0;
 function check(label, condition) {
@@ -68,6 +69,13 @@ check(
   'getPlayableGenreIds() returns [electronic-dance, chill-lofi, kyrgyz-music] (audio genres first)',
   getPlayableGenreIds().join(',') === 'electronic-dance,chill-lofi,kyrgyz-music',
 );
+
+// Discover's genre chip must never fall back to a raw id like "#kyrgyz-music".
+for (const id of getPlayableGenreIds()) {
+  for (const locale of ['en', 'ru']) {
+    check(`Discover genre "${id}" has a ${locale.toUpperCase()} name`, genreNameLabel(locale, id) !== id);
+  }
+}
 
 if (failures > 0) {
   console.error(`\n${failures} genre-tracks check(s) failed.`);

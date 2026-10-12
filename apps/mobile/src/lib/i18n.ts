@@ -976,6 +976,7 @@ export function genreTagLabel(locale: 'en' | 'ru', label: string): string {
 }
 
 const GENRE_NAMES: Record<string, { en: string; ru: string }> = {
+  'kyrgyz-music': { en: 'Kyrgyz Music', ru: 'Кыргызская музыка' },
   'made-for-you': { en: 'Made For You', ru: 'Для вас' },
   'charts-viral': { en: 'Charts & Viral', ru: 'Чарты и вирусное' },
   pop: { en: 'Pop', ru: 'Поп' },
