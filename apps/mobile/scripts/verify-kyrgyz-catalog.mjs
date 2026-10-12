@@ -6,6 +6,7 @@
  */
 import { artists } from '../src/mocks/artists.ts';
 import { tracks } from '../src/mocks/tracks.ts';
+import { PENDING_ARTWORK_ARTIST_IDS, PENDING_ARTWORK_TRACK_IDS } from '../src/constants/stitch-artwork.ts';
 import { hasDemoAudio } from '../src/audio/demo-audio.ts';
 
 let failures = 0;
@@ -47,6 +48,20 @@ check('no duplicate artist ids in the full catalog', new Set(allArtistIds).size 
 
 for (const trackId of KYRGYZ_TRACK_IDS) {
   check(`"${trackId}" has no demo audio (honest unavailable state, no audio supplied yet)`, hasDemoAudio(trackId) === false);
+}
+
+const sameSet = (a, b) => a.length === b.length && new Set(a).size === a.length && a.every((x) => b.includes(x));
+check('PENDING_ARTWORK_TRACK_IDS equals the Kyrgyz track ids', sameSet(PENDING_ARTWORK_TRACK_IDS, KYRGYZ_TRACK_IDS));
+check('PENDING_ARTWORK_ARTIST_IDS equals the Kyrgyz artist ids', sameSet(PENDING_ARTWORK_ARTIST_IDS, KYRGYZ_ARTIST_IDS));
+
+for (const artistId of KYRGYZ_ARTIST_IDS) {
+  const artist = artists.find((a) => a.id === artistId);
+  const ids = artist?.popularTrackIds ?? [];
+  check(`"${artistId}" has at least one popularTrackId`, ids.length >= 1);
+  for (const id of ids) {
+    const track = tracks.find((t) => t.id === id);
+    check(`"${artistId}" popularTrackId "${id}" is a Kyrgyz track by that artist`, !!track && KYRGYZ_TRACK_IDS.includes(id) && track.artistId === artistId);
+  }
 }
 
 if (failures > 0) {

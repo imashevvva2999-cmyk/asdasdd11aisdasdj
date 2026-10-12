@@ -28,7 +28,8 @@ const demoSourcesSrc = await import('node:fs/promises').then((fs) => fs.readFile
 // from plain Node (its require() calls load .mp3 files), so parse it as text.
 const pendingBlock = demoSourcesSrc.match(/PENDING_AUDIO_TRACK_IDS[^=]*=\s*\[([^\]]*)\]/);
 const PENDING_AUDIO_TRACK_IDS = pendingBlock ? [...pendingBlock[1].matchAll(/'([\w-]+)'/g)].map((m) => m[1]) : [];
-check('PENDING_AUDIO_TRACK_IDS parsed from demo-sources.ts', PENDING_AUDIO_TRACK_IDS.length > 0);
+check('PENDING_AUDIO_TRACK_IDS export found in demo-sources.ts', Boolean(pendingBlock));
+check('every PENDING_AUDIO_TRACK_IDS entry is a catalog track id', PENDING_AUDIO_TRACK_IDS.every((id) => tracks.some((t) => t.id === id)));
 
 // Every catalog track must have a demo-audio credit (Demo Audio Experience),
 // except tracks explicitly pending real licensed audio (2026-10-12 Kyrgyz

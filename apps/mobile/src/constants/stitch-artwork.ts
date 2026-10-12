@@ -244,8 +244,9 @@ export const sampleImageChoices: LocalOrRemoteImage[] = [
  * Catalog entries with no artwork yet, by design (docs/superpowers/plans/
  * 2026-10-12-kyrgyz-track-catalog.md): real songs/artists whose official
  * covers are copyrighted and whose generated art is a pending product
- * decision. They render the deterministic gradient fallback
- * (src/constants/fallback-artwork.ts). Read by
+ * decision. List rows/cards render the deterministic gradient fallback
+ * (src/constants/fallback-artwork.ts); the `Artwork` hero component shows
+ * its icon placeholder instead. Read by
  * scripts/verify-artwork-coverage.mjs and scripts/verify-palettes.mjs to
  * exempt exactly these ids — every other entry keeps the full check.
  */
