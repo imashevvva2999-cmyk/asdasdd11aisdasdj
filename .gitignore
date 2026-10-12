@@ -30,3 +30,6 @@ pnpm-debug.log*
 .DS_Store
 .vercel
 .env*
+
+# Local isolated worktrees (superpowers:using-git-worktrees)
+.worktrees/
