@@ -6,6 +6,7 @@
  * scripts/verify-artist-store.mjs. Usage:
  * npx tsx scripts/verify-artist-store-demo-seed.mjs
  */
+import { getArtistById } from '../src/mocks/index.ts';
 import { useArtistStore } from '../src/state/artist-store.ts';
 
 let failures = 0;
@@ -25,8 +26,11 @@ check('seedDemoStats() is a no-op when no artist profile exists yet (demoStreams
 // --- Sets values once a profile exists ------------------------------------
 useArtistStore.getState().createArtistProfile({ stageName: 'Demo Artist' });
 useArtistStore.getState().seedDemoStats(12_000, 45_000);
-check('seedDemoStats() sets monthlyListeners on the current artist', useArtistStore.getState().artist?.monthlyListeners === 12_000);
+check('seedDemoStats() sets demoListeners on state (dashboard-only)', useArtistStore.getState().demoListeners === 12_000);
 check('seedDemoStats() sets demoStreams on state', useArtistStore.getState().demoStreams === 45_000);
+// Demo figures must never leak into the public Artist Profile (S-08).
+check('seedDemoStats() leaves the artist record\'s real monthlyListeners (0) untouched', useArtistStore.getState().artist?.monthlyListeners === 0);
+check('the shared catalog artist (public profile) still shows the real 0', getArtistById('me')?.monthlyListeners === 0);
 
 // --- Idempotent on a second call (absolute, not incrementing) -------------
 useArtistStore.getState().seedDemoStats(12_000, 45_000);

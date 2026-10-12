@@ -62,15 +62,18 @@ type ArtistState = {
    * screen (apps/mobile/src/app/dev-demo-seed.tsx) for the private
    * management demo. Absent in a normal session. */
   demoStreams?: number;
+  /** DEMO SEED ONLY — dashboard Overview listeners. Kept off the Artist
+   * record so the public profile (S-08) never shows a demo figure. */
+  demoListeners?: number;
 
   createArtistProfile: (input: ArtistSetupInput) => Artist;
   saveDraft: (input: UploadTrackInput) => ArtistTrackEntry;
   publishTrack: (trackId: TrackId) => Promise<void>;
   simulateError: (trackId: TrackId) => void;
   retryPublish: (trackId: TrackId) => Promise<void>;
-  /** DEMO SEED ONLY — sets realistic-looking, clearly non-real numbers on
-   * the current local artist for demo purposes. No-op if no artist profile
-   * exists yet. Does not touch any catalog artist other than `'me'`. */
+  /** DEMO SEED ONLY — sets clearly non-real dashboard numbers for the
+   * current local artist. No-op if no artist profile exists yet. Never
+   * writes to any Artist record, so public screens keep real figures. */
   seedDemoStats: (listeners: number, streams: number) => void;
 };
 
@@ -78,6 +81,7 @@ export const useArtistStore = create<ArtistState>((set, get) => ({
   artist: undefined,
   entries: [],
   demoStreams: undefined,
+  demoListeners: undefined,
 
   createArtistProfile: (input) => {
     const artist: Artist = {
@@ -153,10 +157,7 @@ export const useArtistStore = create<ArtistState>((set, get) => ({
   },
 
   seedDemoStats: (listeners, streams) => {
-    const artist = get().artist;
-    if (!artist) return;
-    const updatedArtist: Artist = { ...artist, monthlyListeners: listeners };
-    addMockArtist(updatedArtist);
-    set({ artist: updatedArtist, demoStreams: streams });
+    if (!get().artist) return;
+    set({ demoListeners: listeners, demoStreams: streams });
   },
 }));

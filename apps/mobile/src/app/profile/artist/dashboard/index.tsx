@@ -46,6 +46,7 @@ export default function ArtistDashboardScreen() {
   const artist = useArtistStore((s) => s.artist);
   const entries = useArtistStore((s) => s.entries);
   const demoStreams = useArtistStore((s) => s.demoStreams);
+  const demoListeners = useArtistStore((s) => s.demoListeners);
   const supportHistory = useSupportStore((s) => s.history);
   const play = usePlayerStore((s) => s.play);
   const { t } = useDashboardStrings();
@@ -109,7 +110,7 @@ export default function ArtistDashboardScreen() {
 
         {demoStreams !== undefined && <Badge label={t('demoDataBadge')} style={styles.demoBadge} />}
         <View style={styles.statsRow}>
-          <StatCard label={t('listeners')} value={(artist.monthlyListeners ?? 0).toLocaleString('en-US')} icon="groups" iconColor={Colors.primary} />
+          <StatCard label={t('listeners')} value={(demoListeners ?? artist.monthlyListeners ?? 0).toLocaleString('en-US')} icon="groups" iconColor={Colors.primary} />
           <StatCard label={t('streams')} value={(demoStreams ?? 0).toLocaleString('en-US')} icon="play-circle-outline" iconColor={Colors.tertiary} />
           <StatCard
             label={t('supportLabel')}
