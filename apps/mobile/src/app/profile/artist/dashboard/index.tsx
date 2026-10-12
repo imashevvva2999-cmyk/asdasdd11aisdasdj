@@ -108,8 +108,8 @@ export default function ArtistDashboardScreen() {
         )}
 
         <View style={styles.statsRow}>
-          <StatCard label={t('listeners')} value={String(artist.monthlyListeners ?? 0)} icon="groups" iconColor={Colors.primary} />
-          <StatCard label={t('streams')} value={String(demoStreams ?? 0)} icon="play-circle-outline" iconColor={Colors.tertiary} />
+          <StatCard label={t('listeners')} value={(artist.monthlyListeners ?? 0).toLocaleString('en-US')} icon="groups" iconColor={Colors.primary} />
+          <StatCard label={t('streams')} value={(demoStreams ?? 0).toLocaleString('en-US')} icon="play-circle-outline" iconColor={Colors.tertiary} />
           <StatCard
             label={t('supportLabel')}
             value={`${formatKgsAmount(getArtistSupportTotalKgs(supportHistory, artist.id))} сом`}

@@ -6,5 +6,5 @@ import type { ArtistId, SupportHistoryEntry } from '@/mocks';
  * instead of the previous hardcoded `formatKgsAmount(0)`.
  */
 export function getArtistSupportTotalKgs(history: SupportHistoryEntry[], artistId: ArtistId): number {
-  return history.filter((entry) => entry.artistId === artistId).reduce((sum, entry) => sum + entry.amount, 0);
+  return history.filter((entry) => entry.artistId === artistId && entry.status === 'completed').reduce((sum, entry) => sum + entry.amount, 0);
 }

@@ -29,6 +29,10 @@ check(
   getArtistSupportTotalKgs([entry('me', 100), entry('solaris-echo', 9999), entry('me', 50)], 'me') === 150,
 );
 check('returns 0 for an artist with no entries', getArtistSupportTotalKgs([entry('solaris-echo', 100)], 'me') === 0);
+check(
+  'excludes entries whose status is not completed',
+  getArtistSupportTotalKgs([entry('me', 100), { ...entry('me', 70), status: 'pending' }], 'me') === 100,
+);
 check('returns 0 for an empty history array', getArtistSupportTotalKgs([], 'me') === 0);
 
 if (failures > 0) {
