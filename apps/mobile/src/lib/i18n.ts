@@ -975,6 +975,26 @@ export function genreTagLabel(locale: 'en' | 'ru', label: string): string {
   return key ? APP_STRINGS[locale][key] : label;
 }
 
+const GENRE_NAMES: Record<string, { en: string; ru: string }> = {
+  'made-for-you': { en: 'Made For You', ru: 'Для вас' },
+  'charts-viral': { en: 'Charts & Viral', ru: 'Чарты и вирусное' },
+  pop: { en: 'Pop', ru: 'Поп' },
+  'hip-hop-rnb': { en: 'Hip-Hop & R&B', ru: 'Хип-хоп и R&B' },
+  'electronic-dance': { en: 'Electronic & Dance', ru: 'Электроника и танцевальная' },
+  'rock-indie': { en: 'Rock & Indie', ru: 'Рок и инди' },
+  'jazz-soul': { en: 'Jazz & Soul', ru: 'Джаз и соул' },
+  'chill-lofi': { en: 'Chill & Lo-Fi', ru: 'Чилл и лоу-фай' },
+  'deep-focus-ambient': { en: 'Deep Focus & Ambient', ru: 'Фокус и эмбиент' },
+  'workout-high-energy': { en: 'Workout & High Energy', ru: 'Тренировка и энергия' },
+  'classical-film': { en: 'Classical & Film', ru: 'Классика и саундтреки' },
+  'fresh-finds': { en: 'Fresh Finds', ru: 'Свежие находки' },
+};
+
+/** Discovery player's current-genre label. */
+export function genreNameLabel(locale: 'en' | 'ru', genreId: string): string {
+  return GENRE_NAMES[genreId]?.[locale] ?? genreId;
+}
+
 /** "Direct artist patronage for {name}" — Support sheet subtitle; embeds a live artist name (data). */
 export function artistPatronageSubtitle(locale: 'en' | 'ru', artistName: string): string {
   return locale === 'ru' ? `Прямая поддержка артиста ${artistName}` : `Direct artist patronage for ${artistName}`;
