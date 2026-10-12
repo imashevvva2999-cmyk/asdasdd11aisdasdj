@@ -16,9 +16,12 @@ import { CAROUSEL_SPRING, REDUCED_SETTLE_MS, canStep, carouselPos, carouselTarge
  * swipe up for the next track, down for the previous one. Reuses the exact
  * same shared position/animation state and swipe-resolution math as the
  * horizontal `ArtworkCarousel` in Now Playing (just on the Y axis), so the
- * two never conflict: they live on different screens and nothing here
- * duplicates playback state — `swipeTo` is the same call Now Playing's own
- * carousel makes.
+ * two never conflict: their `ArtworkCarousel`/`DiscoveryFeed` instances are
+ * typically BOTH mounted at once under the root Stack, but only the topmost
+ * screen's `GestureDetector` receives touches (standard React Navigation
+ * touch-focus exclusivity) — the occluded screen's gesture simply never
+ * fires. Nothing here duplicates playback state — `swipeTo` is the same call
+ * Now Playing's own carousel makes.
  *
  * Only the CURRENT slide renders the reactive `ParticleWaveArtwork` (audio-
  * visualizer WebGL); the previous/next neighbour slides show a plain static
