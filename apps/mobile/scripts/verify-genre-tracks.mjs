@@ -52,9 +52,21 @@ check('an unknown genre id returns an empty list without throwing', (() => {
   }
 })());
 
+const KYRGYZ_MUSIC = [
+  'kyrgyzstanym', 'muras', 'ene-til', 'alai', 'kachan-kaitat', 'jazym-kelchi',
+  'kyrgyz-biyi', 'ne-segodnya', 'kirgiz-jeri', 'erke-kyz', 'chopo-choor-fantasy',
+  'kyrgyzstanym-remix', 'jashtyk-kez', 'kambarkan', 'esimde', 'kyrgyz-bala',
+  'taimuras', 'ananayyn', 'eto-lyubov', 'issyk-kulskiy-vaib',
+];
+
+check('kyrgyz-music resolves to exactly the 20 verified Kyrgyz tracks', sameSet(getTrackIdsForGenre('kyrgyz-music'), KYRGYZ_MUSIC));
+check('no Kyrgyz track leaks into electronic-dance or chill-lofi', !getTrackIdsForGenre('electronic-dance').some((id) => KYRGYZ_MUSIC.includes(id)) && !getTrackIdsForGenre('chill-lofi').some((id) => KYRGYZ_MUSIC.includes(id)));
+
+// Audio-first: genres with at least one demo-audio track come first (catalog
+// order within each group), so Discover still opens on Electronic & Dance.
 check(
-  'getPlayableGenreIds() returns exactly [electronic-dance, chill-lofi] in catalog order',
-  getPlayableGenreIds().join(',') === 'electronic-dance,chill-lofi',
+  'getPlayableGenreIds() returns [electronic-dance, chill-lofi, kyrgyz-music] (audio genres first)',
+  getPlayableGenreIds().join(',') === 'electronic-dance,chill-lofi,kyrgyz-music',
 );
 
 if (failures > 0) {

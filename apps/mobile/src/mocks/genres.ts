@@ -60,7 +60,6 @@ export const genreDetails: Record<string, GenreDetail> = {
   'kyrgyz-music': {
     label: 'Regional',
     heroTitle: 'Steppe Resonance',
-    listeners: '128K listeners',
     description: 'Ethno-synth and Komuz-driven productions blending Central Asian heritage instruments with modern electronic production.',
   },
   'made-for-you': { label: 'Personal', description: 'Mixes shaped around what you play most, refreshed as your listening changes.' },
