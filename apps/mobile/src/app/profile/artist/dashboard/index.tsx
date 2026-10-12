@@ -6,9 +6,11 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Artwork, Chip, EmptyState, Icon, IconButton, PillButton, PressableScale, StatCard } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
+import { getArtistSupportTotalKgs } from '@/lib/artist-support-total';
 import { formatKgsAmount } from '@/lib/format-currency';
 import { usePlayerStore } from '@/state/player-store';
 import { useArtistStore, type UploadStatus } from '@/state/artist-store';
+import { useSupportStore } from '@/state/support-store';
 import { useDashboardStrings } from '@/state/dashboard-locale-store';
 
 const FILTERS = ['All', 'Published', 'In Review', 'Draft'] as const;
@@ -43,6 +45,7 @@ const STATUS_LABEL: Record<UploadStatus, string> = {
 export default function ArtistDashboardScreen() {
   const artist = useArtistStore((s) => s.artist);
   const entries = useArtistStore((s) => s.entries);
+  const supportHistory = useSupportStore((s) => s.history);
   const play = usePlayerStore((s) => s.play);
   const { t } = useDashboardStrings();
   const navigation = useNavigation();
@@ -106,7 +109,12 @@ export default function ArtistDashboardScreen() {
         <View style={styles.statsRow}>
           <StatCard label={t('listeners')} value={String(artist.monthlyListeners ?? 0)} icon="groups" iconColor={Colors.primary} />
           <StatCard label={t('streams')} value="0" icon="play-circle-outline" iconColor={Colors.tertiary} />
-          <StatCard label={t('supportLabel')} value={`${formatKgsAmount(0)} сом`} icon="volunteer-activism" iconColor={Colors.secondary} />
+          <StatCard
+            label={t('supportLabel')}
+            value={`${formatKgsAmount(getArtistSupportTotalKgs(supportHistory, artist.id))} сом`}
+            icon="volunteer-activism"
+            iconColor={Colors.secondary}
+          />
         </View>
 
         <View style={styles.section}>
