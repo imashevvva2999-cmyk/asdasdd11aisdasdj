@@ -98,7 +98,8 @@ export const useArtistStore = create<ArtistState>((set, get) => ({
       fansAlsoLikeIds: [],
     };
     addMockArtist(artist);
-    set({ artist });
+    // A fresh profile never inherits demo figures seeded for a previous one.
+    set({ artist, demoListeners: undefined, demoStreams: undefined });
     return artist;
   },
 
