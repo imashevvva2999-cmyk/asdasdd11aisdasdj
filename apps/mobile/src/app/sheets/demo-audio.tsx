@@ -4,8 +4,10 @@ import { demoAudioCredits } from '@/audio/demo-audio';
 import { ThemedText } from '@/components/themed-text';
 import { Icon, IconButton, PressableScale, SheetScreen } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
+import { externalLinkAccessibilityLabel, licensedUnderLabel, playsAsLabel } from '@/lib/i18n';
 import { goBack } from '@/lib/navigation';
 import { getTrackById } from '@/mocks';
+import { useAppStrings } from '@/state/locale-store';
 
 /**
  * Demo audio credits [Т] (Фаза 2): opened from the "Demo audio" label in Now
@@ -14,17 +16,18 @@ import { getTrackById } from '@/mocks';
  */
 export default function DemoAudioSheet() {
   const entries = Object.entries(demoAudioCredits);
+  const { t, locale } = useAppStrings();
 
   return (
     <SheetScreen>
       <View style={styles.header}>
         <View style={styles.headerText}>
-          <ThemedText variant="headline-md">Demo audio</ThemedText>
+          <ThemedText variant="headline-md">{t('demoAudio')}</ThemedText>
           <ThemedText variant="body-sm" emphasis="medium">
-            These tracks play licensed demo audio so the player can be tested. It is not the original recording.
+            {t('demoAudioDescriptionHint')}
           </ThemedText>
         </View>
-        <IconButton icon="close" size={36} accessibilityLabel="Close" onPress={() => goBack()} />
+        <IconButton icon="close" size={36} accessibilityLabel={t('closeLabel')} onPress={() => goBack()} />
       </View>
 
       <ScrollView contentContainerStyle={styles.list}>
@@ -34,17 +37,17 @@ export default function DemoAudioSheet() {
           return (
             <View key={trackId} style={styles.card}>
               <ThemedText variant="label-sm" emphasis="medium">
-                Plays as “{track?.title ?? trackId}”
+                {playsAsLabel(locale, track?.title ?? trackId)}
               </ThemedText>
               <ThemedText variant="label-lg">
                 “{credit.originalTitle}” {credit.author} (incompetech.com)
               </ThemedText>
               <ThemedText variant="body-sm" emphasis="medium">
-                Licensed under {credit.licenseName}
+                {licensedUnderLabel(locale, credit.licenseName)}
               </ThemedText>
               <View style={styles.links}>
-                <ExternalLink label="Licence (CC BY 4.0)" url={credit.licenseUrl} />
-                <ExternalLink label="Source: incompetech.com" url={credit.sourceUrl} />
+                <ExternalLink label={t('licenceCcBy4Label')} url={credit.licenseUrl} />
+                <ExternalLink label={t('sourceIncompetechLabel')} url={credit.sourceUrl} />
               </View>
             </View>
           );
@@ -55,10 +58,11 @@ export default function DemoAudioSheet() {
 }
 
 function ExternalLink({ label, url }: { label: string; url: string }) {
+  const { locale } = useAppStrings();
   return (
     <PressableScale
       accessibilityRole="link"
-      accessibilityLabel={`${label}, opens ${url}`}
+      accessibilityLabel={externalLinkAccessibilityLabel(locale, label, url)}
       onPress={() => {
         Linking.openURL(url).catch(() => {});
       }}

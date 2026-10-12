@@ -10,12 +10,23 @@ import type { LocalOrRemoteImage } from '@/constants/stitch-artwork';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useContentWidth } from '@/hooks/use-content-width';
 import { useToast } from '@/hooks/use-toast';
+import type { AppStringKey } from '@/lib/i18n';
 import { albums, getTrackById, type Album, type Track } from '@/mocks';
 import { useLibraryStore } from '@/state/library-store';
+import { useAppStrings } from '@/state/locale-store';
 import { usePlayerStore } from '@/state/player-store';
 
 const FILTERS = ['This Week', 'Top Charts', 'Albums', 'Singles'] as const;
 type FilterKey = (typeof FILTERS)[number];
+
+/** Internal filter VALUES stay these fixed English strings (switch below
+ * compares against them); only the on-screen LABEL is localized. */
+const FILTER_LABEL_KEYS: Record<FilterKey, AppStringKey> = {
+  'This Week': 'filterThisWeekLabel',
+  'Top Charts': 'filterTopChartsLabel',
+  Albums: 'filterAlbums',
+  Singles: 'filterSinglesLabel',
+};
 
 /** Ranked mock "chart" — reuses existing tracks (all already carry real or
  * generated artwork) rather than inventing a parallel catalog. */
@@ -31,54 +42,57 @@ type SeeAllItem = {
   onPress: () => void;
 };
 
-function albumToItem(album: Album): SeeAllItem {
+function albumToItem(album: Album, t: (key: AppStringKey) => string): SeeAllItem {
   return {
     id: album.id,
     kind: 'album',
     title: album.title,
     subtitle: album.artistName,
     coverUri: album.coverUri,
-    meta: album.trackCount === 1 ? 'Single' : `${album.trackCount} tracks`,
+    meta: album.trackCount === 1 ? t('albumTypeSingle') : `${album.trackCount} ${t('trackCountPlural')}`,
     onPress: () => router.push({ pathname: '/album/[id]', params: { id: album.id } }),
   };
 }
 
-function trackToItem(track: Track, rank: number): SeeAllItem {
+function trackToItem(track: Track, rank: number, t: (key: AppStringKey) => string): SeeAllItem {
   return {
     id: track.id,
     kind: 'track',
     title: track.title,
     subtitle: track.artistName,
     coverUri: track.coverUri,
-    meta: `#${rank} on Top Charts`,
+    meta: `#${rank} ${t('filterTopChartsLabel')}`,
     onPress: () => router.push({ pathname: '/player/now-playing', params: { trackId: track.id } }),
   };
 }
 
-function getFilterContent(filter: FilterKey): { sectionTitle: string; heroItem?: SeeAllItem; items: SeeAllItem[] } {
+function getFilterContent(
+  filter: FilterKey,
+  t: (key: AppStringKey) => string,
+): { sectionTitle: string; heroItem?: SeeAllItem; items: SeeAllItem[] } {
   switch (filter) {
     case 'This Week': {
       const [hero, ...rest] = albums;
-      return { sectionTitle: 'Fresh Finds', heroItem: hero && albumToItem(hero), items: rest.map(albumToItem) };
+      return { sectionTitle: t('freshFindsTitle'), heroItem: hero && albumToItem(hero, t), items: rest.map((a) => albumToItem(a, t)) };
     }
     case 'Top Charts': {
       const chartTracks = TOP_CHART_TRACK_IDS.map((id) => getTrackById(id)).filter((t): t is Track => Boolean(t));
       const [hero, ...rest] = chartTracks;
       return {
-        sectionTitle: 'Top Tracks',
-        heroItem: hero && trackToItem(hero, 1),
-        items: rest.map((track, index) => trackToItem(track, index + 2)),
+        sectionTitle: t('topTracksTitle'),
+        heroItem: hero && trackToItem(hero, 1, t),
+        items: rest.map((track, index) => trackToItem(track, index + 2, t)),
       };
     }
     case 'Albums': {
       const albumsOnly = albums.filter((a) => a.type === 'album' || a.type === 'ep');
       const [hero, ...rest] = albumsOnly;
-      return { sectionTitle: 'All Albums', heroItem: hero && albumToItem(hero), items: rest.map(albumToItem) };
+      return { sectionTitle: t('allAlbumsTitle'), heroItem: hero && albumToItem(hero, t), items: rest.map((a) => albumToItem(a, t)) };
     }
     case 'Singles': {
       const singlesOnly = albums.filter((a) => a.type === 'single');
       const [hero, ...rest] = singlesOnly;
-      return { sectionTitle: 'All Singles', heroItem: hero && albumToItem(hero), items: rest.map(albumToItem) };
+      return { sectionTitle: t('allSinglesTitle'), heroItem: hero && albumToItem(hero, t), items: rest.map((a) => albumToItem(a, t)) };
     }
   }
 }
@@ -89,7 +103,8 @@ function getFilterContent(filter: FilterKey): { sectionTitle: string; heroItem?:
  * hero and carousel both update to match. */
 export default function SeeAllScreen() {
   const [activeFilter, setActiveFilter] = useState<FilterKey>('This Week');
-  const { sectionTitle, heroItem, items } = useMemo(() => getFilterContent(activeFilter), [activeFilter]);
+  const { t } = useAppStrings();
+  const { sectionTitle, heroItem, items } = useMemo(() => getFilterContent(activeFilter, t), [activeFilter, t]);
   const libraryItems = useLibraryStore((s) => s.items);
   const toggleSaved = useLibraryStore((s) => s.toggleSaved);
   const likedTrackIds = usePlayerStore((s) => s.likedTrackIds);
@@ -108,10 +123,10 @@ export default function SeeAllScreen() {
     if (!heroItem) return;
     if (heroItem.kind === 'track') {
       toggleLike(heroItem.id);
-      showToast(heroSaved ? 'Removed from Liked Songs' : 'Added to Liked Songs', 'favorite');
+      showToast(heroSaved ? t('toastRemovedFromLikedSongs') : t('toastAddedToLikedSongs'), 'favorite');
     } else {
       toggleSaved('album', heroItem.id);
-      showToast(heroSaved ? 'Removed from Library' : 'Saved to Library', 'check');
+      showToast(heroSaved ? t('removedFromLibrary') : t('savedToLibrary'), 'check');
     }
   }
 
@@ -120,7 +135,7 @@ export default function SeeAllScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.filterRow}>
           {FILTERS.map((filter) => (
-            <Chip key={filter} label={filter} selected={filter === activeFilter} onPress={() => setActiveFilter(filter)} />
+            <Chip key={filter} label={t(FILTER_LABEL_KEYS[filter])} selected={filter === activeFilter} onPress={() => setActiveFilter(filter)} />
           ))}
         </View>
 
@@ -141,16 +156,16 @@ export default function SeeAllScreen() {
               {heroItem.subtitle} · {heroItem.meta}
             </ThemedText>
             <View style={styles.heroActions}>
-              <PillButton label="Listen Now" leadingIcon="play-arrow" onPress={heroItem.onPress} style={styles.heroButton} />
+              <PillButton label={t('listenNow')} leadingIcon="play-arrow" onPress={heroItem.onPress} style={styles.heroButton} />
               <IconButton
                 icon={heroSaved ? 'bookmark-added' : 'bookmark-add'}
                 color={heroSaved ? Colors.primary : undefined}
-                accessibilityLabel={heroSaved ? 'Saved' : 'Save'}
+                accessibilityLabel={heroSaved ? t('statSaved') : t('saveLabel')}
                 onPress={handleSaveHero}
               />
               <IconButton
                 icon="more-horiz"
-                accessibilityLabel="More options"
+                accessibilityLabel={t('moreOptionsLabel')}
                 onPress={() => router.push({ pathname: '/sheets/options', params: { kind: heroItem.kind, id: heroItem.id } })}
               />
             </View>

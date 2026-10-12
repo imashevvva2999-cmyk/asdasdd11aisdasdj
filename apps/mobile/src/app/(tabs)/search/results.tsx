@@ -10,7 +10,7 @@ import { useContentWidth } from '@/hooks/use-content-width';
 import { useHydratedSearchParams } from '@/hooks/use-hydrated-search-params';
 import { playArtistTopTracksLabel } from '@/lib/i18n';
 import { matchesQuery, normalizeQuery } from '@/lib/search-match';
-import { albums, artists, tracks, trendingSearches } from '@/mocks';
+import { albums, artists, playlistDurationLabel, tracks, trendingSearches } from '@/mocks';
 import { useAppStrings } from '@/state/locale-store';
 import { usePlayerStore } from '@/state/player-store';
 import { usePlaylistsStore } from '@/state/playlists-store';
@@ -254,7 +254,7 @@ function SearchResultsContent({ initialQuery }: { initialQuery: string }) {
                   <LibraryRow
                   coverUri={playlist.coverUri}
                   title={playlist.title}
-                  subtitle={`${t('playlistLabel')} • ${playlist.trackCount} ${playlist.trackCount === 1 ? t('playlistSongSingular') : t('playlistSongPlural')}${playlist.durationLabel ? ` • ${playlist.durationLabel}` : ''}`}
+                  subtitle={`${t('playlistLabel')} • ${playlist.trackCount} ${playlist.trackCount === 1 ? t('playlistSongSingular') : t('playlistSongPlural')}${playlistDurationLabel(locale, playlist.id) ? ` • ${playlistDurationLabel(locale, playlist.id)}` : ''}`}
                   trailing="chevron"
                   onPress={() => router.push({ pathname: '/playlist/[id]', params: { id: playlist.id } })}
                   />

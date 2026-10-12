@@ -1,4 +1,5 @@
 import { isDemoAudioInstrumental } from '@/audio/demo-audio';
+import { APP_STRINGS } from '@/lib/i18n';
 import { getLyricsForTrack, type LyricLine, type LyricsSource, type TrackId, type TrackLyrics } from '@/mocks';
 
 /**
@@ -16,16 +17,19 @@ export type LyricsState =
   | { kind: 'demo-instrumental' }
   | { kind: 'none' };
 
-export const LYRICS_EMPTY = {
-  'demo-instrumental': { title: 'Lyrics unavailable for demo audio', hint: 'This demo recording is instrumental.' },
-  none: { title: 'Lyrics unavailable', hint: "Synchronized lyrics haven't been added for this track yet." },
-} as const;
+/** Empty-state copy for a track with no lyrics to show, localized. */
+export function lyricsEmptyCopy(locale: 'en' | 'ru', kind: 'demo-instrumental' | 'none'): { title: string; hint: string } {
+  const s = APP_STRINGS[locale];
+  return kind === 'demo-instrumental'
+    ? { title: s.lyricsUnavailableDemoTitle, hint: s.lyricsUnavailableDemoHint }
+    : { title: s.lyricsUnavailableTitle, hint: s.lyricsUnavailableHint };
+}
 
 /** Shown wherever sample lyrics appear, so they never pass for the official text. */
-export const SAMPLE_LYRICS_NOTE = {
-  label: 'Sample lyrics',
-  hint: 'Placeholder text for the demo, not the official lyrics.',
-} as const;
+export function sampleLyricsNote(locale: 'en' | 'ru'): { label: string; hint: string } {
+  const s = APP_STRINGS[locale];
+  return { label: s.sampleLyricsLabel, hint: s.sampleLyricsHint };
+}
 
 /**
  * Pure core (Lyrics Demo Experience): gated on whether the *currently playing
@@ -51,11 +55,11 @@ export function lyricsStateFor(trackId: TrackId | undefined): LyricsState {
  * labelled by source, and nothing before the first line's timestamp (a line is
  * never shown ahead of its time).
  */
-export function lyricPreview(state: LyricsState, progressMs: number): { label: string; text: string } | undefined {
+export function lyricPreview(state: LyricsState, progressMs: number, locale: 'en' | 'ru'): { label: string; text: string } | undefined {
   if (state.kind !== 'synced') return undefined;
   const index = activeLineIndex(state.lines, progressMs);
   if (index < 0) return undefined;
-  return { label: state.source === 'sample' ? SAMPLE_LYRICS_NOTE.label : 'Lyrics', text: state.lines[index].text };
+  return { label: state.source === 'sample' ? sampleLyricsNote(locale).label : APP_STRINGS[locale].lyricsTab, text: state.lines[index].text };
 }
 
 /** The line whose timestamp was passed last; -1 before the first one. */

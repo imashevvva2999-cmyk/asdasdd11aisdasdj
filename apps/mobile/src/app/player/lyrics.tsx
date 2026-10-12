@@ -9,8 +9,9 @@ import { PlayerTransport } from '@/components/player/player-transport';
 import { ThemedText } from '@/components/themed-text';
 import { EmptyState } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
-import { LYRICS_EMPTY, SAMPLE_LYRICS_NOTE, activeLineIndex, lyricsStateFor } from '@/lib/lyrics-state';
+import { activeLineIndex, lyricsEmptyCopy, lyricsStateFor, sampleLyricsNote } from '@/lib/lyrics-state';
 import type { LyricLine } from '@/mocks';
+import { useAppStrings } from '@/state/locale-store';
 import { usePlayerStore } from '@/state/player-store';
 
 /** After a manual scroll, follow the current line again after this long. */
@@ -30,6 +31,7 @@ export default function LyricsScreen() {
   const track = usePlayerStore((s) => s.currentTrack());
   const progressSec = usePlayerStore((s) => s.progressSec);
   const state = lyricsStateFor(track?.id);
+  const { locale } = useAppStrings();
 
   return (
     <View style={styles.flex}>
@@ -40,7 +42,7 @@ export default function LyricsScreen() {
           <SyncedLyrics lines={state.lines} sample={state.source === 'sample'} progressMs={progressSec * 1000} />
         ) : (
           <View style={styles.empty}>
-            <EmptyState icon="lyrics" title={LYRICS_EMPTY[state.kind].title} hint={LYRICS_EMPTY[state.kind].hint} />
+            <EmptyState icon="lyrics" title={lyricsEmptyCopy(locale, state.kind).title} hint={lyricsEmptyCopy(locale, state.kind).hint} />
           </View>
         )}
         <PlayerTransport />
@@ -50,6 +52,7 @@ export default function LyricsScreen() {
 }
 
 function SyncedLyrics({ lines, sample, progressMs }: { lines: LyricLine[]; sample: boolean; progressMs: number }) {
+  const { locale } = useAppStrings();
   const reduceMotion = useReducedMotion();
   const scrollRef = useRef<ScrollView>(null);
   const lineY = useRef<number[]>([]);
@@ -82,11 +85,11 @@ function SyncedLyrics({ lines, sample, progressMs }: { lines: LyricLine[]; sampl
         <View style={styles.sampleNote}>
           <View style={styles.samplePill}>
             <ThemedText variant="label-sm" style={styles.samplePillText}>
-              {SAMPLE_LYRICS_NOTE.label}
+              {sampleLyricsNote(locale).label}
             </ThemedText>
           </View>
           <ThemedText variant="body-sm" style={styles.sampleHint} numberOfLines={2}>
-            {SAMPLE_LYRICS_NOTE.hint}
+            {sampleLyricsNote(locale).hint}
           </ThemedText>
         </View>
       )}

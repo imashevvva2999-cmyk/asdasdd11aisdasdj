@@ -4,6 +4,7 @@ import { SettingsSectionCard, settingsScreenStyles, useSettingsSections } from '
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useToast } from '@/hooks/use-toast';
+import { useAppStrings } from '@/state/locale-store';
 
 /**
  * Audio Quality & Playback — Profile Hub destination (S-23). Shows only the
@@ -14,12 +15,13 @@ import { useToast } from '@/hooks/use-toast';
 export default function AudioQualityScreen() {
   const { showToast, toast } = useToast();
   const sections = useSettingsSections(showToast);
+  const { t } = useAppStrings();
 
   return (
     <ThemedView surface="canvas" style={settingsScreenStyles.flex}>
       <ScrollView contentContainerStyle={settingsScreenStyles.content}>
         <ThemedText variant="body-md" emphasis="medium">
-          Streaming quality and playback preferences. These are preview settings — playback isn&apos;t changed yet.
+          {t('audioQualityIntroText')}
         </ThemedText>
         <SettingsSectionCard section={sections.audio} />
         <SettingsSectionCard section={sections.playback} />

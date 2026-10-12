@@ -143,7 +143,7 @@ export default function HomeScreen() {
                   coverUri={album.coverUri}
                   title={album.title}
                   subtitle={album.artistName}
-                  meta={`${album.trackCount} Tracks`}
+                  meta={`${album.trackCount} ${t('tracksCountSuffix')}`}
                   metaTone="muted"
                   liked={isAlbumSaved(album.id)}
                   onPress={() => router.push({ pathname: '/album/[id]', params: { id: album.id } })}
@@ -224,7 +224,7 @@ export default function HomeScreen() {
                     key={mix.id}
                     title={mix.title}
                     subtitle={mix.subtitle}
-                    trackCountLabel={`${mix.trackCount} Tracks`}
+                    trackCountLabel={`${mix.trackCount} ${t('tracksCountSuffix')}`}
                     icon={mix.icon}
                     tint={mix.tint}
                     visual={MOOD_VISUALS[mix.id]}
@@ -246,6 +246,7 @@ export default function HomeScreen() {
 }
 
 function Header() {
+  const { t } = useAppStrings();
   return (
     <View style={headerStyles.header}>
       <SafeAreaView edges={['top']}>
@@ -253,7 +254,7 @@ function Header() {
           <MmusicBrand />
           <IconButton
             icon="person"
-            accessibilityLabel="Profile"
+            accessibilityLabel={t('profileTitle')}
             onPress={() => router.push('/profile')}
           />
         </View>

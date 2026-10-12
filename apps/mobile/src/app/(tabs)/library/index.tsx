@@ -12,7 +12,7 @@ import { Colors, Spacing } from '@/constants/theme';
 import { useContentWidth } from '@/hooks/use-content-width';
 import { useTabEntrance } from '@/hooks/use-tab-entrance';
 import { matchesQuery, normalizeQuery } from '@/lib/search-match';
-import type { AppStringKey } from '@/lib/i18n';
+import { sortAccessibilityLabel, type AppStringKey } from '@/lib/i18n';
 import { getAlbumById, getArtistById, getTrackById, type LibraryItem, type Track } from '@/mocks';
 import { useLibraryStore } from '@/state/library-store';
 import { useAppStrings } from '@/state/locale-store';
@@ -68,7 +68,7 @@ export default function LibraryScreen() {
   const windowWidth = useContentWidth();
   const gridItemWidth = Math.floor((Math.min(windowWidth, 800) - Spacing.margin * 2 - Spacing.md) / 2);
   const entrance = useTabEntrance('library');
-  const { t } = useAppStrings();
+  const { t, locale } = useAppStrings();
 
   const likedTrackIds = usePlayerStore((s) => s.likedTrackIds);
   const play = usePlayerStore((s) => s.play);
@@ -86,11 +86,11 @@ export default function LibraryScreen() {
       return item.kind === kind;
     });
     const resolved = filtered
-      .map((item) => resolveItem(item, playlists))
+      .map((item) => resolveItem(item, playlists, t))
       .filter((r): r is ResolvedItem => r !== undefined && matchesQuery(q, ...r.searchFields));
     if (sortMode === 'Alphabetical') return [...resolved].sort((a, b) => a.title.localeCompare(b.title));
     return [...resolved].sort((a, b) => b.item.addedAt.localeCompare(a.item.addedAt));
-  }, [items, downloadedIds, playlists, filter, sortMode, q]);
+  }, [items, downloadedIds, playlists, filter, sortMode, q, t]);
 
   const likedIds = Array.from(likedTrackIds);
   // Songs aren't one of the chip kinds, so they only join results under "All".
@@ -106,7 +106,7 @@ export default function LibraryScreen() {
     <LibraryRow
       coverIcon="favorite"
       title={t('likedSongs')}
-      subtitle={`Playlist • ${likedIds.length} ${likedIds.length === 1 ? 'song' : 'songs'}`}
+      subtitle={`${t('playlistLabel')} • ${likedIds.length} ${likedIds.length === 1 ? t('playlistSongSingular') : t('playlistSongPlural')}`}
       trailing="chevron"
       onPress={() => router.push('/library/liked-songs')}
     />
@@ -134,7 +134,7 @@ export default function LibraryScreen() {
           <View style={styles.headerActions}>
             <IconButton
               icon="add"
-              accessibilityLabel="Create Playlist"
+              accessibilityLabel={t('createPlaylistLabel')}
               onPress={() => router.push('/create-playlist')}
               size={40}
               style={styles.addButton}
@@ -142,7 +142,7 @@ export default function LibraryScreen() {
             />
             {/* Interim OQ-17 entry point (docs/open-questions.md): avatar in Home/Library
              * header, per the documented [П] proposal — final treatment is Фаза 4+ content. */}
-            <IconButton icon="person" accessibilityLabel="Profile" onPress={() => router.push('/profile')} size={40} />
+            <IconButton icon="person" accessibilityLabel={t('profileTitle')} onPress={() => router.push('/profile')} size={40} />
           </View>
         </View>
       </SafeAreaView>
@@ -158,7 +158,7 @@ export default function LibraryScreen() {
         <View style={styles.sortRow}>
           <PressableScale
             accessibilityRole="button"
-            accessibilityLabel={`Sort: ${sortMode}`}
+            accessibilityLabel={sortAccessibilityLabel(locale, t(SORT_LABEL_KEYS[sortMode]))}
             onPress={() => setSortMode((mode) => SORT_MODES[(SORT_MODES.indexOf(mode) + 1) % SORT_MODES.length])}
             style={styles.sortTrigger}
           >
@@ -171,7 +171,7 @@ export default function LibraryScreen() {
           <View style={styles.sortActions}>
             <IconButton
               icon="search"
-              accessibilityLabel="Search your library"
+              accessibilityLabel={t('librarySearchPlaceholder')}
               onPress={() => (searchOpen ? closeSearch() : setSearchOpen(true))}
               size={32}
               style={styles.transparentButton}
@@ -179,7 +179,7 @@ export default function LibraryScreen() {
             />
             <IconButton
               icon={gridView ? 'view-agenda' : 'grid-view'}
-              accessibilityLabel={gridView ? 'Show as list' : 'Show as grid'}
+              accessibilityLabel={gridView ? t('showAsListLabel') : t('showAsGridLabel')}
               onPress={() => setGridView((value) => !value)}
               size={32}
               style={styles.transparentButton}
@@ -197,12 +197,12 @@ export default function LibraryScreen() {
               value={query}
               onChangeText={setQuery}
               placeholder={t('librarySearchPlaceholder')}
-              accessibilityLabel="Search your library"
+              accessibilityLabel={t('librarySearchPlaceholder')}
               returnKeyType="search"
               leftAccessory={<Icon name="search" color={Colors.text.medium} />}
               rightAccessory={
                 query !== '' ? (
-                  <IconButton icon="close" size={32} color={Colors.text.medium} accessibilityLabel="Clear search" onPress={() => setQuery('')} style={styles.transparentButton} />
+                  <IconButton icon="close" size={32} color={Colors.text.medium} accessibilityLabel={t('searchClearLabel')} onPress={() => setQuery('')} style={styles.transparentButton} />
                 ) : undefined
               }
             />
@@ -307,14 +307,18 @@ export default function LibraryScreen() {
   );
 }
 
-function resolveItem(item: LibraryItem, playlists: ReturnType<typeof usePlaylistsStore.getState>['playlists']): ResolvedItem | undefined {
+function resolveItem(
+  item: LibraryItem,
+  playlists: ReturnType<typeof usePlaylistsStore.getState>['playlists'],
+  t: (key: AppStringKey) => string,
+): ResolvedItem | undefined {
   if (item.kind === 'playlist') {
     const playlist = playlists.find((p) => p.id === item.refId);
     if (!playlist) return undefined;
     return {
       item,
       title: playlist.title,
-      subtitle: `${playlist.editorial ? 'Editorial' : 'Playlist'} • ${playlist.trackCount} ${playlist.trackCount === 1 ? 'song' : 'songs'}`,
+      subtitle: `${playlist.editorial ? t('editorialWordLabel') : t('playlistLabel')} • ${playlist.trackCount} ${playlist.trackCount === 1 ? t('playlistSongSingular') : t('playlistSongPlural')}`,
       coverUri: playlist.coverUri,
       searchFields: [playlist.title],
       open: () => router.push({ pathname: '/playlist/[id]', params: { id: playlist.id } }),
@@ -326,7 +330,7 @@ function resolveItem(item: LibraryItem, playlists: ReturnType<typeof usePlaylist
     return {
       item,
       title: artist.name,
-      subtitle: `Artist${artist.monthlyListeners ? ` • ${(artist.monthlyListeners / 1_000_000).toFixed(1)}M monthly listeners` : ''}`,
+      subtitle: `${t('artistLabel')}${artist.monthlyListeners ? ` • ${(artist.monthlyListeners / 1_000_000).toFixed(1)}M ${t('monthlyListenersSuffix')}` : ''}`,
       coverUri: artist.photoUri,
       verified: artist.verified,
       searchFields: [artist.name],
@@ -338,7 +342,7 @@ function resolveItem(item: LibraryItem, playlists: ReturnType<typeof usePlaylist
   return {
     item,
     title: album.title,
-    subtitle: `Album • ${album.artistName} • ${album.trackCount} tracks`,
+    subtitle: `${t('albumTypeAlbum')} • ${album.artistName} • ${album.trackCount} ${t('trackCountPlural')}`,
     coverUri: album.coverUri,
     searchFields: [album.title, album.artistName],
     open: () => router.push({ pathname: '/album/[id]', params: { id: album.id } }),

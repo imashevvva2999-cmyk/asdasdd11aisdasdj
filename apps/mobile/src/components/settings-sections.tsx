@@ -3,8 +3,16 @@ import { StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { Icon, IconButton, ToggleRow, ValueRow } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
-import { useSettingsStore, type QualitySettingKey } from '@/state/settings-store';
+import { qualityChangeToastLabel, type AppStringKey } from '@/lib/i18n';
+import { useSettingsStore, type QualitySettingKey, type StreamQuality } from '@/state/settings-store';
 import { useAppStrings } from '@/state/locale-store';
+
+/** Internal quality VALUES stay fixed English strings; only the label is localized. */
+const QUALITY_LABEL_KEYS: Record<StreamQuality, AppStringKey> = {
+  Low: 'qualityLowLabel',
+  Normal: 'qualityNormalLabel',
+  High: 'qualityHighLabel',
+};
 
 export type SettingsRow = { id: string; label: string; render: () => React.ReactNode };
 export type SettingsSection = { id: SettingsSectionId; title: string; icon: string; rows: SettingsRow[] };
@@ -21,7 +29,7 @@ type ShowToast = (message: string, icon?: string) => void;
  */
 export function useSettingsSections(showToast: ShowToast): Record<SettingsSectionId, SettingsSection> {
   const s = useSettingsStore();
-  const { t } = useAppStrings();
+  const { t, locale } = useAppStrings();
 
   const qualityRow = (id: QualitySettingKey, title: string): SettingsRow => ({
     id,
@@ -29,10 +37,10 @@ export function useSettingsSections(showToast: ShowToast): Record<SettingsSectio
     render: () => (
       <ValueRow
         title={title}
-        value={s[id]}
+        value={t(QUALITY_LABEL_KEYS[s[id]])}
         onPress={() => {
           const next = s.cycleQuality(id);
-          showToast(`${title}: ${next} (preview — playback is unchanged)`, 'tune');
+          showToast(qualityChangeToastLabel(locale, title, t(QUALITY_LABEL_KEYS[next])), 'tune');
         }}
       />
     ),
@@ -98,11 +106,11 @@ export function useSettingsSections(showToast: ShowToast): Record<SettingsSectio
                 {t('rowCrossfade')}
               </ThemedText>
               <View style={styles.stepper}>
-                <IconButton icon="remove" accessibilityLabel="Decrease crossfade" size={32} onPress={() => s.setCrossfade(s.crossfadeSec - 1)} />
+                <IconButton icon="remove" accessibilityLabel={t('decreaseCrossfadeLabel')} size={32} onPress={() => s.setCrossfade(s.crossfadeSec - 1)} />
                 <ThemedText variant="mono-num" style={styles.crossfadeValue}>
                   {s.crossfadeSec}s
                 </ThemedText>
-                <IconButton icon="add" accessibilityLabel="Increase crossfade" size={32} onPress={() => s.setCrossfade(s.crossfadeSec + 1)} />
+                <IconButton icon="add" accessibilityLabel={t('increaseCrossfadeLabel')} size={32} onPress={() => s.setCrossfade(s.crossfadeSec + 1)} />
               </View>
             </View>
           ),
@@ -114,7 +122,7 @@ export function useSettingsSections(showToast: ShowToast): Record<SettingsSectio
             <ToggleRow title={t('rowGapless')} subtitle={t('gaplessSubtitle')} value={s.gapless} onValueChange={(v) => s.setFlag('gapless', v)} />
           ),
         },
-        { id: 'equalizer', label: t('rowEqualizer'), render: () => <ValueRow title={t('rowEqualizer')} value="Flat" /> },
+        { id: 'equalizer', label: t('rowEqualizer'), render: () => <ValueRow title={t('rowEqualizer')} value={t('equalizerFlatLabel')} /> },
       ],
     },
     downloads: {
@@ -154,7 +162,7 @@ export function useSettingsSections(showToast: ShowToast): Record<SettingsSectio
               value={s.cacheGb > 0 ? formatGb(s.cacheGb) : '0 B'}
               onPress={() => {
                 s.clearCache();
-                showToast('Cache cleared', 'cleaning-services');
+                showToast(t('toastCacheCleared'), 'cleaning-services');
               }}
             />
           ),
@@ -172,7 +180,7 @@ export function useSettingsSections(showToast: ShowToast): Record<SettingsSectio
           render: () => (
             <ToggleRow
               title={t('rowFastPay')}
-              subtitle={s.fastPayAuth ? 'Biometric Active (demo)' : 'Disabled'}
+              subtitle={s.fastPayAuth ? t('biometricActiveDemoLabel') : t('disabledStatusLabel')}
               value={s.fastPayAuth}
               onValueChange={(v) => s.setFlag('fastPayAuth', v)}
             />

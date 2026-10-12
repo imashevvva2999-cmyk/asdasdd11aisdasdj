@@ -8,6 +8,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useSmoothProgress } from '@/hooks/use-smooth-progress';
 import { scrubRatio } from '@/lib/gesture-math';
+import { useAppStrings } from '@/state/locale-store';
 
 /** Accessibility increment/decrement step. */
 const A11Y_STEP_SEC = 10;
@@ -35,6 +36,7 @@ export function SeekBar({ progressSec, durationSec, disabled, message, onSeek, l
   const reduceMotion = useReducedMotion();
   const ratio = durationSec > 0 ? Math.min(1, progressSec / durationSec) : 0;
   const progress = useSmoothProgress(ratio);
+  const { t } = useAppStrings();
 
   const width = useSharedValue(0);
   const duration = useSharedValue(durationSec);
@@ -118,7 +120,7 @@ export function SeekBar({ progressSec, durationSec, disabled, message, onSeek, l
         <View
           accessible
           accessibilityRole="adjustable"
-          accessibilityLabel="Seek"
+          accessibilityLabel={t('seekLabel')}
           accessibilityState={{ disabled }}
           accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
           onAccessibilityAction={(event) => {
@@ -129,7 +131,7 @@ export function SeekBar({ progressSec, durationSec, disabled, message, onSeek, l
           aria-valuemin={0}
           aria-valuemax={Math.round(durationSec)}
           aria-valuenow={Math.floor(progressSec)}
-          aria-valuetext={`${formatTime(progressSec)} of ${formatTime(durationSec)}`}
+          aria-valuetext={`${formatTime(progressSec)} ${t('ofConnectorWord')} ${formatTime(durationSec)}`}
           onLayout={(event) => {
             width.value = event.nativeEvent.layout.width;
           }}

@@ -8,8 +8,10 @@ import { IconButton, LibraryRow } from '@/components/ui';
 import type { LocalOrRemoteImage } from '@/constants/stitch-artwork';
 import { Colors, Spacing } from '@/constants/theme';
 import { useToast } from '@/hooks/use-toast';
+import { removeDownloadAccessibilityLabel, removedFromDownloadsToast } from '@/lib/i18n';
 import { getAlbumById } from '@/mocks';
 import { useLibraryStore } from '@/state/library-store';
+import { useAppStrings } from '@/state/locale-store';
 import { usePlaylistsStore } from '@/state/playlists-store';
 
 /** Library uses this id for the "Liked Songs" download toggle. */
@@ -30,10 +32,11 @@ export default function DownloadsScreen() {
   const downloadedIds = useLibraryStore((s) => s.downloadedIds);
   const toggleDownloaded = useLibraryStore((s) => s.toggleDownloaded);
   const playlists = usePlaylistsStore((s) => s.playlists);
+  const { t, locale } = useAppStrings();
 
   const entries: DownloadedEntry[] = [...downloadedIds].flatMap((id): DownloadedEntry[] => {
     if (id === LIKED_SONGS_ID) {
-      return [{ id, title: 'Liked Songs', subtitle: 'Auto playlist', open: () => router.push('/library/liked-songs') }];
+      return [{ id, title: t('likedSongs'), subtitle: t('autoPlaylistLabel'), open: () => router.push('/library/liked-songs') }];
     }
     const playlist = playlists.find((p) => p.id === id);
     if (playlist) {
@@ -41,7 +44,7 @@ export default function DownloadsScreen() {
         {
           id,
           title: playlist.title,
-          subtitle: `Playlist • ${playlist.trackCount} ${playlist.trackCount === 1 ? 'song' : 'songs'}`,
+          subtitle: `${t('playlistLabel')} • ${playlist.trackCount} ${playlist.trackCount === 1 ? t('playlistSongSingular') : t('playlistSongPlural')}`,
           coverUri: playlist.coverUri,
           open: () => router.push({ pathname: '/playlist/[id]', params: { id } }),
         },
@@ -53,7 +56,7 @@ export default function DownloadsScreen() {
         {
           id,
           title: album.title,
-          subtitle: `Album • ${album.artistName}`,
+          subtitle: `${t('albumTypeAlbum')} • ${album.artistName}`,
           coverUri: album.coverUri,
           open: () => router.push({ pathname: '/album/[id]', params: { id } }),
         },
@@ -67,10 +70,10 @@ export default function DownloadsScreen() {
       <ScrollView contentContainerStyle={settingsScreenStyles.content}>
         <SettingsSectionCard section={sections.downloads} />
 
-        <SettingsCard title={`Downloaded Music (${entries.length})`} icon="download-done">
+        <SettingsCard title={`${t('downloadedMusicLabel')} (${entries.length})`} icon="download-done">
           {entries.length === 0 ? (
             <ThemedText variant="body-md" emphasis="medium" style={styles.empty}>
-              Nothing downloaded yet. Use Download on an album or playlist to keep it here.
+              {t('nothingDownloadedHint')}
             </ThemedText>
           ) : (
             entries.map((entry) => (
@@ -80,10 +83,10 @@ export default function DownloadsScreen() {
                   icon="remove-circle-outline"
                   size={36}
                   color={Colors.text.medium}
-                  accessibilityLabel={`Remove download: ${entry.title}`}
+                  accessibilityLabel={removeDownloadAccessibilityLabel(locale, entry.title)}
                   onPress={() => {
                     toggleDownloaded(entry.id);
-                    showToast(`Removed ${entry.title} from downloads`, 'download');
+                    showToast(removedFromDownloadsToast(locale, entry.title), 'download');
                   }}
                 />
               </View>
@@ -92,7 +95,7 @@ export default function DownloadsScreen() {
         </SettingsCard>
 
         <ThemedText variant="body-sm" emphasis="low" style={styles.note}>
-          Downloads are a preview — no audio is stored on this device yet.
+          {t('downloadsPreviewNote')}
         </ThemedText>
       </ScrollView>
       {toast}

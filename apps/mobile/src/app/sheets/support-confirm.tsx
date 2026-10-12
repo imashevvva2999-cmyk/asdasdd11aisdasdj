@@ -5,9 +5,11 @@ import { ThemedText } from '@/components/themed-text';
 import { Artwork, Icon, PillButton, SheetScreen, TextLinkButton } from '@/components/ui';
 import { DemoNotice } from '@/components/demo-notice';
 import { Colors, Radii, Spacing } from '@/constants/theme';
+import { confirmAndSendLabel, supportTitleLabel } from '@/lib/i18n';
 import { formatKgsAmount } from '@/lib/format-currency';
 import { goBack } from '@/lib/navigation';
 import { getArtistById } from '@/mocks';
+import { useAppStrings } from '@/state/locale-store';
 import { useSupportStore } from '@/state/support-store';
 
 /**
@@ -21,6 +23,7 @@ export default function SupportConfirmSheet() {
   const amount = useSupportStore((s) => s.amount);
   const stage = useSupportStore((s) => s.stage);
   const confirm = useSupportStore((s) => s.confirm);
+  const { t, locale } = useAppStrings();
 
   const artist = artistId ? getArtistById(artistId) : undefined;
 
@@ -28,9 +31,9 @@ export default function SupportConfirmSheet() {
     return (
       <SheetScreen>
         <ThemedText variant="body-md" emphasis="medium" style={styles.notFound}>
-          Nothing to confirm. Go back and choose a support amount.
+          {t('nothingToConfirmMessage')}
         </ThemedText>
-        <TextLinkButton label="Back" onPress={() => goBack()} style={styles.notFoundLink} />
+        <TextLinkButton label={t('backLabel')} onPress={() => goBack()} style={styles.notFoundLink} />
       </SheetScreen>
     );
   }
@@ -47,7 +50,7 @@ export default function SupportConfirmSheet() {
           <Artwork shape="circle" size={88} radius={44} uri={artist.photoUri} placeholderIcon="person" />
         </View>
         <View style={styles.nameRow}>
-          <ThemedText variant="headline-md">Support {artist.name}</ThemedText>
+          <ThemedText variant="headline-md">{supportTitleLabel(locale, artist.name)}</ThemedText>
           {artist.verified && <Icon name="verified" size={18} color={Colors.primary} />}
         </View>
         {artist.genres && artist.genres.length > 0 && (
@@ -58,7 +61,7 @@ export default function SupportConfirmSheet() {
 
         <View style={styles.amountCard}>
           <ThemedText variant="label-sm" style={styles.amountEyebrow}>
-            Contribution Amount
+            {t('contributionAmountLabel')}
           </ThemedText>
           <View style={styles.amountRow}>
             <ThemedText variant="display-lg">{formatKgsAmount(amount)}</ThemedText>
@@ -73,25 +76,25 @@ export default function SupportConfirmSheet() {
             <Icon name="account-balance-wallet" size={22} color={Colors.secondary} />
           </View>
           <ThemedText variant="label-lg" style={styles.accountTitle} numberOfLines={1}>
-            MBANK account •••• 4892
+            {t('mbankAccountMasked')}
           </ThemedText>
           <View style={styles.directBadge}>
             <ThemedText variant="label-md" style={styles.directBadgeText}>
-              Direct
+              {t('directWordLabel')}
             </ThemedText>
           </View>
         </View>
 
-        <DemoNotice text="Demo — no money is sent" style={styles.demoNotice} />
+        <DemoNotice text={t('demoNoMoneySentLabel')} style={styles.demoNotice} />
 
         <PillButton
-          label={`Confirm & Send ${formatKgsAmount(amount)} сом`}
+          label={confirmAndSendLabel(locale, formatKgsAmount(amount))}
           trailingIcon="bolt"
           loading={stage === 'processing'}
           onPress={handleConfirm}
           style={styles.cta}
         />
-        <TextLinkButton label="Cancel" tone="muted" onPress={() => goBack()} disabled={stage === 'processing'} style={styles.cancel} />
+        <TextLinkButton label={t('cancel')} tone="muted" onPress={() => goBack()} disabled={stage === 'processing'} style={styles.cancel} />
       </View>
     </SheetScreen>
   );

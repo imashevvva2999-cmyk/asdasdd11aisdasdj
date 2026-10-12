@@ -6,6 +6,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Icon, MenuRow, PillButton, Toast } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
+import { useAppStrings } from '@/state/locale-store';
 
 /**
  * S-25 Become an Artist — UF-14 step 1 (docs/screens.md). No real identity
@@ -15,6 +16,7 @@ import { Colors, Radii, Spacing } from '@/constants/theme';
  */
 export default function BecomeArtistScreen() {
   const [initializingToastVisible, setInitializingToastVisible] = useState(false);
+  const { t } = useAppStrings();
 
   function handleBecomeArtist() {
     setInitializingToastVisible(true);
@@ -35,24 +37,24 @@ export default function BecomeArtistScreen() {
             </View>
           </View>
           <ThemedText variant="display-lg-mobile" style={styles.centerText}>
-            Share Your Sound with the World
+            {t('shareYourSoundTitle')}
           </ThemedText>
           <ThemedText variant="body-lg" emphasis="medium" style={styles.centerText}>
-            Share your music, connect with listeners and receive support directly through Mmusic.
+            {t('shareYourSoundSubtitle')}
           </ThemedText>
         </View>
 
         <View style={styles.menuList}>
-          <MenuRow variant="feature" icon="cloud-upload" title="Share Your Music" subtitle="Upload and publish your tracks." />
-          <MenuRow variant="feature" icon="volunteer-activism" title="Fan Support" subtitle="Receive support directly from listeners." />
-          <MenuRow variant="feature" icon="insights" title="Artist Insights" subtitle="See how listeners engage with your music." />
+          <MenuRow variant="feature" icon="cloud-upload" title={t('shareYourMusicTitle')} subtitle={t('shareYourMusicSubtitle')} />
+          <MenuRow variant="feature" icon="volunteer-activism" title={t('fanSupportTitle')} subtitle={t('fanSupportSubtitle')} />
+          <MenuRow variant="feature" icon="insights" title={t('artistInsightsTitle')} subtitle={t('artistInsightsSubtitle')} />
         </View>
 
         <View style={styles.spacer} />
-        <PillButton label="BECOME AN ARTIST" trailingIcon="arrow-forward" onPress={handleBecomeArtist} style={styles.cta} />
+        <PillButton label={t('becomeArtistCta')} trailingIcon="arrow-forward" onPress={handleBecomeArtist} style={styles.cta} />
       </ScrollView>
 
-      <Toast message="Initializing Artist Studio setup…" icon="sync" visible={initializingToastVisible} />
+      <Toast message={t('toastInitializingArtistStudio')} icon="sync" visible={initializingToastVisible} />
     </ThemedView>
   );
 }

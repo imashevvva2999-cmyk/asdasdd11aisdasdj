@@ -7,8 +7,10 @@ import { ThemedView } from '@/components/themed-view';
 import { Artwork, Chip, FormCard, Icon, PillButton, PressableScale, SegmentedControl, TextField, TextLinkButton, Toast, ToggleRow } from '@/components/ui';
 import { sampleImageChoices } from '@/constants/stitch-artwork';
 import { Colors, Radii, Spacing } from '@/constants/theme';
+import { trackPublishedMessage } from '@/lib/i18n';
 import { goBack } from '@/lib/navigation';
 import { useArtistStore } from '@/state/artist-store';
+import { useAppStrings } from '@/state/locale-store';
 
 const GENRE_OPTIONS = ['Electronic', 'Ambient', 'Synthwave', 'Indie', 'Dream Pop', 'Neo-Classical', 'Hip-Hop', 'Pop', 'Rock', 'Jazz', 'Lo-Fi'];
 
@@ -16,10 +18,6 @@ const GENRE_OPTIONS = ['Electronic', 'Ambient', 'Synthwave', 'Indie', 'Dream Pop
  * decoded in this preview (see the "simulated file selection" note below). */
 const MOCK_FILE_DURATION_SEC = 204;
 
-const RELEASE_OPTIONS = [
-  { value: 'now', label: 'Release Now' },
-  { value: 'schedule', label: 'Schedule' },
-] as const;
 
 /** Static decorative waveform for the selected file (Stitch S-28) — no audio
  * is decoded, so this is an illustration, not a real waveform. */
@@ -43,6 +41,11 @@ export default function UploadTrackScreen() {
   const simulateError = useArtistStore((s) => s.simulateError);
   const retryPublish = useArtistStore((s) => s.retryPublish);
   const entries = useArtistStore((s) => s.entries);
+  const { t, locale } = useAppStrings();
+  const RELEASE_OPTIONS = [
+    { value: 'now' as const, label: t('releaseNowOptionLabel') },
+    { value: 'schedule' as const, label: t('scheduleOptionLabel') },
+  ];
 
   const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
   // Simulated picker (no native image picker is installed) — cycles the bundled
@@ -108,13 +111,13 @@ export default function UploadTrackScreen() {
             <Icon name="check-circle" size={40} color={Colors.secondary} />
           </View>
           <ThemedText variant="headline-md" style={styles.centerText}>
-            Track Published
+            {t('trackPublishedTitle')}
           </ThemedText>
           <ThemedText variant="body-md" emphasis="medium" style={styles.centerText}>
-            &quot;{activeEntry.track.title}&quot; is now live on your artist profile.
+            {trackPublishedMessage(locale, activeEntry.track.title)}
           </ThemedText>
           <PillButton
-            label="View Public Profile"
+            label={t('viewPublicProfileLabel')}
             onPress={() => {
               // Leave Upload Track first so Back from the public profile lands on the Dashboard.
               router.dismissTo('/profile/artist/dashboard');
@@ -122,7 +125,7 @@ export default function UploadTrackScreen() {
             }}
             style={styles.resultButton}
           />
-          <PillButton label="Back to Dashboard" variant="secondary" onPress={() => goBack('/profile/artist/dashboard')} style={styles.resultButtonSecondary} />
+          <PillButton label={t('backToDashboardLabel')} variant="secondary" onPress={() => goBack('/profile/artist/dashboard')} style={styles.resultButtonSecondary} />
         </View>
       </ThemedView>
     );
@@ -133,9 +136,9 @@ export default function UploadTrackScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <ThemedText variant="headline-md">Upload Audio</ThemedText>
+            <ThemedText variant="headline-md">{t('uploadAudioLabel')}</ThemedText>
             <ThemedText variant="label-sm" emphasis="primary">
-              High-quality audio file
+              {t('highQualityAudioFileHint')}
             </ThemedText>
           </View>
           {selectedFileName ? (
@@ -161,29 +164,29 @@ export default function UploadTrackScreen() {
               <PressableScale accessibilityRole="button" onPress={handleBrowseFile} disabled={isBusy} style={styles.inlineAction}>
                 <Icon name="upload-file" size={18} color={Colors.primary} />
                 <ThemedText variant="label-lg" emphasis="primary">
-                  Browse File
+                  {t('browseFileLabel')}
                 </ThemedText>
               </PressableScale>
             </FormCard>
           ) : (
-            <PillButton label="Browse File" variant="secondary" leadingIcon="folder-open" onPress={handleBrowseFile} />
+            <PillButton label={t('browseFileLabel')} variant="secondary" leadingIcon="folder-open" onPress={handleBrowseFile} />
           )}
         </View>
 
         <View style={styles.section}>
-          <ThemedText variant="headline-md">Track Details</ThemedText>
-          <TextField raised label="Track Title" placeholder="Title" value={title} onChangeText={setTitle} editable={!isBusy} />
+          <ThemedText variant="headline-md">{t('trackDetailsLabel')}</ThemedText>
+          <TextField raised label={t('trackTitleFieldLabel')} placeholder={t('titleLabel')} value={title} onChangeText={setTitle} editable={!isBusy} />
           <TextField
             raised
-            label="Artist / Featured Collaborators"
-            placeholder="Optional"
+            label={t('artistCollaboratorsLabel')}
+            placeholder={t('optionalPlaceholder')}
             value={collaborators}
             onChangeText={setCollaborators}
             editable={!isBusy}
           />
           <View style={styles.field}>
             <ThemedText variant="label-md" emphasis="primary">
-              Genre
+              {t('genreFieldLabel')}
             </ThemedText>
             <View style={styles.chipGrid}>
               {GENRE_OPTIONS.map((option) => (
@@ -194,12 +197,12 @@ export default function UploadTrackScreen() {
         </View>
 
         <View style={styles.section}>
-          <ThemedText variant="headline-md">Cover Artwork</ThemedText>
+          <ThemedText variant="headline-md">{t('coverArtworkLabel')}</ThemedText>
           <FormCard style={styles.coverCard}>
             <Artwork size={112} radius={Radii.md} uri={coverUri} placeholderIcon="add-photo-alternate" />
             <View style={styles.coverText}>
               <ThemedText variant="body-md" emphasis="medium">
-                Add high quality artwork
+                {t('addHighQualityArtworkHint')}
               </ThemedText>
               <PressableScale
                 accessibilityRole="button"
@@ -208,20 +211,20 @@ export default function UploadTrackScreen() {
                 style={styles.compactButton}
               >
                 <Icon name="image" size={18} color={Colors.text.high} />
-                <ThemedText variant="label-lg">{coverUri ? 'Change Cover' : 'Choose Cover'}</ThemedText>
+                <ThemedText variant="label-lg">{coverUri ? t('changeCoverLabel') : t('chooseCoverLabel')}</ThemedText>
               </PressableScale>
             </View>
           </FormCard>
         </View>
 
         <View style={styles.section}>
-          <ThemedText variant="headline-md">Release Settings</ThemedText>
+          <ThemedText variant="headline-md">{t('releaseSettingsLabel')}</ThemedText>
           <View style={styles.field}>
             <ThemedText variant="label-md" emphasis="primary">
-              Schedule Release
+              {t('scheduleReleaseLabel')}
             </ThemedText>
             <SegmentedControl
-              accessibilityLabel="Schedule Release"
+              accessibilityLabel={t('scheduleReleaseLabel')}
               options={RELEASE_OPTIONS}
               value={releaseMode}
               onChange={(mode) => {
@@ -231,10 +234,10 @@ export default function UploadTrackScreen() {
           </View>
           {releaseMode === 'schedule' && (
             <ThemedText variant="body-sm" emphasis="medium">
-              Scheduling isn&apos;t available in this preview — the track will still publish immediately when you tap Publish Track.
+              {t('scheduleHintText')}
             </ThemedText>
           )}
-          <ToggleRow title="Explicit Content" value={explicit} onValueChange={setExplicit} disabled={isBusy} style={styles.explicitRow} />
+          <ToggleRow title={t('explicitContentLabel')} value={explicit} onValueChange={setExplicit} disabled={isBusy} style={styles.explicitRow} />
         </View>
 
         {activeEntry && (activeEntry.status === 'uploading' || activeEntry.status === 'processing') && (
@@ -242,7 +245,7 @@ export default function UploadTrackScreen() {
             <View style={styles.statusRow}>
               <Icon name="sync" size={20} color={Colors.secondary} />
               <ThemedText variant="label-lg" style={styles.statusText}>
-                {activeEntry.status === 'uploading' ? 'Uploading…' : 'Transcoding…'}
+                {activeEntry.status === 'uploading' ? t('uploadingStatusLabel') : t('transcodingStatusLabel')}
               </ThemedText>
             </View>
             <View style={styles.progressTrack}>
@@ -255,14 +258,14 @@ export default function UploadTrackScreen() {
           <View style={styles.errorBanner}>
             <Icon name="error-outline" size={18} color={Colors.error} />
             <ThemedText variant="label-md" style={styles.errorText}>
-              Something went wrong publishing this track.
+              {t('publishErrorMessage')}
             </ThemedText>
-            <TextLinkButton label="Retry" onPress={() => activeTrackId && retryPublish(activeTrackId)} />
+            <TextLinkButton label={t('retryLabel')} onPress={() => activeTrackId && retryPublish(activeTrackId)} />
           </View>
         )}
 
         <PillButton
-          label="Publish Track"
+          label={t('publishTrackLabel')}
           trailingIcon="arrow-forward"
           disabled={!canPublish || isBusy}
           loading={isBusy}
@@ -271,7 +274,7 @@ export default function UploadTrackScreen() {
         />
         <PressableScale accessibilityRole="button" onPress={handleSaveAsDraft} disabled={isBusy} style={styles.quietAction}>
           <ThemedText variant="label-lg" emphasis="medium">
-            Save as Draft
+            {t('saveAsDraftLabel')}
           </ThemedText>
         </PressableScale>
         <PressableScale
@@ -281,12 +284,12 @@ export default function UploadTrackScreen() {
           style={[styles.quietAction, (isBusy || !canPublish) && styles.quietDisabled]}
         >
           <ThemedText variant="body-sm" emphasis="low">
-            Simulate publish error (demo)
+            {t('simulatePublishErrorLabel')}
           </ThemedText>
         </PressableScale>
       </ScrollView>
 
-      <Toast message="Saved as draft" icon="save" visible={draftSavedToastVisible} />
+      <Toast message={t('toastSavedAsDraft')} icon="save" visible={draftSavedToastVisible} />
     </ThemedView>
   );
 }

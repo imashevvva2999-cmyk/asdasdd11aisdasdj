@@ -13,7 +13,7 @@ import { iconFonts } from '@/components/ui/icon';
 import { RouteTitle } from '@/components/web/route-title';
 import { PlayerSurfaceSync } from '@/state/player-surface';
 import { usePlayerStore } from '@/state/player-store';
-import { useLocaleStore } from '@/state/locale-store';
+import { useAppStrings, useLocaleStore } from '@/state/locale-store';
 import { loadedFonts } from '@/constants/fonts';
 import { Colors } from '@/constants/theme';
 import { MAX_CONTENT_WIDTH } from '@/hooks/use-content-width';
@@ -69,6 +69,8 @@ export default function RootLayout() {
     useLocaleStore.persist.rehydrate();
   }, []);
 
+  const { t } = useAppStrings();
+
   if (!fontsLoaded && !fontError) {
     return null;
   }
@@ -111,8 +113,8 @@ export default function RootLayout() {
             />
             <Stack.Screen name="create-playlist" options={{ presentation: 'modal' }} />
             <Stack.Screen name="artist/[id]" options={{ headerShown: true, title: '' }} />
-            <Stack.Screen name="album/[id]" options={{ headerShown: true, title: 'Album' }} />
-            <Stack.Screen name="playlist/[id]" options={{ headerShown: true, title: 'Playlist' }} />
+            <Stack.Screen name="album/[id]" options={{ headerShown: true, title: t('albumHeaderTitle') }} />
+            <Stack.Screen name="playlist/[id]" options={{ headerShown: true, title: t('playlistHeaderTitle') }} />
             <Stack.Screen name="profile" options={{ headerShown: false }} />
           </Stack>
           {/* Follows a swipe up on the mini-player until the player route opens. */}

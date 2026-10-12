@@ -94,7 +94,7 @@ function SupportSheetContent({ artistId }: { artistId: string | undefined }) {
             {artistPatronageSubtitle(locale, artist.name)}
           </ThemedText>
         </View>
-        <IconButton icon="close" accessibilityLabel="Close" onPress={() => goBack()} />
+        <IconButton icon="close" accessibilityLabel={t('closeLabel')} onPress={() => goBack()} />
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>

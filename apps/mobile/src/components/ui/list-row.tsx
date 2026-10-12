@@ -7,6 +7,7 @@ import { resolveFontFamily } from '@/constants/fonts';
 import { type LocalOrRemoteImage, toImageSource } from '@/constants/stitch-artwork';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useHydrated } from '@/hooks/use-hydrated';
+import { useAppStrings } from '@/state/locale-store';
 
 import { Badge } from './badge';
 import { EqualizerIndicator } from './equalizer';
@@ -75,6 +76,7 @@ export function TrackRow({
   // Songs); while playing, the equalizer replaces the index, or overlays the
   // cover when there is no index.
   const showCover = coverUri !== undefined || index === undefined;
+  const { t } = useAppStrings();
   return (
     <PressableScale
       onPress={onPress}
@@ -123,7 +125,7 @@ export function TrackRow({
           onPress={onOptionsPress}
           size={36}
           style={styles.transparentIconButton}
-          accessibilityLabel="Track options"
+          accessibilityLabel={t('trackOptionsLabel')}
         />
       )}
     </PressableScale>
@@ -192,6 +194,7 @@ export function LibraryRow({
   onOptionsPress,
   style,
 }: LibraryRowProps) {
+  const { t } = useAppStrings();
   return (
     <PressableScale onPress={onPress} style={[styles.row, libraryRowStyles.row, style]} accessibilityRole={trailing === 'more' ? undefined : 'button'}>
       {coverIcon ? (
@@ -216,7 +219,7 @@ export function LibraryRow({
       </View>
       {trailing === 'chevron' && <Icon name="chevron-right" color={Colors.text.medium} />}
       {trailing === 'more' && (
-        <IconButton icon="more-vert" accessibilityLabel="Options" size={36} onPress={onOptionsPress} style={styles.transparentIconButton} />
+        <IconButton icon="more-vert" accessibilityLabel={t('optionsLabel')} size={36} onPress={onOptionsPress} style={styles.transparentIconButton} />
       )}
     </PressableScale>
   );

@@ -24,7 +24,9 @@ import { useSmoothProgress } from '@/hooks/use-smooth-progress';
 import type { Track } from '@/mocks';
 import { useWindowSize } from '@/hooks/use-window-size';
 import { expandProgress as expandFor, lockAxis, resolveExpand, resolveSwipe, rubberBand } from '@/lib/gesture-math';
+import { nowPlayingAccessibilityLabel } from '@/lib/i18n';
 import { hasStartedPlayback } from '@/lib/stage-rules';
+import { useAppStrings } from '@/state/locale-store';
 import { usePlayerStore } from '@/state/player-store';
 import {
   CAROUSEL_SPRING,
@@ -86,6 +88,7 @@ function MiniPlayerBody({ track, respectStage }: { track: Track; respectStage: b
   const swipeTo = usePlayerStore((s) => s.swipeTo);
   const reduceMotion = useReducedMotion();
   const { height } = useWindowSize();
+  const { t, locale } = useAppStrings();
 
   const durationSec = engineDurationSec ?? track.durationSec;
   const progressRatio = durationSec > 0 ? Math.min(1, progressSec / durationSec) : 0;
@@ -254,8 +257,8 @@ function MiniPlayerBody({ track, respectStage }: { track: Track; respectStage: b
       <View ref={contentRef}>
       <PressableScale
         // No button role: it contains real buttons (nested <button> is invalid on web).
-        accessibilityLabel={`Now playing: ${track.title} by ${track.artistName}. Open player`}
-        accessibilityHint="Swipe up to expand, left or right to change track"
+        accessibilityLabel={nowPlayingAccessibilityLabel(locale, track.title, track.artistName)}
+        accessibilityHint={t('swipeExpandHint')}
         onPress={() => {
           if (dragging.current) return;
           openPlayer();
@@ -282,7 +285,7 @@ function MiniPlayerBody({ track, respectStage }: { track: Track; respectStage: b
               icon={liked ? 'favorite' : 'favorite-border'}
               iconSize={22}
               color={liked ? Colors.primary : undefined}
-              accessibilityLabel={liked ? 'Unlike' : 'Like'}
+              accessibilityLabel={liked ? t('unlikeLabel') : t('likeLabel')}
               onPress={(e) => {
                 e.stopPropagation();
                 toggleLike(track.id);
@@ -293,7 +296,7 @@ function MiniPlayerBody({ track, respectStage }: { track: Track; respectStage: b
               variant="ghost"
               icon="skip-previous"
               iconSize={26}
-              accessibilityLabel="Previous track"
+              accessibilityLabel={t('previousTrackLabel')}
               onPress={(e) => {
                 e.stopPropagation();
                 previous();
@@ -302,7 +305,7 @@ function MiniPlayerBody({ track, respectStage }: { track: Track; respectStage: b
             />
             <IconButton
               icon={isPlaying ? 'pause' : 'play-arrow'}
-              accessibilityLabel={unavailable ? 'Play (no audio in this preview)' : playback === 'loading' ? 'Loading. Pause' : isPlaying ? 'Pause' : 'Play'}
+              accessibilityLabel={unavailable ? t('playUnavailableLabel') : playback === 'loading' ? t('loadingPauseLabel') : isPlaying ? t('pauseLabel') : t('playLabel')}
               disabled={unavailable}
               loading={playback === 'loading'}
               onPress={(e) => {
@@ -317,7 +320,7 @@ function MiniPlayerBody({ track, respectStage }: { track: Track; respectStage: b
               variant="ghost"
               icon="skip-next"
               iconSize={26}
-              accessibilityLabel="Next track"
+              accessibilityLabel={t('nextTrackLabel')}
               onPress={(e) => {
                 e.stopPropagation();
                 next();

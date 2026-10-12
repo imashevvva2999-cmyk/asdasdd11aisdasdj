@@ -11,6 +11,7 @@ import {
 
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { goBack } from '@/lib/navigation';
+import { useAppStrings } from '@/state/locale-store';
 import { blur } from '@mmusic/design-tokens';
 
 export type AppBottomSheetProps = {
@@ -67,6 +68,7 @@ export type SheetScreenProps = {
 export function SheetScreen({ children, onDismiss }: SheetScreenProps) {
   const insets = useSafeAreaInsets();
   const reduceMotion = useReducedMotion();
+  const { t } = useAppStrings();
   // Opening motion: the backdrop fades in while the panel rises into place.
   const open = useSharedValue(reduceMotion ? 1 : 0);
   useEffect(() => {
@@ -80,7 +82,7 @@ export function SheetScreen({ children, onDismiss }: SheetScreenProps) {
       <Animated.View style={[sheetStyles.scrimLayer, scrimStyle]}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Close"
+          accessibilityLabel={t('closeLabel')}
           style={sheetStyles.scrim}
           onPress={onDismiss ?? (() => goBack())}
         />

@@ -5,9 +5,11 @@ import { ThemedText } from '@/components/themed-text';
 import { Artwork, Icon, PillButton, SheetScreen, TextLinkButton } from '@/components/ui';
 import { DemoNotice } from '@/components/demo-notice';
 import { Colors, Radii, Spacing } from '@/constants/theme';
+import { supportedAmountHeadline } from '@/lib/i18n';
 import { formatKgsAmount } from '@/lib/format-currency';
 import { goBack } from '@/lib/navigation';
 import { getArtistById } from '@/mocks';
+import { useAppStrings } from '@/state/locale-store';
 import { useSupportStore } from '@/state/support-store';
 
 /**
@@ -23,6 +25,7 @@ export default function SupportSuccessSheet() {
   const amount = useSupportStore((s) => s.amount);
   const currency = useSupportStore((s) => s.currency);
   const reset = useSupportStore((s) => s.reset);
+  const { t, locale } = useAppStrings();
 
   const artist = artistId ? getArtistById(artistId) : undefined;
 
@@ -30,9 +33,9 @@ export default function SupportSuccessSheet() {
     return (
       <SheetScreen>
         <ThemedText variant="body-md" emphasis="medium" style={styles.notFound}>
-          No recent support to show.
+          {t('nothingRecentSupportMessage')}
         </ThemedText>
-        <TextLinkButton label="Close" onPress={() => goBack()} style={styles.notFoundLink} />
+        <TextLinkButton label={t('closeLabel')} onPress={() => goBack()} style={styles.notFoundLink} />
       </SheetScreen>
     );
   }
@@ -51,10 +54,10 @@ export default function SupportSuccessSheet() {
           </View>
         </View>
         <ThemedText variant="label-md" emphasis="primary" style={styles.eyebrow}>
-          Direct Patronage Complete
+          {t('directPatronageCompleteLabel')}
         </ThemedText>
         <ThemedText variant="display-lg" style={styles.centerText}>
-          Supported {formatKgsAmount(amount)} {currency === 'KGS' ? 'сом' : currency}
+          {supportedAmountHeadline(locale, formatKgsAmount(amount), currency === 'KGS' ? 'сом' : currency)}
         </ThemedText>
 
         <View style={styles.artistChip}>
@@ -63,12 +66,12 @@ export default function SupportSuccessSheet() {
           {artist.verified && <Icon name="verified" size={16} color={Colors.primary} />}
         </View>
 
-        <DemoNotice text="Demo — no money was sent" style={styles.demoNotice} />
-        <PillButton label="Done" trailingIcon="check" onPress={handleDone} style={styles.cta} />
+        <DemoNotice text={t('demoNoMoneyWasSentLabel')} style={styles.demoNotice} />
+        <PillButton label={t('doneLabel')} trailingIcon="check" onPress={handleDone} style={styles.cta} />
         <TextLinkButton
           tone="muted"
           icon="receipt-long"
-          label="View Support Receipt in History"
+          label={t('viewSupportReceiptLabel')}
           style={styles.receiptLink}
           onPress={() => {
             reset();

@@ -10,6 +10,7 @@ import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useToast } from '@/hooks/use-toast';
 import { goBack } from '@/lib/navigation';
 import { useLibraryStore } from '@/state/library-store';
+import { useAppStrings } from '@/state/locale-store';
 import { usePlaylistsStore } from '@/state/playlists-store';
 
 const NAME_MAX_LENGTH = 50;
@@ -28,6 +29,7 @@ export default function CreatePlaylistScreen() {
   const createPlaylist = usePlaylistsStore((s) => s.createPlaylist);
   const toggleSaved = useLibraryStore((s) => s.toggleSaved);
   const { showToast, toast } = useToast();
+  const { t } = useAppStrings();
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -63,9 +65,9 @@ export default function CreatePlaylistScreen() {
     <ThemedView surface="canvas" style={styles.flex}>
       <View style={styles.header}>
         <ThemedText variant="label-lg" emphasis="medium" accessibilityRole="button" onPress={() => goBack()}>
-          Cancel
+          {t('cancel')}
         </ThemedText>
-        <ThemedText variant="headline-sm">Create Playlist</ThemedText>
+        <ThemedText variant="headline-sm">{t('createPlaylistLabel')}</ThemedText>
         <ThemedText
           variant="label-lg"
           emphasis={canCreate ? 'primary' : 'medium'}
@@ -73,7 +75,7 @@ export default function CreatePlaylistScreen() {
           aria-disabled={!canCreate}
           onPress={canCreate ? handleCreate : undefined}
         >
-          Create
+          {t('createShortLabel')}
         </ThemedText>
       </View>
 
@@ -81,8 +83,8 @@ export default function CreatePlaylistScreen() {
         <View style={styles.coverBlock}>
           <PressableScale
             accessibilityRole="button"
-            accessibilityLabel="Add cover"
-            onPress={() => pickNextCover('Sample cover selected (demo — no photo picker yet)')}
+            accessibilityLabel={t('addCoverLabel')}
+            onPress={() => pickNextCover(t('toastSampleCoverSelected'))}
           >
             {coverUri ? (
               <Artwork uri={coverUri} size={192} radius={20} />
@@ -92,10 +94,10 @@ export default function CreatePlaylistScreen() {
                   <Icon name="add-photo-alternate" size={24} color={Colors.primary} />
                 </View>
                 <ThemedText variant="label-md" style={styles.coverHint}>
-                  Add Cover
+                  {t('addCoverLabel')}
                 </ThemedText>
                 <ThemedText variant="body-sm" emphasis="medium">
-                  Custom art or photo
+                  {t('customArtOrPhotoHint')}
                 </ThemedText>
               </View>
             )}
@@ -103,25 +105,25 @@ export default function CreatePlaylistScreen() {
           <View style={styles.coverActions}>
             <CoverActionChip
               icon="auto-awesome"
-              label="AI Generate"
-              onPress={() => showToast("AI-generated covers aren't available yet", 'auto-awesome')}
+              label={t('aiGenerateLabel')}
+              onPress={() => showToast(t('toastAiCoversUnavailable'), 'auto-awesome')}
             />
-            <CoverActionChip icon="gradient" label="Color Wave" onPress={() => pickNextCover('Color Wave cover applied')} />
+            <CoverActionChip icon="gradient" label={t('colorWaveLabel')} onPress={() => pickNextCover(t('toastColorWaveApplied'))} />
           </View>
         </View>
 
         <View style={styles.field}>
           <View style={styles.labelRow}>
             <ThemedText variant="label-md" emphasis="primary">
-              Name
+              {t('nameFieldLabel')}
             </ThemedText>
             <ThemedText variant="mono-num" emphasis="medium">
               {name.length}/{NAME_MAX_LENGTH}
             </ThemedText>
           </View>
           <TextField
-            accessibilityLabel="Name"
-            placeholder="Give your playlist a name…"
+            accessibilityLabel={t('nameFieldLabel')}
+            placeholder={t('playlistNamePlaceholder')}
             value={name}
             onChangeText={(text) => setName(text.slice(0, NAME_MAX_LENGTH))}
             maxLength={NAME_MAX_LENGTH}
@@ -130,11 +132,11 @@ export default function CreatePlaylistScreen() {
 
         <View style={styles.field}>
           <ThemedText variant="label-md" emphasis="primary">
-            Description <ThemedText variant="label-md" emphasis="medium">(Optional)</ThemedText>
+            {t('descriptionFieldLabel')} <ThemedText variant="label-md" emphasis="medium">{t('optionalSuffixLabel')}</ThemedText>
           </ThemedText>
           <TextField
-            accessibilityLabel="Description (Optional)"
-            placeholder="What's the vibe?"
+            accessibilityLabel={t('descriptionOptionalAccessibility')}
+            placeholder={t('vibePlaceholder')}
             value={description}
             onChangeText={setDescription}
             multiline
@@ -147,8 +149,8 @@ export default function CreatePlaylistScreen() {
             <Icon name="public" size={20} color={Colors.primary} />
           </View>
           <ToggleRow
-            title="Public Playlist"
-            subtitle="Anyone can find and listen"
+            title={t('publicPlaylistLabel')}
+            subtitle={t('publicPlaylistSubtitle')}
             value={isPublic}
             onValueChange={setIsPublic}
             style={styles.toggleRow}
@@ -159,15 +161,15 @@ export default function CreatePlaylistScreen() {
             <Icon name="group-add" size={20} color={Colors.secondary} />
           </View>
           <ToggleRow
-            title="Collaborative"
-            subtitle="Invite friends to add tracks"
+            title={t('collaborativeLabel')}
+            subtitle={t('collaborativeSubtitle')}
             value={isCollaborative}
             onValueChange={setIsCollaborative}
             style={styles.toggleRow}
           />
         </View>
 
-        <PillButton label="Create Playlist" disabled={!canCreate} onPress={handleCreate} style={styles.cta} />
+        <PillButton label={t('createPlaylistLabel')} disabled={!canCreate} onPress={handleCreate} style={styles.cta} />
       </ScrollView>
       {toast}
     </ThemedView>
@@ -175,8 +177,9 @@ export default function CreatePlaylistScreen() {
 }
 
 function CoverActionChip({ icon, label, onPress }: { icon: string; label: string; onPress: () => void }) {
+  const { t } = useAppStrings();
   return (
-    <PressableScale accessibilityRole="button" accessibilityLabel={`${label} cover`} onPress={onPress} style={styles.coverChip}>
+    <PressableScale accessibilityRole="button" accessibilityLabel={`${label} ${t('coverSuffixWord')}`} onPress={onPress} style={styles.coverChip}>
       <Icon name={icon} size={14} color={Colors.primary} />
       <ThemedText variant="label-sm">{label}</ThemedText>
     </PressableScale>

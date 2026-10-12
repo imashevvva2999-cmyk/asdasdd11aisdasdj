@@ -1,9 +1,11 @@
 import { Stack } from 'expo-router';
 
 import { Colors } from '@/constants/theme';
+import { useAppStrings } from '@/state/locale-store';
 
 /** Library tab's own stack (docs/screens.md §1: Library → Liked Songs). */
 export default function LibraryStackLayout() {
+  const { t } = useAppStrings();
   return (
     <Stack
       screenOptions={{
@@ -14,7 +16,7 @@ export default function LibraryStackLayout() {
       }}
     >
       <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Screen name="liked-songs" options={{ title: 'Liked Songs' }} />
+      <Stack.Screen name="liked-songs" options={{ title: t('likedSongs') }} />
     </Stack>
   );
 }

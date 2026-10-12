@@ -64,7 +64,7 @@ export default function QueueScreen() {
               <View style={styles.eyebrowRow}>
                 <Icon name="graphic-eq" size={16} color={Colors.primary} />
                 <ThemedText variant="label-sm" emphasis="primary" style={styles.eyebrow}>
-                  NOW PLAYING
+                  {t('nowPlayingEyebrowLabel')}
                 </ThemedText>
               </View>
               <View style={styles.nowPlayingCard}>
@@ -92,16 +92,16 @@ export default function QueueScreen() {
                   icon={currentLiked ? 'favorite' : 'favorite-border'}
                   iconSize={26}
                   color={currentLiked ? Colors.primary : Colors.text.medium}
-                  accessibilityLabel={currentLiked ? 'Unlike' : 'Like'}
+                  accessibilityLabel={currentLiked ? t('unlikeLabel') : t('likeLabel')}
                   onPress={() => toggleLike(current.id)}
                 />
-                <IconButton variant="ghost" icon="more-horiz" iconSize={24} accessibilityLabel="More options" onPress={openCurrentOptions} />
+                <IconButton variant="ghost" icon="more-horiz" iconSize={24} accessibilityLabel={t('moreOptionsLabel')} onPress={openCurrentOptions} />
               </View>
             </View>
           )}
 
           <View style={styles.section}>
-            <ThemedText variant="headline-md">Playing Next</ThemedText>
+            <ThemedText variant="headline-md">{t('playingNextLabel')}</ThemedText>
 
             {upcoming.length === 0 ? (
               <EmptyState icon="queue-music" title={t('queueEmpty')} hint={t('queueEmptyHint')} />
@@ -125,10 +125,10 @@ export default function QueueScreen() {
             <View style={styles.autoplayText}>
               <ThemedText variant="label-lg">{t('infinityAutoplay')}</ThemedText>
               <ThemedText variant="body-sm" emphasis="medium">
-                Keep playing similar music
+                {t('keepPlayingSimilarMusicHint')}
               </ThemedText>
             </View>
-            <Toggle value={autoplay} onValueChange={toggleAutoplay} accessibilityLabel="Infinity Autoplay" />
+            <Toggle value={autoplay} onValueChange={toggleAutoplay} accessibilityLabel={t('infinityAutoplay')} />
           </View>
         </ScrollView>
         <PlayerTransport />

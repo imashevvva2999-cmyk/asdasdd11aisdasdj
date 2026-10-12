@@ -52,11 +52,11 @@ export default function ProfileScreen() {
               uri={currentUser.photoUri}
               placeholderIcon="person"
               onPress={() => showToast(t('toastChangePhoto'), 'edit')}
-              accessibilityLabel="Change profile photo"
+              accessibilityLabel={t('changeProfilePhotoLabel')}
             />
             <IconButton
               icon="edit"
-              accessibilityLabel="Edit profile photo"
+              accessibilityLabel={t('editProfilePhotoLabel')}
               size={32}
               style={styles.editAvatarButton}
               onPress={() => showToast(t('toastChangePhoto'), 'edit')}

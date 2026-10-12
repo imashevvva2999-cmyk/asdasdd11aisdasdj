@@ -8,7 +8,7 @@
  * Usage: npx tsx scripts/verify-lyrics-state.mjs
  */
 import { hasDemoAudio, isDemoAudioInstrumental } from '../src/audio/demo-audio.ts';
-import { LYRICS_EMPTY, SAMPLE_LYRICS_NOTE, activeLineIndex, lyricPreview, lyricsState, lyricsStateFor } from '../src/lib/lyrics-state.ts';
+import { activeLineIndex, lyricPreview, lyricsEmptyCopy, lyricsState, lyricsStateFor, sampleLyricsNote } from '../src/lib/lyrics-state.ts';
 import { getLyricsForTrack, tracks } from '../src/mocks/index.ts';
 
 let failures = 0;
@@ -33,7 +33,7 @@ check('every lyrics entry in the data names its source', tracks.every((t) => {
   const lyrics = getLyricsForTrack(t.id);
   return lyrics === undefined || lyrics.source === 'catalog' || lyrics.source === 'sample';
 }));
-check('sample lyrics carry a visible label', SAMPLE_LYRICS_NOTE.label === 'Sample lyrics' && SAMPLE_LYRICS_NOTE.hint.length > 0);
+check('sample lyrics carry a visible label', sampleLyricsNote('en').label === 'Sample lyrics' && sampleLyricsNote('en').hint.length > 0);
 check('demo audio without lyrics → instrumental empty state', lyricsStateFor('horizon').kind === 'demo-instrumental');
 check('all 13 catalog demo recordings are currently flagged instrumental', tracks.filter((t) => hasDemoAudio(t.id)).every((t) => isDemoAudioInstrumental(t.id)));
 
@@ -62,10 +62,10 @@ check(
 check('nothing playing → none', lyricsStateFor(undefined).kind === 'none');
 check(
   'approved demo copy, verbatim',
-  LYRICS_EMPTY['demo-instrumental'].title === 'Lyrics unavailable for demo audio' &&
-    LYRICS_EMPTY['demo-instrumental'].hint === 'This demo recording is instrumental.',
+  lyricsEmptyCopy('en', 'demo-instrumental').title === 'Lyrics unavailable for demo audio' &&
+    lyricsEmptyCopy('en', 'demo-instrumental').hint === 'This demo recording is instrumental.',
 );
-check('existing empty copy kept', LYRICS_EMPTY.none.title === 'Lyrics unavailable');
+check('existing empty copy kept', lyricsEmptyCopy('en', 'none').title === 'Lyrics unavailable');
 
 const lines = [
   { timeMs: 1000, text: 'a' },
@@ -80,11 +80,11 @@ check('no lines → -1', activeLineIndex([], 5000) === -1);
 
 // The one-line preview under Now Playing's controls.
 const synced = { kind: 'synced', source: 'catalog', lines };
-check('preview before the first timestamp shows nothing (no line ahead of time)', lyricPreview(synced, 500) === undefined);
-check('preview shows the current line', lyricPreview(synced, 9000)?.text === 'b');
-check('catalog lyrics are labelled "Lyrics"', lyricPreview(synced, 9000)?.label === 'Lyrics');
-check('sample lyrics are labelled "Sample lyrics"', lyricPreview({ ...synced, source: 'sample' }, 9000)?.label === 'Sample lyrics');
-check('no preview without lyrics', lyricPreview({ kind: 'demo-instrumental' }, 9000) === undefined && lyricPreview({ kind: 'none' }, 9000) === undefined);
+check('preview before the first timestamp shows nothing (no line ahead of time)', lyricPreview(synced, 500, 'en') === undefined);
+check('preview shows the current line', lyricPreview(synced, 9000, 'en')?.text === 'b');
+check('catalog lyrics are labelled "Lyrics"', lyricPreview(synced, 9000, 'en')?.label === 'Lyrics');
+check('sample lyrics are labelled "Sample lyrics"', lyricPreview({ ...synced, source: 'sample' }, 9000, 'en')?.label === 'Sample lyrics');
+check('no preview without lyrics', lyricPreview({ kind: 'demo-instrumental' }, 9000, 'en') === undefined && lyricPreview({ kind: 'none' }, 9000, 'en') === undefined);
 
 if (failures > 0) {
   console.error(`\n${failures} lyrics-state check(s) failed.`);

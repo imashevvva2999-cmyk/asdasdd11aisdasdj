@@ -7,7 +7,7 @@ import { Colors, Radii, Spacing } from '@/constants/theme';
 import { unreadCountSubtitle, unreadRowPrefix } from '@/lib/i18n';
 import { goBack } from '@/lib/navigation';
 import { useAppStrings } from '@/state/locale-store';
-import { countUnread, useNotificationsStore, type DemoNotification } from '@/state/notifications-store';
+import { countUnread, notificationContent, useNotificationsStore, type DemoNotification } from '@/state/notifications-store';
 
 /**
  * Notifications drawer opened from the Search header bell. Frontend demo only
@@ -48,7 +48,7 @@ export default function NotificationsSheet() {
             {unread > 0 ? unreadCountSubtitle(locale, unread) : t('allCaughtUpLabel')}
           </ThemedText>
         </View>
-        <IconButton icon="close" size={36} accessibilityLabel="Close" onPress={() => goBack()} />
+        <IconButton icon="close" size={36} accessibilityLabel={t('closeLabel')} onPress={() => goBack()} />
       </View>
 
       {items.length === 0 ? (
@@ -60,33 +60,36 @@ export default function NotificationsSheet() {
             <TextLinkButton label={t('clearAll')} tone="muted" onPress={clearAll} />
           </View>
           <ScrollView contentContainerStyle={styles.list}>
-            {items.map((item) => (
-              <PressableScale
-                key={item.id}
-                accessibilityRole="button"
-                accessibilityLabel={`${item.read ? '' : unreadRowPrefix(locale)}${item.title}. ${item.body}`}
-                onPress={() => open(item)}
-                style={[styles.row, !item.read && styles.rowUnread]}
-              >
-                <View style={styles.iconTile}>
-                  <Icon name={item.icon} size={20} color={Colors.primary} />
-                </View>
-                <View style={styles.rowText}>
-                  <View style={styles.rowTitle}>
-                    <ThemedText variant="label-lg" numberOfLines={1} style={styles.flexText}>
-                      {item.title}
-                    </ThemedText>
-                    <ThemedText variant="body-sm" emphasis="low">
-                      {item.timeLabel}
+            {items.map((item) => {
+              const content = notificationContent(item.id, locale);
+              return (
+                <PressableScale
+                  key={item.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${item.read ? '' : unreadRowPrefix(locale)}${content.title}. ${content.body}`}
+                  onPress={() => open(item)}
+                  style={[styles.row, !item.read && styles.rowUnread]}
+                >
+                  <View style={styles.iconTile}>
+                    <Icon name={item.icon} size={20} color={Colors.primary} />
+                  </View>
+                  <View style={styles.rowText}>
+                    <View style={styles.rowTitle}>
+                      <ThemedText variant="label-lg" numberOfLines={1} style={styles.flexText}>
+                        {content.title}
+                      </ThemedText>
+                      <ThemedText variant="body-sm" emphasis="low">
+                        {content.timeLabel}
+                      </ThemedText>
+                    </View>
+                    <ThemedText variant="body-sm" emphasis="medium" numberOfLines={2}>
+                      {content.body}
                     </ThemedText>
                   </View>
-                  <ThemedText variant="body-sm" emphasis="medium" numberOfLines={2}>
-                    {item.body}
-                  </ThemedText>
-                </View>
-                {!item.read && <View style={styles.unreadDot} />}
-              </PressableScale>
-            ))}
+                  {!item.read && <View style={styles.unreadDot} />}
+                </PressableScale>
+              );
+            })}
           </ScrollView>
         </>
       )}

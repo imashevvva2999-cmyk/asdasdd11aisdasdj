@@ -45,7 +45,7 @@ export default function ArtistProfileScreen() {
     return (
       <ThemedView surface="canvas" style={styles.flex}>
         <ThemedText variant="body-md" emphasis="medium" style={styles.notFound}>
-          Artist not found.
+          {t('artistNotFoundLabel')}
         </ThemedText>
       </ThemedView>
     );
@@ -77,7 +77,7 @@ export default function ArtistProfileScreen() {
             <View style={styles.metaRow}>
               <View style={styles.metaDot} />
               <ThemedText variant="label-md" emphasis="medium">
-                {artist.monthlyListeners !== undefined ? `${formatListeners(artist.monthlyListeners)} monthly listeners` : null}
+                {artist.monthlyListeners !== undefined ? `${formatListeners(artist.monthlyListeners)} ${t('monthlyListenersSuffix')}` : null}
                 {artist.location ? ` • ${artist.location}` : ''}
               </ThemedText>
             </View>
@@ -121,7 +121,7 @@ export default function ArtistProfileScreen() {
 
         {popularTracks.length > 0 && (
           <View style={styles.section}>
-            <SectionHeader title="Popular" />
+            <SectionHeader title={t('popularSectionLabel')} />
             <View style={styles.trackList}>
               {popularTracks.map((track, index) => (
                 <TrackRow
@@ -144,14 +144,14 @@ export default function ArtistProfileScreen() {
 
         {releaseAlbums.length > 0 && (
           <View style={styles.section}>
-            <SectionHeader title="Releases" />
+            <SectionHeader title={t('releasesSectionLabel')} />
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hScroll}>
               {releaseAlbums.map((album) => (
                 <CoverCard
                   key={album!.id}
                   coverUri={album!.coverUri}
                   title={album!.title}
-                  subtitle={`${album!.type === 'ep' ? 'EP' : album!.type === 'single' ? 'Single' : 'Album'} • ${album!.year}`}
+                  subtitle={`${album!.type === 'ep' ? t('albumTypeEp') : album!.type === 'single' ? t('albumTypeSingle') : t('albumTypeAlbum')} • ${album!.year}`}
                   layout="below"
                   width={144}
                   onPress={() => router.push({ pathname: '/album/[id]', params: { id: album!.id } })}
@@ -163,7 +163,7 @@ export default function ArtistProfileScreen() {
 
         {fansAlsoLike.length > 0 && (
           <View style={styles.section}>
-            <SectionHeader title="Fans Also Like" />
+            <SectionHeader title={t('fansAlsoLikeLabel')} />
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hScroll}>
               {fansAlsoLike.map((other) => (
                 <AvatarCard
@@ -171,7 +171,7 @@ export default function ArtistProfileScreen() {
                   photoUri={other!.photoUri}
                   name={other!.name}
                   verified={other!.verified}
-                  metaLabel="Artist"
+                  metaLabel={t('artistLabel')}
                   size={64}
                   style={styles.fanCard}
                   onPress={() => router.push({ pathname: '/artist/[id]', params: { id: other!.id } })}
@@ -183,7 +183,7 @@ export default function ArtistProfileScreen() {
 
         {artist.bio && (
           <View style={styles.section}>
-            <SectionHeader title="About" />
+            <SectionHeader title={t('aboutSectionLabel')} />
             <View style={styles.aboutCard}>
               {(artist.location || artist.genres?.length) && (
                 <ThemedText variant="label-md" emphasis="primary">

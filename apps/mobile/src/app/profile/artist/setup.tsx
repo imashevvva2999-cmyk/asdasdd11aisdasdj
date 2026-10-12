@@ -8,6 +8,7 @@ import { Artwork, Chip, FormCard, Icon, IconButton, PillButton, TextField } from
 import { sampleImageChoices } from '@/constants/stitch-artwork';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useArtistStore } from '@/state/artist-store';
+import { useAppStrings } from '@/state/locale-store';
 
 const BIO_MAX_LENGTH = 300;
 
@@ -47,6 +48,7 @@ export default function ArtistSetupScreen() {
   // bundled sample images, same approach as Upload Track's cover picker.
   const [photoIndex, setPhotoIndex] = useState<number | null>(null);
   const photoUri = photoIndex === null ? undefined : sampleImageChoices[photoIndex];
+  const { t } = useAppStrings();
 
   const trimmedName = stageName.trim();
   const canCreate = trimmedName.length > 0;
@@ -75,22 +77,22 @@ export default function ArtistSetupScreen() {
             <Artwork shape="circle" size={128} radius={64} uri={photoUri} placeholderIcon="add-a-photo" />
             <IconButton
               icon="photo-camera"
-              accessibilityLabel={photoUri ? 'Change artist photo' : 'Add artist photo'}
+              accessibilityLabel={photoUri ? t('changeArtistPhotoLabel') : t('addArtistPhotoLabel')}
               size={36}
               color={Colors.text.high}
               style={styles.cameraButton}
               onPress={() => setPhotoIndex((index) => (index === null ? 0 : (index + 1) % sampleImageChoices.length))}
             />
           </View>
-          <ThemedText variant="label-lg">Artist Photo</ThemedText>
+          <ThemedText variant="label-lg">{t('artistPhotoLabel')}</ThemedText>
         </View>
 
         <FormCard>
-          <TextField raised label="Artist / Stage Name" placeholder="Your stage name" value={stageName} onChangeText={setStageName} />
+          <TextField raised label={t('stageNameLabel')} placeholder={t('stageNamePlaceholder')} value={stageName} onChangeText={setStageName} />
 
           <View style={styles.field}>
             <ThemedText variant="label-md" emphasis="primary">
-              Primary Genre
+              {t('primaryGenreLabel')}
             </ThemedText>
             <View style={styles.chipGrid}>
               {GENRE_OPTIONS.map((option) => (
@@ -107,8 +109,8 @@ export default function ArtistSetupScreen() {
           <View style={styles.field}>
             <TextField
               raised
-              label="Short Bio"
-              placeholder="Tell listeners about your sound"
+              label={t('shortBioLabel')}
+              placeholder={t('shortBioPlaceholder')}
               value={bio}
               onChangeText={(text) => setBio(text.slice(0, BIO_MAX_LENGTH))}
               maxLength={BIO_MAX_LENGTH}
@@ -122,18 +124,18 @@ export default function ArtistSetupScreen() {
 
           <TextField
             raised
-            label="Location / Base City"
-            placeholder="City, Country"
+            label={t('locationFieldLabel')}
+            placeholder={t('locationFieldPlaceholder')}
             value={location}
             onChangeText={setLocation}
             leftAccessory={<Icon name="location-on" size={18} color={Colors.primary} />}
           />
         </FormCard>
 
-        <PillButton label="Create Artist Profile" trailingIcon="arrow-forward" disabled={!canCreate} onPress={handleCreate} style={styles.cta} />
+        <PillButton label={t('createArtistProfileLabel')} trailingIcon="arrow-forward" disabled={!canCreate} onPress={handleCreate} style={styles.cta} />
 
         <ThemedText variant="body-sm" emphasis="low" style={styles.disclaimer}>
-          By creating a profile, you agree to Mmusic&apos;s Artist Terms. Local preview — nothing is sent or verified.
+          {t('artistTermsDisclaimer')}
         </ThemedText>
       </ScrollView>
     </ThemedView>

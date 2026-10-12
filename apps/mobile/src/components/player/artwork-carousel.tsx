@@ -23,7 +23,9 @@ import {
   resolveSwipe,
   rubberBand,
 } from '@/lib/gesture-math';
+import { artworkAccessibilityLabel } from '@/lib/i18n';
 import { getTrackById, type TrackId } from '@/mocks';
+import { useAppStrings } from '@/state/locale-store';
 import { usePlayerStore } from '@/state/player-store';
 import { CAROUSEL_SPRING, REDUCED_SETTLE_MS, canStep, carouselPos, carouselTarget, usePlayPosition } from '@/state/player-surface';
 
@@ -149,7 +151,8 @@ export function ArtworkCarousel({
   }, [paused, reduceMotion, pausedScale]);
   const scaleStyle = useAnimatedStyle(() => ({ transform: [{ scale: pausedScale.value }] }));
 
-  const currentTitle = getTrackById(currentId ?? '')?.title ?? 'Artwork';
+  const { t, locale } = useAppStrings();
+  const currentTitle = getTrackById(currentId ?? '')?.title ?? t('artworkFallbackLabel');
   const slots: { id: TrackId | undefined; at: number }[] = [
     { id: prevId, at: pos - 1 },
     { id: currentId, at: pos },
@@ -162,12 +165,8 @@ export function ArtworkCarousel({
         style={[{ width: size, height: size }, styles.shadow, scaleStyle]}
         accessible
         accessibilityRole="adjustable"
-        accessibilityLabel={`Artwork: ${currentTitle}`}
-        accessibilityHint={
-          tappable
-            ? 'Open the player. Swipe left for the next track, right for the previous one'
-            : 'Swipe left for the next track, right for the previous one'
-        }
+        accessibilityLabel={artworkAccessibilityLabel(locale, currentTitle)}
+        accessibilityHint={tappable ? t('openPlayerSwipeHint') : t('swipeTrackHint')}
         accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }, ...(tappable ? [{ name: 'activate' as const }] : [])]}
         onAccessibilityAction={(event) => {
           if (event.nativeEvent.actionName === 'increment') swipeTo(1);

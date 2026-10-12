@@ -2,6 +2,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, View, type GestureResponderEvent, type ViewStyle } from 'react-native';
 
 import { Colors, Radii, Spacing } from '@/constants/theme';
+import { removeItemAccessibilityLabel } from '@/lib/i18n';
+import { useAppStrings } from '@/state/locale-store';
 
 import { Icon } from './icon';
 import { PressableScale } from './pressable-scale';
@@ -96,6 +98,7 @@ export type RemovableChipProps = {
 
 /** Recent-search style chip with an inline remove (×) button (docs/screens.md §3.2 S-03). */
 export function RemovableChip({ label, onPress, onRemove, style }: RemovableChipProps) {
+  const { locale } = useAppStrings();
   return (
     <PressableScale onPress={onPress} accessibilityRole={onRemove ? undefined : 'button'} style={[removableStyles.base, style]}>
       <ThemedText variant="label-md" emphasis="medium">
@@ -104,7 +107,7 @@ export function RemovableChip({ label, onPress, onRemove, style }: RemovableChip
       {onRemove && (
         <PressableScale
           accessibilityRole="button"
-          accessibilityLabel={`Remove ${label}`}
+          accessibilityLabel={removeItemAccessibilityLabel(locale, label)}
           onPress={onRemove}
           style={removableStyles.removeButton}
         >

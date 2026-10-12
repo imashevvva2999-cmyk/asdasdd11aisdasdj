@@ -9,11 +9,20 @@ import { Artwork, Chip, EmptyState, Icon, PressableScale } from '@/components/ui
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useHydrated } from '@/hooks/use-hydrated';
 import { formatKgsAmount } from '@/lib/format-currency';
+import type { AppStringKey } from '@/lib/i18n';
 import { groupSupportHistory, supportDateLabel, type SupportDateMode } from '@/lib/support-dates';
 import { getArtistById, type SupportHistoryEntry } from '@/mocks';
+import { useAppStrings } from '@/state/locale-store';
 import { useSupportStore } from '@/state/support-store';
 
 const FILTERS = ['All', 'This Month'] as const;
+type FilterKey = (typeof FILTERS)[number];
+
+/** Internal filter VALUES stay fixed English strings; only the label is localized. */
+const FILTER_LABEL_KEYS: Record<FilterKey, AppStringKey> = {
+  All: 'filterAll',
+  'This Month': 'filterThisMonthLabel',
+};
 
 /**
  * S-22 Support History (docs/screens.md §3.12). Local/mock donation history
@@ -25,7 +34,8 @@ const FILTERS = ['All', 'This Month'] as const;
  */
 export default function SupportHistoryScreen() {
   const history = useSupportStore((s) => s.history);
-  const [filter, setFilter] = useState<(typeof FILTERS)[number]>('All');
+  const [filter, setFilter] = useState<FilterKey>('All');
+  const { t, locale } = useAppStrings();
 
   const visibleHistory = useMemo(() => {
     if (filter === 'All') return history;
@@ -42,14 +52,14 @@ export default function SupportHistoryScreen() {
   // (UTC, months only); after hydration: the visitor's time zone, Today / Last Week.
   const hydrated = useHydrated();
   const dateMode: SupportDateMode = hydrated ? { kind: 'live', now: new Date() } : { kind: 'static' };
-  const grouped = groupSupportHistory(visibleHistory, dateMode);
+  const grouped = groupSupportHistory(visibleHistory, dateMode, locale);
 
   return (
     <ThemedView surface="canvas" style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.heroCard}>
           <ThemedText variant="mono-num" emphasis="medium" style={styles.upperLabel}>
-            Total Supported
+            {t('totalSupportedLabel')}
           </ThemedText>
           <View style={styles.totalRow}>
             <ThemedText variant="display-lg">{formatKgsAmount(totalSupported)}</ThemedText>
@@ -58,22 +68,22 @@ export default function SupportHistoryScreen() {
             </ThemedText>
           </View>
           <ThemedText variant="body-md" emphasis="medium">
-            Direct patronage to {distinctArtistCount} {distinctArtistCount === 1 ? 'creator' : 'creators'}
+            {t('directPatronageToPrefix')} {distinctArtistCount} {distinctArtistCount === 1 ? t('creatorSingular') : t('creatorPlural')}
           </ThemedText>
-          <DemoNotice text="Demo history" style={styles.demoNotice} />
+          <DemoNotice text={t('demoHistoryLabel')} style={styles.demoNotice} />
         </View>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
           {FILTERS.map((item) => (
-            <Chip key={item} label={item} selected={item === filter} onPress={() => setFilter(item)} />
+            <Chip key={item} label={t(FILTER_LABEL_KEYS[item])} selected={item === filter} onPress={() => setFilter(item)} />
           ))}
         </ScrollView>
 
         {visibleHistory.length === 0 ? (
           <EmptyState
             icon="volunteer-activism"
-            title="You haven't supported any artists yet"
-            hint="Open an artist's profile and tap Support to send direct patronage."
+            title={t('noSupportHistoryTitle')}
+            hint={t('noSupportHistoryHint')}
           />
         ) : (
           grouped.map(([period, entries]) => (
@@ -83,7 +93,7 @@ export default function SupportHistoryScreen() {
                   {period}
                 </ThemedText>
                 <ThemedText variant="label-md" emphasis="medium">
-                  {entries.length} {entries.length === 1 ? 'Grant' : 'Grants'}
+                  {entries.length} {entries.length === 1 ? t('grantSingular') : t('grantPlural')}
                 </ThemedText>
               </View>
               <View style={styles.entries}>
@@ -99,7 +109,7 @@ export default function SupportHistoryScreen() {
           <View style={styles.footerIcon}>
             <Icon name="account-balance" size={20} color={Colors.text.high} />
           </View>
-          <ThemedText variant="label-lg">MBANK Direct Creator Network</ThemedText>
+          <ThemedText variant="label-lg">{t('mbankDirectCreatorNetworkLabel')}</ThemedText>
         </View>
       </ScrollView>
     </ThemedView>
@@ -108,6 +118,7 @@ export default function SupportHistoryScreen() {
 
 function SupportHistoryRow({ entry, dateMode }: { entry: SupportHistoryEntry; dateMode: SupportDateMode }) {
   const artist = getArtistById(entry.artistId);
+  const { t, locale } = useAppStrings();
 
   return (
     <PressableScale
@@ -120,10 +131,10 @@ function SupportHistoryRow({ entry, dateMode }: { entry: SupportHistoryEntry; da
         <Artwork shape="circle" size={48} radius={24} uri={artist?.photoUri} placeholderIcon="person" />
         <View style={styles.rowText}>
           <ThemedText variant="headline-sm" numberOfLines={1}>
-            {artist?.name ?? 'Unknown artist'}
+            {artist?.name ?? t('unknownArtistLabel')}
           </ThemedText>
           <ThemedText variant="body-sm" emphasis="medium">
-            Direct Fan Patronage
+            {t('directFanPatronageLabel')}
           </ThemedText>
         </View>
         {artist && <Icon name="chevron-right" color={Colors.text.medium} />}
@@ -131,10 +142,10 @@ function SupportHistoryRow({ entry, dateMode }: { entry: SupportHistoryEntry; da
       <View style={styles.rowFooter}>
         <View style={styles.statusDot} />
         <ThemedText variant="label-md" style={styles.rowFooterText}>
-          {formatKgsAmount(entry.amount)} сом • Completed
+          {formatKgsAmount(entry.amount)} сом • {t('completedStatusLabel')}
         </ThemedText>
         <ThemedText variant="label-md" emphasis="medium">
-          {supportDateLabel(entry.createdAt, dateMode)}
+          {supportDateLabel(entry.createdAt, dateMode, locale)}
         </ThemedText>
       </View>
     </PressableScale>

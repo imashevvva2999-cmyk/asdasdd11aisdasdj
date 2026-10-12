@@ -9,12 +9,21 @@ import { ThemedView } from '@/components/themed-view';
 import { Artwork, IconButton, PillButton, TrackRow } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
 import { useToast } from '@/hooks/use-toast';
+import { curatedByLabel, sortAccessibilityLabel, sortedByToastLabel, type AppStringKey } from '@/lib/i18n';
 import { nextSortMode, sortTracks, type TrackSortMode } from '@/lib/sort-tracks';
-import { getTrackById, playlists, type Track } from '@/mocks';
+import { getTrackById, playlistDurationLabel, playlists, type Track } from '@/mocks';
 import { useLibraryStore } from '@/state/library-store';
 import { useAppStrings } from '@/state/locale-store';
 import { usePlayerStore } from '@/state/player-store';
 import { usePlaylistsStore } from '@/state/playlists-store';
+
+/** Internal sort VALUES stay these fixed English strings; only the label is
+ * localized, via this map — same pattern as Liked Songs' own table. */
+const TRACK_SORT_LABEL_KEYS: Record<TrackSortMode, AppStringKey> = {
+  'Default order': 'sortDefaultOrderLabel',
+  Title: 'titleLabel',
+  Artist: 'artistLabel',
+};
 
 /** Pre-renders every catalog playlist for the static website, so a direct link
  * or refresh serves that playlist's own HTML (React #418: the shared `[id]`
@@ -43,7 +52,7 @@ export default function PlaylistScreen() {
   const toggleDownloaded = useLibraryStore((s) => s.toggleDownloaded);
   const [sortMode, setSortMode] = useState<TrackSortMode>('Default order');
   const { showToast, toast } = useToast();
-  const { t } = useAppStrings();
+  const { t, locale } = useAppStrings();
 
   const trackList = useMemo(
     () => sortTracks((playlist?.trackIds ?? []).map((trackId) => getTrackById(trackId)).filter((t): t is Track => Boolean(t)), sortMode),
@@ -54,7 +63,7 @@ export default function PlaylistScreen() {
     return (
       <ThemedView surface="canvas" style={styles.flex}>
         <ThemedText variant="body-md" emphasis="medium" style={styles.notFound}>
-          Playlist not found.
+          {t('playlistNotFoundMessage')}
         </ThemedText>
       </ThemedView>
     );
@@ -69,7 +78,7 @@ export default function PlaylistScreen() {
           <Artwork uri={playlist.coverUri} size={220} radius={24} />
           {playlist.editorial && (
             <ThemedText variant="label-sm" emphasis="primary" style={styles.eyebrow}>
-              Editorial Playlist
+              {t('editorialPlaylistLabel')}
             </ThemedText>
           )}
           <ThemedText variant="display-lg-mobile" style={styles.title} numberOfLines={2}>
@@ -81,11 +90,11 @@ export default function PlaylistScreen() {
             </ThemedText>
           )}
           <ThemedText variant="body-sm" emphasis="medium">
-            {playlist.curator ? `Curated by ${playlist.curator}` : playlist.editorial ? 'Mmusic Editorial' : 'Your playlist'}
+            {playlist.curator ? curatedByLabel(locale, playlist.curator) : playlist.editorial ? t('mmusicEditorialLabel') : t('yourPlaylistLabel')}
           </ThemedText>
           <ThemedText variant="body-sm" emphasis="medium">
-            {formatTrackCount(trackList.length)}
-            {trackList.length > 0 && playlist.durationLabel ? ` • ${playlist.durationLabel}` : ''}
+            {formatTrackCount(trackList.length, t)}
+            {trackList.length > 0 && playlistDurationLabel(locale, playlist.id) ? ` • ${playlistDurationLabel(locale, playlist.id)}` : ''}
           </ThemedText>
 
           <View style={styles.actionsRow}>
@@ -109,21 +118,21 @@ export default function PlaylistScreen() {
             />
             <IconButton
               icon="sort"
-              accessibilityLabel={`Sort: ${sortMode}`}
+              accessibilityLabel={sortAccessibilityLabel(locale, t(TRACK_SORT_LABEL_KEYS[sortMode]))}
               onPress={() => {
                 const next = nextSortMode(sortMode);
                 setSortMode(next);
-                showToast(`Sorted by ${next}`, 'sort');
+                showToast(sortedByToastLabel(locale, t(TRACK_SORT_LABEL_KEYS[next])), 'sort');
               }}
             />
             <View style={styles.spacer} />
             <IconButton
               icon="shuffle"
-              accessibilityLabel="Shuffle"
+              accessibilityLabel={t('shuffleLabel')}
               onPress={() => playShuffled(trackIdsForPlayback)}
             />
             <PillButton
-              label="Play All"
+              label={t('playAllLabel')}
               leadingIcon="play-arrow"
               disabled={trackIdsForPlayback.length === 0}
               onPress={() => trackIdsForPlayback.length > 0 && play(trackIdsForPlayback[0]!, trackIdsForPlayback)}
@@ -134,7 +143,7 @@ export default function PlaylistScreen() {
         <View style={styles.trackList}>
           {trackList.length === 0 && (
             <ThemedText variant="body-md" emphasis="medium" style={styles.emptyHint}>
-              No tracks yet — add some from any track&apos;s ⋮ menu.
+              {t('noTracksYetMessage')}
             </ThemedText>
           )}
           {trackList.map((track, index) => (
@@ -161,8 +170,8 @@ export default function PlaylistScreen() {
   );
 }
 
-function formatTrackCount(count: number): string {
-  return `${count} ${count === 1 ? 'track' : 'tracks'}`;
+function formatTrackCount(count: number, t: (key: AppStringKey) => string): string {
+  return `${count} ${count === 1 ? t('trackCountSingular') : t('trackCountPlural')}`;
 }
 
 const styles = StyleSheet.create({

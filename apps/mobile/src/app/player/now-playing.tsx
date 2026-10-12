@@ -16,6 +16,7 @@ import { CircleButton, Icon, IconButton, PressableScale } from '@/components/ui'
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useContentWidth } from '@/hooks/use-content-width';
 import { useWindowSize } from '@/hooks/use-window-size';
+import { lyricOpenAccessibilityLabel } from '@/lib/i18n';
 import { lyricPreview, lyricsStateFor } from '@/lib/lyrics-state';
 import { goBack } from '@/lib/navigation';
 import { getAlbumById } from '@/mocks';
@@ -50,7 +51,7 @@ export default function NowPlayingScreen() {
   const liked = usePlayerStore((s) => (track ? s.isLiked(track.id) : false));
   const windowWidth = useContentWidth();
   const { height: windowHeight } = useWindowSize();
-  const { t } = useAppStrings();
+  const { t, locale } = useAppStrings();
   // Expand/collapse sheet (mini-player ↔ full player), Back/Escape handling.
   const { collapse, sheetStyle, backgroundStyle, chromeStyle, artStyle, markArtReady } = usePlayerSheet();
 
@@ -70,7 +71,7 @@ export default function NowPlayingScreen() {
       <ThemedView surface="canvas" style={styles.flex}>
         <SafeAreaView style={styles.emptyState}>
           <ThemedText variant="headline-sm" emphasis="medium">
-            Nothing is playing
+            {t('nothingPlayingLabel')}
           </ThemedText>
         </SafeAreaView>
       </ThemedView>
@@ -83,7 +84,7 @@ export default function NowPlayingScreen() {
   const demoAudio = hasDemoAudio(track.id);
   const artworkSize = playerArtworkSize(windowWidth, windowHeight);
   // One lyric line under the controls — only for real lyrics data (W3 spec §2.4).
-  const lyricLine = lyricPreview(lyricsStateFor(track.id), progressSec * 1000);
+  const lyricLine = lyricPreview(lyricsStateFor(track.id), progressSec * 1000, locale);
 
   return (
     <GestureDetector gesture={collapse}>
@@ -95,7 +96,7 @@ export default function NowPlayingScreen() {
       </Animated.View>
       <SafeAreaView style={styles.flex}>
         <Animated.View style={[styles.header, chromeStyle]}>
-          <IconButton variant="ghost" icon="keyboard-arrow-down" iconSize={28} accessibilityLabel="Collapse player" onPress={() => goBack()} />
+          <IconButton variant="ghost" icon="keyboard-arrow-down" iconSize={28} accessibilityLabel={t('collapsePlayerLabel')} onPress={() => goBack()} />
           <View style={styles.headerCenter}>
             <ThemedText variant="label-sm" style={[styles.headerEyebrow, styles.onColorMedium]}>
               {album ? t('playingFromAlbum') : t('playingLabel')}
@@ -108,7 +109,7 @@ export default function NowPlayingScreen() {
             variant="ghost"
             icon="more-horiz"
             iconSize={26}
-            accessibilityLabel="More options"
+            accessibilityLabel={t('moreOptionsLabel')}
             onPress={() => router.push({ pathname: '/sheets/options', params: { kind: 'track', id: track.id } })}
           />
         </Animated.View>
@@ -134,7 +135,7 @@ export default function NowPlayingScreen() {
               {demoAudio && (
                 <PressableScale
                   accessibilityRole="button"
-                  accessibilityLabel="Demo audio. View credits"
+                  accessibilityLabel={t('demoAudioViewCreditsLabel')}
                   onPress={() => router.push('/sheets/demo-audio')}
                   style={styles.demoPill}
                 >
@@ -148,7 +149,7 @@ export default function NowPlayingScreen() {
           </View>
           <IconButton
             icon={liked ? 'favorite' : 'favorite-border'}
-            accessibilityLabel={liked ? 'Unlike' : 'Like'}
+            accessibilityLabel={liked ? t('unlikeLabel') : t('likeLabel')}
             color={liked ? Colors.primary : ON_COLOR_MEDIUM}
             size={48}
             onPress={() => toggleLike(track.id)}
@@ -159,7 +160,7 @@ export default function NowPlayingScreen() {
           progressSec={progressSec}
           durationSec={durationSec}
           disabled={unavailable}
-          message={unavailable ? 'No audio in this preview' : failed ? "Couldn't play this track. Tap play to retry." : undefined}
+          message={unavailable ? t('noAudioPreviewMessage') : failed ? t('playbackErrorMessage') : undefined}
           onSeek={seekTo}
           labelStyle={styles.onColorMedium}
         />
@@ -169,26 +170,26 @@ export default function NowPlayingScreen() {
             variant="ghost"
             icon="shuffle"
             iconSize={22}
-            accessibilityLabel="Shuffle"
+            accessibilityLabel={t('shuffleLabel')}
             color={shuffle ? Colors.primary : ON_COLOR_QUIET}
             onPress={toggleShuffle}
           />
-          <IconButton variant="ghost" icon="skip-previous" iconSize={38} accessibilityLabel="Previous track" size={52} onPress={previous} />
+          <IconButton variant="ghost" icon="skip-previous" iconSize={38} accessibilityLabel={t('previousTrackLabel')} size={52} onPress={previous} />
           <CircleButton
             icon={isPlaying ? 'pause' : 'play-arrow'}
-            accessibilityLabel={unavailable ? 'Play (no audio in this preview)' : playback === 'loading' ? 'Loading. Pause' : isPlaying ? 'Pause' : 'Play'}
+            accessibilityLabel={unavailable ? t('playUnavailableLabel') : playback === 'loading' ? t('loadingPauseLabel') : isPlaying ? t('pauseLabel') : t('playLabel')}
             size={72}
             iconSize={36}
             disabled={unavailable}
             loading={playback === 'loading'}
             onPress={togglePlayPause}
           />
-          <IconButton variant="ghost" icon="skip-next" iconSize={38} accessibilityLabel="Next track" size={52} onPress={next} />
+          <IconButton variant="ghost" icon="skip-next" iconSize={38} accessibilityLabel={t('nextTrackLabel')} size={52} onPress={next} />
           <IconButton
             variant="ghost"
             iconSize={22}
             icon="repeat"
-            accessibilityLabel="Repeat"
+            accessibilityLabel={t('repeatLabel')}
             color={repeat !== 'off' ? Colors.primary : ON_COLOR_QUIET}
             onPress={cycleRepeat}
           />
@@ -197,7 +198,7 @@ export default function NowPlayingScreen() {
         {lyricLine !== undefined && (
           <PressableScale
             accessibilityRole="button"
-            accessibilityLabel={`${lyricLine.label}: ${lyricLine.text}. Open lyrics`}
+            accessibilityLabel={lyricOpenAccessibilityLabel(locale, lyricLine.label, lyricLine.text)}
             onPress={() => router.push('/player/lyrics')}
             style={styles.lyricPreview}
           >

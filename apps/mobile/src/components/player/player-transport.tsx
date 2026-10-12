@@ -2,6 +2,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { CircleButton, IconButton } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
+import { useAppStrings } from '@/state/locale-store';
 import { usePlayerStore } from '@/state/player-store';
 
 import { SeekBar } from './seek-bar';
@@ -24,6 +25,7 @@ export function PlayerTransport() {
   const next = usePlayerStore((s) => s.next);
   const previous = usePlayerStore((s) => s.previous);
   const seekTo = usePlayerStore((s) => s.seekTo);
+  const { t } = useAppStrings();
 
   if (!track) return null;
 
@@ -38,22 +40,22 @@ export function PlayerTransport() {
         progressSec={progressSec}
         durationSec={durationSec}
         disabled={unavailable}
-        message={unavailable ? 'No audio in this preview' : failed ? "Couldn't play this track. Tap play to retry." : undefined}
+        message={unavailable ? t('noAudioPreviewMessage') : failed ? t('playbackErrorMessage') : undefined}
         onSeek={seekTo}
         labelStyle={styles.onColorMedium}
       />
       <View style={styles.row}>
-        <IconButton variant="ghost" icon="skip-previous" iconSize={32} size={48} accessibilityLabel="Previous track" onPress={previous} />
+        <IconButton variant="ghost" icon="skip-previous" iconSize={32} size={48} accessibilityLabel={t('previousTrackLabel')} onPress={previous} />
         <CircleButton
           icon={isPlaying ? 'pause' : 'play-arrow'}
-          accessibilityLabel={unavailable ? 'Play (no audio in this preview)' : playback === 'loading' ? 'Loading. Pause' : isPlaying ? 'Pause' : 'Play'}
+          accessibilityLabel={unavailable ? t('playUnavailableLabel') : playback === 'loading' ? t('loadingPauseLabel') : isPlaying ? t('pauseLabel') : t('playLabel')}
           size={60}
           iconSize={30}
           disabled={unavailable}
           loading={playback === 'loading'}
           onPress={togglePlayPause}
         />
-        <IconButton variant="ghost" icon="skip-next" iconSize={32} size={48} accessibilityLabel="Next track" onPress={next} />
+        <IconButton variant="ghost" icon="skip-next" iconSize={32} size={48} accessibilityLabel={t('nextTrackLabel')} onPress={next} />
       </View>
     </View>
   );

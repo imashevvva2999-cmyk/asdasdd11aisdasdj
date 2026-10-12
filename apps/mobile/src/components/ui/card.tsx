@@ -6,6 +6,8 @@ import { getFallbackGradient } from '@/constants/fallback-artwork';
 import { type LocalOrRemoteImage, toImageSource } from '@/constants/stitch-artwork';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useHydrated } from '@/hooks/use-hydrated';
+import { moreOptionsForAccessibilityLabel, playItemAccessibilityLabel, playPauseTrackLabel } from '@/lib/i18n';
+import { useAppStrings } from '@/state/locale-store';
 
 import { Icon } from './icon';
 import { IconButton } from './button';
@@ -84,6 +86,7 @@ export function CoverCard({
   const coverWidth = surfaced && layout === 'below' ? width - Spacing.sm * 2 : width;
   const coverHeight = height ?? coverWidth;
   const hydrated = useHydrated();
+  const { t } = useAppStrings();
 
   const cover = (
     <View style={[cardStyles.coverBase, { width: coverWidth, height: coverHeight }, layout === 'overlay' && cardStyles.justifyEnd]}>
@@ -113,7 +116,7 @@ export function CoverCard({
       {layout === 'below' && onToggleLike && (
         <PressableScale
           accessibilityRole="button"
-          accessibilityLabel={liked ? 'Unlike' : 'Like'}
+          accessibilityLabel={liked ? t('unlikeLabel') : t('likeLabel')}
           onPress={onToggleLike}
           style={cardStyles.likeButton}
         >
@@ -201,6 +204,7 @@ export type FeaturedBannerProps = {
  * to 16:9; pass `height` for the fixed-height heroes used on Home/Search/Genre. */
 export function FeaturedBanner({ coverUri, title, subtitle, height, layout = 'overlay', onPlayPress, onPress, animated = false, paused = false, active = false, trackId, audioPlaying = false, onNextPress, onPreviousPress, style }: FeaturedBannerProps) {
   const hydrated = useHydrated();
+  const { t, locale } = useAppStrings();
 
   if (layout === 'footer') {
     return (
@@ -238,7 +242,7 @@ export function FeaturedBanner({ coverUri, title, subtitle, height, layout = 'ov
               variant="surface"
               icon="skip-previous"
               size={44}
-              accessibilityLabel="Previous track"
+              accessibilityLabel={t('previousTrackLabel')}
               onPress={onPreviousPress}
               style={cardStyles.footerBannerNextButton}
             />
@@ -246,7 +250,7 @@ export function FeaturedBanner({ coverUri, title, subtitle, height, layout = 'ov
           {onPlayPress && (
             <PressableScale
               accessibilityRole="button"
-              accessibilityLabel={`${active ? 'Pause' : 'Play'} ${title}`}
+              accessibilityLabel={playPauseTrackLabel(locale, active, title)}
               onPress={onPlayPress}
               style={cardStyles.footerBannerPlayButton}
             >
@@ -258,7 +262,7 @@ export function FeaturedBanner({ coverUri, title, subtitle, height, layout = 'ov
               variant="surface"
               icon="skip-next"
               size={44}
-              accessibilityLabel="Next track"
+              accessibilityLabel={t('nextTrackLabel')}
               onPress={onNextPress}
               style={cardStyles.footerBannerNextButton}
             />
@@ -410,6 +414,7 @@ export type QuickTileProps = {
  * play button or a quiet ⋯ menu (docs/screens.md §3.4 "Quick tile"; Home S-01). */
 export function QuickTile({ coverUri, title, onPress, onPlayPress, onMorePress, style }: QuickTileProps) {
   const hydrated = useHydrated();
+  const { locale } = useAppStrings();
 
   return (
     <PressableScale onPress={onPress} accessibilityRole={onPlayPress || onMorePress ? undefined : 'button'} style={[quickTileStyles.row, style]}>
@@ -428,12 +433,12 @@ export function QuickTile({ coverUri, title, onPress, onPlayPress, onMorePress, 
         {title}
       </ThemedText>
       {onPlayPress && (
-        <PressableScale accessibilityRole="button" accessibilityLabel={`Play ${title}`} onPress={onPlayPress} style={quickTileStyles.playButton}>
+        <PressableScale accessibilityRole="button" accessibilityLabel={playItemAccessibilityLabel(locale, title)} onPress={onPlayPress} style={quickTileStyles.playButton}>
           <Icon name="play-arrow" size={16} color={Colors.text.high} />
         </PressableScale>
       )}
       {onMorePress && (
-        <PressableScale accessibilityRole="button" accessibilityLabel={`More options for ${title}`} onPress={onMorePress} style={quickTileStyles.moreButton}>
+        <PressableScale accessibilityRole="button" accessibilityLabel={moreOptionsForAccessibilityLabel(locale, title)} onPress={onMorePress} style={quickTileStyles.moreButton}>
           <Icon name="more-horiz" size={20} color={Colors.text.medium} />
         </PressableScale>
       )}

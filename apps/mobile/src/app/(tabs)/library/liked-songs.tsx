@@ -7,11 +7,21 @@ import { ThemedView } from '@/components/themed-view';
 import { EmptyState, Icon, IconButton, PillButton, TrackRow } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useToast } from '@/hooks/use-toast';
+import { sortAccessibilityLabel, sortedByToastLabel, type AppStringKey } from '@/lib/i18n';
 import { nextSortMode, sortTracks, type TrackSortMode } from '@/lib/sort-tracks';
 import { getTrackById, type Track } from '@/mocks';
 import { useLibraryStore } from '@/state/library-store';
 import { useAppStrings } from '@/state/locale-store';
 import { usePlayerStore } from '@/state/player-store';
+
+/** Internal sort VALUES stay these fixed English strings (comparisons below use
+ * them); only the on-screen/accessibility LABEL is localized, via this map —
+ * same pattern as Library's own FILTER_LABEL_KEYS/SORT_LABEL_KEYS. */
+const TRACK_SORT_LABEL_KEYS: Record<TrackSortMode, AppStringKey> = {
+  'Default order': 'sortDefaultOrderLabel',
+  Title: 'titleLabel',
+  Artist: 'artistLabel',
+};
 
 const LIKED_SONGS_ID = 'liked-songs';
 
@@ -31,7 +41,7 @@ export default function LikedSongsScreen() {
   const toggleDownloaded = useLibraryStore((s) => s.toggleDownloaded);
   const [sortMode, setSortMode] = useState<TrackSortMode>('Default order');
   const { showToast, toast } = useToast();
-  const { t } = useAppStrings();
+  const { t, locale } = useAppStrings();
 
   const likedTracks = useMemo(
     () =>
@@ -56,24 +66,24 @@ export default function LikedSongsScreen() {
           </View>
           <View style={styles.heroText}>
             <ThemedText variant="label-sm" emphasis="primary" style={styles.eyebrow}>
-              Auto Playlist
+              {t('autoPlaylistLabel')}
             </ThemedText>
             <ThemedText variant="display-lg-mobile">{t('likedSongs')}</ThemedText>
             <ThemedText variant="body-sm" emphasis="medium">
-              {likedTracks.length} {likedTracks.length === 1 ? 'saved track' : 'saved tracks'}
+              {likedTracks.length} {likedTracks.length === 1 ? t('savedTrackSingular') : t('savedTrackPlural')}
             </ThemedText>
           </View>
         </View>
 
         <View style={styles.actionsRow}>
           <PillButton
-            label="Play All"
+            label={t('playAllLabel')}
             leadingIcon="play-arrow"
             disabled={likedTrackIdsOrdered.length === 0}
             onPress={() => likedTrackIdsOrdered.length > 0 && play(likedTrackIdsOrdered[0]!, likedTrackIdsOrdered)}
             style={styles.playAll}
           />
-          <IconButton icon="shuffle" size={48} accessibilityLabel="Shuffle" onPress={() => playShuffled(likedTrackIdsOrdered)} />
+          <IconButton icon="shuffle" size={48} accessibilityLabel={t('shuffleLabel')} onPress={() => playShuffled(likedTrackIdsOrdered)} />
           <View style={styles.spacer} />
           <IconButton
             variant="ghost"
@@ -91,17 +101,17 @@ export default function LikedSongsScreen() {
             size={40}
             icon="swap-vert"
             color={Colors.text.medium}
-            accessibilityLabel={`Sort: ${sortMode}`}
+            accessibilityLabel={sortAccessibilityLabel(locale, t(TRACK_SORT_LABEL_KEYS[sortMode]))}
             onPress={() => {
               const next = nextSortMode(sortMode);
               setSortMode(next);
-              showToast(`Sorted by ${next}`, 'sort');
+              showToast(sortedByToastLabel(locale, t(TRACK_SORT_LABEL_KEYS[next])), 'sort');
             }}
           />
         </View>
 
         {likedTracks.length === 0 ? (
-          <EmptyState icon="favorite-border" title="No liked songs yet" hint="Tap the heart on any track to save it here." />
+          <EmptyState icon="favorite-border" title={t('likedSongsEmptyTitle')} hint={t('likedSongsEmptyHint')} />
         ) : (
           <View style={styles.trackList}>
             {likedTracks.map((track, index) => (

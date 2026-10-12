@@ -39,14 +39,14 @@ export default function AlbumScreen() {
     return (
       <ThemedView surface="canvas" style={styles.flex}>
         <ThemedText variant="body-md" emphasis="medium" style={styles.notFound}>
-          Album not found.
+          {t('albumNotFoundMessage')}
         </ThemedText>
       </ThemedView>
     );
   }
 
   const trackList = (album.trackIds ?? []).map((trackId) => getTrackById(trackId)).filter(Boolean);
-  const typeLabel = album.type === 'ep' ? 'EP' : album.type === 'single' ? 'Single' : 'Album';
+  const typeLabel = album.type === 'ep' ? t('albumTypeEp') : album.type === 'single' ? t('albumTypeSingle') : t('albumTypeAlbum');
 
   return (
     <ThemedView surface="canvas" style={styles.flex}>
@@ -65,7 +65,7 @@ export default function AlbumScreen() {
             {album.artistName}
           </ThemedText>
           <ThemedText variant="body-sm" emphasis="medium">
-            {album.year} • {typeLabel} • {trackList.length || album.trackCount} {(trackList.length || album.trackCount) === 1 ? 'track' : 'tracks'}
+            {album.year} • {typeLabel} • {trackList.length || album.trackCount} {(trackList.length || album.trackCount) === 1 ? t('trackCountSingular') : t('trackCountPlural')}
           </ThemedText>
 
           <View style={styles.actionsRow}>
@@ -89,19 +89,19 @@ export default function AlbumScreen() {
             />
             <IconButton
               icon="more-horiz"
-              accessibilityLabel="More options"
+              accessibilityLabel={t('moreOptionsLabel')}
               onPress={() => router.push({ pathname: '/sheets/options', params: { kind: 'album', id: album.id } })}
             />
             <View style={styles.spacer} />
             <IconButton
               icon="shuffle"
-              accessibilityLabel="Shuffle"
+              accessibilityLabel={t('shuffleLabel')}
               disabled={trackList.length === 0}
               onPress={() => playShuffled(trackList.map((t) => t!.id))}
             />
             <CircleButton
               icon="play-arrow"
-              accessibilityLabel="Play album"
+              accessibilityLabel={t('playAlbumLabel')}
               size={56}
               iconSize={26}
               disabled={trackList.length === 0}
@@ -112,11 +112,11 @@ export default function AlbumScreen() {
 
         <View style={styles.trackList}>
           <ThemedText variant="label-sm" emphasis="medium" style={styles.overline}>
-            Tracks
+            {t('tracksHeaderLabel')}
           </ThemedText>
           {trackList.length === 0 ? (
             <ThemedText variant="body-sm" emphasis="medium" style={styles.emptyTracks}>
-              No tracks available in this preview.
+              {t('noTracksAvailableMessage')}
             </ThemedText>
           ) : (
             trackList.map((track, index) => (
@@ -138,7 +138,7 @@ export default function AlbumScreen() {
 
         <View style={styles.footerBlock}>
           <ThemedText variant="label-sm" emphasis="medium" style={styles.overline}>
-            Released {album.year}
+            {t('releasedPrefix')} {album.year}
           </ThemedText>
           <ThemedText variant="body-sm" emphasis="low" style={styles.footer}>
             ℗ {album.year} {album.artistName}

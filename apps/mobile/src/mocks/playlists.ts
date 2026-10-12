@@ -1,4 +1,5 @@
 import { generatedArtworkByPlaylistId, resolveArtwork, stitchArtworkByPlaylistId } from '@/constants/stitch-artwork';
+import { APP_STRINGS, type AppStringKey } from '@/lib/i18n';
 
 import type { Playlist } from './types';
 
@@ -32,4 +33,32 @@ for (const playlist of playlists) {
 
 export function getPlaylistById(id: string): Playlist | undefined {
   return playlists.find((playlist) => playlist.id === id);
+}
+
+/** Localized total-duration label for a catalog playlist (`durationLabel`
+ * above is the English fallback/fixture value only — screens should call
+ * this instead so the figure reads right in both locales). */
+const DURATION_KEYS: Record<string, AppStringKey> = {
+  'late-night-flow': 'durationLateNightFlow',
+  'late-night-driving': 'durationLateNightDriving',
+  'lofi-beats-to-code': 'durationLofiBeatsToCode',
+  'electronic-essentials': 'durationElectronicEssentials',
+  'this-is-solaris-echo': 'durationThisIsSolarisEcho',
+};
+
+export function playlistDurationLabel(locale: 'en' | 'ru', playlistId: string): string | undefined {
+  const key = DURATION_KEYS[playlistId];
+  return key ? APP_STRINGS[locale][key] : undefined;
+}
+
+/** Localized "Updated Xd ago" label for a catalog playlist — same fixture/fallback relationship as `playlistDurationLabel`. */
+const UPDATED_KEYS: Record<string, AppStringKey> = {
+  'late-night-flow': 'updatedLateNightFlow',
+  'late-night-driving': 'updatedLateNightDriving',
+  'electronic-essentials': 'updatedElectronicEssentials',
+};
+
+export function playlistUpdatedLabel(locale: 'en' | 'ru', playlistId: string): string | undefined {
+  const key = UPDATED_KEYS[playlistId];
+  return key ? APP_STRINGS[locale][key] : undefined;
 }

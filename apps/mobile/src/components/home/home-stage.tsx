@@ -8,8 +8,10 @@ import { SeekBar } from '@/components/player/seek-bar';
 import { ThemedText } from '@/components/themed-text';
 import { CircleButton, Icon, IconButton, PressableScale } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
+import { openPlayerAccessibilityLabel } from '@/lib/i18n';
 import { homeChromeOffset, homeChromeOpacity } from '@/lib/stage-math';
 import { createTapGuard, hasStartedPlayback } from '@/lib/stage-rules';
+import { useAppStrings } from '@/state/locale-store';
 import { usePlayerStore } from '@/state/player-store';
 import { expandOrigin, expandProgress, stageCoverRect } from '@/state/player-surface';
 
@@ -41,6 +43,7 @@ export function HomeStage({ onLayout }: { onLayout?: (event: LayoutChangeEvent) 
   const seekTo = usePlayerStore((s) => s.seekTo);
   const toggleLike = usePlayerStore((s) => s.toggleLike);
   const liked = usePlayerStore((s) => (track ? s.isLiked(track.id) : false));
+  const { t, locale } = useAppStrings();
   const coverRef = useRef<View>(null);
   // Growing into Now Playing: everything under the cover slides down and fades first.
   const chromeStyle = useAnimatedStyle(() => {
@@ -71,7 +74,7 @@ export function HomeStage({ onLayout }: { onLayout?: (event: LayoutChangeEvent) 
           tap is a pointer gesture, and the capsule steps aside for the stage). */}
       <PressableScale
         accessibilityRole="button"
-        accessibilityLabel={`Open player: ${track.title} by ${track.artistName}`}
+        accessibilityLabel={openPlayerAccessibilityLabel(locale, track.title, track.artistName)}
         onPress={openPlayer}
         style={styles.titleBlock}
       >
@@ -84,17 +87,17 @@ export function HomeStage({ onLayout }: { onLayout?: (event: LayoutChangeEvent) 
       </PressableScale>
 
       <View style={styles.transport}>
-        <IconButton variant="ghost" icon="skip-previous" iconSize={34} size={48} accessibilityLabel="Previous track" onPress={previous} />
+        <IconButton variant="ghost" icon="skip-previous" iconSize={34} size={48} accessibilityLabel={t('previousTrackLabel')} onPress={previous} />
         <CircleButton
           icon={isPlaying ? 'pause' : 'play-arrow'}
-          accessibilityLabel={unavailable ? 'Play (no audio in this preview)' : playback === 'loading' ? 'Loading. Pause' : isPlaying ? 'Pause' : 'Play'}
+          accessibilityLabel={unavailable ? t('playUnavailableLabel') : playback === 'loading' ? t('loadingPauseLabel') : isPlaying ? t('pauseLabel') : t('playLabel')}
           size={64}
           iconSize={32}
           disabled={unavailable}
           loading={playback === 'loading'}
           onPress={togglePlayPause}
         />
-        <IconButton variant="ghost" icon="skip-next" iconSize={34} size={48} accessibilityLabel="Next track" onPress={next} />
+        <IconButton variant="ghost" icon="skip-next" iconSize={34} size={48} accessibilityLabel={t('nextTrackLabel')} onPress={next} />
       </View>
 
       <View style={styles.seek}>
@@ -102,7 +105,7 @@ export function HomeStage({ onLayout }: { onLayout?: (event: LayoutChangeEvent) 
           progressSec={progressSec}
           durationSec={durationSec}
           disabled={unavailable}
-          message={unavailable ? 'No audio in this preview' : failed ? "Couldn't play this track. Tap play to retry." : undefined}
+          message={unavailable ? t('noAudioPreviewMessage') : failed ? t('playbackErrorMessage') : undefined}
           onSeek={seekTo}
           labelStyle={styles.onColorMedium}
         />
@@ -112,12 +115,12 @@ export function HomeStage({ onLayout }: { onLayout?: (event: LayoutChangeEvent) 
         <QuietAction
           icon={liked ? 'favorite' : 'favorite-border'}
           iconColor={liked ? Colors.primary : ON_COLOR_MEDIUM}
-          label={liked ? 'Liked' : 'Like'}
-          accessibilityLabel={liked ? 'Unlike' : 'Like'}
+          label={liked ? t('likedStateLabel') : t('likeLabel')}
+          accessibilityLabel={liked ? t('unlikeLabel') : t('likeLabel')}
           onPress={() => toggleLike(track.id)}
         />
-        <QuietAction icon="lyrics" label="Lyrics" onPress={() => router.push('/player/lyrics')} />
-        <QuietAction icon="queue-music" label="Up next" onPress={() => router.push('/player/queue')} />
+        <QuietAction icon="lyrics" label={t('lyricsTab')} onPress={() => router.push('/player/lyrics')} />
+        <QuietAction icon="queue-music" label={t('upNextLabel')} onPress={() => router.push('/player/queue')} />
       </View>
       </Animated.View>
     </View>

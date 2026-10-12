@@ -8,7 +8,7 @@ import { Colors, Spacing } from '@/constants/theme';
 import { useHydratedSearchParams } from '@/hooks/use-hydrated-search-params';
 import { addedToPlaylistToast } from '@/lib/i18n';
 import { goBack } from '@/lib/navigation';
-import { getTrackById } from '@/mocks';
+import { getTrackById, playlistUpdatedLabel } from '@/mocks';
 import { useAppStrings } from '@/state/locale-store';
 import { usePlaylistsStore } from '@/state/playlists-store';
 import { usePlayerStore } from '@/state/player-store';
@@ -65,7 +65,7 @@ function AddToPlaylistContent({ trackIdParam }: { trackIdParam: string | undefin
             {t('addToPlaylistSubtitle')}
           </ThemedText>
         </View>
-        <IconButton icon="close" size={36} accessibilityLabel="Close" onPress={() => goBack()} />
+        <IconButton icon="close" size={36} accessibilityLabel={t('closeLabel')} onPress={() => goBack()} />
       </View>
 
       {track && (
@@ -106,7 +106,7 @@ function AddToPlaylistContent({ trackIdParam }: { trackIdParam: string | undefin
 
         {filteredPlaylists.map((playlist) => {
           const added = trackId ? (playlist.trackIds ?? []).includes(trackId) : false;
-          const countLabel = `${playlist.trackCount} ${playlist.trackCount === 1 ? t('playlistSongSingular') : t('playlistSongPlural')}${playlist.updatedLabel ? ` • ${playlist.updatedLabel}` : ''}`;
+          const countLabel = `${playlist.trackCount} ${playlist.trackCount === 1 ? t('playlistSongSingular') : t('playlistSongPlural')}${playlistUpdatedLabel(locale, playlist.id) ? ` • ${playlistUpdatedLabel(locale, playlist.id)}` : ''}`;
           return (
             <PlaylistPickerRow
               key={playlist.id}

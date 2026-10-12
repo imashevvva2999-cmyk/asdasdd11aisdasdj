@@ -106,7 +106,7 @@ function OptionsSheetContent({ kind, id }: { kind: OptionsKind; id: string }) {
             {header.subtitle}
           </ThemedText>
         </View>
-        <IconButton icon="close" size={36} accessibilityLabel="Close" onPress={() => goBack()} />
+        <IconButton icon="close" size={36} accessibilityLabel={t('closeLabel')} onPress={() => goBack()} />
       </View>
 
       <ScrollView contentContainerStyle={styles.list}>

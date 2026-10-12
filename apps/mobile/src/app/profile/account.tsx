@@ -7,6 +7,7 @@ import { Icon, PressableScale, ValueRow } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useToast } from '@/hooks/use-toast';
 import { currentUser } from '@/mocks';
+import { useAppStrings } from '@/state/locale-store';
 
 /**
  * Account & Security — Profile Hub destination (S-23). The design only defines
@@ -18,34 +19,35 @@ import { currentUser } from '@/mocks';
 export default function AccountScreen() {
   const { showToast, toast } = useToast();
   const sections = useSettingsSections(showToast);
+  const { t } = useAppStrings();
 
   return (
     <ThemedView surface="canvas" style={settingsScreenStyles.flex}>
       <ScrollView contentContainerStyle={settingsScreenStyles.content}>
-        <SettingsCard title="Account" icon="person">
-          <ValueRow title="Name" value={currentUser.name} />
-          <ValueRow title="Username" value={`@${currentUser.username}`} />
-          <ValueRow title="Member since" value={String(currentUser.memberSinceYear)} />
+        <SettingsCard title={t('accountSectionLabel')} icon="person">
+          <ValueRow title={t('personNameLabel')} value={currentUser.name} />
+          <ValueRow title={t('usernameFieldLabel')} value={`@${currentUser.username}`} />
+          <ValueRow title={t('memberSince')} value={String(currentUser.memberSinceYear)} />
         </SettingsCard>
 
-        <SettingsCard title="Security" icon="verified-user">
-          <ValueRow title="MBANK Connected ID" value="Connected (demo)" />
+        <SettingsCard title={t('securitySectionLabel')} icon="verified-user">
+          <ValueRow title={t('mbankConnectedId')} value={t('connectedDemoLabel')} />
         </SettingsCard>
 
         <SettingsSectionCard section={sections.account} />
 
         <ThemedText variant="body-sm" emphasis="low" style={styles.note}>
-          Demo account — no real MBANK account is linked in this preview.
+          {t('demoAccountNote')}
         </ThemedText>
 
         <PressableScale
           accessibilityRole="button"
-          onPress={() => showToast("Signing out isn't available in this preview", 'logout')}
+          onPress={() => showToast(t('toastSignOut'), 'logout')}
           style={styles.logOut}
         >
           <Icon name="logout" size={20} color={Colors.primary} />
           <ThemedText variant="label-lg" emphasis="primary">
-            Log Out
+            {t('logOut')}
           </ThemedText>
         </PressableScale>
       </ScrollView>
