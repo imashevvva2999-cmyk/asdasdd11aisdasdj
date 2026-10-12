@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { StyleSheet } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -103,6 +103,38 @@ export function DiscoveryFeed({ size }: { size: { width: number; height: number 
     [step],
   );
 
+  // Web-only: mouse-wheel / trackpad scroll, handled separately from the Pan
+  // gesture above (wheel events are not pointer-drag events). A physical
+  // trackpad swipe fires many small wheel events, including a long tail of
+  // inertial/momentum events after the finger lifts — so this locks after the
+  // FIRST wheel event that crosses the threshold, ignoring every subsequent
+  // wheel event until WHEEL_IDLE_MS has passed with no new events (meaning the
+  // physical gesture, including its momentum tail, has actually ended).
+  const WHEEL_THRESHOLD = 24;
+  const WHEEL_IDLE_MS = 220;
+  const wheelLocked = useRef(false);
+  const wheelIdleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleWheel = useCallback(
+    (e: { deltaY: number; preventDefault?: () => void }) => {
+      if (wheelIdleTimer.current) clearTimeout(wheelIdleTimer.current);
+      wheelIdleTimer.current = setTimeout(() => {
+        wheelLocked.current = false;
+      }, WHEEL_IDLE_MS);
+      if (wheelLocked.current) return;
+      if (Math.abs(e.deltaY) < WHEEL_THRESHOLD) return;
+      const dir: 1 | -1 = e.deltaY > 0 ? 1 : -1;
+      const base = carouselTarget.value;
+      if (!canStep(base, dir)) return;
+      wheelLocked.current = true;
+      const target = base + dir;
+      carouselTarget.value = target;
+      carouselPos.value = reduceMotion ? target : withSpring(target, CAROUSEL_SPRING);
+      swipeTo(dir);
+    },
+    [reduceMotion, swipeTo],
+  );
+
   const stripStyle = useAnimatedStyle(() => ({ transform: [{ translateY: carouselPos.value * step }] }));
 
   const slots: { id: TrackId | undefined; at: number; current: boolean }[] = [
@@ -113,7 +145,7 @@ export function DiscoveryFeed({ size }: { size: { width: number; height: number 
 
   return (
     <GestureDetector gesture={pan}>
-      <Animated.View style={[{ width: size.width, height: size.height }, styles.clip]}>
+      <Animated.View style={[{ width: size.width, height: size.height }, styles.clip]} {...({ onWheel: handleWheel } as object)}>
         <Animated.View style={[StyleSheet.absoluteFill, stripStyle]}>
           {slots.map(({ id, at, current }) =>
             id ? <Slot key={`slot-${at}`} trackId={id} at={at} size={size} step={step} current={current} playing={isPlaying} /> : null,
