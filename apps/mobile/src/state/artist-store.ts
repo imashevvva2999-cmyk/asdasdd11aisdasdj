@@ -58,17 +58,26 @@ const LOCAL_ARTIST_ID: ArtistId = 'me';
 type ArtistState = {
   artist?: Artist;
   entries: ArtistTrackEntry[];
+  /** DEMO SEED ONLY — not real analytics. Set by the dev-only demo-seed
+   * screen (apps/mobile/src/app/dev-demo-seed.tsx) for the private
+   * management demo. Absent in a normal session. */
+  demoStreams?: number;
 
   createArtistProfile: (input: ArtistSetupInput) => Artist;
   saveDraft: (input: UploadTrackInput) => ArtistTrackEntry;
   publishTrack: (trackId: TrackId) => Promise<void>;
   simulateError: (trackId: TrackId) => void;
   retryPublish: (trackId: TrackId) => Promise<void>;
+  /** DEMO SEED ONLY — sets realistic-looking, clearly non-real numbers on
+   * the current local artist for demo purposes. No-op if no artist profile
+   * exists yet. Does not touch any catalog artist other than `'me'`. */
+  seedDemoStats: (listeners: number, streams: number) => void;
 };
 
 export const useArtistStore = create<ArtistState>((set, get) => ({
   artist: undefined,
   entries: [],
+  demoStreams: undefined,
 
   createArtistProfile: (input) => {
     const artist: Artist = {
@@ -141,5 +150,13 @@ export const useArtistStore = create<ArtistState>((set, get) => ({
 
   retryPublish: async (trackId) => {
     await get().publishTrack(trackId);
+  },
+
+  seedDemoStats: (listeners, streams) => {
+    const artist = get().artist;
+    if (!artist) return;
+    const updatedArtist: Artist = { ...artist, monthlyListeners: listeners };
+    addMockArtist(updatedArtist);
+    set({ artist: updatedArtist, demoStreams: streams });
   },
 }));
