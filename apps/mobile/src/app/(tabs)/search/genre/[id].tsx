@@ -153,7 +153,8 @@ export default function GenreDetailScreen() {
             <EmptyState icon="library-music" title={t('genreNoTracksTitle')} hint={t('genreNoTracksHint')} />
           ) : (
             <>
-              <SectionTitle title={`${t('genreTrendingLiveTopPrefix')} ${trending.length}`} subtitle={t('mostPlayedRightNow')} />
+              {/* Neutral wording: no play/trending data exists, so no "live"/"most played" claim. */}
+              <SectionTitle title={`${t('genreTopPrefix')} ${trending.length}`} subtitle={t('genreTracksSubtitle')} />
               <View style={styles.trackList}>
                 {trending.map((track, index) => (
                   <TrackRow
