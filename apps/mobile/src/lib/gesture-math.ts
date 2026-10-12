@@ -30,6 +30,14 @@ export const CAROUSEL_FAIL_OFFSET_Y = 10;
 /** A press that moves further than this is a drag, not a tap. */
 export const TAP_MAX_DISTANCE = 8;
 
+/** The Late Night Flow discovery feed claims a vertical drag after this many
+ * points — mirrors CAROUSEL_ACTIVE_OFFSET_X exactly, just on the other axis,
+ * for the same committed feel. */
+export const DISCOVERY_ACTIVE_OFFSET_Y = 12;
+/** …and gives it up (a stray horizontal movement) once the finger has moved
+ * this far horizontally first — mirrors CAROUSEL_FAIL_OFFSET_Y. */
+export const DISCOVERY_FAIL_OFFSET_X = 10;
+
 export type CarouselClaim = 'tap' | 'swipe' | 'scroll' | 'none';
 
 /**
