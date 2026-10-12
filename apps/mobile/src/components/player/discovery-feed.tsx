@@ -186,26 +186,49 @@ export function DiscoveryFeed({ size }: { size: { width: number; height: number 
   const WHEEL_THRESHOLD = 24;
   const WHEEL_IDLE_MS = 220;
   const wheelLocked = useRef(false);
+  // Mirrors the Pan gesture's `lockedAxis` shape, but kept as a separate
+  // plain ref since `handleWheel` is a JS-thread callback, not a worklet —
+  // sharing `lockedAxis` would need extra UI/JS plumbing not worth it here.
+  const wheelAxisRef = useRef<'x' | 'y' | null>(null);
   const wheelIdleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleWheel = useCallback(
-    (e: { deltaY: number; preventDefault?: () => void }) => {
+    (e: { deltaX: number; deltaY: number; preventDefault?: () => void }) => {
       if (wheelIdleTimer.current) clearTimeout(wheelIdleTimer.current);
       wheelIdleTimer.current = setTimeout(() => {
         wheelLocked.current = false;
+        wheelAxisRef.current = null;
       }, WHEEL_IDLE_MS);
+      // Ignores every event of an already-locked physical gesture (including
+      // its momentum tail) on EITHER axis — same single-step-per-gesture
+      // contract as before, just now covering both axes.
       if (wheelLocked.current) return;
-      if (Math.abs(e.deltaY) < WHEEL_THRESHOLD) return;
-      const dir: 1 | -1 = e.deltaY > 0 ? 1 : -1;
-      const base = carouselTarget.value;
-      if (!canStep(base, dir)) return;
-      wheelLocked.current = true;
-      const target = base + dir;
-      carouselTarget.value = target;
-      carouselPos.value = reduceMotion ? target : withSpring(target, CAROUSEL_SPRING);
-      swipeTo(dir);
+
+      const axis: 'x' | 'y' = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? 'x' : 'y';
+      wheelAxisRef.current = axis;
+      const delta = axis === 'x' ? e.deltaX : e.deltaY;
+      if (Math.abs(delta) < WHEEL_THRESHOLD) return;
+      const dir: 1 | -1 = delta > 0 ? 1 : -1;
+
+      if (axis === 'y') {
+        const base = carouselTarget.value;
+        if (!canStep(base, dir)) return;
+        wheelLocked.current = true;
+        const target = base + dir;
+        carouselTarget.value = target;
+        carouselPos.value = reduceMotion ? target : withSpring(target, CAROUSEL_SPRING);
+        swipeTo(dir);
+      } else {
+        const base = genreTarget.value;
+        if (!canStepGenre(base, dir, genreCount)) return;
+        wheelLocked.current = true;
+        const target = base + dir;
+        genreTarget.value = target;
+        genrePos.value = reduceMotion ? target : withSpring(target, CAROUSEL_SPRING);
+        commitGenreChange(dir);
+      }
     },
-    [reduceMotion, swipeTo],
+    [reduceMotion, swipeTo, genreCount, commitGenreChange],
   );
 
   const genreStripStyle = useAnimatedStyle(() => ({ transform: [{ translateX: genrePos.value * width }] }));
