@@ -4,7 +4,9 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { EmptyState, Icon, IconButton, PressableScale, SheetScreen, TextLinkButton } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
+import { unreadCountSubtitle, unreadRowPrefix } from '@/lib/i18n';
 import { goBack } from '@/lib/navigation';
+import { useAppStrings } from '@/state/locale-store';
 import { countUnread, useNotificationsStore, type DemoNotification } from '@/state/notifications-store';
 
 /**
@@ -18,6 +20,7 @@ export default function NotificationsSheet() {
   const markAllRead = useNotificationsStore((s) => s.markAllRead);
   const clearAll = useNotificationsStore((s) => s.clearAll);
   const unread = countUnread(items);
+  const { locale, t } = useAppStrings();
 
   function open(item: DemoNotification) {
     markRead(item.id);
@@ -34,34 +37,34 @@ export default function NotificationsSheet() {
       <View style={styles.header}>
         <View style={styles.headerText}>
           <View style={styles.titleRow}>
-            <ThemedText variant="headline-md">Notifications</ThemedText>
+            <ThemedText variant="headline-md">{t('notificationsLabel')}</ThemedText>
             <View style={styles.demoPill}>
               <ThemedText variant="label-sm" emphasis="medium">
-                DEMO
+                {t('demoPillLabel')}
               </ThemedText>
             </View>
           </View>
           <ThemedText variant="body-sm" emphasis="medium">
-            {unread > 0 ? `${unread} unread` : 'All caught up'}
+            {unread > 0 ? unreadCountSubtitle(locale, unread) : t('allCaughtUpLabel')}
           </ThemedText>
         </View>
         <IconButton icon="close" size={36} accessibilityLabel="Close" onPress={() => goBack()} />
       </View>
 
       {items.length === 0 ? (
-        <EmptyState icon="notifications-none" title="No notifications" hint="New releases and support receipts will show up here." />
+        <EmptyState icon="notifications-none" title={t('notificationsEmptyTitle')} hint={t('notificationsEmptyHint')} />
       ) : (
         <>
           <View style={styles.actions}>
-            <TextLinkButton label="Mark all read" tone="muted" onPress={markAllRead} disabled={unread === 0} />
-            <TextLinkButton label="Clear all" tone="muted" onPress={clearAll} />
+            <TextLinkButton label={t('markAllReadLabel')} tone="muted" onPress={markAllRead} disabled={unread === 0} />
+            <TextLinkButton label={t('clearAll')} tone="muted" onPress={clearAll} />
           </View>
           <ScrollView contentContainerStyle={styles.list}>
             {items.map((item) => (
               <PressableScale
                 key={item.id}
                 accessibilityRole="button"
-                accessibilityLabel={`${item.read ? '' : 'Unread. '}${item.title}. ${item.body}`}
+                accessibilityLabel={`${item.read ? '' : unreadRowPrefix(locale)}${item.title}. ${item.body}`}
                 onPress={() => open(item)}
                 style={[styles.row, !item.read && styles.rowUnread]}
               >

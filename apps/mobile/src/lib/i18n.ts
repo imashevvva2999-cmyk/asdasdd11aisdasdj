@@ -200,6 +200,43 @@ const EN_STRINGS = {
   queueEmpty: 'Queue is empty',
   queueEmptyHint: 'Play a track to start building your queue.',
   infinityAutoplay: 'Infinity Autoplay',
+
+  // Sheets & dialogs
+  supportArtistTitle: 'Support Artist',
+  artistNotFoundLabel: 'Artist not found.',
+  moreAmountLabel: 'More',
+  customAmountPlaceholder: 'Custom amount',
+  amountValidationError: 'Enter an amount greater than 0.',
+  selectAnAmount: 'Select an amount',
+  directPayoutToArtistLabel: 'Direct payout to artist',
+  addToPlaylistTitle: 'Add to Playlist',
+  addToPlaylistSubtitle: 'Choose one or more destinations',
+  findPlaylistPlaceholder: 'Find a playlist…',
+  newPlaylistLabel: 'New Playlist',
+  newPlaylistAutoInsertSubtitle: 'Create and auto-insert current track',
+  doneLabel: 'Done',
+  demoPillLabel: 'DEMO',
+  allCaughtUpLabel: 'All caught up',
+  notificationsEmptyTitle: 'No notifications',
+  notificationsEmptyHint: 'New releases and support receipts will show up here.',
+  markAllReadLabel: 'Mark all read',
+  pageNotFoundTitle: 'Page not found',
+  pageNotFoundHint: "This link doesn't lead anywhere in Mmusic. It may be mistyped or no longer available.",
+  goToHomeLabel: 'Go to Home',
+  likeLabel: 'Like',
+  unlikeLabel: 'Unlike',
+  addToPlaylistRowLabel: 'Add to playlist',
+  viewArtistLabel: 'View artist',
+  goToAlbumLabel: 'Go to album',
+  shareTrackLabel: 'Share track',
+  playLabel: 'Play',
+  shuffleLabel: 'Shuffle',
+  nothingToShowLabel: 'Nothing to show.',
+  closeLabel: 'Close',
+  saveToLibraryLabel: 'Save to Library',
+  removeFromLibraryLabel: 'Remove from Library',
+  shareAlbumLabel: 'Share album',
+  sharePlaylistLabel: 'Share playlist',
 } as const;
 
 const RU_STRINGS: Record<keyof typeof EN_STRINGS, string> = {
@@ -382,6 +419,42 @@ const RU_STRINGS: Record<keyof typeof EN_STRINGS, string> = {
   queueEmpty: 'Очередь пуста',
   queueEmptyHint: 'Запустите трек, чтобы начать собирать очередь.',
   infinityAutoplay: 'Бесконечное автовоспроизведение',
+
+  supportArtistTitle: 'Поддержать артиста',
+  artistNotFoundLabel: 'Артист не найден.',
+  moreAmountLabel: 'Другая',
+  customAmountPlaceholder: 'Своя сумма',
+  amountValidationError: 'Введите сумму больше 0.',
+  selectAnAmount: 'Выберите сумму',
+  directPayoutToArtistLabel: 'Прямая выплата артисту',
+  addToPlaylistTitle: 'Добавить в плейлист',
+  addToPlaylistSubtitle: 'Выберите один или несколько плейлистов',
+  findPlaylistPlaceholder: 'Найти плейлист…',
+  newPlaylistLabel: 'Новый плейлист',
+  newPlaylistAutoInsertSubtitle: 'Создать и сразу добавить текущий трек',
+  doneLabel: 'Готово',
+  demoPillLabel: 'ДЕМО',
+  allCaughtUpLabel: 'Все прочитано',
+  notificationsEmptyTitle: 'Нет уведомлений',
+  notificationsEmptyHint: 'Здесь появятся новые релизы и квитанции поддержки.',
+  markAllReadLabel: 'Отметить все как прочитанные',
+  pageNotFoundTitle: 'Страница не найдена',
+  pageNotFoundHint: 'Такой ссылки в Mmusic не существует. Возможно, она набрана с ошибкой или больше не действует.',
+  goToHomeLabel: 'На главную',
+  likeLabel: 'Добавить в Любимые',
+  unlikeLabel: 'Убрать из Любимых',
+  addToPlaylistRowLabel: 'Добавить в плейлист',
+  viewArtistLabel: 'Перейти к артисту',
+  goToAlbumLabel: 'Перейти к альбому',
+  shareTrackLabel: 'Поделиться треком',
+  playLabel: 'Включить',
+  shuffleLabel: 'Перемешать',
+  nothingToShowLabel: 'Нечего показать.',
+  closeLabel: 'Закрыть',
+  saveToLibraryLabel: 'Сохранить в библиотеку',
+  removeFromLibraryLabel: 'Удалить из библиотеки',
+  shareAlbumLabel: 'Поделиться альбомом',
+  sharePlaylistLabel: 'Поделиться плейлистом',
 };
 
 export type AppStringKey = keyof typeof EN_STRINGS;
@@ -428,4 +501,34 @@ const GENRE_TAG_KEYS: Record<string, AppStringKey> = {
 export function genreTagLabel(locale: 'en' | 'ru', label: string): string {
   const key = GENRE_TAG_KEYS[label];
   return key ? APP_STRINGS[locale][key] : label;
+}
+
+/** "Direct artist patronage for {name}" — Support sheet subtitle; embeds a live artist name (data). */
+export function artistPatronageSubtitle(locale: 'en' | 'ru', artistName: string): string {
+  return locale === 'ru' ? `Прямая поддержка артиста ${artistName}` : `Direct artist patronage for ${artistName}`;
+}
+
+/** "Support with {amount} сом" CTA once an amount is chosen; "сом" stays untranslated like every other KGS amount in the app. */
+export function supportWithAmountLabel(locale: 'en' | 'ru', formattedAmount: string): string {
+  return locale === 'ru' ? `Поддержать на ${formattedAmount} сом` : `Support with ${formattedAmount} сом`;
+}
+
+/** "Added to {playlistTitle}" toast on the Add to Playlist sheet; playlist title is data. */
+export function addedToPlaylistToast(locale: 'en' | 'ru', playlistTitle: string): string {
+  return locale === 'ru' ? `Добавлено в «${playlistTitle}»` : `Added to ${playlistTitle}`;
+}
+
+/** "{count} unread" — Notifications sheet subtitle when there are unread items. */
+export function unreadCountSubtitle(locale: 'en' | 'ru', count: number): string {
+  return locale === 'ru' ? `${count} непрочитанных` : `${count} unread`;
+}
+
+/** "Unread. " a11y prefix read before a notification row's title/body. */
+export function unreadRowPrefix(locale: 'en' | 'ru'): string {
+  return locale === 'ru' ? 'Непрочитано. ' : 'Unread. ';
+}
+
+/** Options sheet's share fallback toast; the deep link itself (kind/id) is data, never translated. */
+export function sharingNotSupportedToast(locale: 'en' | 'ru', deepLink: string): string {
+  return locale === 'ru' ? `Общий доступ здесь не поддерживается — ссылка: ${deepLink}` : `Sharing isn't supported here — link: ${deepLink}`;
 }

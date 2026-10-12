@@ -7,8 +7,10 @@ import { AmountChip, Icon, IconButton, PillButton, SheetScreen, TextField } from
 import { Colors, Spacing } from '@/constants/theme';
 import { useHydratedSearchParams } from '@/hooks/use-hydrated-search-params';
 import { formatKgsAmount } from '@/lib/format-currency';
+import { artistPatronageSubtitle, supportWithAmountLabel } from '@/lib/i18n';
 import { goBack } from '@/lib/navigation';
 import { getArtistById, quickDonationAmountsKgs } from '@/mocks';
+import { useAppStrings } from '@/state/locale-store';
 import { useSupportStore } from '@/state/support-store';
 
 /**
@@ -24,6 +26,7 @@ export default function SupportSheet() {
 
 function SupportSheetContent({ artistId }: { artistId: string | undefined }) {
   const artist = getArtistById(artistId ?? '');
+  const { locale, t } = useAppStrings();
 
   const storeArtistId = useSupportStore((s) => s.artistId);
   const amount = useSupportStore((s) => s.amount);
@@ -45,7 +48,7 @@ function SupportSheetContent({ artistId }: { artistId: string | undefined }) {
     return (
       <SheetScreen>
         <ThemedText variant="body-md" emphasis="medium" style={styles.notFound}>
-          Artist not found.
+          {t('artistNotFoundLabel')}
         </ThemedText>
       </SheetScreen>
     );
@@ -86,9 +89,9 @@ function SupportSheetContent({ artistId }: { artistId: string | undefined }) {
     <SheetScreen>
       <View style={styles.header}>
         <View style={styles.headerText}>
-          <ThemedText variant="headline-sm">Support Artist</ThemedText>
+          <ThemedText variant="headline-sm">{t('supportArtistTitle')}</ThemedText>
           <ThemedText variant="body-sm" emphasis="medium">
-            Direct artist patronage for {artist.name}
+            {artistPatronageSubtitle(locale, artist.name)}
           </ThemedText>
         </View>
         <IconButton icon="close" accessibilityLabel="Close" onPress={() => goBack()} />
@@ -106,13 +109,13 @@ function SupportSheetContent({ artistId }: { artistId: string | undefined }) {
               style={styles.amountItem}
             />
           ))}
-          <AmountChip icon="favorite" label="More" selected={showCustomInput} onPress={handleMorePress} style={styles.amountItem} />
+          <AmountChip icon="favorite" label={t('moreAmountLabel')} selected={showCustomInput} onPress={handleMorePress} style={styles.amountItem} />
         </View>
 
         {showCustomInput && (
           <View style={styles.customAmountBlock}>
             <TextField
-              placeholder="Custom amount"
+              placeholder={t('customAmountPlaceholder')}
               keyboardType="number-pad"
               value={customAmountText}
               onChangeText={handleCustomAmountChange}
@@ -124,14 +127,14 @@ function SupportSheetContent({ artistId }: { artistId: string | undefined }) {
             />
             {!isCustomValid && customAmountText.trim().length > 0 && (
               <ThemedText variant="body-sm" style={styles.validationError}>
-                Enter an amount greater than 0.
+                {t('amountValidationError')}
               </ThemedText>
             )}
           </View>
         )}
 
         <PillButton
-          label={amount ? `Support with ${formatKgsAmount(amount)} сом` : 'Select an amount'}
+          label={amount ? supportWithAmountLabel(locale, formatKgsAmount(amount)) : t('selectAnAmount')}
           leadingIcon="bolt"
           disabled={!amount}
           onPress={handleContinue}
@@ -141,7 +144,7 @@ function SupportSheetContent({ artistId }: { artistId: string | undefined }) {
         <View style={styles.footerNote}>
           <Icon name="lock" size={14} color={Colors.text.low} />
           <ThemedText variant="body-sm" emphasis="medium">
-            Direct payout to artist
+            {t('directPayoutToArtistLabel')}
           </ThemedText>
         </View>
       </ScrollView>

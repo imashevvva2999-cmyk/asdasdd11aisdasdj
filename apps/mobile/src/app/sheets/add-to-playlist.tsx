@@ -6,8 +6,10 @@ import { ThemedText } from '@/components/themed-text';
 import { Artwork, Icon, IconButton, MenuRow, PillButton, PlaylistPickerRow, SheetScreen, TextField, Toast } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
 import { useHydratedSearchParams } from '@/hooks/use-hydrated-search-params';
+import { addedToPlaylistToast } from '@/lib/i18n';
 import { goBack } from '@/lib/navigation';
 import { getTrackById } from '@/mocks';
+import { useAppStrings } from '@/state/locale-store';
 import { usePlaylistsStore } from '@/state/playlists-store';
 import { usePlayerStore } from '@/state/player-store';
 
@@ -32,6 +34,7 @@ function AddToPlaylistContent({ trackIdParam }: { trackIdParam: string | undefin
   const playlists = usePlaylistsStore((s) => s.playlists);
   const addTrackToPlaylist = usePlaylistsStore((s) => s.addTrackToPlaylist);
   const removeTrackFromPlaylist = usePlaylistsStore((s) => s.removeTrackFromPlaylist);
+  const { locale, t } = useAppStrings();
 
   const [query, setQuery] = useState('');
   const [toastLabel, setToastLabel] = useState<string | null>(null);
@@ -48,7 +51,7 @@ function AddToPlaylistContent({ trackIdParam }: { trackIdParam: string | undefin
       removeTrackFromPlaylist(playlistId, trackId);
     } else {
       addTrackToPlaylist(playlistId, trackId);
-      setToastLabel(`Added to ${playlistTitle}`);
+      setToastLabel(addedToPlaylistToast(locale, playlistTitle));
       setTimeout(() => setToastLabel(null), 2000);
     }
   }
@@ -57,9 +60,9 @@ function AddToPlaylistContent({ trackIdParam }: { trackIdParam: string | undefin
     <SheetScreen>
       <View style={styles.header}>
         <View style={styles.headerText}>
-          <ThemedText variant="headline-md">Add to Playlist</ThemedText>
+          <ThemedText variant="headline-md">{t('addToPlaylistTitle')}</ThemedText>
           <ThemedText variant="body-sm" emphasis="medium">
-            Choose one or more destinations
+            {t('addToPlaylistSubtitle')}
           </ThemedText>
         </View>
         <IconButton icon="close" size={36} accessibilityLabel="Close" onPress={() => goBack()} />
@@ -81,7 +84,7 @@ function AddToPlaylistContent({ trackIdParam }: { trackIdParam: string | undefin
 
       <View style={styles.searchBlock}>
         <TextField
-          placeholder="Find a playlist…"
+          placeholder={t('findPlaylistPlaceholder')}
           value={query}
           onChangeText={setQuery}
           leftAccessory={<Icon name="search" size={18} color={Colors.text.medium} />}
@@ -91,8 +94,8 @@ function AddToPlaylistContent({ trackIdParam }: { trackIdParam: string | undefin
       <ScrollView contentContainerStyle={styles.list}>
         <MenuRow
           icon="playlist-add"
-          title="New Playlist"
-          subtitle="Create and auto-insert current track"
+          title={t('newPlaylistLabel')}
+          subtitle={t('newPlaylistAutoInsertSubtitle')}
           onPress={() =>
             router.push({
               pathname: '/create-playlist',
@@ -103,7 +106,7 @@ function AddToPlaylistContent({ trackIdParam }: { trackIdParam: string | undefin
 
         {filteredPlaylists.map((playlist) => {
           const added = trackId ? (playlist.trackIds ?? []).includes(trackId) : false;
-          const countLabel = `${playlist.trackCount} ${playlist.trackCount === 1 ? 'song' : 'songs'}${playlist.updatedLabel ? ` • ${playlist.updatedLabel}` : ''}`;
+          const countLabel = `${playlist.trackCount} ${playlist.trackCount === 1 ? t('playlistSongSingular') : t('playlistSongPlural')}${playlist.updatedLabel ? ` • ${playlist.updatedLabel}` : ''}`;
           return (
             <PlaylistPickerRow
               key={playlist.id}
@@ -117,7 +120,7 @@ function AddToPlaylistContent({ trackIdParam }: { trackIdParam: string | undefin
         })}
       </ScrollView>
 
-      <PillButton label="Done" variant="secondary" onPress={() => goBack()} style={styles.doneButton} />
+      <PillButton label={t('doneLabel')} variant="secondary" onPress={() => goBack()} style={styles.doneButton} />
 
       <Toast message={toastLabel ? `✓ ${toastLabel}` : ''} icon="check" visible={Boolean(toastLabel)} />
     </SheetScreen>

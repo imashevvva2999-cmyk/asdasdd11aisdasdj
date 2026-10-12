@@ -6,6 +6,7 @@ import { Artwork, IconButton, MenuRow, PillButton, SheetScreen, TextLinkButton }
 import { Spacing } from '@/constants/theme';
 import { useHydratedSearchParams } from '@/hooks/use-hydrated-search-params';
 import { useToast } from '@/hooks/use-toast';
+import { sharingNotSupportedToast } from '@/lib/i18n';
 import { goBack } from '@/lib/navigation';
 import { shareEntity } from '@/lib/share';
 import { forYouMenuActions } from '@/lib/for-you-menu';
@@ -41,7 +42,7 @@ function OptionsSheetContent({ kind, id }: { kind: OptionsKind; id: string }) {
   const toggleSaved = useLibraryStore((s) => s.toggleSaved);
   const toggleDownloaded = useLibraryStore((s) => s.toggleDownloaded);
   const { showToast, toast } = useToast();
-  const { t } = useAppStrings();
+  const { locale, t } = useAppStrings();
 
   const playMix = usePlayerStore((s) => s.play);
   const shuffleMix = usePlayerStore((s) => s.playShuffled);
@@ -57,9 +58,9 @@ function OptionsSheetContent({ kind, id }: { kind: OptionsKind; id: string }) {
       : kind === 'album' && album
         ? { title: album.title, subtitle: album.artistName, coverUri: album.coverUri }
         : kind === 'playlist' && playlist
-          ? { title: playlist.title, subtitle: playlist.curator ?? 'Playlist', coverUri: playlist.coverUri }
+          ? { title: playlist.title, subtitle: playlist.curator ?? t('playlistLabel'), coverUri: playlist.coverUri }
           : kind === 'mix' && mix
-            ? { title: mix.title, subtitle: `${mix.trackIds.length} tracks`, coverUri: mix.coverUri }
+            ? { title: mix.title, subtitle: `${mix.trackIds.length} ${t('tracksCountSuffix')}`, coverUri: mix.coverUri }
             : undefined;
 
   async function handleShare() {
@@ -68,7 +69,7 @@ function OptionsSheetContent({ kind, id }: { kind: OptionsKind; id: string }) {
     if (shared) {
       goBack();
     } else {
-      showToast(`Sharing isn't supported here — link: mmusic://${kind}/${id}`, 'share');
+      showToast(sharingNotSupportedToast(locale, `mmusic://${kind}/${id}`), 'share');
     }
   }
 
@@ -86,9 +87,9 @@ function OptionsSheetContent({ kind, id }: { kind: OptionsKind; id: string }) {
     return (
       <SheetScreen>
         <ThemedText variant="body-md" emphasis="medium" style={styles.notFound}>
-          Nothing to show.
+          {t('nothingToShowLabel')}
         </ThemedText>
-        <TextLinkButton label="Close" onPress={() => goBack()} style={styles.cancel} />
+        <TextLinkButton label={t('closeLabel')} onPress={() => goBack()} style={styles.cancel} />
       </SheetScreen>
     );
   }
@@ -114,19 +115,19 @@ function OptionsSheetContent({ kind, id }: { kind: OptionsKind; id: string }) {
             <MenuRow
               variant="flat"
               icon={likedTrackIds.has(track.id) ? 'favorite' : 'favorite-border'}
-              title={likedTrackIds.has(track.id) ? 'Unlike' : 'Like'}
+              title={likedTrackIds.has(track.id) ? t('unlikeLabel') : t('likeLabel')}
               onPress={() => toggleLike(track.id)}
             />
             <MenuRow
               variant="flat"
               icon="playlist-add"
-              title="Add to playlist"
+              title={t('addToPlaylistRowLabel')}
               onPress={() => router.replace({ pathname: '/sheets/add-to-playlist', params: { trackId: track.id } })}
             />
-            <MenuRow variant="flat" icon="person" title="View artist" onPress={() => goTo('/artist/[id]', track.artistId)} />
-            {album && <MenuRow variant="flat" icon="album" title="Go to album" onPress={() => goTo('/album/[id]', album.id)} />}
+            <MenuRow variant="flat" icon="person" title={t('viewArtistLabel')} onPress={() => goTo('/artist/[id]', track.artistId)} />
+            {album && <MenuRow variant="flat" icon="album" title={t('goToAlbumLabel')} onPress={() => goTo('/album/[id]', album.id)} />}
             <MenuRow variant="flat" icon="volunteer-activism" title={t('donate')} onPress={() => goToSupport(track.artistId)} />
-            <MenuRow variant="flat" icon="share" title="Share track" onPress={handleShare} />
+            <MenuRow variant="flat" icon="share" title={t('shareTrackLabel')} onPress={handleShare} />
           </>
         )}
 
@@ -138,7 +139,7 @@ function OptionsSheetContent({ kind, id }: { kind: OptionsKind; id: string }) {
                   key={action}
                   variant="flat"
                   icon="play-arrow"
-                  title="Play"
+                  title={t('playLabel')}
                   onPress={() => {
                     playMix(mix.trackIds[0]!, mix.trackIds);
                     goBack();
@@ -149,14 +150,14 @@ function OptionsSheetContent({ kind, id }: { kind: OptionsKind; id: string }) {
                   key={action}
                   variant="flat"
                   icon="shuffle"
-                  title="Shuffle"
+                  title={t('shuffleLabel')}
                   onPress={() => {
                     shuffleMix(mix.trackIds);
                     goBack();
                   }}
                 />
               ) : mix.artistId ? (
-                <MenuRow key={action} variant="flat" icon="person" title="View artist" onPress={() => goTo('/artist/[id]', mix.artistId!)} />
+                <MenuRow key={action} variant="flat" icon="person" title={t('viewArtistLabel')} onPress={() => goTo('/artist/[id]', mix.artistId!)} />
               ) : null,
             )}
           </>
@@ -167,28 +168,28 @@ function OptionsSheetContent({ kind, id }: { kind: OptionsKind; id: string }) {
             <MenuRow
               variant="flat"
               icon={isSaved ? 'library-add-check' : 'library-add'}
-              title={isSaved ? 'Remove from Library' : 'Save to Library'}
+              title={isSaved ? t('removeFromLibraryLabel') : t('saveToLibraryLabel')}
               onPress={() => {
                 toggleSaved(kind, id);
-                showToast(isSaved ? 'Removed from Library' : 'Saved to Library', isSaved ? 'remove-circle-outline' : 'check');
+                showToast(isSaved ? t('removedFromLibrary') : t('savedToLibrary'), isSaved ? 'remove-circle-outline' : 'check');
               }}
             />
             <MenuRow
               variant="flat"
               icon={isDownloaded ? 'download-done' : 'download'}
-              title={isDownloaded ? 'Remove download' : 'Download'}
+              title={isDownloaded ? t('removeDownloadLabel') : t('download')}
               onPress={() => {
                 toggleDownloaded(id, kind);
-                showToast(isDownloaded ? 'Download removed' : 'Marked for offline (demo — no audio is stored yet)', 'download');
+                showToast(isDownloaded ? t('toastDownloadRemoved') : t('toastMarkedForOffline'), 'download');
               }}
             />
-            {kind === 'album' && album && <MenuRow variant="flat" icon="person" title="View artist" onPress={() => goTo('/artist/[id]', album.artistId)} />}
-            <MenuRow variant="flat" icon="share" title={kind === 'album' ? 'Share album' : 'Share playlist'} onPress={handleShare} />
+            {kind === 'album' && album && <MenuRow variant="flat" icon="person" title={t('viewArtistLabel')} onPress={() => goTo('/artist/[id]', album.artistId)} />}
+            <MenuRow variant="flat" icon="share" title={kind === 'album' ? t('shareAlbumLabel') : t('sharePlaylistLabel')} onPress={handleShare} />
           </>
         )}
       </ScrollView>
 
-      <PillButton label="Cancel" variant="secondary" onPress={() => goBack()} style={styles.cancel} />
+      <PillButton label={t('cancel')} variant="secondary" onPress={() => goBack()} style={styles.cancel} />
       {toast}
     </SheetScreen>
   );
