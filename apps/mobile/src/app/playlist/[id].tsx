@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { nextSortMode, sortTracks, type TrackSortMode } from '@/lib/sort-tracks';
 import { getTrackById, playlists, type Track } from '@/mocks';
 import { useLibraryStore } from '@/state/library-store';
+import { useAppStrings } from '@/state/locale-store';
 import { usePlayerStore } from '@/state/player-store';
 import { usePlaylistsStore } from '@/state/playlists-store';
 
@@ -42,6 +43,7 @@ export default function PlaylistScreen() {
   const toggleDownloaded = useLibraryStore((s) => s.toggleDownloaded);
   const [sortMode, setSortMode] = useState<TrackSortMode>('Default order');
   const { showToast, toast } = useToast();
+  const { t } = useAppStrings();
 
   const trackList = useMemo(
     () => sortTracks((playlist?.trackIds ?? []).map((trackId) => getTrackById(trackId)).filter((t): t is Track => Boolean(t)), sortMode),
@@ -90,19 +92,19 @@ export default function PlaylistScreen() {
             <IconButton
               icon={isSaved ? 'favorite' : 'favorite-border'}
               color={isSaved ? Colors.primary : undefined}
-              accessibilityLabel={isSaved ? 'Remove playlist from Library' : 'Save playlist'}
+              accessibilityLabel={isSaved ? t('removePlaylistFromLibrary') : t('savePlaylist')}
               onPress={() => {
                 toggleSaved('playlist', playlist.id);
-                showToast(isSaved ? 'Removed from Library' : 'Saved to Library', 'check');
+                showToast(isSaved ? t('removedFromLibrary') : t('savedToLibrary'), 'check');
               }}
             />
             <IconButton
               icon={isDownloaded ? 'download-done' : 'download'}
               color={isDownloaded ? Colors.secondary : undefined}
-              accessibilityLabel={isDownloaded ? 'Remove download' : 'Download'}
+              accessibilityLabel={isDownloaded ? t('removeDownloadLabel') : t('download')}
               onPress={() => {
                 toggleDownloaded(playlist.id, 'playlist');
-                showToast(isDownloaded ? 'Download removed' : 'Marked for offline (demo — no audio is stored yet)', 'download');
+                showToast(isDownloaded ? t('toastDownloadRemoved') : t('toastMarkedForOffline'), 'download');
               }}
             />
             <IconButton

@@ -176,6 +176,18 @@ const EN_STRINGS = {
   toastDownloadRemoved: 'Download removed',
   toastMarkedForOffline: 'Marked for offline (demo — no audio is stored yet)',
 
+  // Detail screen actions (Playlist/Album/Artist)
+  removedFromLibrary: 'Removed from Library',
+  savedToLibrary: 'Saved to Library',
+  removePlaylistFromLibrary: 'Remove playlist from Library',
+  savePlaylist: 'Save playlist',
+  removeAlbumFromLibrary: 'Remove album from Library',
+  saveAlbum: 'Save album',
+  download: 'Download',
+  supportArtistLabel: 'Support',
+  playPopularTracksLabel: 'Play popular tracks',
+  shufflePopularTracksLabel: 'Shuffle popular tracks',
+
   // Player
   playingFromAlbum: 'PLAYING FROM ALBUM',
   playingLabel: 'PLAYING',
@@ -347,6 +359,17 @@ const RU_STRINGS: Record<keyof typeof EN_STRINGS, string> = {
   downloadOfflineLabel: 'Загрузить для офлайна',
   toastDownloadRemoved: 'Загрузка удалена',
   toastMarkedForOffline: 'Отмечено для офлайна (демо — аудио пока не сохраняется)',
+
+  removedFromLibrary: 'Удалено из библиотеки',
+  savedToLibrary: 'Сохранено в библиотеку',
+  removePlaylistFromLibrary: 'Удалить плейлист из библиотеки',
+  savePlaylist: 'Сохранить плейлист',
+  removeAlbumFromLibrary: 'Удалить альбом из библиотеки',
+  saveAlbum: 'Сохранить альбом',
+  download: 'Загрузить',
+  supportArtistLabel: 'Поддержать',
+  playPopularTracksLabel: 'Включить популярные треки',
+  shufflePopularTracksLabel: 'Перемешать популярные треки',
 
   playingFromAlbum: 'ИГРАЕТ ИЗ АЛЬБОМА',
   playingLabel: 'ИГРАЕТ',

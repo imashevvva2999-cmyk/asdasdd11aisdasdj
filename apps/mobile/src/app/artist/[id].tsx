@@ -11,6 +11,7 @@ import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useContentWidth } from '@/hooks/use-content-width';
 import { artists, getAlbumById, getArtistById, getTrackById } from '@/mocks';
 import { useLibraryStore } from '@/state/library-store';
+import { useAppStrings } from '@/state/locale-store';
 import { usePlayerStore } from '@/state/player-store';
 
 /** Pre-renders every catalog artist for the static website, so a direct link or
@@ -33,6 +34,7 @@ export default function ArtistProfileScreen() {
   const heroWidth = useContentWidth() - Spacing.margin * 2;
   const heroHeight = Math.min(360, Math.round(heroWidth * 1.05));
   const toggleSaved = useLibraryStore((s) => s.toggleSaved);
+  const { t } = useAppStrings();
 
   const play = usePlayerStore((s) => s.play);
   const playShuffled = usePlayerStore((s) => s.playShuffled);
@@ -84,14 +86,14 @@ export default function ArtistProfileScreen() {
 
         <View style={styles.actionsRow}>
           <PillButton
-            label={isFollowing ? 'Following' : 'Follow'}
+            label={isFollowing ? t('followingLabel') : t('followLabel')}
             variant="secondary"
             leadingIcon={isFollowing ? 'check' : 'add'}
             onPress={() => toggleSaved('artist', artist.id)}
             style={styles.smallPill}
           />
           <PillButton
-            label="Support"
+            label={t('supportArtistLabel')}
             variant="secondary"
             leadingIcon="volunteer-activism"
             onPress={() => router.push({ pathname: '/sheets/support', params: { artistId: artist.id } })}
@@ -103,14 +105,14 @@ export default function ArtistProfileScreen() {
               icon="play-arrow"
               size={56}
               iconSize={30}
-              accessibilityLabel="Play popular tracks"
+              accessibilityLabel={t('playPopularTracksLabel')}
               onPress={() => popularTrackIds.length > 0 && play(popularTrackIds[0]!, popularTrackIds)}
             />
             <IconButton
               icon="shuffle"
               size={26}
               iconSize={14}
-              accessibilityLabel="Shuffle popular tracks"
+              accessibilityLabel={t('shufflePopularTracksLabel')}
               onPress={() => playShuffled(popularTrackIds)}
               style={styles.shuffleBadge}
             />

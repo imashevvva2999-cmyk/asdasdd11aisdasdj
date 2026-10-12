@@ -10,6 +10,7 @@ import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useToast } from '@/hooks/use-toast';
 import { albums, getAlbumById, getTrackById } from '@/mocks';
 import { useLibraryStore } from '@/state/library-store';
+import { useAppStrings } from '@/state/locale-store';
 import { usePlayerStore } from '@/state/player-store';
 
 /** Pre-renders every catalog album for the static website, so a direct link or
@@ -30,6 +31,7 @@ export default function AlbumScreen() {
   const toggleSaved = useLibraryStore((s) => s.toggleSaved);
   const toggleDownloaded = useLibraryStore((s) => s.toggleDownloaded);
   const { showToast, toast } = useToast();
+  const { t } = useAppStrings();
   const currentTrackId = usePlayerStore((s) => s.currentTrackId());
   const isPlaying = usePlayerStore((s) => s.isPlaying);
 
@@ -70,19 +72,19 @@ export default function AlbumScreen() {
             <IconButton
               icon={isSaved ? 'favorite' : 'favorite-border'}
               color={isSaved ? Colors.primary : undefined}
-              accessibilityLabel={isSaved ? 'Remove album from Library' : 'Save album'}
+              accessibilityLabel={isSaved ? t('removeAlbumFromLibrary') : t('saveAlbum')}
               onPress={() => {
                 toggleSaved('album', album.id);
-                showToast(isSaved ? 'Removed from Library' : 'Saved to Library', 'check');
+                showToast(isSaved ? t('removedFromLibrary') : t('savedToLibrary'), 'check');
               }}
             />
             <IconButton
               icon={isDownloaded ? 'download-done' : 'download'}
               color={isDownloaded ? Colors.secondary : undefined}
-              accessibilityLabel={isDownloaded ? 'Remove download' : 'Download'}
+              accessibilityLabel={isDownloaded ? t('removeDownloadLabel') : t('download')}
               onPress={() => {
                 toggleDownloaded(album.id, 'album');
-                showToast(isDownloaded ? 'Download removed' : 'Marked for offline (demo — no audio is stored yet)', 'download');
+                showToast(isDownloaded ? t('toastDownloadRemoved') : t('toastMarkedForOffline'), 'download');
               }}
             />
             <IconButton
