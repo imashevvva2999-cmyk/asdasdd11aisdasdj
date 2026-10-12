@@ -164,6 +164,13 @@ export function DiscoveryFeed({ size }: { size: { width: number; height: number 
           }
           // lockedAxis.value === null: the gesture never cleared the deadzone
           // (a tap or negligible jitter) — nothing moves on either axis.
+        })
+        // Also covers a cancelled gesture (not just a clean release) — without
+        // this, a completed 'x' gesture would leave lockedAxis stuck at 'x'
+        // forever, silently blocking the genre-index-sync effect below from
+        // ever reacting to a later EXTERNAL (non-gesture) genreIndex change.
+        .onFinalize(() => {
+          lockedAxis.value = null;
         }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [step, width, genreCount, commitGenreChange],
