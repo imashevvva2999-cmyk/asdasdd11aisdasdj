@@ -140,9 +140,12 @@ export default function ArtistDashboardScreen() {
               {visibleEntries.map((entry) => {
                 const inProgress = entry.status === 'uploading' || entry.status === 'processing';
                 const published = entry.status === 'published';
+                // The ⋮ button sits OUTSIDE the pressable row (a button nested in a
+                // button is invalid HTML and trips React's dev overlay on web); a
+                // same-size spacer keeps the row layout pixel-identical.
                 return (
+                  <View key={entry.track.id} style={styles.releaseItem}>
                   <PressableScale
-                    key={entry.track.id}
                     accessibilityRole={published ? 'button' : undefined}
                     disabled={!published}
                     onPress={published ? () => play(entry.track.id) : undefined}
@@ -164,16 +167,7 @@ export default function ArtistDashboardScreen() {
                           {inProgress ? STATUS_LABEL[entry.status] : `Single • ${STATUS_LABEL[entry.status]}`}
                         </ThemedText>
                       </View>
-                      {published && (
-                        <IconButton
-                          icon="more-vert"
-                          size={36}
-                          color={Colors.text.medium}
-                          accessibilityLabel="Track options"
-                          style={styles.releaseMore}
-                          onPress={() => router.push({ pathname: '/sheets/options', params: { kind: 'track', id: entry.track.id } })}
-                        />
-                      )}
+                      {published && <View style={styles.releaseMoreSlot} />}
                     </View>
                     {inProgress && (
                       <View style={styles.progressTrack}>
@@ -181,6 +175,19 @@ export default function ArtistDashboardScreen() {
                       </View>
                     )}
                   </PressableScale>
+                  {published && (
+                    <View pointerEvents="box-none" style={styles.releaseMoreOverlay}>
+                      <IconButton
+                        icon="more-vert"
+                        size={36}
+                        color={Colors.text.medium}
+                        accessibilityLabel="Track options"
+                        style={styles.releaseMore}
+                        onPress={() => router.push({ pathname: '/sheets/options', params: { kind: 'track', id: entry.track.id } })}
+                      />
+                    </View>
+                  )}
+                  </View>
                 );
               })}
             </View>
@@ -245,6 +252,20 @@ const styles = StyleSheet.create({
   },
   releaseMore: {
     backgroundColor: 'transparent',
+  },
+  releaseItem: {
+    position: 'relative',
+  },
+  releaseMoreSlot: {
+    width: 36,
+    height: 36,
+  },
+  releaseMoreOverlay: {
+    position: 'absolute',
+    top: Spacing.sm,
+    bottom: Spacing.sm,
+    right: Spacing.sm,
+    justifyContent: 'center',
   },
   progressTrack: {
     height: 4,
