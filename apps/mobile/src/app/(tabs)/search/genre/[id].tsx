@@ -152,25 +152,25 @@ export default function GenreDetailScreen() {
           {trending.length === 0 ? (
             <EmptyState icon="library-music" title={t('genreNoTracksTitle')} hint={t('genreNoTracksHint')} />
           ) : (
-          <>
-          <SectionTitle title={`${t('genreTrendingLiveTopPrefix')} ${trending.length}`} subtitle={t('mostPlayedRightNow')} />
-          <View style={styles.trackList}>
-            {trending.map((track, index) => (
-              <TrackRow
-                key={track.id}
-                index={index + 1}
-                coverUri={track.coverUri}
-                active={currentTrackId === track.id}
-                title={track.title}
-                artist={track.artistName}
-                lossless={track.lossless}
-                explicit={track.explicit}
-                onPress={() => playTrending(track.id)}
-                onOptionsPress={() => router.push({ pathname: '/sheets/options', params: { kind: 'track', id: track.id } })}
-              />
-            ))}
-          </View>
-          </>
+            <>
+              <SectionTitle title={`${t('genreTrendingLiveTopPrefix')} ${trending.length}`} subtitle={t('mostPlayedRightNow')} />
+              <View style={styles.trackList}>
+                {trending.map((track, index) => (
+                  <TrackRow
+                    key={track.id}
+                    index={index + 1}
+                    coverUri={track.coverUri}
+                    active={currentTrackId === track.id}
+                    title={track.title}
+                    artist={track.artistName}
+                    lossless={track.lossless}
+                    explicit={track.explicit}
+                    onPress={() => playTrending(track.id)}
+                    onOptionsPress={() => router.push({ pathname: '/sheets/options', params: { kind: 'track', id: track.id } })}
+                  />
+                ))}
+              </View>
+            </>
           )}
         </View>
 
