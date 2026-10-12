@@ -13,6 +13,7 @@ import { Icon } from './icon';
 import { IconButton } from './button';
 import { AnimatedIcon } from './animated-icon';
 import { ParticleWaveArtwork } from './particle-wave/particle-wave-artwork';
+import { LivingMoodScene, type SceneEngineCtor } from '../living-moods/living-mood-scene';
 import { MoodVisual, type MoodVisualKind } from './mood-visual';
 import { PressableScale } from './pressable-scale';
 import { ThemedText } from '../themed-text';
@@ -197,12 +198,14 @@ export type FeaturedBannerProps = {
   onNextPress?: () => void;
   /** 'footer' layout only — shows a secondary skip-previous button before Play/Pause. */
   onPreviousPress?: () => void;
+  /** 'footer' layout only — replaces the circular play button with a text pill (e.g. "Go"). */
+  ctaLabel?: string;
   style?: ViewStyle;
 };
 
 /** Hero banner (DESIGN.md "Album & Playlist Cards"; docs/screens.md §3.4). Defaults
  * to 16:9; pass `height` for the fixed-height heroes used on Home/Search/Genre. */
-export function FeaturedBanner({ coverUri, title, subtitle, height, layout = 'overlay', onPlayPress, onPress, animated = false, paused = false, active = false, trackId, audioPlaying = false, onNextPress, onPreviousPress, style }: FeaturedBannerProps) {
+export function FeaturedBanner({ coverUri, title, subtitle, height, layout = 'overlay', onPlayPress, onPress, animated = false, paused = false, active = false, trackId, audioPlaying = false, onNextPress, onPreviousPress, ctaLabel, style }: FeaturedBannerProps) {
   const hydrated = useHydrated();
   const { t, locale } = useAppStrings();
 
@@ -247,7 +250,14 @@ export function FeaturedBanner({ coverUri, title, subtitle, height, layout = 'ov
               style={cardStyles.footerBannerNextButton}
             />
           )}
-          {onPlayPress && (
+          {onPlayPress && ctaLabel && (
+            <PressableScale accessibilityRole="button" accessibilityLabel={`${ctaLabel} — ${title}`} onPress={onPlayPress} style={cardStyles.footerBannerCta}>
+              <ThemedText variant="label-lg" style={cardStyles.footerBannerCtaText}>
+                {ctaLabel}
+              </ThemedText>
+            </PressableScale>
+          )}
+          {onPlayPress && !ctaLabel && (
             <PressableScale
               accessibilityRole="button"
               accessibilityLabel={playPauseTrackLabel(locale, active, title)}
@@ -455,16 +465,30 @@ export type MoodCardProps = {
   onPress?: (event: GestureResponderEvent) => void;
   /** Mood motif in the lower-right corner (see MoodVisual). */
   visual?: MoodVisualKind;
+  /** Living Moods WebGL scene filling the card (replaces `visual` when set). */
+  scene?: SceneEngineCtor;
+  sceneColors?: [string, string];
   style?: ViewStyle;
 };
 
 /** Mood & Vibe Mixes 2×2 grid card (docs/screens.md §3.1 S-01, §3.4 "Mood card"). */
-export function MoodCard({ title, subtitle, trackCountLabel, icon, tint = 'primary', visual, onPress, style }: MoodCardProps) {
+export function MoodCard({ title, subtitle, trackCountLabel, icon, tint = 'primary', visual, scene, sceneColors, onPress, style }: MoodCardProps) {
   const tintColor = tint === 'primary' ? Colors.primary : tint === 'secondary' ? Colors.secondary : Colors.tertiary;
 
   return (
-    <PressableScale onPress={onPress} accessibilityRole="button" style={[moodStyles.card, style]}>
-      {visual && <MoodVisual kind={visual} color={tintColor} />}
+    <PressableScale onPress={onPress} accessibilityRole="button" style={[moodStyles.card, scene && moodStyles.sceneCard, style]}>
+      {scene && (
+        <>
+          <LivingMoodScene engine={scene} active fallbackColors={sceneColors ?? ['#121216', '#2a2a32']} style={StyleSheet.absoluteFill} />
+          <LinearGradient
+            pointerEvents="none"
+            colors={['rgba(10, 10, 12, 0.35)', 'rgba(10, 10, 12, 0)', 'rgba(10, 10, 12, 0.75)']}
+            locations={[0, 0.4, 1]}
+            style={StyleSheet.absoluteFill}
+          />
+        </>
+      )}
+      {!scene && visual && <MoodVisual kind={visual} color={tintColor} />}
       <View style={moodStyles.topRow}>
         <Icon name={icon} size={24} color={tintColor} />
         <ThemedText variant="mono-num" emphasis="medium">
@@ -561,6 +585,21 @@ const cardStyles = StyleSheet.create({
   footerBannerNextButton: {
     flexShrink: 0,
   },
+  footerBannerCta: {
+    height: 52,
+    paddingHorizontal: 28,
+    borderRadius: Radii.full,
+    backgroundColor: Colors.primary,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 24,
+    shadowOpacity: 0.45,
+    elevation: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  footerBannerCtaText: { color: Colors.text.high, fontSize: 18, letterSpacing: 0.5 },
   footerBannerPlayButton: {
     width: 56,
     height: 56,
@@ -718,6 +757,10 @@ const moodStyles = StyleSheet.create({
     padding: Spacing.sm,
     justifyContent: 'space-between',
     overflow: 'hidden',
+  },
+  sceneCard: {
+    height: 168,
+    backgroundColor: '#0c0c10',
   },
   topRow: {
     flexDirection: 'row',
