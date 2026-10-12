@@ -29,7 +29,8 @@ export type Track = {
   artistId: ArtistId;
   artistName: string;
   albumId?: AlbumId;
-  durationSec: number;
+  /** Undefined = length unknown (no audio file yet) — never a placeholder. */
+  durationSec?: number;
   coverUri?: LocalOrRemoteImage;
   explicit?: boolean;
   lossless?: boolean;

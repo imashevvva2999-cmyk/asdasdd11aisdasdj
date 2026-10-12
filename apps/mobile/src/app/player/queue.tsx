@@ -137,7 +137,9 @@ export default function QueueScreen() {
   );
 }
 
-function formatDuration(totalSeconds: number): string {
+/** "—" when the length is unknown (no audio file yet) — never a made-up time. */
+function formatDuration(totalSeconds: number | undefined): string {
+  if (totalSeconds === undefined) return '—';
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   return `${minutes}:${String(seconds).padStart(2, '0')}`;

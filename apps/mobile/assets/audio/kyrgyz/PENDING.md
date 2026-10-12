@@ -27,10 +27,11 @@ For each track you have a licensed file for:
    rightsholder, the license/permission reference (contract, email,
    written permission — whatever proof your organization requires), and
    the date added.
-5. Update this track's `durationSec` in `apps/mobile/src/mocks/tracks.ts` to
-   the real file's duration. Nineteen of the twenty tracks still carry the
-   180-second placeholder; `kyrgyzstanym` is already 135 s, so check its
-   current value rather than assuming 180.
+5. Set this track's `durationSec` in `apps/mobile/src/mocks/tracks.ts` to
+   the real file's duration. Nineteen of the twenty tracks have no
+   `durationSec` (unknown — the Queue shows "—"); `kyrgyzstanym` already has
+   its confirmed 135 s. Then update `CONFIRMED_DURATIONS` in
+   `apps/mobile/scripts/verify-kyrgyz-catalog.mjs` to match.
 6. Remove this track's row from the table below, and remove its id from
    `PENDING_AUDIO_TRACK_IDS` in `apps/mobile/src/audio/demo-sources.ts`.
    Artwork is separate: an id leaves `PENDING_ARTWORK_TRACK_IDS` /

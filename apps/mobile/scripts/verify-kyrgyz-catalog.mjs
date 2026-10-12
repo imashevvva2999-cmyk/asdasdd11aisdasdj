@@ -50,6 +50,17 @@ for (const trackId of KYRGYZ_TRACK_IDS) {
   check(`"${trackId}" has no demo audio (honest unavailable state, no audio supplied yet)`, hasDemoAudio(trackId) === false);
 }
 
+// No invented durations: only a confirmed length is recorded; the rest are unknown.
+const CONFIRMED_DURATIONS = { kyrgyzstanym: 135 };
+for (const trackId of KYRGYZ_TRACK_IDS) {
+  const track = tracks.find((t) => t.id === trackId);
+  const expected = CONFIRMED_DURATIONS[trackId];
+  check(
+    expected === undefined ? `"${trackId}" has no placeholder duration (unknown)` : `"${trackId}" keeps its confirmed duration (${expected}s)`,
+    track?.durationSec === expected,
+  );
+}
+
 const sameSet = (a, b) => a.length === b.length && new Set(a).size === a.length && a.every((x) => b.includes(x));
 check('PENDING_ARTWORK_TRACK_IDS equals the Kyrgyz track ids', sameSet(PENDING_ARTWORK_TRACK_IDS, KYRGYZ_TRACK_IDS));
 check('PENDING_ARTWORK_ARTIST_IDS equals the Kyrgyz artist ids', sameSet(PENDING_ARTWORK_ARTIST_IDS, KYRGYZ_ARTIST_IDS));

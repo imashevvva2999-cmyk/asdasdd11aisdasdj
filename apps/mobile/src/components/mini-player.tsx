@@ -90,7 +90,7 @@ function MiniPlayerBody({ track, respectStage }: { track: Track; respectStage: b
   const { height } = useWindowSize();
   const { t, locale } = useAppStrings();
 
-  const durationSec = engineDurationSec ?? track.durationSec;
+  const durationSec = engineDurationSec ?? track.durationSec ?? 0;
   const progressRatio = durationSec > 0 ? Math.min(1, progressSec / durationSec) : 0;
   const unavailable = playback === 'unavailable';
   const progress = useSmoothProgress(progressRatio);
