@@ -344,7 +344,7 @@ const RU_STRINGS: Record<keyof typeof EN_STRINGS, string> = {
   libraryNoMatchesSuffix: 'в вашей библиотеке.',
   songsHeader: 'Треки',
   removeDownloadLabel: 'Удалить загрузку',
-  downloadOfflineLabel: 'Скачать офлайн',
+  downloadOfflineLabel: 'Загрузить для офлайна',
   toastDownloadRemoved: 'Загрузка удалена',
   toastMarkedForOffline: 'Отмечено для офлайна (демо — аудио пока не сохраняется)',
 
