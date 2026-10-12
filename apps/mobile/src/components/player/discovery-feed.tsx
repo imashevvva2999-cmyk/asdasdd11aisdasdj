@@ -1,7 +1,16 @@
 import { useEffect, useMemo } from 'react';
 import { StyleSheet } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { Easing, cancelAnimation, useAnimatedStyle, useReducedMotion, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, {
+  Easing,
+  cancelAnimation,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withSpring,
+  withTiming,
+  type SharedValue,
+} from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { Artwork } from '@/components/ui';
@@ -131,7 +140,7 @@ function Slot({
   playing: boolean;
 }) {
   const track = getTrackById(trackId);
-  const style = useAnimatedStyle(() => ({ opacity: fade(at) }));
+  const style = useAnimatedStyle(() => ({ opacity: fade(carouselPos, at) }));
   return (
     <Animated.View style={[styles.slot, { width: size.width, height: size.height, top: at * step }, style]}>
       {current ? (
@@ -145,11 +154,11 @@ function Slot({
       )}
     </Animated.View>
   );
+}
 
-  function fade(position: number): number {
-    'worklet';
-    return Math.min(1, Math.max(0, (1 - Math.abs(carouselPos.value - position)) * 4));
-  }
+function fade(p: SharedValue<number>, at: number): number {
+  'worklet';
+  return Math.min(1, Math.max(0, (1 - Math.abs(p.value - at)) * 4));
 }
 
 const styles = StyleSheet.create({
