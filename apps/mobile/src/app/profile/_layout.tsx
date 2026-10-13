@@ -31,6 +31,7 @@ export default function ProfileStackLayout() {
       <Stack.Screen name="artist/setup" options={{ title: t('artistSetupTitle') }} />
       <Stack.Screen name="artist/dashboard" options={{ title: t('artistDashboardTitle') }} />
       <Stack.Screen name="artist/upload-track" options={{ title: t('uploadTrackTitle') }} />
+      <Stack.Screen name="artist/promote" options={{ title: t('promoteSongTitle') }} />
     </Stack>
   );
 }

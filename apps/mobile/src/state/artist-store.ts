@@ -1,7 +1,10 @@
 import { create } from 'zustand';
 
 import type { LocalOrRemoteImage } from '@/constants/stitch-artwork';
+import { getArtistDemoTotals } from '@/lib/analytics-mock';
+import type { Campaign } from '@/lib/promotion';
 import { addMockArtist, addMockTrack, currentUser, type Artist, type ArtistId, type Track, type TrackId } from '@/mocks';
+import { DEMO_ARTIST_PROFILE, DEMO_RELEASES } from '@/mocks/demo-artist-account';
 
 export type UploadStatus = 'draft' | 'uploading' | 'processing' | 'published' | 'error';
 
@@ -65,8 +68,15 @@ type ArtistState = {
   /** DEMO SEED ONLY — dashboard Overview listeners. Kept off the Artist
    * record so the public profile (S-08) never shows a demo figure. */
   demoListeners?: number;
+  /** True once the dev-only "Load demo artist account" ran (all tabs show demo data). */
+  demoAccount: boolean;
+  /** Promotion campaigns (demo payments only — see lib/payments/mbank-payment.ts). */
+  campaigns: Campaign[];
 
   createArtistProfile: (input: ArtistSetupInput) => Artist;
+  addCampaign: (campaign: Campaign) => void;
+  /** DEMO ONLY — one-tap fully populated, fictional artist account. */
+  loadDemoAccount: () => void;
   saveDraft: (input: UploadTrackInput) => ArtistTrackEntry;
   publishTrack: (trackId: TrackId) => Promise<void>;
   simulateError: (trackId: TrackId) => void;
@@ -82,6 +92,32 @@ export const useArtistStore = create<ArtistState>((set, get) => ({
   entries: [],
   demoStreams: undefined,
   demoListeners: undefined,
+  demoAccount: false,
+  campaigns: [],
+
+  addCampaign: (campaign) => set((state) => ({ campaigns: [campaign, ...state.campaigns] })),
+
+  loadDemoAccount: () => {
+    const artist = get().createArtistProfile(DEMO_ARTIST_PROFILE);
+    const now = Date.now();
+    const entries: ArtistTrackEntry[] = DEMO_RELEASES.map((r) => ({
+      track: { id: r.id, title: r.title, artistId: artist.id, artistName: artist.name, durationSec: r.durationSec, coverUri: r.coverUri },
+      status: 'published',
+      createdAt: new Date(now - r.daysAgo * 86_400_000).toISOString(),
+    }));
+    entries.forEach((e) => addMockTrack(e.track));
+    const ids = entries.map((e) => e.track.id);
+    const withReleases: Artist = { ...artist, popularTrackIds: ids };
+    addMockArtist(withReleases);
+    const totals = getArtistDemoTotals(ids);
+    const [fresh, second, third] = DEMO_RELEASES;
+    const campaigns: Campaign[] = [
+      { id: 'demo-cmp-osh', trackId: second!.id, trackTitle: second!.title, goal: 'streams', budgetKgs: 5000, durationDays: 14, estimatedReach: 85_000, reachSoFar: 61_200, newFollowers: 1_240, status: 'active', createdAt: new Date(now - 9 * 86_400_000).toISOString(), paymentRef: 'DEMO-7Q2K4M', simulatedPayment: true },
+      { id: 'demo-cmp-issyk', trackId: third!.id, trackTitle: third!.title, goal: 'followers', budgetKgs: 2500, durationDays: 7, estimatedReach: 30_000, reachSoFar: 31_800, newFollowers: 2_150, status: 'completed', createdAt: new Date(now - 40 * 86_400_000).toISOString(), paymentRef: 'DEMO-3HX9PA', simulatedPayment: true },
+      { id: 'demo-cmp-steppe', trackId: fresh!.id, trackTitle: fresh!.title, goal: 'playlists', budgetKgs: 1000, durationDays: 7, estimatedReach: 9_000, reachSoFar: 9_600, newFollowers: 420, status: 'completed', createdAt: new Date(now - 70 * 86_400_000).toISOString(), paymentRef: 'DEMO-8LM2ZT', simulatedPayment: true },
+    ];
+    set({ artist: withReleases, entries, demoAccount: true, demoListeners: totals.monthlyListeners, demoStreams: totals.streams, campaigns });
+  },
 
   createArtistProfile: (input) => {
     const artist: Artist = {
