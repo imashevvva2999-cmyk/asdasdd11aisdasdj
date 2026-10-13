@@ -26,6 +26,8 @@ function DevDemoSeedPanel() {
   const artist = useArtistStore((s) => s.artist);
   const seedDemoStats = useArtistStore((s) => s.seedDemoStats);
   const loadDemoAccount = useArtistStore((s) => s.loadDemoAccount);
+  const demoAccount = useArtistStore((s) => s.demoAccount);
+  const resetDemoAccount = useArtistStore((s) => s.resetDemoAccount);
   const entries = useArtistStore((s) => s.entries);
   const publishedIds = entries.filter((e) => e.status === 'published').map((e) => e.track.id);
   // Derived from the Analytics tab's own per-track figures, so Overview and
@@ -53,6 +55,16 @@ function DevDemoSeedPanel() {
           onPress={() => {
             loadDemoAccount();
             router.push('/profile/artist/dashboard');
+          }}
+        />
+        <PillButton
+          label="Reset demo account"
+          variant="secondary"
+          disabled={!demoAccount}
+          onPress={() => {
+            resetDemoAccount();
+            // Full reload also drops the demo releases from the in-memory mock catalog.
+            if (typeof window !== 'undefined') window.location.reload();
           }}
         />
         <PillButton label="Back to Dashboard" onPress={() => router.push('/profile/artist/dashboard')} />

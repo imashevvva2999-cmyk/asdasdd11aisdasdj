@@ -11,6 +11,7 @@ import { startAudio } from '@/audio/platform-audio';
 import { PlayerExpandPreview } from '@/components/player/expand-preview';
 import { iconFonts } from '@/components/ui/icon';
 import { RouteTitle } from '@/components/web/route-title';
+import { useArtistStore } from '@/state/artist-store';
 import { PlayerSurfaceSync } from '@/state/player-surface';
 import { usePlayerStore } from '@/state/player-store';
 import { useAppStrings, useLocaleStore } from '@/state/locale-store';
@@ -67,6 +68,12 @@ export default function RootLayout() {
   // + client-only rehydrate pattern as likedTrackIds above.
   useEffect(() => {
     useLocaleStore.persist.rehydrate();
+  }, []);
+
+  // DEMO ONLY: rebuild the fictional "Nomad Echo" account if it was loaded in
+  // this browser before (client-only, same reason as above). No-op otherwise.
+  useEffect(() => {
+    useArtistStore.getState().restoreDemoAccount();
   }, []);
 
   const { t } = useAppStrings();

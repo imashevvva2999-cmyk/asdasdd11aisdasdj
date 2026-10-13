@@ -37,6 +37,53 @@ export type UploadTrackInput = {
  * local artist per session. */
 const LOCAL_ARTIST_ID: ArtistId = 'me';
 
+/** DEMO ONLY — browser key that keeps the fictional demo account across reloads.
+ * Holds just a marker plus campaigns created during the demo; the account itself
+ * is rebuilt deterministically by `loadDemoAccount`. A real profile clears it. */
+const DEMO_ACCOUNT_KEY = 'mmusic:demo-artist';
+type DemoSnapshot = { v: 1; userCampaigns: Campaign[] };
+
+function demoStorage(): Storage | undefined {
+  try {
+    return typeof window !== 'undefined' && window.localStorage ? window.localStorage : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function readDemoSnapshot(): DemoSnapshot | undefined {
+  try {
+    const raw = demoStorage()?.getItem(DEMO_ACCOUNT_KEY);
+    if (!raw) return undefined;
+    const parsed = JSON.parse(raw) as Partial<DemoSnapshot>;
+    if (parsed?.v !== 1) return undefined;
+    const userCampaigns = Array.isArray(parsed.userCampaigns)
+      ? parsed.userCampaigns.filter((c): c is Campaign => !!c && typeof c.id === 'string' && c.simulatedPayment === true)
+      : [];
+    return { v: 1, userCampaigns };
+  } catch {
+    return undefined;
+  }
+}
+
+function writeDemoSnapshot(userCampaigns: Campaign[]): void {
+  try {
+    demoStorage()?.setItem(DEMO_ACCOUNT_KEY, JSON.stringify({ v: 1, userCampaigns } satisfies DemoSnapshot));
+  } catch {
+    // Storage blocked/full — demo still works for this session.
+  }
+}
+
+function clearDemoSnapshot(): void {
+  try {
+    demoStorage()?.removeItem(DEMO_ACCOUNT_KEY);
+  } catch {
+    // ignore
+  }
+}
+
+const isSeededDemoCampaign = (c: Campaign) => c.id.startsWith('demo-cmp-');
+
 /**
  * Shared frontend Artist state (Фаза 4, Batch 4 — docs/screens.md §2 Artist
  * Flow, S-25…S-28). Single boundary for: the current user's own Artist
@@ -75,8 +122,13 @@ type ArtistState = {
 
   createArtistProfile: (input: ArtistSetupInput) => Artist;
   addCampaign: (campaign: Campaign) => void;
-  /** DEMO ONLY — one-tap fully populated, fictional artist account. */
+  /** DEMO ONLY — one-tap fully populated, fictional artist account (persisted
+   * in this browser until reset or a real artist profile is created). */
   loadDemoAccount: () => void;
+  /** DEMO ONLY — client startup: rebuilds the demo account if it was loaded before. */
+  restoreDemoAccount: () => void;
+  /** DEMO ONLY — forgets the demo account (storage + in-memory state). */
+  resetDemoAccount: () => void;
   saveDraft: (input: UploadTrackInput) => ArtistTrackEntry;
   publishTrack: (trackId: TrackId) => Promise<void>;
   simulateError: (trackId: TrackId) => void;
@@ -87,6 +139,22 @@ type ArtistState = {
   seedDemoStats: (listeners: number, streams: number) => void;
 };
 
+function buildLocalArtist(input: ArtistSetupInput): Artist {
+  return {
+    id: LOCAL_ARTIST_ID,
+    name: input.stageName,
+    verified: false,
+    monthlyListeners: 0,
+    genres: input.genre ? [input.genre] : [],
+    bio: input.bio,
+    location: input.location,
+    photoUri: input.photoUri,
+    popularTrackIds: [],
+    releaseAlbumIds: [],
+    fansAlsoLikeIds: [],
+  };
+}
+
 export const useArtistStore = create<ArtistState>((set, get) => ({
   artist: undefined,
   entries: [],
@@ -95,10 +163,28 @@ export const useArtistStore = create<ArtistState>((set, get) => ({
   demoAccount: false,
   campaigns: [],
 
-  addCampaign: (campaign) => set((state) => ({ campaigns: [campaign, ...state.campaigns] })),
+  addCampaign: (campaign) => {
+    set((state) => ({ campaigns: [campaign, ...state.campaigns] }));
+    if (get().demoAccount) writeDemoSnapshot(get().campaigns.filter((c) => !isSeededDemoCampaign(c)));
+  },
+
+  restoreDemoAccount: () => {
+    const snapshot = readDemoSnapshot();
+    if (!snapshot || get().demoAccount) return;
+    get().loadDemoAccount();
+    if (snapshot.userCampaigns.length) {
+      set((state) => ({ campaigns: [...snapshot.userCampaigns, ...state.campaigns] }));
+      writeDemoSnapshot(snapshot.userCampaigns);
+    }
+  },
+
+  resetDemoAccount: () => {
+    clearDemoSnapshot();
+    set({ artist: undefined, entries: [], demoAccount: false, demoListeners: undefined, demoStreams: undefined, campaigns: [] });
+  },
 
   loadDemoAccount: () => {
-    const artist = get().createArtistProfile(DEMO_ARTIST_PROFILE);
+    const artist = buildLocalArtist(DEMO_ARTIST_PROFILE);
     const now = Date.now();
     const entries: ArtistTrackEntry[] = DEMO_RELEASES.map((r) => ({
       track: { id: r.id, title: r.title, artistId: artist.id, artistName: artist.name, durationSec: r.durationSec, coverUri: r.coverUri },
@@ -117,25 +203,23 @@ export const useArtistStore = create<ArtistState>((set, get) => ({
       { id: 'demo-cmp-steppe', trackId: fresh!.id, trackTitle: fresh!.title, goal: 'playlists', budgetKgs: 1000, durationDays: 7, estimatedReach: 9_000, reachSoFar: 9_600, newFollowers: 420, status: 'completed', createdAt: new Date(now - 70 * 86_400_000).toISOString(), paymentRef: 'DEMO-8LM2ZT', simulatedPayment: true },
     ];
     set({ artist: withReleases, entries, demoAccount: true, demoListeners: totals.monthlyListeners, demoStreams: totals.streams, campaigns });
+    writeDemoSnapshot([]);
   },
 
   createArtistProfile: (input) => {
-    const artist: Artist = {
-      id: LOCAL_ARTIST_ID,
-      name: input.stageName,
-      verified: false,
-      monthlyListeners: 0,
-      genres: input.genre ? [input.genre] : [],
-      bio: input.bio,
-      location: input.location,
-      photoUri: input.photoUri,
-      popularTrackIds: [],
-      releaseAlbumIds: [],
-      fansAlsoLikeIds: [],
-    };
+    const artist = buildLocalArtist(input);
     addMockArtist(artist);
-    // A fresh profile never inherits demo figures seeded for a previous one.
-    set({ artist, demoListeners: undefined, demoStreams: undefined });
+    // A real profile never inherits demo data: drop the persisted demo account,
+    // its releases/campaigns, and any seeded figures.
+    const wasDemo = get().demoAccount;
+    clearDemoSnapshot();
+    set({
+      artist,
+      demoListeners: undefined,
+      demoStreams: undefined,
+      demoAccount: false,
+      ...(wasDemo ? { entries: [], campaigns: [] } : {}),
+    });
     return artist;
   },
 
