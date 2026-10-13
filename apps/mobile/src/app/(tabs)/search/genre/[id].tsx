@@ -9,8 +9,8 @@ import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useContentWidth } from '@/hooks/use-content-width';
 import { useToast } from '@/hooks/use-toast';
 import { getTrackIdsForGenre } from '@/lib/genre-tracks';
-import { genreFollowToggleToast, genreTagLabel } from '@/lib/i18n';
-import { albums, artists, featuredGenre, genreDetails, genres, getGenreById, getTrackById, type Track } from '@/mocks';
+import { genreFollowToggleToast, genreNameLabel, genreTagLabel } from '@/lib/i18n';
+import { albums, artists, featuredGenre, genreDescriptionsRu, genreDetails, genres, getGenreById, getTrackById, type Track } from '@/mocks';
 import { useLibraryStore } from '@/state/library-store';
 import { useAppStrings } from '@/state/locale-store';
 import { usePlayerStore } from '@/state/player-store';
@@ -81,10 +81,12 @@ export default function GenreDetailScreen() {
                 {detail.listeners}
               </ThemedText>
             )}
-            <ThemedText variant="display-lg-mobile" numberOfLines={2}>{detail?.heroTitle ?? genre?.title ?? t('genreFallback')}</ThemedText>
+            <ThemedText variant="display-lg-mobile" numberOfLines={2}>
+              {detail?.heroTitle ?? (genre ? genreNameLabel(locale, genre.id) : t('genreFallback'))}
+            </ThemedText>
             {detail && (
               <ThemedText variant="body-sm" emphasis="medium" numberOfLines={2}>
-                {detail.description}
+                {locale === 'ru' ? (genreDescriptionsRu[id ?? ''] ?? detail.description) : detail.description}
               </ThemedText>
             )}
           <View style={styles.heroActions}>

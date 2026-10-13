@@ -3,7 +3,7 @@ export { artists, getArtistById, addMockArtist } from './artists';
 export { albums, getAlbumById } from './albums';
 export { tracks, getTrackById, addMockTrack } from './tracks';
 export { playlists, getPlaylistById, playlistDurationLabel, playlistUpdatedLabel } from './playlists';
-export { genres, featuredGenre, getGenreById, genreDetails } from './genres';
+export { genres, featuredGenre, getGenreById, genreDetails, genreDescriptionsRu } from './genres';
 export { moodMixes } from './moods';
 export { forYouTiles, heroPlaylistId, trendingNowAlbumIds, newReleases, jumpBackInTrackIds } from './home';
 export { initialRecentSearches, trendingSearches } from './search';
