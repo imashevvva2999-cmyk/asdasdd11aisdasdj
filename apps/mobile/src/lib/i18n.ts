@@ -141,6 +141,7 @@ const EN_STRINGS = {
   genreTracksSubtitle: 'Tracks in this genre',
   genreNoTracksTitle: 'No tracks here yet',
   genreNoTracksHint: 'Tracks for this genre are on their way.',
+  starsCtaLabel: 'Go',
   recentReleasesSubtitle: 'Recent releases',
   allGenresTitle: 'All Genres & Moods',
   allGenresSubtitle: 'Explore 24+ sonic realms & curated cultures',
