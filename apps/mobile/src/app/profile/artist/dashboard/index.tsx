@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Artwork, Badge, Chip, EmptyState, Icon, IconButton, PillButton, PressableScale, StatCard } from '@/components/ui';
+import { Artwork, Badge, Chip, EmptyState, Icon, IconButton, PillButton, PressableScale, StatCard, TextLinkButton } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { getArtistSupportTotalKgs } from '@/lib/artist-support-total';
 import { formatKgsAmount } from '@/lib/format-currency';
@@ -12,8 +12,10 @@ import { usePlayerStore } from '@/state/player-store';
 import { useArtistStore, type UploadStatus } from '@/state/artist-store';
 import { useSupportStore } from '@/state/support-store';
 import { useDashboardStrings } from '@/state/dashboard-locale-store';
+import type { DashboardStringKey } from '@/lib/dashboard-i18n';
+import { DEMO_FAN_DONATIONS, DEMO_RECENT_ACTIVITY, getDemoAccountMetrics } from '@/mocks/demo-artist-account';
 
-const FILTERS = ['All', 'Published', 'In Review', 'Draft'] as const;
+const FILTERS = ['filterAll', 'filterPublished', 'filterInReview', 'filterDraft'] as const satisfies readonly DashboardStringKey[];
 
 /** Status text colours from the Stitch release rows: published in the soft
  * flame tint, in-progress in gold, errors in the error red. */
@@ -25,13 +27,19 @@ const STATUS_COLOR: Record<UploadStatus, string> = {
   error: Colors.error,
 };
 
-const STATUS_LABEL: Record<UploadStatus, string> = {
-  draft: 'Draft',
-  uploading: 'Uploading',
-  processing: 'Transcoding',
-  published: 'Published',
-  error: 'Error',
+const STATUS_LABEL: Record<UploadStatus, DashboardStringKey> = {
+  draft: 'statusDraft',
+  uploading: 'statusUploading',
+  processing: 'statusProcessing',
+  published: 'statusPublished',
+  error: 'statusError',
 };
+
+function relativeDay(daysAgo: number, t: (k: DashboardStringKey) => string): string {
+  if (daysAgo <= 0) return t('today');
+  if (daysAgo === 1) return t('yesterday');
+  return `${daysAgo} ${t('daysAgoSuffix')}`;
+}
 
 /**
  * S-27 Artist Dashboard — UF-14 step 3 (docs/screens.md). Same Artist entity
@@ -49,10 +57,18 @@ export default function ArtistDashboardScreen() {
   const demoListeners = useArtistStore((s) => s.demoListeners);
   const supportHistory = useSupportStore((s) => s.history);
   const play = usePlayerStore((s) => s.play);
-  const { t } = useDashboardStrings();
+  const demoAccount = useArtistStore((s) => s.demoAccount);
+  const campaigns = useArtistStore((s) => s.campaigns);
+  const loadDemoAccount = useArtistStore((s) => s.loadDemoAccount);
+  const { t, locale } = useDashboardStrings();
   const navigation = useNavigation();
+  const metrics = useMemo(
+    () => (demoAccount ? getDemoAccountMetrics(entries.filter((e) => e.status === 'published').map((e) => e.track.id)) : undefined),
+    [demoAccount, entries],
+  );
+  const promoSpendKgs = campaigns.reduce((sum, c) => sum + c.budgetKgs, 0);
 
-  const [filter, setFilter] = useState<(typeof FILTERS)[number]>('All');
+  const [filter, setFilter] = useState<(typeof FILTERS)[number]>('filterAll');
 
   useEffect(() => {
     if (!artist) return;
@@ -76,9 +92,9 @@ export default function ArtistDashboardScreen() {
   }, [artist, navigation]);
 
   const visibleEntries = useMemo(() => {
-    if (filter === 'All') return entries;
-    if (filter === 'Published') return entries.filter((e) => e.status === 'published');
-    if (filter === 'Draft') return entries.filter((e) => e.status === 'draft');
+    if (filter === 'filterAll') return entries;
+    if (filter === 'filterPublished') return entries.filter((e) => e.status === 'published');
+    if (filter === 'filterDraft') return entries.filter((e) => e.status === 'draft');
     return entries.filter((e) => e.status === 'uploading' || e.status === 'processing');
   }, [entries, filter]);
 
@@ -92,6 +108,8 @@ export default function ArtistDashboardScreen() {
           actionLabel={t('becomeArtistAction')}
           onActionPress={() => router.push('/profile/artist/become-artist')}
         />
+        {/* Dev builds only (demo preview): one-tap fully populated demo account. */}
+        {__DEV__ && <TextLinkButton label={t('loadDemoAccount')} onPress={loadDemoAccount} style={styles.demoLink} />}
       </ThemedView>
     );
   }
@@ -108,13 +126,31 @@ export default function ArtistDashboardScreen() {
           />
         )}
 
+        {demoAccount && (
+          <View style={styles.profileCard}>
+            <Artwork shape="circle" size={64} radius={32} uri={artist.photoUri} placeholderIcon="person" />
+            <View style={styles.profileText}>
+              <View style={styles.profileNameRow}>
+                <ThemedText variant="headline-sm" numberOfLines={1}>{artist.name}</ThemedText>
+                <Icon name="verified" size={18} color={Colors.text.medium} />
+                <Badge label={t('demoAccountBadge')} />
+              </View>
+              <ThemedText variant="body-sm" emphasis="medium" numberOfLines={2}>{artist.bio}</ThemedText>
+              {metrics && (
+                <ThemedText variant="label-md" style={{ color: Colors.primary }}>
+                  {metrics.followers.toLocaleString('en-US')} {t('followersLabel').toLowerCase()}
+                </ThemedText>
+              )}
+            </View>
+          </View>
+        )}
         {demoStreams !== undefined && <Badge label={t('demoDataBadge')} style={styles.demoBadge} />}
         <View style={styles.statsRow}>
           <StatCard label={t('listeners')} value={(demoListeners ?? artist.monthlyListeners ?? 0).toLocaleString('en-US')} icon="groups" iconColor={Colors.primary} />
           <StatCard label={t('streams')} value={(demoStreams ?? 0).toLocaleString('en-US')} icon="play-circle-outline" iconColor={Colors.tertiary} />
           <StatCard
             label={t('supportLabel')}
-            value={`${formatKgsAmount(getArtistSupportTotalKgs(supportHistory, artist.id))} сом`}
+            value={`${formatKgsAmount(getArtistSupportTotalKgs(supportHistory, artist.id) + (metrics?.fanDonationsKgs ?? 0))} сом`}
             icon="volunteer-activism"
             iconColor={Colors.secondary}
           />
@@ -124,7 +160,7 @@ export default function ArtistDashboardScreen() {
           <ThemedText variant="headline-md">{t('yourReleases')}</ThemedText>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
             {FILTERS.map((item) => (
-              <Chip key={item} label={item} selected={item === filter} onPress={() => setFilter(item)} />
+              <Chip key={item} label={t(item)} selected={item === filter} onPress={() => setFilter(item)} />
             ))}
           </ScrollView>
 
@@ -165,7 +201,7 @@ export default function ArtistDashboardScreen() {
                           {entry.track.title}
                         </ThemedText>
                         <ThemedText variant="body-sm" numberOfLines={1} style={{ color: STATUS_COLOR[entry.status] }}>
-                          {inProgress ? STATUS_LABEL[entry.status] : `Single • ${STATUS_LABEL[entry.status]}`}
+                          {inProgress ? t(STATUS_LABEL[entry.status]) : `${t('singleLabel')} • ${t(STATUS_LABEL[entry.status])}`}
                         </ThemedText>
                       </View>
                       {published && <View style={styles.releaseMoreSlot} />}
@@ -182,7 +218,7 @@ export default function ArtistDashboardScreen() {
                         icon="more-vert"
                         size={36}
                         color={Colors.text.medium}
-                        accessibilityLabel="Track options"
+                        accessibilityLabel={t('trackOptions')}
                         style={styles.releaseMore}
                         onPress={() => router.push({ pathname: '/sheets/options', params: { kind: 'track', id: entry.track.id } })}
                       />
@@ -194,8 +230,49 @@ export default function ArtistDashboardScreen() {
             </View>
           )}
         </View>
+
+        {metrics && (
+          <>
+            <View style={styles.infoCard}>
+              <View style={styles.infoHeader}>
+                <ThemedText variant="headline-sm" style={styles.flexText}>{t('revenueSection')}</ThemedText>
+                <Badge label={t('demoDataBadge')} />
+              </View>
+              <InfoLine label={t('streamingRoyalties')} value={`${formatKgsAmount(metrics.royaltiesKgs)} сом`} />
+              <InfoLine label={t('fanDonations')} value={`${formatKgsAmount(metrics.fanDonationsKgs)} сом`} />
+              <InfoLine label={t('promoSpend')} value={`−${formatKgsAmount(promoSpendKgs)} сом`} />
+            </View>
+
+            <View style={styles.infoCard}>
+              <ThemedText variant="headline-sm">{t('recentDonations')}</ThemedText>
+              {DEMO_FAN_DONATIONS.slice(0, 4).map((d) => (
+                <InfoLine key={`${d.from}-${d.daysAgo}`} label={`${d.from} · ${relativeDay(d.daysAgo, t)}`} value={`+${formatKgsAmount(d.amountKgs)} сом`} />
+              ))}
+            </View>
+
+            <View style={styles.infoCard}>
+              <ThemedText variant="headline-sm">{t('recentActivity')}</ThemedText>
+              {DEMO_RECENT_ACTIVITY.map((a) => (
+                <View key={a.text.en} style={styles.activityRow}>
+                  <Icon name={a.icon} size={20} color={Colors.text.medium} />
+                  <ThemedText variant="body-sm" style={styles.flexText}>{a.text[locale]}</ThemedText>
+                  <ThemedText variant="body-sm" emphasis="medium">{relativeDay(a.daysAgo, t)}</ThemedText>
+                </View>
+              ))}
+            </View>
+          </>
+        )}
       </ScrollView>
     </ThemedView>
+  );
+}
+
+function InfoLine({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.infoLine}>
+      <ThemedText variant="body-sm" emphasis="medium" style={styles.flexText} numberOfLines={1}>{label}</ThemedText>
+      <ThemedText variant="label-lg">{value}</ThemedText>
+    </View>
   );
 }
 
@@ -209,6 +286,15 @@ const styles = StyleSheet.create({
   uploadButton: {
     borderRadius: Radii.md,
   },
+  demoLink: { alignSelf: 'center', marginBottom: Spacing.xl },
+  profileCard: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, backgroundColor: Colors.surface.l1, borderRadius: Radii.lg, padding: Spacing.md },
+  profileText: { flex: 1, minWidth: 0, gap: 4 },
+  profileNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
+  infoCard: { backgroundColor: Colors.surface.l1, borderRadius: Radii.lg, padding: Spacing.md, gap: Spacing.sm },
+  infoHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  infoLine: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  activityRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  flexText: { flex: 1, minWidth: 0 },
   demoBadge: {
     alignSelf: 'flex-start',
     marginBottom: -Spacing.sm,

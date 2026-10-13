@@ -25,6 +25,7 @@ export default function DevDemoSeedScreen() {
 function DevDemoSeedPanel() {
   const artist = useArtistStore((s) => s.artist);
   const seedDemoStats = useArtistStore((s) => s.seedDemoStats);
+  const loadDemoAccount = useArtistStore((s) => s.loadDemoAccount);
   const entries = useArtistStore((s) => s.entries);
   const publishedIds = entries.filter((e) => e.status === 'published').map((e) => e.track.id);
   // Derived from the Analytics tab's own per-track figures, so Overview and
@@ -45,6 +46,14 @@ function DevDemoSeedPanel() {
           label="Seed demo stats from Analytics"
           onPress={() => seedDemoStats(totals.monthlyListeners, totals.streams)}
           disabled={!artist || publishedIds.length === 0}
+        />
+        <PillButton
+          label="Load demo artist account (all tabs)"
+          variant="secondary"
+          onPress={() => {
+            loadDemoAccount();
+            router.push('/profile/artist/dashboard');
+          }}
         />
         <PillButton label="Back to Dashboard" onPress={() => router.push('/profile/artist/dashboard')} />
       </SafeAreaView>

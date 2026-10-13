@@ -9,6 +9,7 @@ import { Colors, Radii, Spacing } from '@/constants/theme';
 import { getTrackAnalytics, type TimePeriod } from '@/lib/analytics-mock';
 import { useDashboardStrings } from '@/state/dashboard-locale-store';
 import { useArtistStore } from '@/state/artist-store';
+import { DEMO_AGE_GROUPS, DEMO_GENDER, DEMO_TOP_CITIES, DEMO_TOP_COUNTRIES, getDemoAccountMetrics } from '@/mocks/demo-artist-account';
 import type { DashboardStringKey } from '@/lib/dashboard-i18n';
 
 const PERIOD_KEYS: { id: TimePeriod; key: DashboardStringKey }[] = [
@@ -23,6 +24,7 @@ const PERIOD_KEYS: { id: TimePeriod; key: DashboardStringKey }[] = [
 export default function AnalyticsScreen() {
   const { t, locale } = useDashboardStrings();
   const entries = useArtistStore((s) => s.entries);
+  const demoAccount = useArtistStore((s) => s.demoAccount);
   const published = useMemo(() => entries.filter((e) => e.status === 'published'), [entries]);
   const [rawTrackId, setRawTrackId] = useState(published[0]?.track.id);
   const trackId = published.some((e) => e.track.id === rawTrackId) ? rawTrackId : published[0]?.track.id;
@@ -122,13 +124,88 @@ export default function AnalyticsScreen() {
             ))}
           </View>
         </View>
+
+        {demoAccount && <AccountSections trackIds={published.map((e) => e.track.id)} titles={published.map((e) => e.track.title)} />}
       </ScrollView>
     </ThemedView>
   );
 }
 
+/** Account-level demo analytics (demo account only) — derived from the same
+ * per-track seeded figures as the cards above, so every number reconciles. */
+function AccountSections({ trackIds, titles }: { trackIds: string[]; titles: string[] }) {
+  const { t, locale } = useDashboardStrings();
+  const metrics = useMemo(() => getDemoAccountMetrics(trackIds), [trackIds]);
+  const peak = Math.max(...metrics.growth.map((p) => p.value));
+  return (
+    <>
+      <View style={styles.chartCard}>
+        <ThemedText variant="label-sm" emphasis="medium" style={styles.sectionLabel}>{t('growthSection')}</ThemedText>
+        <ThemedText variant="headline-sm">{t('listenerGrowth')}</ThemedText>
+        <ListenTrendChart points={metrics.growth.map((p) => ({ label: p.label[locale], value: p.value }))} peakLabel={`${t('peakLabel')} ${peak.toLocaleString('en-US')}`} />
+        <View style={styles.chartFooter}>
+          <ThemedText variant="body-sm" emphasis="medium">{metrics.growth[0]!.label[locale]}</ThemedText>
+          <ThemedText variant="body-sm">{metrics.monthlyListeners.toLocaleString('en-US')} {t('listenersWord')}</ThemedText>
+        </View>
+      </View>
+
+      <View style={styles.chartCard}>
+        <ThemedText variant="label-sm" emphasis="medium" style={styles.sectionLabel}>{t('demographicsSection')}</ThemedText>
+        <ThemedText variant="headline-sm">{t('ageGroups')}</ThemedText>
+        {DEMO_AGE_GROUPS.map((g) => (
+          <PctBar key={g.label} label={g.label} pct={g.pct} />
+        ))}
+        <ThemedText variant="headline-sm" style={styles.subHead}>{t('genderLabel')}</ThemedText>
+        {DEMO_GENDER.map((g) => (
+          <PctBar key={g.label.en} label={g.label[locale]} pct={g.pct} />
+        ))}
+      </View>
+
+      <View style={styles.chartCard}>
+        <ThemedText variant="headline-sm">{t('topCountries')}</ThemedText>
+        {DEMO_TOP_COUNTRIES.map((c) => (
+          <PctBar key={c.name.en} label={c.name[locale]} pct={c.pct} />
+        ))}
+        <ThemedText variant="headline-sm" style={styles.subHead}>{t('topCities')}</ThemedText>
+        {DEMO_TOP_CITIES.map((c) => (
+          <PctBar key={c.name.en} label={c.name[locale]} pct={c.pct} />
+        ))}
+      </View>
+
+      <View style={styles.chartCard}>
+        <ThemedText variant="headline-sm">{t('trackPerformance')}</ThemedText>
+        {trackIds.map((id, i) => (
+          <View key={id} style={styles.barRow}>
+            <ThemedText variant="body-sm" numberOfLines={1} style={styles.flexText}>{titles[i]}</ThemedText>
+            <ThemedText variant="label-lg">{getTrackAnalytics(id, 'all').streams.toLocaleString('en-US')} {t('streamsWord')}</ThemedText>
+          </View>
+        ))}
+      </View>
+    </>
+  );
+}
+
+function PctBar({ label, pct }: { label: string; pct: number }) {
+  return (
+    <View style={styles.pctRow}>
+      <View style={styles.barRow}>
+        <ThemedText variant="body-sm">{label}</ThemedText>
+        <ThemedText variant="label-lg">{pct}%</ThemedText>
+      </View>
+      <View style={styles.pctTrack}>
+        <View style={[styles.pctFill, { width: `${pct}%` }]} />
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  subHead: { marginTop: Spacing.sm },
+  flexText: { flex: 1, minWidth: 0, marginRight: Spacing.sm },
+  pctRow: { gap: 4 },
+  pctTrack: { height: 6, borderRadius: 3, backgroundColor: Colors.surface.l3, overflow: 'hidden' },
+  pctFill: { height: '100%', borderRadius: 3, backgroundColor: Colors.primary },
   content: { padding: Spacing.margin, gap: Spacing.lg, paddingBottom: Spacing.xl * 3 },
   trackHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
   trackText: { flex: 1, minWidth: 0, gap: 2 },

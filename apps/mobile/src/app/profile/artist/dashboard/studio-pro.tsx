@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { router } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
+import { Linking, Platform, ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -8,7 +9,9 @@ import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useToast } from '@/hooks/use-toast';
 import { formatKgsAmount } from '@/lib/format-currency';
 import type { DashboardStringKey, LocalizedText } from '@/lib/dashboard-i18n';
+import { getMbankPaymentAdapter, newOrderId, type PaymentOrder } from '@/lib/payments/mbank-payment';
 import { useDashboardStrings } from '@/state/dashboard-locale-store';
+import { usePaymentStore } from '@/state/payment-store';
 
 const TIERS: {
   id: string;
@@ -101,6 +104,44 @@ export default function StudioProScreen() {
   const { t, locale } = useDashboardStrings();
   const [yearly, setYearly] = useState(true);
   const { showToast, toast } = useToast();
+  const [currentTierId, setCurrentTierId] = useState(TIERS.find((tier) => tier.current)!.id);
+  const pending = useRef<{ orderId: string; tierId: string } | undefined>(undefined);
+  const result = usePaymentStore((s) => s.result);
+  const paidOrder = usePaymentStore((s) => s.order);
+
+  // Outcome of this tab's MBANK (demo) checkout.
+  useEffect(() => {
+    if (!result || !paidOrder || paidOrder.id !== pending.current?.orderId) return;
+    const { tierId } = pending.current;
+    pending.current = undefined;
+    if (result.outcome === 'success') {
+      setCurrentTierId(tierId);
+      showToast(t('planActivatedDemo'), 'check');
+    } else {
+      showToast(result.outcome === 'cancelled' ? t('paymentCancelledMsg') : t('paymentFailedMsg'), 'info-outline');
+    }
+    usePaymentStore.getState().reset();
+  }, [result, paidOrder, showToast, t]);
+
+  async function choose(tier: (typeof TIERS)[number]) {
+    const amountKgs = yearly ? tier.priceYear : Math.round((tier.priceYear / 10) * 1.15);
+    const order: PaymentOrder = {
+      id: newOrderId('STUDIO'),
+      amountKgs,
+      currency: 'KGS',
+      description: `${tier.name[locale]} · ${yearly ? t('perYear') : t('perMonth')}`,
+      purpose: 'studio-pro',
+    };
+    pending.current = { orderId: order.id, tierId: tier.id };
+    const session = await getMbankPaymentAdapter().createSession(order);
+    usePaymentStore.getState().start(order);
+    if (session.kind === 'redirect') {
+      if (Platform.OS === 'web') window.location.assign(session.checkoutUrl);
+      else void Linking.openURL(session.checkoutUrl);
+      return;
+    }
+    router.push('/sheets/mbank-pay');
+  }
 
   return (
     <ThemedView surface="canvas" style={styles.flex}>
@@ -129,9 +170,9 @@ export default function StudioProScreen() {
               </View>
             ))}
             <PillButton
-              label={tier.current ? t('currentPlan') : `${t('chooseTier')} ${tier.name[locale]}`}
-              disabled={tier.current}
-              onPress={tier.current ? undefined : () => showToast(t('subscriptionsToast'), 'studio')}
+              label={tier.id === currentTierId ? t('currentPlan') : `${t('chooseTier')} ${tier.name[locale]}`}
+              disabled={tier.id === currentTierId || tier.priceYear === 0}
+              onPress={tier.id === currentTierId || tier.priceYear === 0 ? undefined : () => void choose(tier)}
               style={styles.tierButton}
             />
           </View>
