@@ -1,10 +1,10 @@
 import { router } from 'expo-router';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Artwork, Badge, PillButton } from '@/components/ui';
+import { Artwork, Badge, Chip, EmptyState, PillButton, PressableScale } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import type { DashboardStringKey } from '@/lib/dashboard-i18n';
 import { formatKgsAmount } from '@/lib/format-currency';
@@ -14,6 +14,14 @@ import { useArtistStore } from '@/state/artist-store';
 import { useDashboardStrings } from '@/state/dashboard-locale-store';
 
 const GOAL_LABEL: Record<PromoGoal, DashboardStringKey> = { streams: 'goalStreams', followers: 'goalFollowers', playlists: 'goalPlaylists' };
+
+type CampaignFilter = 'all' | 'active' | 'paused' | 'completed';
+const CAMPAIGN_FILTERS: { id: CampaignFilter; key: DashboardStringKey }[] = [
+  { id: 'all', key: 'filterAll' },
+  { id: 'active', key: 'campaignActive' },
+  { id: 'paused', key: 'campaignPaused' },
+  { id: 'completed', key: 'campaignCompleted' },
+];
 
 /** Artist Dashboard — Promotion tab (Stitch "mmusic_boost"). Campaigns are
  * created through the promotion wizard and paid via the MBANK payment adapter
@@ -25,12 +33,18 @@ export default function PromotionScreen() {
   const published = useMemo(() => entries.filter((e) => e.status === 'published'), [entries]);
   const coverOf = (trackId: string) => published.find((e) => e.track.id === trackId)?.track.coverUri;
   const active = campaigns.find((c) => c.status === 'active');
+  const [filter, setFilter] = useState<CampaignFilter>('all');
+  const filteredCampaigns = useMemo(() => (filter === 'all' ? campaigns : campaigns.filter((c) => c.status === filter)), [campaigns, filter]);
 
   return (
     <ThemedView surface="canvas" style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
         {active && (
-          <View style={styles.card}>
+          <PressableScale
+            accessibilityRole="button"
+            onPress={() => router.push({ pathname: '/profile/artist/campaign/[id]', params: { id: active.id } })}
+            style={styles.card}
+          >
             <View style={styles.activeRow}>
               <ThemedText variant="label-sm" style={[styles.flexText, { color: Colors.primary }]}>
                 {t('liveLabel')} · {t(GOAL_LABEL[active.goal])}
@@ -56,7 +70,7 @@ export default function PromotionScreen() {
             <View style={styles.progressTrack}>
               <View style={[styles.progressFill, { width: `${Math.min(100, (active.reachSoFar / active.estimatedReach) * 100)}%` }]} />
             </View>
-          </View>
+          </PressableScale>
         )}
 
         <View style={styles.section}>
@@ -71,9 +85,16 @@ export default function PromotionScreen() {
         {campaigns.length > 0 && (
           <View style={styles.section}>
             <ThemedText variant="headline-md">{t('campaignsSection')}</ThemedText>
-            {campaigns.map((c) => (
-              <CampaignRow key={c.id} campaign={c} coverUri={coverOf(c.trackId)} />
-            ))}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
+              {CAMPAIGN_FILTERS.map((f) => (
+                <Chip key={f.id} label={t(f.key)} selected={f.id === filter} onPress={() => setFilter(f.id)} />
+              ))}
+            </ScrollView>
+            {filteredCampaigns.length === 0 ? (
+              <EmptyState icon="campaign" title={t('noCampaignsForFilter')} />
+            ) : (
+              filteredCampaigns.map((c) => <CampaignRow key={c.id} campaign={c} coverUri={coverOf(c.trackId)} />)
+            )}
           </View>
         )}
 
@@ -96,9 +117,14 @@ export default function PromotionScreen() {
 
 function CampaignRow({ campaign: c, coverUri }: { campaign: Campaign; coverUri?: Parameters<typeof Artwork>[0]['uri'] }) {
   const { t } = useDashboardStrings();
-  const done = c.status === 'completed';
+  const statusLabel = c.status === 'completed' ? t('campaignCompleted') : c.status === 'paused' ? t('campaignPaused') : t('campaignActive');
+  const statusColor = c.status === 'completed' ? Colors.text.medium : c.status === 'paused' ? Colors.secondary : Colors.tertiary;
   return (
-    <View style={styles.historyCard}>
+    <PressableScale
+      accessibilityRole="button"
+      onPress={() => router.push({ pathname: '/profile/artist/campaign/[id]', params: { id: c.id } })}
+      style={styles.historyCard}
+    >
       <View style={styles.activeRow}>
         <Artwork uri={coverUri} size={40} radius={Radii.DEFAULT} />
         <View style={styles.flexText}>
@@ -107,9 +133,7 @@ function CampaignRow({ campaign: c, coverUri }: { campaign: Campaign; coverUri?:
             {t(GOAL_LABEL[c.goal])} · {formatKgsAmount(c.budgetKgs)} сом · {c.durationDays} {t('daysWord')}
           </ThemedText>
         </View>
-        <ThemedText variant="label-md" style={{ color: done ? Colors.text.medium : Colors.tertiary }}>
-          {done ? t('campaignCompleted') : t('campaignActive')}
-        </ThemedText>
+        <ThemedText variant="label-md" style={{ color: statusColor }}>{statusLabel}</ThemedText>
       </View>
       <View style={styles.statsRow}>
         <ThemedText variant="body-sm" emphasis="medium">
@@ -119,7 +143,7 @@ function CampaignRow({ campaign: c, coverUri }: { campaign: Campaign; coverUri?:
           {c.simulatedPayment ? t('paidViaMbankDemo') : ''} · {c.paymentRef}
         </ThemedText>
       </View>
-    </View>
+    </PressableScale>
   );
 }
 
@@ -133,6 +157,7 @@ const styles = StyleSheet.create({
   progressTrack: { height: 6, borderRadius: 3, backgroundColor: Colors.surface.l3, overflow: 'hidden' },
   progressFill: { height: '100%', borderRadius: 3, backgroundColor: Colors.primary },
   section: { gap: Spacing.sm },
+  filterRow: { gap: Spacing.xs },
   toolCard: { backgroundColor: Colors.surface.l1, borderRadius: Radii.md, padding: Spacing.md, gap: 4 },
   toolHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   historyCard: { backgroundColor: Colors.surface.l1, borderRadius: Radii.md, padding: Spacing.sm, gap: Spacing.xs },

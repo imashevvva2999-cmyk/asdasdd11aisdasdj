@@ -29,6 +29,7 @@ check('streams/listeners/playlistAdds are positive integers', Number.isInteger(a
 check('completionPct is between 0 and 100', a.completionPct > 0 && a.completionPct <= 100);
 check('geography percentages sum to 100', Math.round(a.geography.reduce((sum, g) => sum + g.pct, 0)) === 100);
 check('channel percentages sum to 100', Math.round(a.channels.reduce((sum, c2) => sum + c2.pct, 0)) === 100);
+check('device percentages sum to 100', Math.round(a.devices.reduce((sum, dev) => sum + dev.pct, 0)) === 100);
 check('peak equals the real maximum of the trend values', a.peak === Math.max(...a.trend.map((p) => p.value)));
 check('trend has at least 2 points for every period', ['24h', '7d', '28d', 'all'].every((p) => getTrackAnalytics('midnight-mirage', p).trend.length >= 2));
 check('avgListenSec is positive and avgListenPct is 0-100', a.avgListenSec > 0 && a.avgListenPct > 0 && a.avgListenPct <= 100);

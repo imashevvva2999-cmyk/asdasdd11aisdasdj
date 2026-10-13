@@ -208,6 +208,10 @@ function fade(p: SharedValue<number>, at: number): number {
 
 const styles = StyleSheet.create({
   shadow: {
+    // Matches the rounded artwork it's cast behind (Slot/Artwork both use
+    // Radii.lg) — without this, the shadow's own box has square corners and
+    // shows through as a sharp rectangle behind the rounded cover.
+    borderRadius: Radii.lg,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 18 },
     shadowOpacity: 0.35,

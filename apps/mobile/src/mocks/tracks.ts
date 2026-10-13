@@ -45,6 +45,11 @@ export const tracks: Track[] = [
   { id: 'ananayyn', title: 'Ананайын', artistId: 'tamga', artistName: 'Тамга' },
   { id: 'eto-lyubov', title: 'Это любовь', artistId: 'aibek-zamirov', artistName: 'Айбек Замиров' },
   { id: 'issyk-kulskiy-vaib', title: 'Иссык-Кульский Вайб', artistId: 'freeman996', artistName: 'FreeMan996' },
+  // First real Kyrgyz audio import (not one of the 20 above — a new track,
+  // added on top of them, never replacing any). Rights are NOT confirmed —
+  // local/dev testing only, see assets/audio/kyrgyz/CREDITS.md. durationSec
+  // is the real file's measured length (ffprobe).
+  { id: 'oshondo', title: 'Ошондо', artistId: 'mirbek-atabekov', artistName: 'Мирбек Атабеков', durationSec: 201 },
 ];
 
 // Fill in recovered Stitch artwork (Фаза 4 restoration pass) — a plain id

@@ -8,12 +8,15 @@ import { StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { startAudio } from '@/audio/platform-audio';
+import { FloatingPaymentButton } from '@/components/mbank/floating-payment-button';
 import { PlayerExpandPreview } from '@/components/player/expand-preview';
 import { iconFonts } from '@/components/ui/icon';
 import { RouteTitle } from '@/components/web/route-title';
 import { useArtistStore } from '@/state/artist-store';
+import { useFloatingButtonStore } from '@/state/floating-button-store';
 import { PlayerSurfaceSync } from '@/state/player-surface';
 import { usePlayerStore } from '@/state/player-store';
+import { useProfileAvatarStore } from '@/state/profile-avatar-store';
 import { useAppStrings, useLocaleStore } from '@/state/locale-store';
 import { loadedFonts } from '@/constants/fonts';
 import { Colors } from '@/constants/theme';
@@ -68,6 +71,18 @@ export default function RootLayout() {
   // + client-only rehydrate pattern as likedTrackIds above.
   useEffect(() => {
     useLocaleStore.persist.rehydrate();
+  }, []);
+
+  // Profile avatar override: same skipHydration + client-only rehydrate
+  // pattern as above.
+  useEffect(() => {
+    useProfileAvatarStore.persist.rehydrate();
+  }, []);
+
+  // Floating MBANK payment button's last snapped position: same skipHydration
+  // + client-only rehydrate pattern as above.
+  useEffect(() => {
+    useFloatingButtonStore.persist.rehydrate();
   }, []);
 
   // DEMO ONLY: rebuild the fictional "Nomad Echo" account if it was loaded in
@@ -126,6 +141,9 @@ export default function RootLayout() {
           </Stack>
           {/* Follows a swipe up on the mini-player until the player route opens. */}
           <PlayerExpandPreview />
+          {/* AssistiveTouch-style draggable MBANK payment entry point — one
+              instance for the whole app, drawn above everything else. */}
+          <FloatingPaymentButton />
         </ThemeProvider>
       </BottomSheetModalProvider>
       </View>

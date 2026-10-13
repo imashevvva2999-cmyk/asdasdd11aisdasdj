@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
 import { DemoNotice } from '@/components/demo-notice';
@@ -24,8 +25,15 @@ export default function MbankPaySheet() {
   const app = useAppStrings();
 
   async function finish(outcome: 'success' | 'cancelled' | 'failed') {
-    await completeDemo(outcome);
-    goBack();
+    // Promotion keeps its own embedded, already-approved success screen
+    // (promote.tsx step === 'done') — only purposes without one (studio-pro,
+    // future purchases) go through the shared processing/result sheets.
+    if (order?.purpose === 'promotion') {
+      await completeDemo(outcome);
+      goBack();
+      return;
+    }
+    router.replace({ pathname: '/sheets/mbank-processing', params: { outcome } });
   }
 
   if (!order) {

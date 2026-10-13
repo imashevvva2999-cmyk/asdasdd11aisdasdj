@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { Linking, Platform, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Artwork, Icon, PillButton, SheetScreen, TextLinkButton } from '@/components/ui';
@@ -8,21 +8,23 @@ import { Colors, Radii, Spacing } from '@/constants/theme';
 import { confirmAndSendLabel, supportTitleLabel } from '@/lib/i18n';
 import { formatKgsAmount } from '@/lib/format-currency';
 import { goBack } from '@/lib/navigation';
+import { getMbankPaymentAdapter, newOrderId, type PaymentOrder } from '@/lib/payments/mbank-payment';
 import { getArtistById } from '@/mocks';
 import { useAppStrings } from '@/state/locale-store';
+import { usePaymentStore } from '@/state/payment-store';
 import { useSupportStore } from '@/state/support-store';
 
 /**
  * S-20 Donation Confirmation (docs/screens.md §3.12). Frontend confirmation
  * step only — no real MBANK transaction, balance retrieval, or bank auth.
- * `useSupportStore.confirm()` is the single place a future payment call
- * replaces the local success transition (see its own comment).
+ * Routes through the shared MBANK payment widget (lib/payments/mbank-payment.ts
+ * + sheets/mbank-processing, sheets/mbank-result) exactly like Studio Pro and
+ * Promotion, so a future live adapter covers donations too.
  */
 export default function SupportConfirmSheet() {
   const artistId = useSupportStore((s) => s.artistId);
   const amount = useSupportStore((s) => s.amount);
-  const stage = useSupportStore((s) => s.stage);
-  const confirm = useSupportStore((s) => s.confirm);
+  const stage = usePaymentStore((s) => s.stage);
   const { t, locale } = useAppStrings();
 
   const artist = artistId ? getArtistById(artistId) : undefined;
@@ -38,9 +40,26 @@ export default function SupportConfirmSheet() {
     );
   }
 
-  async function handleConfirm() {
-    await confirm();
-    router.replace('/sheets/support-success');
+  async function startDonationPayment(outcome: 'success' | 'failed') {
+    if (!artist || !amount) return;
+    const order: PaymentOrder = {
+      id: newOrderId('DONATE'),
+      amountKgs: amount,
+      currency: 'KGS',
+      description: supportTitleLabel(locale, artist.name),
+      purpose: 'donation',
+    };
+    // start() first so the Pay/Decline buttons disable (via `stage`) before
+    // the createSession() await resolves — closes a double-submit window a
+    // fast double-tap could otherwise hit.
+    usePaymentStore.getState().start(order);
+    const session = await getMbankPaymentAdapter().createSession(order);
+    if (session.kind === 'redirect') {
+      if (Platform.OS === 'web') window.location.assign(session.checkoutUrl);
+      else void Linking.openURL(session.checkoutUrl);
+      return;
+    }
+    router.replace({ pathname: '/sheets/mbank-processing', params: { outcome } });
   }
 
   return (
@@ -90,11 +109,23 @@ export default function SupportConfirmSheet() {
         <PillButton
           label={confirmAndSendLabel(locale, formatKgsAmount(amount))}
           trailingIcon="bolt"
-          loading={stage === 'processing'}
-          onPress={handleConfirm}
+          loading={stage === 'pending' || stage === 'processing'}
+          onPress={() => startDonationPayment('success')}
           style={styles.cta}
         />
-        <TextLinkButton label={t('cancel')} tone="muted" onPress={() => goBack()} disabled={stage === 'processing'} style={styles.cancel} />
+        <TextLinkButton
+          label={t('mbankWidgetSimulateDeclineLabel')}
+          tone="muted"
+          disabled={stage === 'pending' || stage === 'processing'}
+          onPress={() => startDonationPayment('failed')}
+        />
+        <TextLinkButton
+          label={t('cancel')}
+          tone="muted"
+          onPress={() => goBack()}
+          disabled={stage === 'pending' || stage === 'processing'}
+          style={styles.cancel}
+        />
       </View>
     </SheetScreen>
   );

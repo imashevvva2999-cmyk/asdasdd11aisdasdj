@@ -60,14 +60,19 @@ const KYRGYZ_MUSIC = [
   'taimuras', 'ananayyn', 'eto-lyubov', 'issyk-kulskiy-vaib',
 ];
 
-check('kyrgyz-music resolves to exactly the 20 verified Kyrgyz tracks', sameSet(getTrackIdsForGenre('kyrgyz-music'), KYRGYZ_MUSIC));
+// 'oshondo' is a 21st real Kyrgyz track (2026-10-13 import, see
+// assets/audio/kyrgyz/CREDITS.md) added on top of the original 20, not
+// replacing any of them.
+check('kyrgyz-music resolves to exactly the 20 verified Kyrgyz tracks plus the real "oshondo" import', sameSet(getTrackIdsForGenre('kyrgyz-music'), [...KYRGYZ_MUSIC, 'oshondo']));
 check('no Kyrgyz track leaks into electronic-dance or chill-lofi', !getTrackIdsForGenre('electronic-dance').some((id) => KYRGYZ_MUSIC.includes(id)) && !getTrackIdsForGenre('chill-lofi').some((id) => KYRGYZ_MUSIC.includes(id)));
 
 // Audio-first: genres with at least one demo-audio track come first (catalog
-// order within each group), so Discover still opens on Electronic & Dance.
+// order within each group). kyrgyz-music now has real audio ('oshondo',
+// 2026-10-13) and is featuredGenre (sorted first in source order), so it now
+// leads instead of trailing the no-audio group.
 check(
-  'getPlayableGenreIds() returns [electronic-dance, chill-lofi, kyrgyz-music] (audio genres first)',
-  getPlayableGenreIds().join(',') === 'electronic-dance,chill-lofi,kyrgyz-music',
+  'getPlayableGenreIds() returns [kyrgyz-music, electronic-dance, chill-lofi] (audio genres first)',
+  getPlayableGenreIds().join(',') === 'kyrgyz-music,electronic-dance,chill-lofi',
 );
 
 // Discover's genre chip must never fall back to a raw id like "#kyrgyz-music".

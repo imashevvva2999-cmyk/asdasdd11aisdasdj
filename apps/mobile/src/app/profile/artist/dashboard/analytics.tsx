@@ -76,10 +76,10 @@ export default function AnalyticsScreen() {
         </ScrollView>
 
         <View style={styles.statsGrid}>
-          <StatCard label={t('streams')} value={data.streams.toLocaleString('en-US')} style={styles.statTile} />
-          <StatCard label={t('listeners')} value={data.listeners.toLocaleString('en-US')} style={styles.statTile} />
+          <StatCard label={t('streams')} value={data.streams.toLocaleString('en-US')} trend={`+${data.streamsDeltaPct}%`} style={styles.statTile} />
+          <StatCard label={t('listeners')} value={data.listeners.toLocaleString('en-US')} trend={`+${data.listenersDeltaPct}%`} style={styles.statTile} />
           <StatCard label={t('completion')} value={`${data.completionPct}%`} style={styles.statTile} />
-          <StatCard label={t('inPlaylists')} value={data.playlistAdds.toLocaleString('en-US')} style={styles.statTile} />
+          <StatCard label={t('inPlaylists')} value={data.playlistAdds.toLocaleString('en-US')} trend={`+${data.playlistAddsDelta}`} style={styles.statTile} />
         </View>
 
         <View style={styles.chartCard}>
@@ -121,6 +121,18 @@ export default function AnalyticsScreen() {
           <View style={styles.statsGrid}>
             {data.channels.map((c) => (
               <StatCard key={c.name.en} label={c.name[locale]} value={`${c.pct}%`} style={styles.statTile} />
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.chartCard}>
+          <ThemedText variant="label-sm" emphasis="medium" style={styles.sectionLabel}>
+            {t('devicesSection')}
+          </ThemedText>
+          <ThemedText variant="headline-sm">{t('listeningDevices')}</ThemedText>
+          <View style={styles.statsGrid}>
+            {data.devices.map((d) => (
+              <StatCard key={d.name.en} label={d.name[locale]} value={`${d.pct}%`} style={styles.statTile} />
             ))}
           </View>
         </View>

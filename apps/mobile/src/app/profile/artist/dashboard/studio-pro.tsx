@@ -6,10 +6,9 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Chip, Icon, PillButton, PressableScale } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
-import { useToast } from '@/hooks/use-toast';
 import { formatKgsAmount } from '@/lib/format-currency';
 import type { DashboardStringKey, LocalizedText } from '@/lib/dashboard-i18n';
-import { getMbankPaymentAdapter, newOrderId, type PaymentOrder } from '@/lib/payments/mbank-payment';
+import { getMbankPaymentAdapter, newOrderId, type PaymentOrder, type PaymentResult } from '@/lib/payments/mbank-payment';
 import { useDashboardStrings } from '@/state/dashboard-locale-store';
 import { usePaymentStore } from '@/state/payment-store';
 
@@ -103,25 +102,27 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
 export default function StudioProScreen() {
   const { t, locale } = useDashboardStrings();
   const [yearly, setYearly] = useState(true);
-  const { showToast, toast } = useToast();
   const [currentTierId, setCurrentTierId] = useState(TIERS.find((tier) => tier.current)!.id);
   const pending = useRef<{ orderId: string; tierId: string } | undefined>(undefined);
+  const lastHandledResult = useRef<PaymentResult | undefined>(undefined);
   const result = usePaymentStore((s) => s.result);
   const paidOrder = usePaymentStore((s) => s.order);
 
-  // Outcome of this tab's MBANK (demo) checkout.
+  // Tier activation side effect for this tab's MBANK (demo) checkout — the
+  // shared mbank-result.tsx sheet now owns the outcome's visual presentation
+  // and the store's reset() (only on its own Done/Close), so this only needs
+  // to flip the active tier on success. Dedup by result identity rather than
+  // clearing `pending`: Retry (from the result sheet) replays the SAME order
+  // through a NEW completeDemo() call, producing a new `result` object this
+  // effect must still react to.
   useEffect(() => {
     if (!result || !paidOrder || paidOrder.id !== pending.current?.orderId) return;
-    const { tierId } = pending.current;
-    pending.current = undefined;
+    if (result === lastHandledResult.current) return;
+    lastHandledResult.current = result;
     if (result.outcome === 'success') {
-      setCurrentTierId(tierId);
-      showToast(t('planActivatedDemo'), 'check');
-    } else {
-      showToast(result.outcome === 'cancelled' ? t('paymentCancelledMsg') : t('paymentFailedMsg'), 'info-outline');
+      setCurrentTierId(pending.current.tierId);
     }
-    usePaymentStore.getState().reset();
-  }, [result, paidOrder, showToast, t]);
+  }, [result, paidOrder]);
 
   async function choose(tier: (typeof TIERS)[number]) {
     const amountKgs = yearly ? tier.priceYear : Math.round((tier.priceYear / 10) * 1.15);
@@ -198,7 +199,6 @@ export default function StudioProScreen() {
           ))}
         </View>
       </ScrollView>
-      {toast}
     </ThemedView>
   );
 }

@@ -3,7 +3,7 @@
  * reach figures are SIMULATED estimates, not an ad-delivery forecast.
  */
 export type PromoGoal = 'streams' | 'followers' | 'playlists';
-export type CampaignStatus = 'active' | 'completed';
+export type CampaignStatus = 'active' | 'paused' | 'completed';
 
 export type Campaign = {
   id: string;

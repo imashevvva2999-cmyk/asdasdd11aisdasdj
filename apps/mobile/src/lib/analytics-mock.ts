@@ -27,13 +27,16 @@ export type TrackAnalytics = {
   avgListenPct: number;
   geography: { city: LocalizedText; country: LocalizedText; pct: number }[];
   channels: { name: LocalizedText; pct: number }[];
+  devices: { name: LocalizedText; pct: number }[];
 };
 
 const PERIOD_POINTS: Record<TimePeriod, number> = { '24h': 6, '7d': 7, '28d': 10, all: 12 };
 const PERIOD_BASE: Record<TimePeriod, number> = { '24h': 1200, '7d': 9000, '28d': 42000, all: 180000 };
 
-/** Small, seeded PRNG (mulberry32) — deterministic given the same seed. */
-function mulberry32(seed: number) {
+/** Small, seeded PRNG (mulberry32) — deterministic given the same seed.
+ * Exported so other deterministic mock-data modules (e.g.
+ * campaign-analytics-mock.ts) share the exact same generator. */
+export function mulberry32(seed: number) {
   let a = seed;
   return () => {
     a |= 0;
@@ -44,11 +47,16 @@ function mulberry32(seed: number) {
   };
 }
 
-function seedFrom(trackId: string, period: TimePeriod): number {
-  const s = `${trackId}:${period}`;
+/** Deterministic string hash → PRNG seed. Exported for other deterministic
+ * mock-data modules to key their own PRNG off an arbitrary id string. */
+export function seedFromString(s: string): number {
   let hash = 0;
   for (let i = 0; i < s.length; i += 1) hash = (hash * 31 + s.charCodeAt(i)) | 0;
   return hash >>> 0;
+}
+
+function seedFrom(trackId: string, period: TimePeriod): number {
+  return seedFromString(`${trackId}:${period}`);
 }
 
 export function getTrackAnalytics(trackId: string, period: TimePeriod): TrackAnalytics {
@@ -78,6 +86,11 @@ export function getTrackAnalytics(trackId: string, period: TimePeriod): TrackAna
   const chanPcts = chanRaw.map((v) => Math.round((v / chanSum) * 94));
   const lastChan = 100 - chanPcts.reduce((s, v) => s + v, 0);
 
+  const devRaw = [0.45 + rand() * 0.2, 0.2 + rand() * 0.15, 0.05 + rand() * 0.08];
+  const devSum = devRaw.reduce((s, v) => s + v, 0);
+  const devPcts = devRaw.map((v) => Math.round((v / devSum) * 93));
+  const lastDev = 100 - devPcts.reduce((s, v) => s + v, 0);
+
   return {
     streams,
     streamsDeltaPct: Math.round((8 + rand() * 15) * 10) / 10,
@@ -103,6 +116,12 @@ export function getTrackAnalytics(trackId: string, period: TimePeriod): TrackAna
       { name: { en: 'Playlists', ru: 'Плейлисты' }, pct: chanPcts[1]! },
       { name: { en: 'Artist Search', ru: 'Поиск артиста' }, pct: chanPcts[2]! },
       { name: { en: 'Track Radio', ru: 'Радио трека' }, pct: lastChan },
+    ],
+    devices: [
+      { name: { en: 'Mobile app', ru: 'Мобильное приложение' }, pct: devPcts[0]! },
+      { name: { en: 'Web / desktop', ru: 'Веб / десктоп' }, pct: devPcts[1]! },
+      { name: { en: 'Smart speaker', ru: 'Умная колонка' }, pct: devPcts[2]! },
+      { name: { en: 'Other', ru: 'Другое' }, pct: lastDev },
     ],
   };
 }

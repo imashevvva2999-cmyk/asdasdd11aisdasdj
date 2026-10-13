@@ -24,6 +24,7 @@ const EN_STRINGS = {
   artistSetupTitle: 'Artist Setup',
   artistDashboardTitle: 'Artist Dashboard',
   uploadTrackTitle: 'Upload Track',
+  campaignDetailsTitle: 'Campaign details',
 
   // Settings — Fast facts section
   appLanguage: 'App Language',
@@ -422,6 +423,33 @@ const EN_STRINGS = {
   demoNoMoneyWasSentLabel: 'Demo — no money was sent',
   viewSupportReceiptLabel: 'View Support Receipt in History',
 
+  // Universal MBANK Payment Widget (mbank-processing / mbank-result sheets)
+  mbankWidgetProcessingTitle: 'Processing payment…',
+  mbankWidgetProcessingHint: 'This only takes a moment.',
+  mbankWidgetFailedTitle: 'Payment failed',
+  mbankWidgetFailedHint: 'The demo bank declined this payment. You can try again.',
+  mbankWidgetCancelledTitle: 'Payment cancelled',
+  mbankWidgetCancelledHint: 'You cancelled before the payment completed.',
+  mbankWidgetSimulateDeclineLabel: 'Simulate decline (demo)',
+  mbankWidgetSubscriptionActivatedTitle: 'Plan activated',
+  mbankWidgetPurchaseSuccessTitle: 'Purchase complete',
+  mbankWidgetReferenceLabel: 'Reference',
+
+  // Floating MBANK payment button + launcher (mbank-launcher* sheets)
+  mbankFloatingButtonLabel: 'MBANK Pay (Demo)',
+  mbankLauncherTitle: 'MBANK Pay',
+  mbankLauncherSubtitle: 'Choose what you want to pay for',
+  mbankScenarioDonationTitle: 'Artist Donation',
+  mbankScenarioDonationSubtitle: 'Support an artist directly',
+  mbankScenarioStudioProTitle: 'Studio Pro',
+  mbankScenarioStudioProSubtitle: 'Manage your subscription plan',
+  mbankScenarioPurchaseTitle: 'General Purchase',
+  mbankScenarioPurchaseSubtitle: 'A demo one-off payment',
+  mbankPickArtistTitle: 'Choose an artist',
+  mbankPurchaseAmountTitle: 'Choose an amount',
+  mbankGeneralPurchaseDescription: 'General Purchase (Demo)',
+  continueLabel: 'Continue',
+
   // Task 5 — Settings sections
   decreaseCrossfadeLabel: 'Decrease crossfade',
   increaseCrossfadeLabel: 'Increase crossfade',
@@ -496,6 +524,7 @@ const RU_STRINGS: Record<keyof typeof EN_STRINGS, string> = {
   artistSetupTitle: 'Настройка артиста',
   artistDashboardTitle: 'Кабинет артиста',
   uploadTrackTitle: 'Загрузить трек',
+  campaignDetailsTitle: 'Детали кампании',
 
   appLanguage: 'Язык приложения',
   appLanguageEnglish: 'English',
@@ -877,6 +906,32 @@ const RU_STRINGS: Record<keyof typeof EN_STRINGS, string> = {
   directPatronageCompleteLabel: 'Прямая поддержка завершена',
   demoNoMoneyWasSentLabel: 'Демо — деньги не были отправлены',
   viewSupportReceiptLabel: 'Посмотреть квитанцию в истории',
+
+  // Universal MBANK Payment Widget (mbank-processing / mbank-result sheets)
+  mbankWidgetProcessingTitle: 'Обработка платежа…',
+  mbankWidgetProcessingHint: 'Это займёт всего мгновение.',
+  mbankWidgetFailedTitle: 'Платёж не выполнен',
+  mbankWidgetFailedHint: 'Демо-банк отклонил этот платёж. Вы можете попробовать снова.',
+  mbankWidgetCancelledTitle: 'Платёж отменён',
+  mbankWidgetCancelledHint: 'Вы отменили оплату до её завершения.',
+  mbankWidgetSimulateDeclineLabel: 'Смоделировать отказ (демо)',
+  mbankWidgetSubscriptionActivatedTitle: 'Тариф активирован',
+  mbankWidgetPurchaseSuccessTitle: 'Покупка завершена',
+  mbankWidgetReferenceLabel: 'Референс',
+
+  mbankFloatingButtonLabel: 'MBANK Оплата (Демо)',
+  mbankLauncherTitle: 'Оплата MBANK',
+  mbankLauncherSubtitle: 'Выберите, за что хотите заплатить',
+  mbankScenarioDonationTitle: 'Поддержка артиста',
+  mbankScenarioDonationSubtitle: 'Прямая поддержка артиста',
+  mbankScenarioStudioProTitle: 'Studio Pro',
+  mbankScenarioStudioProSubtitle: 'Управление тарифом подписки',
+  mbankScenarioPurchaseTitle: 'Общая покупка',
+  mbankScenarioPurchaseSubtitle: 'Разовый демо-платёж',
+  mbankPickArtistTitle: 'Выберите артиста',
+  mbankPurchaseAmountTitle: 'Выберите сумму',
+  mbankGeneralPurchaseDescription: 'Общая покупка (Демо)',
+  continueLabel: 'Продолжить',
 
   decreaseCrossfadeLabel: 'Уменьшить кроссфейд',
   increaseCrossfadeLabel: 'Увеличить кроссфейд',

@@ -42,6 +42,7 @@ export type ArtworkProps = {
 export function Artwork({ uri, size = 160, aspectRatio, radius = Radii.lg, shape = 'square', placeholderIcon = 'music-note', style, onLoad, onPress, accessibilityLabel }: ArtworkProps) {
   const height = aspectRatio ? size / aspectRatio : size;
   const hydrated = useHydrated();
+  const cornerRadius = shape === 'circle' ? height / 2 : radius;
 
   const content = (
     <View
@@ -50,13 +51,17 @@ export function Artwork({ uri, size = 160, aspectRatio, radius = Radii.lg, shape
         {
           width: size,
           height,
-          borderRadius: shape === 'circle' ? height / 2 : radius,
+          borderRadius: cornerRadius,
         },
         style,
       ]}
     >
       {uri && hydrated ? (
-        <Image source={toImageSource(uri)} style={StyleSheet.absoluteFill} contentFit="cover" onLoad={onLoad} />
+        // borderRadius set directly on the image too, not just the parent's
+        // overflow:hidden — on web, a parent clip can fail to round an
+        // absolutely-filled image when an ancestor (e.g. a Reanimated
+        // carousel slide) has its own transform, leaving sharp corners.
+        <Image source={toImageSource(uri)} style={[StyleSheet.absoluteFill, { borderRadius: cornerRadius }]} contentFit="cover" onLoad={onLoad} />
       ) : (
         <View style={styles.placeholderIcon}>
           <Icon name={placeholderIcon} size={Math.max(20, Math.min(size, height) * 0.35)} color={Colors.text.low} />

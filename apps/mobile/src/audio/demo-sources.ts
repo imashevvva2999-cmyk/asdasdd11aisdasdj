@@ -21,6 +21,10 @@ export const DEMO_SOURCES: Partial<Record<TrackId, AudioSource>> = {
   'lost-frequencies-t1': require('../../assets/audio/late-night-radio.mp3'),
   'velvet-skyline-t1': require('../../assets/audio/airship-serenity.mp3'),
   'chronos-echoes-t1': require('../../assets/audio/winter-reflections.mp3'),
+  // First real Kyrgyz audio import — rights NOT confirmed, local/dev testing
+  // only (assets/audio/kyrgyz/CREDITS.md). Not CC BY 4.0 / Kevin MacLeod like
+  // the entries above; see the Kyrgyz-catalog id list further down this file.
+  oshondo: require('../../assets/audio/kyrgyz/oshondo.mp3'),
 };
 
 /**
@@ -36,4 +40,19 @@ export const PENDING_AUDIO_TRACK_IDS: TrackId[] = [
   'kyrgyz-biyi', 'ne-segodnya', 'kirgiz-jeri', 'erke-kyz', 'chopo-choor-fantasy',
   'kyrgyzstanym-remix', 'jashtyk-kez', 'kambarkan', 'esimde', 'kyrgyz-bala',
   'taimuras', 'ananayyn', 'eto-lyubov', 'issyk-kulskiy-vaib',
+];
+
+/**
+ * Every Kyrgyz-catalog track id, whether its audio is still pending (the 20
+ * above) or already wired (e.g. 'oshondo'). Real Kyrgyz recordings are
+ * licensed/credited separately from the CC BY 4.0 Kevin MacLeod demo
+ * recordings used elsewhere — scripts/verify-demo-audio-coverage.mjs reads
+ * this to exempt these ids from that license-specific check (PENDING.md
+ * step 7) without weakening it for any other track.
+ */
+export const KYRGYZ_TRACK_IDS: TrackId[] = [
+  'kyrgyzstanym', 'muras', 'ene-til', 'alai', 'kachan-kaitat', 'jazym-kelchi',
+  'kyrgyz-biyi', 'ne-segodnya', 'kirgiz-jeri', 'erke-kyz', 'chopo-choor-fantasy',
+  'kyrgyzstanym-remix', 'jashtyk-kez', 'kambarkan', 'esimde', 'kyrgyz-bala',
+  'taimuras', 'ananayyn', 'eto-lyubov', 'issyk-kulskiy-vaib', 'oshondo',
 ];

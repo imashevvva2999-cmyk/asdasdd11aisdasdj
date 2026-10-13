@@ -126,6 +126,19 @@ export const demoAudioCredits: Partial<Record<TrackId, DemoAudioCredit>> = {
     licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
     isInstrumental: true,
   },
+  // First real Kyrgyz audio import — NOT a CC BY 4.0 / Kevin MacLeod demo
+  // recording like every entry above. Rights are not confirmed: local/dev
+  // testing only, never publish or distribute (assets/audio/kyrgyz/CREDITS.md).
+  // `isInstrumental: true` is a safe UI default (no lyrics text exists for
+  // this track to show), not a claim about the actual recording's content.
+  oshondo: {
+    originalTitle: 'Ошондо (Mood Video)',
+    author: 'Мирбек Атабеков',
+    sourceUrl: '',
+    licenseName: 'Rights not confirmed — local development testing only, not licensed for distribution',
+    licenseUrl: '',
+    isInstrumental: true,
+  },
 };
 
 export function hasDemoAudio(trackId: TrackId | undefined): boolean {

@@ -7,7 +7,7 @@
  * that holds the MBANK merchant credentials and creates the payment session —
  * secrets must never live in this frontend bundle.
  */
-export type PaymentPurpose = 'promotion' | 'studio-pro';
+export type PaymentPurpose = 'promotion' | 'studio-pro' | 'donation' | 'purchase';
 
 export type PaymentOrder = {
   id: string;

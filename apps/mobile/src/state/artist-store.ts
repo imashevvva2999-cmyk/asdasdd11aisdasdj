@@ -122,6 +122,10 @@ type ArtistState = {
 
   createArtistProfile: (input: ArtistSetupInput) => Artist;
   addCampaign: (campaign: Campaign) => void;
+  /** Stops delivery on an active campaign. No-op if the campaign doesn't exist or is already paused/completed. */
+  pauseCampaign: (campaignId: string) => void;
+  /** Resumes a paused campaign. No-op if the campaign doesn't exist, isn't paused, or is completed (completed campaigns are never resumable). */
+  resumeCampaign: (campaignId: string) => void;
   /** DEMO ONLY — one-tap fully populated, fictional artist account (persisted
    * in this browser until reset or a real artist profile is created). */
   loadDemoAccount: () => void;
@@ -165,6 +169,20 @@ export const useArtistStore = create<ArtistState>((set, get) => ({
 
   addCampaign: (campaign) => {
     set((state) => ({ campaigns: [campaign, ...state.campaigns] }));
+    if (get().demoAccount) writeDemoSnapshot(get().campaigns.filter((c) => !isSeededDemoCampaign(c)));
+  },
+
+  pauseCampaign: (campaignId) => {
+    set((state) => ({
+      campaigns: state.campaigns.map((c) => (c.id === campaignId && c.status === 'active' ? { ...c, status: 'paused' } : c)),
+    }));
+    if (get().demoAccount) writeDemoSnapshot(get().campaigns.filter((c) => !isSeededDemoCampaign(c)));
+  },
+
+  resumeCampaign: (campaignId) => {
+    set((state) => ({
+      campaigns: state.campaigns.map((c) => (c.id === campaignId && c.status === 'paused' ? { ...c, status: 'active' } : c)),
+    }));
     if (get().demoAccount) writeDemoSnapshot(get().campaigns.filter((c) => !isSeededDemoCampaign(c)));
   },
 

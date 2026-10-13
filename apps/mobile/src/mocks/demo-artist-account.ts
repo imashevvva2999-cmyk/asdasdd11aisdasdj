@@ -1,5 +1,5 @@
 import { sampleImageChoices } from '@/constants/stitch-artwork';
-import { getArtistDemoTotals } from '@/lib/analytics-mock';
+import { getArtistDemoTotals, getTrackAnalytics } from '@/lib/analytics-mock';
 import type { LocalizedText } from '@/lib/dashboard-i18n';
 
 /**
@@ -82,11 +82,23 @@ export type DemoAccountMetrics = {
   royaltiesKgs: number;
   fanDonationsKgs: number;
   growth: { label: LocalizedText; value: number }[];
+  /** Period-over-period growth, weighted across releases by their own
+   * streams/listeners — same seeded per-track deltas the Analytics tab shows. */
+  streamsDeltaPct: number;
+  listenersDeltaPct: number;
 };
+
+function weightedAvgPct(values: number[], weights: number[]): number {
+  const totalWeight = weights.reduce((s, w) => s + w, 0);
+  if (totalWeight === 0) return 0;
+  const sum = values.reduce((s, v, i) => s + v * weights[i]!, 0);
+  return Math.round((sum / totalWeight) * 10) / 10;
+}
 
 /** All account-level figures, derived from the demo releases' analytics. */
 export function getDemoAccountMetrics(trackIds: string[]): DemoAccountMetrics {
   const { streams, monthlyListeners } = getArtistDemoTotals(trackIds);
+  const perTrack28d = trackIds.map((id) => getTrackAnalytics(id, '28d'));
   return {
     monthlyListeners,
     streams,
@@ -95,6 +107,8 @@ export function getDemoAccountMetrics(trackIds: string[]): DemoAccountMetrics {
     fanDonationsKgs: DEMO_FAN_DONATIONS.reduce((sum, d) => sum + d.amountKgs, 0),
     // 12-month listener growth ending at the current monthly listeners.
     growth: MONTHS.map((label, i) => ({ label, value: Math.round(monthlyListeners * (0.32 + 0.68 * Math.pow(i / 11, 1.35))) })),
+    streamsDeltaPct: weightedAvgPct(perTrack28d.map((d) => d.streamsDeltaPct), perTrack28d.map((d) => d.streams)),
+    listenersDeltaPct: weightedAvgPct(perTrack28d.map((d) => d.listenersDeltaPct), perTrack28d.map((d) => d.listeners)),
   };
 }
 

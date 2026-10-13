@@ -7,6 +7,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Artwork, Badge, Chip, EmptyState, Icon, IconButton, PillButton, PressableScale, StatCard, TextLinkButton } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { getArtistSupportTotalKgs } from '@/lib/artist-support-total';
+import { getTrackAnalytics } from '@/lib/analytics-mock';
 import { formatKgsAmount } from '@/lib/format-currency';
 import { usePlayerStore } from '@/state/player-store';
 import { useArtistStore, type UploadStatus } from '@/state/artist-store';
@@ -62,10 +63,18 @@ export default function ArtistDashboardScreen() {
   const loadDemoAccount = useArtistStore((s) => s.loadDemoAccount);
   const { t, locale } = useDashboardStrings();
   const navigation = useNavigation();
+  const publishedEntries = useMemo(() => entries.filter((e) => e.status === 'published'), [entries]);
   const metrics = useMemo(
-    () => (demoAccount ? getDemoAccountMetrics(entries.filter((e) => e.status === 'published').map((e) => e.track.id)) : undefined),
-    [demoAccount, entries],
+    () => (demoAccount ? getDemoAccountMetrics(publishedEntries.map((e) => e.track.id)) : undefined),
+    [demoAccount, publishedEntries],
   );
+  const topTrack = useMemo(() => {
+    if (!demoAccount || publishedEntries.length === 0) return undefined;
+    return publishedEntries.reduce((best, e) => {
+      const streams = getTrackAnalytics(e.track.id, 'all').streams;
+      return streams > getTrackAnalytics(best.track.id, 'all').streams ? e : best;
+    });
+  }, [demoAccount, publishedEntries]);
   const promoSpendKgs = campaigns.reduce((sum, c) => sum + c.budgetKgs, 0);
 
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>('filterAll');
@@ -146,8 +155,20 @@ export default function ArtistDashboardScreen() {
         )}
         {demoStreams !== undefined && <Badge label={t('demoDataBadge')} style={styles.demoBadge} />}
         <View style={styles.statsRow}>
-          <StatCard label={t('listeners')} value={(demoListeners ?? artist.monthlyListeners ?? 0).toLocaleString('en-US')} icon="groups" iconColor={Colors.primary} />
-          <StatCard label={t('streams')} value={(demoStreams ?? 0).toLocaleString('en-US')} icon="play-circle-outline" iconColor={Colors.tertiary} />
+          <StatCard
+            label={t('listeners')}
+            value={(demoListeners ?? artist.monthlyListeners ?? 0).toLocaleString('en-US')}
+            icon="groups"
+            iconColor={Colors.primary}
+            trend={metrics ? `+${metrics.listenersDeltaPct}%` : undefined}
+          />
+          <StatCard
+            label={t('streams')}
+            value={(demoStreams ?? 0).toLocaleString('en-US')}
+            icon="play-circle-outline"
+            iconColor={Colors.tertiary}
+            trend={metrics ? `+${metrics.streamsDeltaPct}%` : undefined}
+          />
           <StatCard
             label={t('supportLabel')}
             value={`${formatKgsAmount(getArtistSupportTotalKgs(supportHistory, artist.id) + (metrics?.fanDonationsKgs ?? 0))} сом`}
@@ -230,6 +251,24 @@ export default function ArtistDashboardScreen() {
             </View>
           )}
         </View>
+
+        {metrics && topTrack && (
+          <View style={styles.infoCard}>
+            <View style={styles.infoHeader}>
+              <ThemedText variant="headline-sm" style={styles.flexText}>{t('topTrackSection')}</ThemedText>
+              <Badge label={t('demoDataBadge')} />
+            </View>
+            <View style={styles.activityRow}>
+              <Artwork uri={topTrack.track.coverUri} size={48} radius={Radii.DEFAULT} />
+              <View style={styles.flexText}>
+                <ThemedText variant="label-lg" numberOfLines={1}>{topTrack.track.title}</ThemedText>
+                <ThemedText variant="body-sm" emphasis="medium">
+                  {getTrackAnalytics(topTrack.track.id, 'all').streams.toLocaleString('en-US')} {t('streamsWord')}
+                </ThemedText>
+              </View>
+            </View>
+          </View>
+        )}
 
         {metrics && (
           <>
