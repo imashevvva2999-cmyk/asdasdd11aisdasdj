@@ -13,7 +13,32 @@ import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 
+import { APP_STRINGS } from '../src/lib/i18n.ts';
+import { DASHBOARD_STRINGS } from '../src/lib/dashboard-i18n.ts';
+
 const root = join(import.meta.dirname, '..');
+
+// Pages pre-render in the default locale (Russian). Expectations below are
+// written in English; a UI-string marker also matches its RU translation from
+// the app's own string tables, while data (titles, names) must match exactly.
+const RU_OF = new Map();
+for (const table of [APP_STRINGS, DASHBOARD_STRINGS]) {
+  for (const [key, en] of Object.entries(table.en)) {
+    if (typeof en === 'string' && typeof table.ru[key] === 'string') RU_OF.set(en, table.ru[key]);
+  }
+}
+const htmlEscape = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;');
+const htmlUnescape = (s) => s.replace(/&amp;/g, '&').replace(/&#x27;/g, "'").replace(/&quot;/g, '"');
+function hasMarker(html, marker) {
+  const plain = htmlUnescape(marker);
+  const variants = [marker, plain];
+  // Exact table entry, or a fragment of one (case-insensitive): accept the
+  // RU translation of every UI string that contains the marker.
+  for (const [en, ru] of RU_OF) {
+    if (en === plain || en.toLowerCase().includes(plain.toLowerCase())) variants.push(ru);
+  }
+  return variants.some((v) => html.includes(v) || html.includes(htmlEscape(v)) || html.includes(htmlEscape(v.toUpperCase())) || html.includes(v.toUpperCase()));
+}
 const distDir = join(root, 'dist');
 
 /** @type {{ path: string; mustContain: string[]; mustNotContain?: string[]; label: string }[]} */
@@ -94,7 +119,7 @@ for (const { path, mustContain, mustNotContain = [], label } of expectations) {
 
   const html = readFileSync(filePath, 'utf8');
   const leakedUndefined = (html.match(/undefined/g) ?? []).length;
-  const missingMarkers = mustContain.filter((marker) => !html.includes(marker));
+  const missingMarkers = mustContain.filter((marker) => !hasMarker(html, marker));
   const forbiddenMarkers = mustNotContain.filter((marker) => html.includes(marker));
 
   if (leakedUndefined > 0 || missingMarkers.length > 0 || forbiddenMarkers.length > 0) {
@@ -109,7 +134,7 @@ for (const { path, mustContain, mustNotContain = [], label } of expectations) {
 }
 
 // W1 — website basics on every page: metadata, safe areas (iPhone), manifest.
-const HEAD_MARKERS = [' lang="en"', 'viewport-fit=cover', '<meta name="description"', '<meta name="theme-color"', 'rel="manifest"', 'property="og:title"'];
+const HEAD_MARKERS = [' lang="ru"', 'viewport-fit=cover', '<meta name="description"', '<meta name="theme-color"', 'rel="manifest"', 'property="og:title"'];
 let headFailures = 0;
 for (const { path } of expectations) {
   const filePath = join(distDir, path);
@@ -140,7 +165,9 @@ const TITLES = [
 for (const [path, expected] of TITLES) {
   const html = existsSync(join(distDir, path)) ? readFileSync(join(distDir, path), 'utf8') : '';
   const title = (/<title[^>]*>([^<]*)<\/title>/.exec(html)?.[1] ?? '').replace(/&amp;/g, '&');
-  if (title === expected) {
+  const [head, ...rest] = expected.split(' – ');
+  const expectedRu = rest.length ? [RU_OF.get(head) ?? head, ...rest].join(' – ') : expected;
+  if (title === expected || title === expectedRu) {
     console.log(`✓ OK       title "${expected}"`);
   } else {
     console.error(`✗ FAIL     title for ${path}: expected "${expected}", got "${title}"`);

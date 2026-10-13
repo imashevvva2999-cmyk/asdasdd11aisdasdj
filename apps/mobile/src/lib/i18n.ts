@@ -607,6 +607,7 @@ const RU_STRINGS: Record<keyof typeof EN_STRINGS, string> = {
   genreTracksSubtitle: 'Треки этого жанра',
   genreNoTracksTitle: 'Здесь пока нет треков',
   genreNoTracksHint: 'Треки этого жанра скоро появятся.',
+  starsCtaLabel: 'Вперёд',
   recentReleasesSubtitle: 'Недавние релизы',
   allGenresTitle: 'Все жанры и настроения',
   allGenresSubtitle: 'Исследуйте более 24 звуковых миров и уникальных культур',

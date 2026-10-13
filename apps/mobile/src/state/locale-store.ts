@@ -18,20 +18,21 @@ const localeStorage = typeof window !== 'undefined' && window.localStorage ? win
 
 /**
  * App-wide language preference (Settings > App Language). Defaults to
- * English, persists across reloads, and is the single source of truth every
+ * Russian for first-time users; a saved EN/RU choice persists across
+ * reloads and always wins. Single source of truth every
  * screen (including the Artist Dashboard, which used to keep its own
  * session-local toggle) reads from.
  */
 export const useLocaleStore = create<LocaleState>()(
   persist(
     (set) => ({
-      locale: 'en',
+      locale: 'ru',
       setLocale: (locale) => set({ locale }),
     }),
     {
       name: 'mmusic:locale',
       storage: createJSONStorage(() => localeStorage),
-      // Static web export pre-renders with the store's default ('en');
+      // Static web export pre-renders with the store's default ('ru');
       // rehydrating synchronously on module load would diverge from that
       // server HTML and trigger a React hydration mismatch. Skipping here
       // and rehydrating from a client-only effect (root _layout.tsx) keeps
