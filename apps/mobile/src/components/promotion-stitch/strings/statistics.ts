@@ -36,7 +36,9 @@ type K =
   | 'manageTitle'
   | 'extend'
   | 'editAudience'
-  | 'pause';
+  | 'pause'
+  | 'sparkCaption'
+  | 'sparkEmpty';
 
 export const StatisticsPromoStrings = {
   en: {
@@ -76,6 +78,8 @@ export const StatisticsPromoStrings = {
     extend: 'Extend campaign with 10% off',
     editAudience: 'Edit audience settings',
     pause: 'Pause delivery',
+    sparkCaption: 'Impressions / day',
+    sparkEmpty: 'No delivery yet',
   },
   ru: {
     campaignPrefix: 'Кампания',
@@ -114,5 +118,7 @@ export const StatisticsPromoStrings = {
     extend: 'Продлить кампанию со скидкой 10%',
     editAudience: 'Изменить параметры аудитории',
     pause: 'Приостановить показ',
+    sparkCaption: 'Показы / день',
+    sparkEmpty: 'Показов пока нет',
   },
 } satisfies PromoStringTable<K>;

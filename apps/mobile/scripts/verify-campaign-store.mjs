@@ -4,7 +4,7 @@
  * real store module directly via `tsx`, same approach as
  * scripts/verify-support-store.mjs. Usage: npx tsx scripts/verify-campaign-store.mjs
  */
-import { setupIssues, useCampaignStore } from '../src/state/campaign-store.ts';
+import { isValidStartDate, parseIsoDay, setupIssues, toIsoDay, useCampaignStore } from '../src/state/campaign-store.ts';
 
 let failures = 0;
 function check(label, condition) {
@@ -127,6 +127,25 @@ check('reset() returns to selectingTrack', useCampaignStore.getState().stage ===
 const launchedBeforeNoOp = useCampaignStore.getState().launched.length;
 await useCampaignStore.getState().confirm(765);
 check('confirm() without a track/package selected does not record a campaign', useCampaignStore.getState().launched.length === launchedBeforeNoOp);
+
+// Campaign start date (Review & Pay calendar): today … one year ahead only.
+const today = new Date();
+const iso = (d) => toIsoDay(d);
+const addDays = (n) => new Date(today.getFullYear(), today.getMonth(), today.getDate() + n);
+check('today is a valid start date', isValidStartDate(iso(today)));
+check('a past day is rejected', !isValidStartDate(iso(addDays(-1))));
+check('more than a year ahead is rejected', !isValidStartDate(iso(addDays(370))));
+check('malformed / impossible dates are rejected', !isValidStartDate('2026-02-30') && !isValidStartDate('nope') && parseIsoDay('2026-13-01') === undefined);
+useCampaignStore.getState().startCampaign('midnight-mirage');
+useCampaignStore.getState().selectPackage('pro');
+useCampaignStore.getState().toggleGenre('pop');
+useCampaignStore.getState().setStartDate(iso(addDays(-3)));
+check('setStartDate ignores a past day', useCampaignStore.getState().startDate === undefined);
+useCampaignStore.getState().setStartDate(iso(addDays(10)));
+check('setStartDate keeps a valid future day', useCampaignStore.getState().startDate === iso(addDays(10)));
+useCampaignStore.getState().setPaymentMethod('mbank');
+await useCampaignStore.getState().confirm(765);
+check('the launched campaign records the chosen start date', useCampaignStore.getState().launched[0]?.startDate === iso(addDays(10)));
 
 if (failures > 0) {
   console.error(`\n${failures} campaign-store check(s) failed.`);

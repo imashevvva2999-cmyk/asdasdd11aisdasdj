@@ -2,15 +2,15 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router, type Href } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Circle } from 'react-native-svg';
 
 import { DemoNotice } from '@/components/demo-notice';
 import { S, SR, SS, SText, alpha, usePromoStrings } from '@/components/promotion-stitch';
 import { SuccessPromoStrings } from '@/components/promotion-stitch/strings/success';
+import { SuccessCheck } from '@/components/promotion-stitch/success-check';
 import { Icon } from '@/components/ui';
 import { PROMO_PACKAGES } from '@/mocks/promotions';
 import { useArtistStore } from '@/state/artist-store';
-import { useCampaignStore } from '@/state/campaign-store';
+import { parseIsoDay, toIsoDay, useCampaignStore } from '@/state/campaign-store';
 import { useDashboardStrings } from '@/state/dashboard-locale-store';
 
 /** Campaign wizard terminal screen — Stitch screen 7 ("Продвижение создано!"),
@@ -18,7 +18,7 @@ import { useDashboardStrings } from '@/state/dashboard-locale-store';
  * status and "what happens next" steps are the Stitch demo copy; the existing
  * DemoNotice line still states that no real campaign is submitted. */
 export default function CampaignSuccessScreen() {
-  const { t } = useDashboardStrings();
+  const { t, locale } = useDashboardStrings();
   const s = usePromoStrings(SuccessPromoStrings);
   const insets = useSafeAreaInsets();
   const entries = useArtistStore((st) => st.entries);
@@ -55,6 +55,12 @@ export default function CampaignSuccessScreen() {
   const digits = latest.id.replace(/\D/g, '');
   const campaignCode = `#PR-${digits.slice(-4)}-MM`;
   const paid = pkg.priceKgs - Math.round(pkg.priceKgs * 0.15);
+  // Same start day as on Review & Pay; today keeps the "today after review" copy.
+  const startDay = latest.startDate ? parseIsoDay(latest.startDate) : undefined;
+  const startLabel =
+    !startDay || latest.startDate === toIsoDay(new Date())
+      ? s.startValue
+      : startDay.toLocaleDateString(locale === 'ru' ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' });
 
   const specs = [
     { icon: 'tag', label: s.campaign },
@@ -79,35 +85,9 @@ export default function CampaignSuccessScreen() {
           </Pressable>
         </View>
 
-        {/* Nebula rings */}
+        {/* Success mark: glowing check + one radial wave, then static */}
         <View style={styles.hero}>
-          <View style={styles.ringsBox}>
-            <LinearGradient
-              colors={[alpha(S.primaryContainer, 0.2), alpha(S.secondaryContainer, 0.1), 'transparent']}
-              start={{ x: 0, y: 1 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.pulse}
-            />
-            <View style={styles.ring1}>
-              <View style={styles.ring2}>
-                <LinearGradient
-                  colors={[S.primaryContainer, S.tertiaryContainer, S.secondary]}
-                  start={{ x: 0, y: 1 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.checkCircle}
-                >
-                  <Icon name="check" size={44} color={S.onPrimaryContainer} />
-                  <View style={styles.particle}>
-                    <Icon name="auto-awesome" size={10} color={S.onSecondary} />
-                  </View>
-                </LinearGradient>
-              </View>
-            </View>
-            <Svg viewBox="0 0 200 200" style={styles.ticks} pointerEvents="none">
-              <Circle cx={100} cy={100} r={92} fill="none" stroke={S.primary} strokeDasharray="2 8" strokeWidth={1.5} />
-              <Circle cx={100} cy={100} r={82} fill="none" stroke={S.secondary} strokeDasharray="1 6" strokeWidth={1} />
-            </Svg>
-          </View>
+          <SuccessCheck />
 
           <SText v="headline-lg" style={styles.title}>
             {s.title}
@@ -169,7 +149,7 @@ export default function CampaignSuccessScreen() {
                     <Icon name="verified" size={14} color={S.primary} />
                   </View>
                 )}
-                {i === 3 && <SText v="body-sm">{s.startValue}</SText>}
+                {i === 3 && <SText v="body-sm">{startLabel}</SText>}
               </View>
             ))}
           </View>
@@ -257,49 +237,6 @@ const styles = StyleSheet.create({
   hubText: { textTransform: 'uppercase', letterSpacing: 0.1 * 11 },
   closeBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: S.surfaceContainerHigh, alignItems: 'center', justifyContent: 'center' },
   hero: { alignItems: 'center', marginTop: 8, marginBottom: 24, overflow: 'hidden' },
-  ringsBox: { width: 224, height: 224, marginVertical: 8, alignItems: 'center', justifyContent: 'center' },
-  pulse: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, borderRadius: SR.full, opacity: 0.9 },
-  ring1: {
-    position: 'absolute',
-    width: 192,
-    height: 192,
-    borderRadius: 96,
-    backgroundColor: alpha(S.surfaceContainerHigh, 0.4),
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: S.black,
-    shadowOffset: { width: 0, height: 25 },
-    shadowRadius: 50,
-    shadowOpacity: 0.25,
-  },
-  ring2: { width: 144, height: 144, borderRadius: 72, backgroundColor: alpha(S.surfaceContainer, 0.6), alignItems: 'center', justifyContent: 'center' },
-  checkCircle: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: S.black,
-    shadowOffset: { width: 0, height: 10 },
-    shadowRadius: 15,
-    shadowOpacity: 0.1,
-  },
-  particle: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: S.secondaryFixed,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: S.black,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 6,
-    shadowOpacity: 0.1,
-  },
-  ticks: { position: 'absolute', top: 0, left: 0, width: 224, height: 224, opacity: 0.4 },
   title: { marginTop: 8, marginBottom: 8, textAlign: 'center', letterSpacing: -0.025 * 24 },
   body: { maxWidth: 320, textAlign: 'center', lineHeight: 23 },
   statusCard: {

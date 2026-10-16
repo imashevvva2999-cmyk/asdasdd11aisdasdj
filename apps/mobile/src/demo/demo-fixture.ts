@@ -114,6 +114,7 @@ export type DemoCampaignSeed = {
   ageGroups: AgeGroup[];
   customRegionIds: string[];
   description: string;
+  startDate?: string;
   paymentMethod: PaymentMethod;
   walletBalanceKgs: number;
   stage: 'settingUp';

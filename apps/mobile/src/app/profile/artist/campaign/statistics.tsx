@@ -19,6 +19,7 @@ import { resolveCampaignView } from '@/lib/campaign-view';
 import { CAMPAIGN_HISTORY } from '@/mocks/promotions';
 import { useArtistStore } from '@/state/artist-store';
 import { ACTIVE_CAMPAIGN_KEY, useCampaignStore } from '@/state/campaign-store';
+import { useIsDemoArtist } from '@/state/demo-session-store';
 import { useDashboardStrings } from '@/state/dashboard-locale-store';
 import { useAppStrings } from '@/state/locale-store';
 
@@ -89,6 +90,7 @@ export default function CampaignStatisticsScreen() {
   const si = usePromoStrings(InteractionPromoStrings);
   // Guest preview: campaign management is read-only; back stays inside /demo.
   const guest = useIsGuestPreview();
+  const demo = useIsDemoArtist();
   const readOnly = () => showToast(DemoStrings[locale].readOnlyToast, 'lock');
   const startCampaign = useCampaignStore((st) => st.startCampaign);
   const selectPackage = useCampaignStore((st) => st.selectPackage);
@@ -113,6 +115,10 @@ export default function CampaignStatisticsScreen() {
   const daysRemaining = Math.max(totalDays - currentDay, 0);
   const idDigits = view.status === 'active' ? (launched[0]?.id.match(/\d+/)?.[0] ?? view.number).slice(-4) : view.number;
   const campaignId = `#PR-${idDigits}-MM`;
+  // Hero sparkline: daily impressions. Only the labelled demo dataset has
+  // delivery data (its reach spread over the days run so far); regular
+  // artists and campaigns still in review show an empty state instead.
+  const sparkPoints = demo && view.status !== 'review' && ACTIVE_CAMPAIGN.reach > 0 ? dailyImpressions(ACTIVE_CAMPAIGN.reach, ACTIVE_CAMPAIGN.dayOfTotal.en) : [];
   const numberLocale = locale === 'ru' ? 'ru-RU' : 'en-US';
   const fmt = (n: number) => n.toLocaleString(numberLocale);
 
@@ -223,7 +229,6 @@ export default function CampaignStatisticsScreen() {
         </View>
 
         <View style={[styles.heroCard, styles.shadowXl]}>
-          <View pointerEvents="none" style={styles.heroGlow} />
           <View style={styles.heroTop}>
             <View style={styles.cover}>
               <Artwork uri={track?.coverUri} size={64} radius={SR.lg} />
@@ -250,6 +255,7 @@ export default function CampaignStatisticsScreen() {
                 {artistName}
               </SText>
             </View>
+            <Sparkline points={sparkPoints} caption={s.sparkCaption} empty={s.sparkEmpty} />
           </View>
 
           <View style={styles.progressBlock}>
@@ -504,7 +510,54 @@ function StatTile({ icon, iconColor, badge, value, caption }: { icon: string; ic
   );
 }
 
+/** Split reach into deterministic daily impressions for the days run so far
+ * ("Day 4 of 10" → 4 days; "Completed … · 14 days" → 14). Sums to reach. */
+function dailyImpressions(reach: number, dayLabel: string): number[] {
+  const nums = dayLabel.match(/\d+/g)?.map(Number) ?? [];
+  const days = Math.max(2, Math.min(30, /^Day/.test(dayLabel) ? nums[0] ?? 2 : nums[nums.length - 1] ?? 7));
+  const weights = Array.from({ length: days }, (_, i) => 0.7 + 0.6 * (i / (days - 1)) + 0.15 * Math.sin(i * 1.7));
+  const total = weights.reduce((a, w) => a + w, 0);
+  return weights.map((w) => Math.round((reach * w) / total));
+}
+
+/** Compact activity sparkline for the hero card (or a quiet empty state). */
+function Sparkline({ points, caption, empty }: { points: number[]; caption: string; empty: string }) {
+  const W = 84;
+  const H = 34;
+  if (points.length < 2) {
+    return (
+      <View style={styles.spark} accessibilityLabel={empty}>
+        <Svg width={W} height={H}>
+          <Line x1={2} y1={H - 4} x2={W - 2} y2={H - 4} stroke={alpha(S.outline, 0.35)} strokeWidth={1.5} strokeDasharray="3 4" />
+        </Svg>
+        <SText v="label-sm" color={S.outline}>
+          {empty}
+        </SText>
+      </View>
+    );
+  }
+  const max = Math.max(...points);
+  const min = Math.min(...points);
+  const span = Math.max(1, max - min);
+  const xy = points.map((v, i) => [2 + (i * (W - 4)) / (points.length - 1), H - 4 - ((v - min) / span) * (H - 10)] as const);
+  const d = xy.map(([x, y], i) => `${i === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`).join(' ');
+  const last = xy[xy.length - 1]!;
+  return (
+    <View style={styles.spark} accessibilityLabel={caption}>
+      <Svg width={W} height={H}>
+        <Path d={`${d} L ${last[0].toFixed(1)} ${H} L 2 ${H} Z`} fill={alpha(S.primary, 0.12)} />
+        <Path d={d} fill="none" stroke={S.primary} strokeWidth={1.75} strokeLinejoin="round" strokeLinecap="round" />
+        <Circle cx={last[0]} cy={last[1]} r={2.5} fill={S.primary} />
+      </Svg>
+      <SText v="label-sm" color={S.outline}>
+        {caption}
+      </SText>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  spark: { alignItems: 'flex-end', gap: 2 },
   guestNotice: { marginBottom: SS.md },
   screen: { flex: 1, backgroundColor: S.surface },
   content: { paddingHorizontal: SS.margin, paddingTop: SS.md, paddingBottom: SS.lg, gap: SS.lg },
@@ -514,7 +567,6 @@ const styles = StyleSheet.create({
   iconRow: { flexDirection: 'row', alignItems: 'center', gap: SS.xs },
   roundBtn: { width: 40, height: 40, borderRadius: SR.full, backgroundColor: S.surfaceContainer, alignItems: 'center', justifyContent: 'center' },
   heroCard: { overflow: 'hidden', borderRadius: SR.xl, backgroundColor: S.surfaceContainer, padding: SS.md, gap: SS.md },
-  heroGlow: { position: 'absolute', top: -48, right: -48, width: 192, height: 192, borderRadius: SR.full, backgroundColor: alpha(S.primaryContainer, 0.12) },
   heroTop: { flexDirection: 'row', alignItems: 'center', gap: SS.md },
   cover: {
     width: 64,

@@ -37,6 +37,7 @@ export type SavedArtistAccount = {
     ageGroups: AgeGroup[];
     customRegionIds: string[];
     description: string;
+    startDate?: string;
     paymentMethod: PaymentMethod;
     walletBalanceKgs: number;
     stage: CampaignStage;
@@ -131,6 +132,7 @@ function snapshot(): SavedArtistAccount {
       ageGroups: c.ageGroups,
       customRegionIds: c.customRegionIds,
       description: c.description,
+      startDate: c.startDate,
       paymentMethod: c.paymentMethod,
       walletBalanceKgs: c.walletBalanceKgs,
       // A payment in flight or a failed attempt is never persisted.

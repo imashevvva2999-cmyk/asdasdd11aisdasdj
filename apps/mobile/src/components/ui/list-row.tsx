@@ -77,12 +77,11 @@ export function TrackRow({
   // cover when there is no index.
   const showCover = coverUri !== undefined || index === undefined;
   const { t } = useAppStrings();
-  return (
-    <PressableScale
-      onPress={onPress}
-      style={[styles.row, active && styles.activeRow, style]}
-      accessibilityRole={onOptionsPress ? undefined : 'button'}
-    >
+  // The options button sits beside (not inside) the row's pressable, overlaid
+  // on a same-size spacer: the row keeps its real button role and web never
+  // nests a <button> inside another <button>. Same layout as before.
+  const row = (
+    <PressableScale onPress={onPress} style={[styles.row, active && styles.activeRow, style]} accessibilityRole="button">
       {index !== undefined && (
         <View style={showCover ? styles.indexSlot : styles.leadingSlot}>
           {isPlaying ? (
@@ -119,7 +118,14 @@ export function TrackRow({
           {explicit && <Badge label="E" variant="explicit" />}
         </View>
       </View>
-      {onOptionsPress && (
+      {onOptionsPress && <View style={styles.optionsSpacer} />}
+    </PressableScale>
+  );
+  if (!onOptionsPress) return row;
+  return (
+    <View style={styles.rowWrap}>
+      {row}
+      <View style={[styles.optionsSlot, active && styles.optionsSlotActive]} pointerEvents="box-none">
         <IconButton
           icon="more-vert"
           onPress={onOptionsPress}
@@ -127,8 +133,8 @@ export function TrackRow({
           style={styles.transparentIconButton}
           accessibilityLabel={t('trackOptionsLabel')}
         />
-      )}
-    </PressableScale>
+      </View>
+    </View>
   );
 }
 
@@ -452,6 +458,10 @@ const styles = StyleSheet.create({
     borderRadius: Radii.md,
     paddingHorizontal: Spacing.sm,
   },
+  rowWrap: { position: 'relative' },
+  optionsSpacer: { width: 36, height: 36 },
+  optionsSlot: { position: 'absolute', top: 0, bottom: 0, right: 0, justifyContent: 'center' },
+  optionsSlotActive: { right: Spacing.sm },
   coverEqualizer: {
     position: 'absolute',
     top: 0,

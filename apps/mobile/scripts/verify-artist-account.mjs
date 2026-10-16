@@ -15,6 +15,7 @@ import {
 } from '../src/state/artist-account-persistence.ts';
 import { useArtistStore } from '../src/state/artist-store.ts';
 import { useCampaignStore } from '../src/state/campaign-store.ts';
+import { COVER_MAX_BYTES, validateCoverFile } from '../src/lib/pick-cover-image.ts';
 
 let failures = 0;
 function check(label, condition) {
@@ -109,6 +110,16 @@ check('restore after corrupted data leaves an empty account (no crash)', useArti
 useArtistStore.getState().createArtistProfile({ stageName: 'Second' });
 useCampaignStore.setState({ stage: 'processing' });
 check('an in-flight payment is saved as confirming, not processing', readArtistAccount()?.campaign.stage === 'confirming');
+
+// Upload Track cover picker validation (JPG / PNG / WebP, ≤ 10 MB).
+check('cover: JPG, PNG and WebP are accepted', ['image/jpeg', 'image/png', 'image/webp'].every((type) => validateCoverFile({ type, size: 1000 }) === undefined));
+check('cover: other types are rejected', validateCoverFile({ type: 'image/gif', size: 1000 })?.kind === 'invalid-type' && validateCoverFile({ type: 'application/pdf', size: 10 })?.kind === 'invalid-type');
+check('cover: files over 10 MB are rejected', validateCoverFile({ type: 'image/png', size: COVER_MAX_BYTES + 1 })?.kind === 'too-large');
+// A picked cover (data URL) survives save + reload.
+useArtistStore.getState().saveDraft({ title: 'With Cover', coverUri: 'data:image/jpeg;base64,AAAA' });
+setArtistPersistencePaused(true); useArtistStore.setState({ artist: undefined, entries: [] }); setArtistPersistencePaused(false);
+restoreArtistAccount();
+check('cover: a picked cover survives reload', useArtistStore.getState().entries.some((e) => e.track.title === 'With Cover' && e.track.coverUri === 'data:image/jpeg;base64,AAAA'));
 
 if (failures > 0) {
   console.error(`\n${failures} artist-account check(s) failed.`);

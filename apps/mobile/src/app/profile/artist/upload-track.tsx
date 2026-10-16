@@ -9,6 +9,9 @@ import { sampleImageChoices } from '@/constants/stitch-artwork';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { trackPublishedMessage } from '@/lib/i18n';
 import { goBack } from '@/lib/navigation';
+import { pickCoverImage } from '@/lib/pick-cover-image';
+import { useToast } from '@/hooks/use-toast';
+import type { LocalOrRemoteImage } from '@/constants/stitch-artwork';
 import { useArtistStore } from '@/state/artist-store';
 import { useAppStrings } from '@/state/locale-store';
 
@@ -28,12 +31,10 @@ const WAVEFORM_BARS = [8, 14, 10, 20, 12, 26, 16, 22, 10, 28, 18, 24, 12, 20, 26
  * publishing states beyond the input form are undesigned, OQ-50). Frontend
  * state only: no real upload, transcoding, moderation, or catalog ingestion.
  *
- * File/cover picker: this uses SIMULATED local file selection rather than a
- * real native document/image picker (expo-document-picker /
- * expo-image-picker are not current dependencies, and there is no
- * simulator/device available in this environment to validate a newly added
- * native picker's actual platform behavior — per the batch instructions,
- * the simulated UI is the safer choice here, reported explicitly).
+ * Audio file: SIMULATED selection (no real upload/decoding).
+ * Cover artwork: the browser's native image picker on web (JPG/PNG/WebP,
+ * preview + replace, kept on the device — src/lib/pick-cover-image.ts). Native
+ * builds have no image-picker dependency yet and keep the sample-cover cycle.
  */
 export default function UploadTrackScreen() {
   const saveDraft = useArtistStore((s) => s.saveDraft);
@@ -48,10 +49,9 @@ export default function UploadTrackScreen() {
   ];
 
   const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
-  // Simulated picker (no native image picker is installed) — cycles the bundled
-  // sample covers, mirroring "Browse File" above.
-  const [coverIndex, setCoverIndex] = useState<number | null>(null);
-  const coverUri = coverIndex === null ? undefined : sampleImageChoices[coverIndex];
+  const [coverUri, setCoverUri] = useState<LocalOrRemoteImage | undefined>(undefined);
+  const [sampleIndex, setSampleIndex] = useState(-1);
+  const { showToast, toast } = useToast();
   const [title, setTitle] = useState('');
   const [collaborators, setCollaborators] = useState('');
   const [genre, setGenre] = useState<string | undefined>(undefined);
@@ -64,6 +64,21 @@ export default function UploadTrackScreen() {
 
   const canPublish = title.trim().length > 0 && selectedFileName !== null;
   const isBusy = activeEntry?.status === 'uploading' || activeEntry?.status === 'processing';
+
+  async function handleChooseCover() {
+    const result = await pickCoverImage();
+    if (result.kind === 'picked') setCoverUri(result.uri);
+    else if (result.kind === 'invalid-type') showToast(t('coverInvalidType'), 'error-outline');
+    else if (result.kind === 'too-large') showToast(t('coverTooLarge'), 'error-outline');
+    else if (result.kind === 'unreadable') showToast(t('coverUnreadable'), 'error-outline');
+    else if (result.kind === 'unsupported' && sampleImageChoices.length > 0) {
+      // Native build without an image picker: previous sample-cover fallback.
+      const next = (sampleIndex + 1) % sampleImageChoices.length;
+      setSampleIndex(next);
+      setCoverUri(sampleImageChoices[next]);
+    }
+    // 'cancelled': keep the current cover untouched.
+  }
 
   function handleBrowseFile() {
     setSelectedFileName('midnight-session-master.wav');
@@ -206,8 +221,8 @@ export default function UploadTrackScreen() {
               </ThemedText>
               <PressableScale
                 accessibilityRole="button"
-                onPress={() => setCoverIndex((index) => (index === null ? 0 : (index + 1) % sampleImageChoices.length))}
-                disabled={isBusy || sampleImageChoices.length === 0}
+                onPress={() => void handleChooseCover()}
+                disabled={isBusy}
                 style={styles.compactButton}
               >
                 <Icon name="image" size={18} color={Colors.text.high} />
@@ -290,6 +305,7 @@ export default function UploadTrackScreen() {
       </ScrollView>
 
       <Toast message={t('toastSavedAsDraft')} icon="save" visible={draftSavedToastVisible} />
+      {toast}
     </ThemedView>
   );
 }

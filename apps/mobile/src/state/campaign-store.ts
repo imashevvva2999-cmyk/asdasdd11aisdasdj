@@ -27,6 +27,8 @@ export type LaunchedCampaign = {
   method: PaymentMethod;
   totalKgs: number;
   createdAt: string;
+  /** Chosen campaign start (YYYY-MM-DD); end = start + package duration. */
+  startDate?: string;
 };
 
 /** Stitch promo-wallet demo balance (dashboard "Промо-кошелек", Review & Pay
@@ -39,6 +41,27 @@ export const ACTIVE_CAMPAIGN_KEY = 'active-demo';
 export const DEFAULT_AGE_GROUPS: AgeGroup[] = ['18-24', '25-34'];
 
 export const DESCRIPTION_MAX = 300;
+
+/** Local calendar date as YYYY-MM-DD (no time zone shift). */
+export function toIsoDay(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+export function parseIsoDay(iso: string): Date | undefined {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (!m) return undefined;
+  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  return toIsoDay(d) === iso ? d : undefined;
+}
+
+/** A start date is valid from today up to one year ahead. */
+export function isValidStartDate(iso: string, today: Date = new Date()): boolean {
+  const d = parseIsoDay(iso);
+  if (!d) return false;
+  const min = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const max = new Date(min.getFullYear() + 1, min.getMonth(), min.getDate());
+  return d >= min && d <= max;
+}
 
 export type SetupIssue = 'noGenres' | 'noRegions';
 
@@ -72,6 +95,8 @@ type CampaignState = {
   ageGroups: AgeGroup[];
   customRegionIds: string[];
   description: string;
+  /** Selected start day (YYYY-MM-DD); undefined = today. */
+  startDate?: string;
   paymentMethod: PaymentMethod;
   paymentError?: PaymentError;
   walletBalanceKgs: number;
@@ -88,6 +113,8 @@ type CampaignState = {
   toggleAgeGroup: (group: AgeGroup) => void;
   toggleRegion: (regionId: string) => void;
   setDescription: (text: string) => void;
+  /** Ignored unless the date is today … one year ahead. */
+  setStartDate: (iso: string) => void;
   setPaymentMethod: (method: PaymentMethod) => void;
   goToSetup: () => void;
   goToConfirm: () => void;
@@ -104,6 +131,7 @@ const freshDraft = {
   ageGroups: DEFAULT_AGE_GROUPS,
   customRegionIds: [] as string[],
   description: '',
+  startDate: undefined as string | undefined,
   paymentError: undefined,
 };
 
@@ -155,6 +183,10 @@ export const useCampaignStore = create<CampaignState>((set, get) => ({
 
   setDescription: (text) => set({ description: text.slice(0, DESCRIPTION_MAX) }),
 
+  setStartDate: (iso) => {
+    if (isValidStartDate(iso)) set({ startDate: iso });
+  },
+
   setPaymentMethod: (method) => set({ paymentMethod: method, paymentError: undefined, stage: get().stage === 'failed' ? 'confirming' : get().stage }),
 
   goToSetup: () => set({ stage: 'settingUp' }),
@@ -162,7 +194,7 @@ export const useCampaignStore = create<CampaignState>((set, get) => ({
   goToConfirm: () => set({ stage: 'confirming', paymentError: undefined }),
 
   confirm: async (totalKgs) => {
-    const { trackId, packageId, targetGenreIds, geoScope, ageGroups, customRegionIds, description, paymentMethod, walletBalanceKgs, stage } = get();
+    const { trackId, packageId, targetGenreIds, geoScope, ageGroups, customRegionIds, description, startDate, paymentMethod, walletBalanceKgs, stage } = get();
     if (!trackId || !packageId || stage === 'processing') return 'failed';
     if (setupIssues(get()).length > 0) return 'failed';
 
@@ -190,6 +222,8 @@ export const useCampaignStore = create<CampaignState>((set, get) => ({
       ageGroups,
       customRegionIds: geoScope === 'custom' ? customRegionIds : [],
       description: description.trim(),
+      // A start day that has meanwhile passed falls back to today.
+      startDate: startDate && isValidStartDate(startDate) ? startDate : toIsoDay(new Date()),
       method: paymentMethod,
       totalKgs,
       createdAt: new Date().toISOString(),
@@ -219,6 +253,6 @@ export const useCampaignStore = create<CampaignState>((set, get) => ({
 // edited, paused or paid for — enforced here, not only in the UI.
 guardStoreActions(
   useCampaignStore,
-  ['startCampaign', 'selectPackage', 'toggleGenre', 'setGeoScope', 'toggleAgeGroup', 'toggleRegion', 'setDescription', 'setPaymentMethod', 'goToSetup', 'goToConfirm', 'confirm', 'cancelPayment', 'togglePause', 'reset'],
+  ['startCampaign', 'selectPackage', 'toggleGenre', 'setGeoScope', 'toggleAgeGroup', 'toggleRegion', 'setDescription', 'setStartDate', 'setPaymentMethod', 'goToSetup', 'goToConfirm', 'confirm', 'cancelPayment', 'togglePause', 'reset'],
   { blocked: { confirm: Promise.resolve('failed') } },
 );

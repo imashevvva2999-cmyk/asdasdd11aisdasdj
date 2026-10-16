@@ -1,6 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { DemoNotice } from '@/components/demo-notice';
@@ -9,13 +9,14 @@ import { STITCH_GENRES } from '@/components/promotion-stitch/data/genres';
 import { ConfirmPromoStrings } from '@/components/promotion-stitch/strings/confirm';
 import { InteractionPromoStrings } from '@/components/promotion-stitch/strings/interactions';
 import { KG_REGIONS } from '@/components/promotion-stitch/strings/setup-form';
+import { StartDatePopover } from '@/components/promotion-stitch/start-date-popover';
 import { Artwork, Icon } from '@/components/ui';
 import { useToast } from '@/hooks/use-toast';
 import { goBack } from '@/lib/navigation';
 import { formatKgsAmount } from '@/lib/format-currency';
 import { PROMO_PACKAGES } from '@/mocks/promotions';
 import { useArtistStore } from '@/state/artist-store';
-import { useCampaignStore } from '@/state/campaign-store';
+import { isValidStartDate, parseIsoDay, toIsoDay, useCampaignStore } from '@/state/campaign-store';
 import { useDashboardStrings } from '@/state/dashboard-locale-store';
 import { useAppStrings } from '@/state/locale-store';
 
@@ -44,6 +45,10 @@ export default function CampaignConfirmScreen() {
   const geoScope = useCampaignStore((st) => st.geoScope);
   const customRegionIds = useCampaignStore((st) => st.customRegionIds);
   const description = useCampaignStore((st) => st.description.trim());
+  const startDate = useCampaignStore((st) => st.startDate);
+  const setStartDate = useCampaignStore((st) => st.setStartDate);
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [reachInfoOpen, setReachInfoOpen] = useState(false);
   const stage = useCampaignStore((st) => st.stage);
   const confirm = useCampaignStore((st) => st.confirm);
   const cancelPayment = useCampaignStore((st) => st.cancelPayment);
@@ -83,8 +88,10 @@ export default function CampaignConfirmScreen() {
   const discount = Math.round(pkg.priceKgs * 0.15);
   const total = pkg.priceKgs - discount;
   const cashback = Math.round(total * 0.05);
-  const start = new Date();
-  const end = new Date(start.getTime() + pkg.durationDays * 86400000);
+  // Selected start day (today if none or no longer valid); end keeps the package duration.
+  const startIso = startDate && isValidStartDate(startDate) ? startDate : toIsoDay(new Date());
+  const start = parseIsoDay(startIso) ?? new Date();
+  const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + pkg.durationDays);
   const customLabel = KG_REGIONS.filter((r) => customRegionIds.includes(r.id)).map((r) => r.label[locale]).join(', ');
   const geoLabel = { all: s.geoAll, bishkek: s.geoBishkek, 'bishkek-osh': s.geoBishkekOsh, custom: customLabel || s.geoCustom }[geoScope];
   const chips = STITCH_GENRES.filter((g) => targetGenreIds.includes(g.id));
@@ -155,9 +162,6 @@ export default function CampaignConfirmScreen() {
                         {s.single} • {start.getFullYear()}
                       </SText>
                     </View>
-                    <SText v="mono-num" color={S.outline}>
-                      {s.hiRes}
-                    </SText>
                   </View>
                   {description.length > 0 && (
                     <SText v="body-sm" color={S.onSurfaceVariant} numberOfLines={2} style={styles.descLine}>
@@ -185,12 +189,19 @@ export default function CampaignConfirmScreen() {
                   <SText v="label-sm" color={S.outline}>
                     {s.showPeriod}
                   </SText>
-                  <View style={styles.specValue}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={s.periodEditLabel}
+                    disabled={processing}
+                    onPress={() => setCalendarOpen(true)}
+                    style={({ pressed }) => [styles.specValue, styles.periodButton, pressed && styles.pressedDim]}
+                  >
                     <Icon name="date-range" size={16} color={S.tertiary} />
                     <SText v="label-lg">
                       {shortDate(start, locale)} — {shortDate(end, locale)}
                     </SText>
-                  </View>
+                    <Icon name="expand-more" size={16} color={S.outline} />
+                  </Pressable>
                 </View>
               </View>
 
@@ -234,10 +245,22 @@ export default function CampaignConfirmScreen() {
                   <SText v="body-sm" color={S.outline}>
                     {s.reachSub}
                   </SText>
+                  {reachInfoOpen && (
+                    <SText v="body-sm" color={S.onSurfaceVariant} style={styles.reachInfo}>
+                      {s.reachInfo}
+                    </SText>
+                  )}
                 </View>
-                <View style={styles.forecastIcon}>
-                  <Icon name="stream" size={26} color={S.secondary} />
-                </View>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={s.reachInfoLabel}
+                  accessibilityState={{ expanded: reachInfoOpen }}
+                  onPress={() => setReachInfoOpen((v) => !v)}
+                  hitSlop={8}
+                  style={styles.forecastIcon}
+                >
+                  <Icon name="info-outline" size={18} color={S.outline} />
+                </Pressable>
               </LinearGradient>
             </View>
           </View>
@@ -341,11 +364,6 @@ export default function CampaignConfirmScreen() {
                     <View style={styles.flexShrink}>
                       <View style={styles.mbankTitleRow}>
                         <SText v="headline-sm">{s.mbankPay}</SText>
-                        <View style={styles.oneTap}>
-                          <SText v="label-sm" color={MBANK_GREEN}>
-                            {s.oneTap}
-                          </SText>
-                        </View>
                       </View>
                       <SText v="body-md" color={S.outline} numberOfLines={1}>
                         {s.balance}
@@ -461,6 +479,15 @@ export default function CampaignConfirmScreen() {
           </View>
         </View>
       </ScrollView>
+      <StartDatePopover
+        visible={calendarOpen}
+        value={startIso}
+        durationDays={pkg.durationDays}
+        locale={locale}
+        labels={{ title: s.calTitle, ends: s.calEnds, cancel: s.calCancel, apply: s.calApply, prevMonth: s.calPrevMonth, nextMonth: s.calNextMonth, prevYear: s.calPrevYear, nextYear: s.calNextYear, weekdays: s.calWeekdays }}
+        onApply={setStartDate}
+        onClose={() => setCalendarOpen(false)}
+      />
       {toast}
     </View>
   );
@@ -548,14 +575,10 @@ const styles = StyleSheet.create({
   genreChip: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: SR.full, backgroundColor: S.surfaceVariant },
   forecast: { padding: SS.md, borderRadius: SR.lg, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   forecastText: { gap: 2, flexShrink: 1 },
-  forecastIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: alpha(S.secondaryContainer, 0.2),
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  forecastIcon: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center', alignSelf: 'flex-start' },
+  reachInfo: { marginTop: 6 },
+  periodButton: { alignSelf: 'flex-start' },
+  pressedDim: { opacity: 0.7 },
 
   costCard: {
     backgroundColor: S.surfaceContainer,
@@ -609,7 +632,6 @@ const styles = StyleSheet.create({
   logoLast: { alignItems: 'center', gap: 0 },
   logoDot: { width: 6, height: 6, borderRadius: 3, position: 'absolute', top: -6 },
   mbankTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  oneTap: { paddingHorizontal: 6, paddingVertical: 1, borderRadius: SR.DEFAULT, backgroundColor: alpha(MBANK_GREEN, 0.2) },
   cashback: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
   radioOn: {
     width: 24,
