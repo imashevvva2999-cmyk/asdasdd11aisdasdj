@@ -18,6 +18,7 @@ import { usePlayerStore } from '@/state/player-store';
 import { useProfileAvatarStore } from '@/state/profile-avatar-store';
 import { useAppStrings, useLocaleStore } from '@/state/locale-store';
 import { useDemoSessionStore } from '@/state/demo-session-store';
+import { restoreArtistAccount } from '@/state/artist-account-persistence';
 import { loadedFonts } from '@/constants/fonts';
 import { Colors } from '@/constants/theme';
 import { MAX_CONTENT_WIDTH } from '@/hooks/use-content-width';
@@ -83,6 +84,14 @@ export default function RootLayout() {
   // + client-only rehydrate pattern as above.
   useEffect(() => {
     useFloatingButtonStore.persist.rehydrate();
+  }, []);
+
+  // Regular artist account (frontend MVP, localStorage — see
+  // state/artist-account-persistence.ts). Runs before the demo session restore
+  // so a signed-in demo then takes over; skipped in the guest preview.
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/demo')) return;
+    restoreArtistAccount();
   }, []);
 
   // Demo Artist Account (dev/demo only): restores a signed-in demo session.

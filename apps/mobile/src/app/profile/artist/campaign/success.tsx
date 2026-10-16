@@ -1,5 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
@@ -23,15 +23,18 @@ export default function CampaignSuccessScreen() {
   const insets = useSafeAreaInsets();
   const entries = useArtistStore((st) => st.entries);
   const launched = useCampaignStore((st) => st.launched);
-  const reset = useCampaignStore((st) => st.reset);
 
   const latest = launched[0];
   const track = latest ? entries.find((e) => e.track.id === latest.trackId)?.track : undefined;
   const pkg = latest ? PROMO_PACKAGES.find((p) => p.id === latest.packageId) : undefined;
 
+  // Dismiss to the dashboard's own stack screen (Promotion is a tab inside it).
+  // No draft reset here: the wizard screens still mounted underneath redirect
+  // to track selection when their draft disappears, which hijacked this
+  // navigation. A finished ('success') draft is replaced by the next
+  // startCampaign() anyway.
   function backToDashboard() {
-    reset();
-    router.dismissTo('/profile/artist/dashboard/promotion');
+    router.dismissTo('/profile/artist/dashboard' as Href);
   }
 
   if (!latest || !track || !pkg) {
@@ -40,7 +43,7 @@ export default function CampaignSuccessScreen() {
         <SText v="body-md" color={S.onSurfaceVariant} style={styles.center}>
           {t('nothingJustLaunchedLabel')}
         </SText>
-        <Pressable accessibilityRole="button" onPress={() => router.dismissTo('/profile/artist/dashboard/promotion')} style={styles.backLink}>
+        <Pressable accessibilityRole="button" onPress={() => router.dismissTo('/profile/artist/dashboard' as Href)} style={styles.backLink}>
           <SText v="label-md" color={S.onSurfaceVariant}>
             {t('backToStudioDashboardLabel')}
           </SText>

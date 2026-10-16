@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { DemoArtistAnalytics } from '@/components/dashboard/demo-artist-analytics';
+import { ArtistOverviewAnalytics, NoData } from '@/components/dashboard/demo-artist-analytics';
 import { ListenTrendChart } from '@/components/dashboard/listen-trend-chart';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -11,6 +11,7 @@ import { getTrackAnalytics, type TimePeriod } from '@/lib/analytics-mock';
 import { useDashboardStrings } from '@/state/dashboard-locale-store';
 import { useArtistStore } from '@/state/artist-store';
 import { useIsDemoArtist } from '@/state/demo-session-store';
+import { useDemoStrings } from '@/demo/demo-strings';
 import type { DashboardStringKey } from '@/lib/dashboard-i18n';
 
 const PERIOD_KEYS: { id: TimePeriod; key: DashboardStringKey }[] = [
@@ -30,6 +31,7 @@ export default function AnalyticsScreen() {
   const trackId = published.some((e) => e.track.id === rawTrackId) ? rawTrackId : published[0]?.track.id;
   const [period, setPeriod] = useState<TimePeriod>('28d');
   const demo = useIsDemoArtist();
+  const { d } = useDemoStrings();
 
   if (published.length === 0) {
     return (
@@ -42,13 +44,17 @@ export default function AnalyticsScreen() {
   // published.length > 0 guarantees trackId resolves to a real track id above.
   const activeTrackId = trackId as string;
   const track = published.find((e) => e.track.id === activeTrackId)?.track;
-  const data = getTrackAnalytics(activeTrackId, period);
+  // Simulated per-track figures only for the labelled demo account; regular
+  // artists have no telemetry yet, so they see "—" and empty states.
+  const data = demo ? getTrackAnalytics(activeTrackId, period) : undefined;
+  const noData = <NoData text={d.anNoData} hint={d.anNoDataHint} />;
   const periodLabel = t(PERIOD_KEYS.find((p) => p.id === period)!.key);
 
   return (
     <ThemedView surface="canvas" style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
-        {demo && <DemoArtistAnalytics />}
+        {/* One Analytics layout for every artist; demo vs own data inside. */}
+        <ArtistOverviewAnalytics demo={demo} />
         <View style={styles.trackHeader}>
           <Artwork uri={track?.coverUri} size={56} radius={Radii.DEFAULT} />
           <View style={styles.trackText}>
@@ -76,10 +82,10 @@ export default function AnalyticsScreen() {
         </ScrollView>
 
         <View style={styles.statsGrid}>
-          <StatCard label={t('streams')} value={data.streams.toLocaleString('en-US')} style={styles.statTile} />
-          <StatCard label={t('listeners')} value={data.listeners.toLocaleString('en-US')} style={styles.statTile} />
-          <StatCard label={t('completion')} value={`${data.completionPct}%`} style={styles.statTile} />
-          <StatCard label={t('inPlaylists')} value={data.playlistAdds.toLocaleString('en-US')} style={styles.statTile} />
+          <StatCard label={t('streams')} value={data ? data.streams.toLocaleString('en-US') : '—'} style={styles.statTile} />
+          <StatCard label={t('listeners')} value={data ? data.listeners.toLocaleString('en-US') : '—'} style={styles.statTile} />
+          <StatCard label={t('completion')} value={data ? `${data.completionPct}%` : '—'} style={styles.statTile} />
+          <StatCard label={t('inPlaylists')} value={data ? data.playlistAdds.toLocaleString('en-US') : '—'} style={styles.statTile} />
         </View>
 
         <View style={styles.chartCard}>
@@ -87,13 +93,13 @@ export default function AnalyticsScreen() {
             {t('trendSection')}
           </ThemedText>
           <ThemedText variant="headline-sm">{t('listensOver')} {periodLabel.toLowerCase()}</ThemedText>
-          <ListenTrendChart points={data.trend} peakLabel={`${t('peakLabel')} ${data.peak.toLocaleString('en-US')}`} />
+          {data ? <ListenTrendChart points={data.trend} peakLabel={`${t('peakLabel')} ${data.peak.toLocaleString('en-US')}`} /> : noData}
           <View style={styles.chartFooter}>
             <ThemedText variant="body-sm" emphasis="medium">
               {t('averageListenTime')}
             </ThemedText>
             <ThemedText variant="body-sm">
-              {Math.floor(data.avgListenSec / 60)}:{String(data.avgListenSec % 60).padStart(2, '0')} ({data.avgListenPct}%)
+              {data ? `${Math.floor(data.avgListenSec / 60)}:${String(data.avgListenSec % 60).padStart(2, '0')} (${data.avgListenPct}%)` : '—'}
             </ThemedText>
           </View>
         </View>
@@ -103,7 +109,8 @@ export default function AnalyticsScreen() {
             {t('audienceSection')}
           </ThemedText>
           <ThemedText variant="headline-sm">{t('listenerGeography')}</ThemedText>
-          {data.geography.map((g) => (
+          {!data && noData}
+          {data?.geography.map((g) => (
             <View key={g.city.en} style={styles.barRow}>
               <ThemedText variant="body-sm">
                 {g.city[locale]} <ThemedText variant="body-sm" emphasis="medium">{g.country[locale]}</ThemedText>
@@ -118,11 +125,15 @@ export default function AnalyticsScreen() {
             {t('channelsSection')}
           </ThemedText>
           <ThemedText variant="headline-sm">{t('discoverySources')}</ThemedText>
-          <View style={styles.statsGrid}>
-            {data.channels.map((c) => (
-              <StatCard key={c.name.en} label={c.name[locale]} value={`${c.pct}%`} style={styles.statTile} />
-            ))}
-          </View>
+          {data ? (
+            <View style={styles.statsGrid}>
+              {data.channels.map((c) => (
+                <StatCard key={c.name.en} label={c.name[locale]} value={`${c.pct}%`} style={styles.statTile} />
+              ))}
+            </View>
+          ) : (
+            noData
+          )}
         </View>
       </ScrollView>
     </ThemedView>

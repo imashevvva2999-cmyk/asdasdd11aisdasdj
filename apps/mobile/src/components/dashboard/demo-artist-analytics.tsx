@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ListenTrendChart } from '@/components/dashboard/listen-trend-chart';
 import { ThemedText } from '@/components/themed-text';
-import { Artwork, Chip, StatCard } from '@/components/ui';
+import { Artwork, Chip, Icon, StatCard } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { DEMO_PERIODS, buildDemoArtistAnalytics, type DemoPeriod, type DemoShare } from '@/demo/demo-analytics';
 import { useDemoStrings } from '@/demo/demo-strings';
@@ -29,17 +29,43 @@ function ShareRow({ label, pct, count, fmt, color = Colors.primary }: { label: s
   );
 }
 
+/** In-card empty state for a section with no real data behind it. */
+export function NoData({ text, hint }: { text: string; hint?: string }) {
+  return (
+    <View style={styles.empty}>
+      <Icon name="insights" size={20} color={Colors.text.medium} />
+      <View style={styles.flexText}>
+        <ThemedText variant="label-lg" emphasis="medium">
+          {text}
+        </ThemedText>
+        {hint ? (
+          <ThemedText variant="body-sm" emphasis="medium">
+            {hint}
+          </ThemedText>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
 /**
- * Demo Artist Account — artist-level DEMO analytics shown above the existing
- * per-track Analytics (src/demo/demo-analytics.ts). Only rendered for the demo
- * account; every figure is labelled as simulated.
+ * Artist Overview analytics — one shared layout for every artist, shown above
+ * the per-track Analytics.
+ *  - `demo`: the Solaris Echo demo/guest account — the labelled DEMO dataset
+ *    (src/demo/demo-analytics.ts).
+ *  - otherwise: the artist's own data only. No telemetry backend exists yet,
+ *    so listeners/streams match Overview, promotion shows the artist's own
+ *    campaigns, and every section without real data shows an empty state —
+ *    never Solaris Echo's demo figures.
  */
-export function DemoArtistAnalytics() {
+export function ArtistOverviewAnalytics({ demo }: { demo: boolean }) {
   const { d, locale } = useDemoStrings();
   const entries = useArtistStore((s) => s.entries);
+  const monthlyListeners = useArtistStore((s) => s.artist?.monthlyListeners ?? 0);
   const launched = useCampaignStore((s) => s.launched);
   const [period, setPeriod] = useState<DemoPeriod>('30d');
   const data = useMemo(() => buildDemoArtistAnalytics(entries, period, launched), [entries, period, launched]);
+  const empty = <NoData text={d.anNoData} hint={d.anNoDataHint} />;
   const fmt = (n: number) => n.toLocaleString(locale === 'ru' ? 'ru-RU' : 'en-US');
   const periodLabel: Record<DemoPeriod, string> = { '7d': d.an7d, '30d': d.an30d, '90d': d.an90d };
   const geoGroup = (region: 'kg' | 'abroad') => data.geography.filter((g) => g.region === region);
@@ -50,14 +76,16 @@ export function DemoArtistAnalytics() {
     <View style={styles.section}>
       <View style={styles.titleRow}>
         <ThemedText variant="headline-md">{d.anTitle}</ThemedText>
-        <View style={styles.demoBadge}>
-          <ThemedText variant="label-sm" style={{ color: Colors.secondary }}>
-            {d.anBadge}
-          </ThemedText>
-        </View>
+        {demo && (
+          <View style={styles.demoBadge}>
+            <ThemedText variant="label-sm" style={{ color: Colors.secondary }}>
+              {d.anBadge}
+            </ThemedText>
+          </View>
+        )}
       </View>
       <ThemedText variant="body-sm" emphasis="medium">
-        {d.anNote}
+        {demo ? d.anNote : d.anRealNote}
       </ThemedText>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
@@ -67,19 +95,24 @@ export function DemoArtistAnalytics() {
       </ScrollView>
 
       <View style={styles.statsGrid}>
-        <StatCard label={d.anStreams} value={fmt(data.streams)} style={styles.statTile} />
-        <StatCard label={d.anListeners} value={fmt(data.listeners)} style={styles.statTile} />
-        <StatCard label={d.anSaveRate} value={`${data.saveRatePct}%`} style={styles.statTile} />
-        <StatCard label={d.anEngagement} value={`${data.engagementPct}%`} style={styles.statTile} />
+        {/* Regular artists: streams/listeners exactly as on Overview; rates need data → "—". */}
+        <StatCard label={d.anStreams} value={demo ? fmt(data.streams) : fmt(0)} style={styles.statTile} />
+        <StatCard label={d.anListeners} value={demo ? fmt(data.listeners) : fmt(monthlyListeners)} style={styles.statTile} />
+        <StatCard label={d.anSaveRate} value={demo ? `${data.saveRatePct}%` : '—'} style={styles.statTile} />
+        <StatCard label={d.anEngagement} value={demo ? `${data.engagementPct}%` : '—'} style={styles.statTile} />
       </View>
 
       <View style={styles.card}>
         <ThemedText variant="label-sm" emphasis="medium" style={styles.cardLabel}>
           {d.anAttributed}
         </ThemedText>
-        <ThemedText variant="headline-md">{fmt(data.attributedStreams)}</ThemedText>
+        <ThemedText variant="headline-md">{fmt(demo ? data.attributedStreams : 0)}</ThemedText>
         <ThemedText variant="body-sm" emphasis="medium">
-          {data.attributedPct}% {d.anAttributedHint}
+          {demo
+            ? `${data.attributedPct}% ${d.anAttributedHint}`
+            : launched.length > 0
+              ? d.anPromoInReview.replace('{n}', String(launched.length))
+              : d.anPromoNone}
         </ThemedText>
       </View>
 
@@ -87,19 +120,18 @@ export function DemoArtistAnalytics() {
         <ThemedText variant="headline-sm">
           {d.anTrend} • {periodLabel[period].toLowerCase()}
         </ThemedText>
-        <ListenTrendChart points={data.trend} peakLabel={`${d.anPeak} ${fmt(data.peak)}`} />
+        {demo ? <ListenTrendChart points={data.trend} peakLabel={`${d.anPeak} ${fmt(data.peak)}`} /> : empty}
       </View>
 
       <View style={styles.card}>
         <ThemedText variant="headline-sm">{d.anAges}</ThemedText>
-        {data.ages.map((a) => (
-          <ShareRow key={a.label.en} label={a.label[locale]} pct={a.pct} count={a.count} fmt={fmt} />
-        ))}
+        {demo ? data.ages.map((a) => <ShareRow key={a.label.en} label={a.label[locale]} pct={a.pct} count={a.count} fmt={fmt} />) : empty}
       </View>
 
       <View style={styles.card}>
         <ThemedText variant="headline-sm">{d.anGeo}</ThemedText>
-        {(['kg', 'abroad'] as const).map((region) => (
+        {!demo && empty}
+        {demo && (['kg', 'abroad'] as const).map((region) => (
           <View key={region} style={styles.group}>
             <ThemedText variant="label-sm" emphasis="medium" style={styles.cardLabel}>
               {region === 'kg' ? d.anKg : d.anAbroad} • {groupPct(geoGroup(region))}%
@@ -113,14 +145,16 @@ export function DemoArtistAnalytics() {
 
       <View style={styles.card}>
         <ThemedText variant="headline-sm">{d.anSources}</ThemedText>
-        {data.sources.map((s, i) => (
+        {!demo && empty}
+        {demo && data.sources.map((s, i) => (
           <ShareRow key={s.label.en} label={s.label[locale]} pct={s.pct} count={s.count} fmt={fmt} color={i === data.sources.length - 1 ? Colors.secondary : Colors.tertiary} />
         ))}
       </View>
 
       <View style={styles.card}>
         <ThemedText variant="headline-sm">{d.anTop}</ThemedText>
-        {data.topTracks.map((t, i) => (
+        {!demo && empty}
+        {demo && data.topTracks.map((t, i) => (
           <View key={t.trackId} style={styles.topRow}>
             <ThemedText variant="label-lg" emphasis="medium" style={styles.rank}>
               {i + 1}
@@ -140,6 +174,8 @@ export function DemoArtistAnalytics() {
 
       <View style={styles.card}>
         <ThemedText variant="headline-sm">{d.anHistory}</ThemedText>
+        {!demo && empty}
+        {demo && (
         <View style={styles.historyChart}>
           {data.history.map((h) => (
             <View key={h.label.en} style={styles.historyCol}>
@@ -155,6 +191,7 @@ export function DemoArtistAnalytics() {
             </View>
           ))}
         </View>
+        )}
       </View>
 
       <ThemedText variant="headline-md" style={styles.byTrack}>
@@ -165,6 +202,7 @@ export function DemoArtistAnalytics() {
 }
 
 const styles = StyleSheet.create({
+  empty: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingVertical: Spacing.xs },
   section: { gap: Spacing.lg },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   demoBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: Radii.full, backgroundColor: 'rgba(245, 166, 35, 0.14)' },

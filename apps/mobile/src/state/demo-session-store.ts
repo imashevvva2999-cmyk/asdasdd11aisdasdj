@@ -12,6 +12,7 @@ import {
 } from '@/demo/demo-fixture';
 import { isGuestPreview, useGuestPreviewStore } from '@/demo/guest-mode';
 import { addMockArtist, addMockTrack, getArtistById, type Artist } from '@/mocks';
+import { restoreArtistAccount, setArtistPersistencePaused } from '@/state/artist-account-persistence';
 import { useArtistStore, type ArtistTrackEntry } from '@/state/artist-store';
 import { PROMO_WALLET_START_KGS, useCampaignStore, type CampaignStage } from '@/state/campaign-store';
 
@@ -131,6 +132,8 @@ export const useDemoSessionStore = create<DemoSessionState>()(
       signIn: () => {
         const saved = get().snapshot;
         const snapshot = saved && saved.version === DEMO_FIXTURE_VERSION ? saved : freshSnapshot();
+        // Regular artist persistence stops before demo data enters the app stores.
+        setArtistPersistencePaused(true);
         applySnapshot(snapshot);
         set({ active: true, snapshot: captureSnapshot(DEMO_FIXTURE_VERSION) ?? snapshot });
       },
@@ -138,6 +141,9 @@ export const useDemoSessionStore = create<DemoSessionState>()(
       signOut: () => {
         clearApp();
         set({ active: false });
+        // Back to the regular artist account (if any) saved in this browser.
+        setArtistPersistencePaused(false);
+        restoreArtistAccount();
       },
 
       resetDemo: () => {
@@ -197,4 +203,5 @@ export function exitGuestPreview() {
   if (!isGuestPreview()) return;
   clearApp();
   useGuestPreviewStore.setState({ active: false });
+  restoreArtistAccount();
 }
