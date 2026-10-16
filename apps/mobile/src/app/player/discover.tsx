@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,7 +12,10 @@ import { CircleButton, IconButton } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useContentWidth } from '@/hooks/use-content-width';
 import { useWindowSize } from '@/hooks/use-window-size';
+import { getGenreIdForTrack, getTrackIdsForGenre } from '@/lib/genre-tracks';
+import { genreNameLabel } from '@/lib/i18n';
 import { goBack } from '@/lib/navigation';
+import { useDiscoveryStore } from '@/state/discovery-store';
 import { useAppStrings } from '@/state/locale-store';
 import { usePlayerStore } from '@/state/player-store';
 
@@ -37,14 +40,53 @@ export default function DiscoverScreen() {
   const togglePlayPause = usePlayerStore((s) => s.togglePlayPause);
   const windowWidth = useContentWidth();
   const { height: windowHeight } = useWindowSize();
-  const { t } = useAppStrings();
+  const { locale, t } = useAppStrings();
+  const genreIds = useDiscoveryStore((s) => s.genreIds);
+  const genreIndex = useDiscoveryStore((s) => s.genreIndex);
+  const genreId = genreIds[genreIndex];
+  const firstRun = useRef(true);
 
+  // Genre change (or first open): play this genre's queue, resuming its last track.
   useEffect(() => {
-    if (trackId && trackId !== currentTrackId) {
-      play(trackId);
+    const discovery = useDiscoveryStore.getState();
+    const player = usePlayerStore.getState();
+    let entryTrack: string | undefined;
+    if (firstRun.current) {
+      firstRun.current = false;
+      entryTrack = trackId || player.currentTrackId();
+      const startGenre = (entryTrack && getGenreIdForTrack(entryTrack)) || discovery.genreIds[0];
+      const startIndex = Math.max(0, discovery.genreIds.indexOf(startGenre));
+      if (startIndex !== discovery.genreIndex) {
+        discovery.setGenreIndex(startIndex);
+        return;
+      }
     }
+    const id = discovery.genreIds[genreIndex];
+    const trackIds = id ? getTrackIdsForGenre(id) : [];
+    if (trackIds.length === 0) {
+      player.pause();
+      return;
+    }
+    const restored = discovery.lastTrackByGenre[id];
+    const target =
+      restored && trackIds.includes(restored)
+        ? restored
+        : entryTrack && trackIds.includes(entryTrack)
+          ? entryTrack
+          : trackIds[0];
+    const sameQueue = player.queue.length === trackIds.length && player.queue.every((q, i) => q === trackIds[i]);
+    if (!(sameQueue && player.currentTrackId() === target)) play(target, trackIds);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trackId]);
+  }, [genreIndex]);
+
+  // Remember the last song per genre so returning to it resumes there.
+  useEffect(() => {
+    const discovery = useDiscoveryStore.getState();
+    const id = discovery.genreIds[discovery.genreIndex];
+    if (id && currentTrackId && getTrackIdsForGenre(id).includes(currentTrackId)) {
+      discovery.recordLastTrack(id, currentTrackId);
+    }
+  }, [currentTrackId]);
 
   if (!track) {
     return (
@@ -69,6 +111,20 @@ export default function DiscoverScreen() {
       <SafeAreaView style={StyleSheet.absoluteFill} pointerEvents="box-none">
         <View style={styles.header} pointerEvents="box-none">
           <IconButton variant="ghost" icon="close" iconSize={26} accessibilityLabel={t('closeLabel')} onPress={() => goBack()} />
+          {genreId && (
+            <View style={styles.genreChip}>
+              <ThemedText variant="label-md" numberOfLines={1} style={styles.genreLabel}>
+                #{genreNameLabel(locale, genreId)}
+              </ThemedText>
+            </View>
+          )}
+          {genreIds.length > 1 && (
+            <View style={styles.genreDots}>
+              {genreIds.map((id, i) => (
+                <View key={id} style={[styles.genreDot, i === genreIndex && styles.genreDotActive]} />
+              ))}
+            </View>
+          )}
         </View>
         <View style={styles.footer} pointerEvents="box-none">
           <View style={styles.titleBlock}>
@@ -98,7 +154,20 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   onColorMedium: { color: ON_COLOR_MEDIUM },
-  header: { height: 56, paddingHorizontal: Spacing.sm, justifyContent: 'center' },
+  header: { height: 56, paddingHorizontal: Spacing.sm, flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  genreChip: {
+    flexShrink: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.18)',
+  },
+  genreLabel: { color: '#fff', letterSpacing: 0.3 },
+  genreDots: { marginLeft: 'auto', flexDirection: 'row', gap: 6, paddingRight: Spacing.sm },
+  genreDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255, 255, 255, 0.3)' },
+  genreDotActive: { width: 18, backgroundColor: '#fff' },
   footer: {
     marginTop: 'auto',
     flexDirection: 'row',

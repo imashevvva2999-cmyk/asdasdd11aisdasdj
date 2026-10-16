@@ -3,12 +3,16 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Chip, Icon, PillButton, PressableScale } from '@/components/ui';
+import { Chip, Icon, PillButton, PressableScale, StatCard } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useToast } from '@/hooks/use-toast';
 import { formatKgsAmount } from '@/lib/format-currency';
 import type { DashboardStringKey, LocalizedText } from '@/lib/dashboard-i18n';
 import { useDashboardStrings } from '@/state/dashboard-locale-store';
+import { useIsGuestPreview } from '@/demo/guest-mode';
+import { useIsDemoArtist } from '@/state/demo-session-store';
+import { DEMO_SUBSCRIPTION } from '@/demo/demo-fixture';
+import { useDemoStrings } from '@/demo/demo-strings';
 
 const TIERS: {
   id: string;
@@ -101,10 +105,32 @@ export default function StudioProScreen() {
   const { t, locale } = useDashboardStrings();
   const [yearly, setYearly] = useState(true);
   const { showToast, toast } = useToast();
+  const demo = useIsDemoArtist();
+  const guest = useIsGuestPreview();
+  const { d } = useDemoStrings();
+  // Demo account is on Studio PRO; everyone else keeps the tier marked current.
+  const isCurrent = (tier: (typeof TIERS)[number]) => (demo ? tier.id === DEMO_SUBSCRIPTION.planId : tier.current);
+  const dateLabel = (iso: string) => new Date(`${iso}T00:00:00`).toLocaleDateString(locale === 'ru' ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' });
 
   return (
     <ThemedView surface="canvas" style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
+        {demo && (
+          <View style={[styles.tierCard, styles.tierCardHighlight]}>
+            <ThemedText variant="label-sm" style={{ color: Colors.secondary }}>{d.planTitle}</ThemedText>
+            <ThemedText variant="headline-lg">{d.planDemo}</ThemedText>
+            <ThemedText variant="body-sm" emphasis="medium">
+              {d.planSince} {dateLabel(DEMO_SUBSCRIPTION.since)} • {d.planRenews} {dateLabel(DEMO_SUBSCRIPTION.renews)} • {formatKgsAmount(DEMO_SUBSCRIPTION.priceYearKgs)} сом / {t('perYear')}
+            </ThemedText>
+            <View style={styles.usageGrid}>
+              {DEMO_SUBSCRIPTION.usage.map((u) => (
+                <StatCard key={u.label.en} label={u.label[locale]} value={u.value} style={styles.usageTile} />
+              ))}
+            </View>
+            <ThemedText variant="body-sm" emphasis="medium">{d.planNoBilling}</ThemedText>
+          </View>
+        )}
+
         <ThemedText variant="headline-lg">{t('studioPlans')}</ThemedText>
         <ThemedText variant="body-md" emphasis="medium">{t('studioPlansHint')}</ThemedText>
 
@@ -129,9 +155,9 @@ export default function StudioProScreen() {
               </View>
             ))}
             <PillButton
-              label={tier.current ? t('currentPlan') : `${t('chooseTier')} ${tier.name[locale]}`}
-              disabled={tier.current}
-              onPress={tier.current ? undefined : () => showToast(t('subscriptionsToast'), 'studio')}
+              label={isCurrent(tier) ? t('currentPlan') : `${t('chooseTier')} ${tier.name[locale]}`}
+              disabled={isCurrent(tier)}
+              onPress={isCurrent(tier) ? undefined : () => showToast(guest ? d.readOnlyToast : t('subscriptionsToast'), guest ? 'lock' : 'studio')}
               style={styles.tierButton}
             />
           </View>
@@ -163,6 +189,8 @@ export default function StudioProScreen() {
 }
 
 const styles = StyleSheet.create({
+  usageGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
+  usageTile: { flexBasis: '47%' },
   flex: { flex: 1 },
   content: { padding: Spacing.margin, gap: Spacing.md, paddingBottom: Spacing.xl * 3 },
   toggleRow: { flexDirection: 'row', gap: Spacing.xs },

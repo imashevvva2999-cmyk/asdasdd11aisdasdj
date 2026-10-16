@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { DemoArtistAnalytics } from '@/components/dashboard/demo-artist-analytics';
 import { ListenTrendChart } from '@/components/dashboard/listen-trend-chart';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -9,6 +10,7 @@ import { Colors, Radii, Spacing } from '@/constants/theme';
 import { getTrackAnalytics, type TimePeriod } from '@/lib/analytics-mock';
 import { useDashboardStrings } from '@/state/dashboard-locale-store';
 import { useArtistStore } from '@/state/artist-store';
+import { useIsDemoArtist } from '@/state/demo-session-store';
 import type { DashboardStringKey } from '@/lib/dashboard-i18n';
 
 const PERIOD_KEYS: { id: TimePeriod; key: DashboardStringKey }[] = [
@@ -27,6 +29,7 @@ export default function AnalyticsScreen() {
   const [rawTrackId, setRawTrackId] = useState(published[0]?.track.id);
   const trackId = published.some((e) => e.track.id === rawTrackId) ? rawTrackId : published[0]?.track.id;
   const [period, setPeriod] = useState<TimePeriod>('28d');
+  const demo = useIsDemoArtist();
 
   if (published.length === 0) {
     return (
@@ -45,6 +48,7 @@ export default function AnalyticsScreen() {
   return (
     <ThemedView surface="canvas" style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
+        {demo && <DemoArtistAnalytics />}
         <View style={styles.trackHeader}>
           <Artwork uri={track?.coverUri} size={56} radius={Radii.DEFAULT} />
           <View style={styles.trackText}>

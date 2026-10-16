@@ -4,12 +4,13 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Artwork, AvatarCard, CoverCard, PillButton, TrackRow } from '@/components/ui';
+import { Artwork, AvatarCard, CoverCard, EmptyState, PillButton, TrackRow } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useContentWidth } from '@/hooks/use-content-width';
 import { useToast } from '@/hooks/use-toast';
+import { getTrackIdsForGenre } from '@/lib/genre-tracks';
 import { genreFollowToggleToast, genreTagLabel } from '@/lib/i18n';
-import { albums, artists, featuredGenre, genreDetails, genres, getGenreById, tracks } from '@/mocks';
+import { albums, artists, featuredGenre, genreDetails, genres, getGenreById, getTrackById, type Track } from '@/mocks';
 import { useLibraryStore } from '@/state/library-store';
 import { useAppStrings } from '@/state/locale-store';
 import { usePlayerStore } from '@/state/player-store';
@@ -35,7 +36,11 @@ export default function GenreDetailScreen() {
   const heroWidth = windowWidth - Spacing.margin * 2;
   const columnWidth = Math.floor((heroWidth - Spacing.md) / 2);
   const pioneeringArtists = artists.slice(0, 4);
-  const trending = tracks.slice(0, 4);
+  // Genre-specific listing: only tracks mapped to this genre (GENRE_TAG_MAP);
+  // an unmapped/empty genre shows an empty state, never unrelated tracks.
+  const trending = getTrackIdsForGenre(id ?? '')
+    .map((trackId) => getTrackById(trackId))
+    .filter((track): track is Track => track !== undefined);
   const newReleases = albums.slice(3, 6);
   const trendingIds = trending.map((track) => track.id);
   const play = usePlayerStore((s) => s.play);
@@ -83,7 +88,13 @@ export default function GenreDetailScreen() {
               </ThemedText>
             )}
           <View style={styles.heroActions}>
-            <PillButton label={t('listenNow')} leadingIcon="play-arrow" onPress={() => playTrending()} style={styles.heroButton} />
+            <PillButton
+              label={t('listenNow')}
+              leadingIcon="play-arrow"
+              disabled={trending.length === 0}
+              onPress={() => playTrending()}
+              style={styles.heroButton}
+            />
             <PillButton
               label={followed ? t('followingLabel') : t('followLabel')}
               leadingIcon={followed ? 'check' : 'add'}
@@ -138,23 +149,30 @@ export default function GenreDetailScreen() {
         </View>
 
         <View style={styles.section}>
-          <SectionTitle title={`${t('genreTrendingLiveTopPrefix')} ${trending.length}`} subtitle={t('mostPlayedRightNow')} />
-          <View style={styles.trackList}>
-            {trending.map((track, index) => (
-              <TrackRow
-                key={track.id}
-                index={index + 1}
-                coverUri={track.coverUri}
-                active={currentTrackId === track.id}
-                title={track.title}
-                artist={track.artistName}
-                lossless={track.lossless}
-                explicit={track.explicit}
-                onPress={() => playTrending(track.id)}
-                onOptionsPress={() => router.push({ pathname: '/sheets/options', params: { kind: 'track', id: track.id } })}
-              />
-            ))}
-          </View>
+          {trending.length === 0 ? (
+            <EmptyState icon="library-music" title={t('genreNoTracksTitle')} hint={t('genreNoTracksHint')} />
+          ) : (
+            <>
+              {/* Neutral wording: no play/trending data exists, so no "live"/"most played" claim. */}
+              <SectionTitle title={`${t('genreTopPrefix')} ${trending.length}`} subtitle={t('genreTracksSubtitle')} />
+              <View style={styles.trackList}>
+                {trending.map((track, index) => (
+                  <TrackRow
+                    key={track.id}
+                    index={index + 1}
+                    coverUri={track.coverUri}
+                    active={currentTrackId === track.id}
+                    title={track.title}
+                    artist={track.artistName}
+                    lossless={track.lossless}
+                    explicit={track.explicit}
+                    onPress={() => playTrending(track.id)}
+                    onOptionsPress={() => router.push({ pathname: '/sheets/options', params: { kind: 'track', id: track.id } })}
+                  />
+                ))}
+              </View>
+            </>
+          )}
         </View>
 
         <View style={styles.section}>

@@ -57,6 +57,15 @@ const expectations = [
   { path: 'sheets/support.html', mustContain: [], mustNotContain: ['PLACEHOLDER', 'Artist not found.'], label: 'Support Artist (S-19, neutral shell until ?artistId= is known)' },
   { path: 'sheets/support-confirm.html', mustContain: ['Nothing to confirm'], mustNotContain: ['PLACEHOLDER'], label: 'Donation Confirmation (S-20, nothing to confirm yet)' },
   { path: 'sheets/support-success.html', mustContain: ['No recent support to show.'], mustNotContain: ['PLACEHOLDER'], label: 'Support Success (S-21, no recent donation yet)' },
+  // Public Guest Demo Preview: exported for production, renders a neutral shell until the client loads the read-only fixture — never Become an Artist or a login.
+  { path: 'demo/artist/index.html', mustContain: [], mustNotContain: ['PLACEHOLDER', 'Become an Artist', 'Sign in', 'EXPO_PUBLIC_DEMO'], label: 'Guest Demo Preview — Overview' },
+  { path: 'demo/artist/analytics.html', mustContain: [], mustNotContain: ['PLACEHOLDER', 'Become an Artist', 'EXPO_PUBLIC_DEMO'], label: 'Guest Demo Preview — Analytics' },
+  { path: 'demo/artist/promotion.html', mustContain: [], mustNotContain: ['PLACEHOLDER', 'Become an Artist', 'EXPO_PUBLIC_DEMO'], label: 'Guest Demo Preview — Promotion' },
+  { path: 'demo/artist/studio-pro.html', mustContain: [], mustNotContain: ['PLACEHOLDER', 'Become an Artist', 'EXPO_PUBLIC_DEMO'], label: 'Guest Demo Preview — Studio Pro' },
+  { path: 'demo/artist/campaign/statistics.html', mustContain: [], mustNotContain: ['PLACEHOLDER', 'EXPO_PUBLIC_DEMO'], label: 'Guest Demo Preview — Campaign analytics' },
+  { path: 'demo/artist/campaign/select-package.html', mustContain: [], mustNotContain: ['PLACEHOLDER', 'EXPO_PUBLIC_DEMO'], label: 'Guest Demo Preview — Package comparison' },
+  // Demo Artist login is development-only: the production export must render it as unavailable, never a usable form.
+  { path: 'profile/demo-login.html', mustContain: ['Demo login is not available'], mustNotContain: ['PLACEHOLDER', 'Sign in'], label: 'Demo artist login (dev-only, disabled in production export)' },
   { path: 'profile/index.html', mustContain: ['Alex Rivers', 'Studio Sanctuary', 'Support History', 'Settings', 'Become an Artist', 'Log Out', 'Saved', 'Playlists', 'Supported'], mustNotContain: ['PLACEHOLDER', 'All Settings', 'Listening Pulse', 'Audio Quality &amp; Playback', 'Downloads &amp; Offline', 'Account &amp; Security'], label: 'Profile Hub (S-23, simplified — Audio Quality/Downloads/Account rows moved under Settings)' },
   { path: 'profile/support-history.html', mustContain: ['Demo history', 'Total Supported'], mustNotContain: ['PLACEHOLDER', 'Today', 'Last Week'], label: 'Support History (S-22): demo label, build-time-independent dates' },
   { path: 'profile/settings.html', mustContain: ['App Language', 'Audio Quality &amp; Playback', 'Downloads &amp; Offline', 'Account &amp; Security'], mustNotContain: ['PLACEHOLDER', 'Audio Streaming', 'Playback &amp; Sound Engine'], label: 'Settings (S-24, 4-row navigator)' },
@@ -73,7 +82,22 @@ const expectations = [
   { path: 'profile/artist/become-artist.html', mustContain: ['Share Your Sound with the World', 'Share Your Music', 'Fan Support', 'Artist Insights', 'BECOME AN ARTIST'], mustNotContain: ['PLACEHOLDER'], label: 'Become an Artist (S-25)' },
   { path: 'profile/artist/setup.html', mustContain: ['Primary Genre', 'Electronic', 'Create Artist Profile'], mustNotContain: ['PLACEHOLDER'], label: 'Artist Setup (S-26)' },
   { path: 'profile/artist/dashboard/index.html', mustContain: ['No artist profile yet', 'Set up your artist profile to start uploading tracks.'], mustNotContain: ['PLACEHOLDER'], label: 'Artist Dashboard (S-27, no local artist yet)' },
+  { path: 'profile/artist/dashboard/promotion.html', mustContain: ['No artist profile yet', 'Set up your artist profile to start uploading tracks.'], mustNotContain: ['PLACEHOLDER'], label: 'Artist Dashboard Promotion tab (same cold-export empty state as Overview — no local artist yet)' },
   { path: 'profile/artist/upload-track.html', mustContain: ['Upload Audio', 'Browse File', 'Track Details', 'Cover Artwork', 'Release Settings', 'Publish Track', 'Save as Draft'], mustNotContain: ['PLACEHOLDER'], label: 'Upload Track (S-28)' },
+  // Campaign Creation wizard (Artist Promotion flow, Stitch "mmusic_studio").
+  // No track/package is ever selected in a cold static export (campaign-store
+  // resets every build), so the mid-flow screens render their real empty
+  // "entered with nothing selected" shell — same neutral-shell convention as
+  // sheets/support.html — while the entry and terminal screens show their own
+  // real empty-state copy. Full flow is exercised directly against the store
+  // in scripts/verify-campaign-store.mjs.
+  { path: 'profile/artist/campaign/select-track.html', mustContain: ['No published tracks yet', 'Publish a track first to promote it.'], mustNotContain: ['PLACEHOLDER', 'No campaign was just launched.', 'Campaign Analytics'], label: 'Campaign: Choose Track (cold export, no local artist/tracks yet)' },
+  { path: 'profile/artist/campaign/select-package.html', mustContain: [], mustNotContain: ['PLACEHOLDER', 'No published tracks yet', 'No campaign was just launched.', 'Campaign Analytics'], label: 'Campaign: Choose Package (cold export, no track selected — neutral redirect shell)' },
+  { path: 'profile/artist/campaign/package-details.html', mustContain: [], mustNotContain: ['PLACEHOLDER', 'No published tracks yet', 'No campaign was just launched.', 'Campaign Analytics'], label: 'Campaign: Package Details (cold export, no ?packageId= — neutral shell)' },
+  { path: 'profile/artist/campaign/setup.html', mustContain: [], mustNotContain: ['PLACEHOLDER', 'No published tracks yet', 'No campaign was just launched.', 'Campaign Analytics'], label: 'Campaign: Setup (cold export, no track selected — neutral redirect shell)' },
+  { path: 'profile/artist/campaign/confirm.html', mustContain: [], mustNotContain: ['PLACEHOLDER', 'No published tracks yet', 'No campaign was just launched.', 'Campaign Analytics'], label: 'Campaign: Confirm & Pay (cold export, no track/package selected — neutral redirect shell)' },
+  { path: 'profile/artist/campaign/success.html', mustContain: ['No campaign was just launched.'], mustNotContain: ['PLACEHOLDER', 'No published tracks yet', 'Campaign Analytics'], label: 'Campaign: Success (cold export, nothing just launched — empty state)' },
+  { path: 'profile/artist/campaign/statistics.html', mustContain: ['Campaign Analytics'], mustNotContain: ['PLACEHOLDER', 'No published tracks yet', 'No campaign was just launched.'], label: 'Campaign: Statistics (reads the existing ACTIVE_CAMPAIGN mock, always has content)' },
   // W1 — the website's own 404 page (served by the host for unknown URLs).
   { path: '+not-found.html', mustContain: ['Page not found', 'Go to Home'], mustNotContain: ['PLACEHOLDER'], label: '404 page (W1)' },
 ];

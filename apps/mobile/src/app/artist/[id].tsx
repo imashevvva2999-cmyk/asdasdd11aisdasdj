@@ -9,6 +9,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Artwork, AvatarCard, CircleButton, CoverCard, Icon, IconButton, PillButton, SectionHeader, TrackRow } from '@/components/ui';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useContentWidth } from '@/hooks/use-content-width';
+import { formatArtistMeta } from '@/lib/artist-meta';
 import { artists, getAlbumById, getArtistById, getTrackById } from '@/mocks';
 import { useLibraryStore } from '@/state/library-store';
 import { useAppStrings } from '@/state/locale-store';
@@ -77,8 +78,10 @@ export default function ArtistProfileScreen() {
             <View style={styles.metaRow}>
               <View style={styles.metaDot} />
               <ThemedText variant="label-md" emphasis="medium">
-                {artist.monthlyListeners !== undefined ? `${formatListeners(artist.monthlyListeners)} ${t('monthlyListenersSuffix')}` : null}
-                {artist.location ? ` • ${artist.location}` : ''}
+                {formatArtistMeta(
+                  artist.monthlyListeners !== undefined ? `${formatListeners(artist.monthlyListeners)} ${t('monthlyListenersSuffix')}` : undefined,
+                  artist.location,
+                )}
               </ThemedText>
             </View>
           </View>

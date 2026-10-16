@@ -25,8 +25,21 @@ import {
 } from '@/mocks';
 import { useLibraryStore } from '@/state/library-store';
 import { useAppStrings } from '@/state/locale-store';
+import { type SceneEngineCtor } from '@/components/living-moods/living-mood-scene';
+import { GalaxyScene } from '@/components/living-moods/scenes/galaxy-scene';
+import { LiquidChromeScene } from '@/components/living-moods/scenes/liquid-chrome-scene';
+import { MetaBallsScene } from '@/components/living-moods/scenes/meta-balls-scene';
+import { OrbScene } from '@/components/living-moods/scenes/orb-scene';
 import { usePlayerStore } from '@/state/player-store';
 import { expandOrigin, stageVisible } from '@/state/player-surface';
+
+/** Living Moods WebGL scene per mix (presentation only). */
+const MOOD_SCENES: Record<string, { scene: SceneEngineCtor; colors: [string, string] }> = {
+  'late-night': { scene: GalaxyScene, colors: ['#0a0e16', '#162038'] },
+  melancholy: { scene: LiquidChromeScene, colors: ['#1a1a1f', '#3a3a42'] },
+  'high-energy': { scene: OrbScene, colors: ['#120a16', '#2a1638'] },
+  'flow-state': { scene: MetaBallsScene, colors: ['#1a1014', '#3a1f28'] },
+};
 
 /** Mood motif per mix (presentation only — the mix data stays unchanged). */
 const MOOD_VISUALS: Record<string, MoodVisualKind> = {
@@ -40,11 +53,8 @@ const MOOD_VISUALS: Record<string, MoodVisualKind> = {
 export default function HomeScreen() {
   const hero = getPlaylistById(heroPlaylistId);
   const play = usePlayerStore((s) => s.play);
-  const next = usePlayerStore((s) => s.next);
-  const previous = usePlayerStore((s) => s.previous);
   const currentTrackId = usePlayerStore((s) => s.currentTrackId());
   const isPlaying = usePlayerStore((s) => s.isPlaying);
-  const togglePlayPause = usePlayerStore((s) => s.togglePlayPause);
   const queue = usePlayerStore((s) => s.queue);
   // The hero's own tracks are what the player is on (queue matches the playlist).
   const heroInPlayer = !!hero?.trackIds && !!currentTrackId && hero.trackIds.includes(currentTrackId) && queue.length === hero.trackIds.length;
@@ -70,6 +80,19 @@ export default function HomeScreen() {
       return () => setHomeFocused(false);
     }, []),
   );
+
+  // MMusic Stars: opens the genre × song discovery player.
+  function openStars() {
+    let targetTrackId = currentTrackId;
+    if (!heroInPlayer) {
+      const trackIds = hero?.trackIds;
+      if (trackIds && trackIds.length > 0) {
+        targetTrackId = trackIds[0]!;
+        play(targetTrackId, trackIds);
+      }
+    }
+    router.push({ pathname: '/player/discover', params: { trackId: targetTrackId ?? hero?.trackIds?.[0] ?? '' } });
+  }
 
   return (
     <ThemedView surface="canvas" style={styles.flex}>
@@ -108,33 +131,14 @@ export default function HomeScreen() {
               animated
               paused={!homeFocused}
               active={heroPlaying}
-              title={hero.title}
-              subtitle={hero.curator}
+              title="MMusic Stars"
               coverUri={hero.coverUri}
               height={224}
               trackId={currentTrackId ?? hero.trackIds?.[0]}
               audioPlaying={isPlaying}
-              onNextPress={heroInPlayer ? next : undefined}
-              onPreviousPress={heroInPlayer ? previous : undefined}
-              onPress={() => {
-                let targetTrackId = currentTrackId;
-                if (!heroInPlayer) {
-                  const trackIds = hero.trackIds;
-                  if (trackIds && trackIds.length > 0) {
-                    targetTrackId = trackIds[0]!;
-                    play(targetTrackId, trackIds);
-                  }
-                }
-                router.push({ pathname: '/player/discover', params: { trackId: targetTrackId ?? hero.trackIds?.[0] ?? '' } });
-              }}
-              onPlayPress={() => {
-                if (heroInPlayer) {
-                  togglePlayPause();
-                  return;
-                }
-                const trackIds = hero.trackIds;
-                if (trackIds && trackIds.length > 0) play(trackIds[0]!, trackIds);
-              }}
+              ctaLabel="Go"
+              onPress={openStars}
+              onPlayPress={openStars}
             />
           </View>
         )}
@@ -238,6 +242,8 @@ export default function HomeScreen() {
                     icon={mix.icon}
                     tint={mix.tint}
                     visual={MOOD_VISUALS[mix.id]}
+                    scene={MOOD_SCENES[mix.id]?.scene}
+                    sceneColors={MOOD_SCENES[mix.id]?.colors}
                     onPress={() => {
                       play(mix.trackIds[0]!, mix.trackIds);
                       router.push('/player/now-playing');

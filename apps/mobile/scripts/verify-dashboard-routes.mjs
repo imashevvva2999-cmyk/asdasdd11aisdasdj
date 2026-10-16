@@ -23,6 +23,10 @@ check('old single-file dashboard.tsx is gone (replaced by the dashboard/ folder)
 check('dashboard/_layout.tsx exists', existsSync(join(APP, 'profile', 'artist', 'dashboard', '_layout.tsx')));
 check('dashboard/index.tsx (Overview) exists', existsSync(join(APP, 'profile', 'artist', 'dashboard', 'index.tsx')));
 
+for (const name of ['select-track', 'select-package', 'package-details', 'setup', 'confirm', 'success', 'statistics']) {
+  check(`artist/campaign/${name}.tsx exists`, existsSync(join(APP, 'profile', 'artist', 'campaign', `${name}.tsx`)));
+}
+
 if (failures > 0) {
   console.error(`\n${failures} dashboard-routes check(s) failed.`);
   process.exit(1);

@@ -10,6 +10,9 @@ import { formatKgsAmount } from '@/lib/format-currency';
 import { usePlayerStore } from '@/state/player-store';
 import { useArtistStore, type UploadStatus } from '@/state/artist-store';
 import { useDashboardStrings } from '@/state/dashboard-locale-store';
+import { useIsGuestPreview } from '@/demo/guest-mode';
+import { useIsDemoArtist } from '@/state/demo-session-store';
+import { DEMO_SUPPORT_TOTAL_KGS, demoTotals } from '@/demo/demo-fixture';
 
 const FILTERS = ['All', 'Published', 'In Review', 'Draft'] as const;
 
@@ -48,9 +51,16 @@ export default function ArtistDashboardScreen() {
   const navigation = useNavigation();
 
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>('All');
+  const demo = useIsDemoArtist();
+  // Guest preview is read-only and stays inside /demo: no uploads, track
+  // options, playback or public-profile jump.
+  const guest = useIsGuestPreview();
+  // Demo account: totals are summed from the same per-track analytics the
+  // Analytics tab shows, so Overview and Analytics always match.
+  const totals = useMemo(() => (demo ? demoTotals(entries) : undefined), [demo, entries]);
 
   useEffect(() => {
-    if (!artist) return;
+    if (!artist || guest) return;
     // Overview lives inside the dashboard's own Tabs navigator (headerShown: false);
     // the public-profile button must reach the parent profile Stack's header instead.
     const parent = navigation.getParent();
@@ -68,7 +78,7 @@ export default function ArtistDashboardScreen() {
     return () => {
       parent.setOptions({ headerRight: undefined });
     };
-  }, [artist, navigation]);
+  }, [artist, navigation, guest]);
 
   const visibleEntries = useMemo(() => {
     if (filter === 'All') return entries;
@@ -94,7 +104,7 @@ export default function ArtistDashboardScreen() {
   return (
     <ThemedView surface="canvas" style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
-        {entries.length > 0 && (
+        {entries.length > 0 && !guest && (
           <PillButton
             label={t('uploadTrack')}
             leadingIcon="add-circle-outline"
@@ -104,9 +114,19 @@ export default function ArtistDashboardScreen() {
         )}
 
         <View style={styles.statsRow}>
-          <StatCard label={t('listeners')} value={String(artist.monthlyListeners ?? 0)} icon="groups" iconColor={Colors.primary} />
-          <StatCard label={t('streams')} value="0" icon="play-circle-outline" iconColor={Colors.tertiary} />
-          <StatCard label={t('supportLabel')} value={`${formatKgsAmount(0)} сом`} icon="volunteer-activism" iconColor={Colors.secondary} />
+          <StatCard
+            label={t('listeners')}
+            value={totals ? formatKgsAmount(totals.monthlyListeners) : String(artist.monthlyListeners ?? 0)}
+            icon="groups"
+            iconColor={Colors.primary}
+          />
+          <StatCard label={t('streams')} value={totals ? formatKgsAmount(totals.streams) : '0'} icon="play-circle-outline" iconColor={Colors.tertiary} />
+          <StatCard
+            label={t('supportLabel')}
+            value={`${formatKgsAmount(demo ? DEMO_SUPPORT_TOTAL_KGS : 0)} сом`}
+            icon="volunteer-activism"
+            iconColor={Colors.secondary}
+          />
         </View>
 
         <View style={styles.section}>
@@ -131,11 +151,13 @@ export default function ArtistDashboardScreen() {
                 const inProgress = entry.status === 'uploading' || entry.status === 'processing';
                 const published = entry.status === 'published';
                 return (
+                  // The options button sits beside (not inside) the row's pressable —
+                  // overlaid on a same-size spacer — so web never nests <button>s.
+                  <View key={entry.track.id} style={styles.releaseItem}>
                   <PressableScale
-                    key={entry.track.id}
-                    accessibilityRole={published ? 'button' : undefined}
-                    disabled={!published}
-                    onPress={published ? () => play(entry.track.id) : undefined}
+                    accessibilityRole={published && !guest ? 'button' : undefined}
+                    disabled={!published || guest}
+                    onPress={published && !guest ? () => play(entry.track.id) : undefined}
                     style={styles.releaseCard}
                   >
                     <View style={styles.releaseRow}>
@@ -154,16 +176,7 @@ export default function ArtistDashboardScreen() {
                           {inProgress ? STATUS_LABEL[entry.status] : `Single • ${STATUS_LABEL[entry.status]}`}
                         </ThemedText>
                       </View>
-                      {published && (
-                        <IconButton
-                          icon="more-vert"
-                          size={36}
-                          color={Colors.text.medium}
-                          accessibilityLabel="Track options"
-                          style={styles.releaseMore}
-                          onPress={() => router.push({ pathname: '/sheets/options', params: { kind: 'track', id: entry.track.id } })}
-                        />
-                      )}
+                      {published && !guest && <View style={styles.releaseMoreSpacer} />}
                     </View>
                     {inProgress && (
                       <View style={styles.progressTrack}>
@@ -171,6 +184,17 @@ export default function ArtistDashboardScreen() {
                       </View>
                     )}
                   </PressableScale>
+                  {published && !guest && (
+                    <IconButton
+                      icon="more-vert"
+                      size={36}
+                      color={Colors.text.medium}
+                      accessibilityLabel="Track options"
+                      style={styles.releaseMoreOverlay}
+                      onPress={() => router.push({ pathname: '/sheets/options', params: { kind: 'track', id: entry.track.id } })}
+                    />
+                  )}
+                  </View>
                 );
               })}
             </View>
@@ -229,8 +253,19 @@ const styles = StyleSheet.create({
     minWidth: 0,
     gap: 2,
   },
-  releaseMore: {
+  releaseItem: {
+    position: 'relative',
+  },
+  releaseMoreSpacer: {
+    width: 36,
+    height: 36,
+  },
+  // Card padding + (48px cover row − 36px button) / 2 → same spot as before.
+  releaseMoreOverlay: {
     backgroundColor: 'transparent',
+    position: 'absolute',
+    top: Spacing.sm + 6,
+    right: Spacing.sm,
   },
   progressTrack: {
     height: 4,

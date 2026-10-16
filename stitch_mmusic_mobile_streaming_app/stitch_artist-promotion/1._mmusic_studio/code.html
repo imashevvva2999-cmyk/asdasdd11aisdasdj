@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior:none;background-color:#131315;color:#e5e1e4;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-primary-fixed-variant": "#930014", "on-secondary-fixed-variant": "#633f00", "secondary-fixed": "#ffddb4", "on-secondary": "#452b00", "surface-bright": "#39393b", "primary": "#ffb3ae", "inverse-on-surface": "#313032", "tertiary": "#ffb4a2", "on-tertiary-fixed-variant": "#862208", "surface-container-low": "#1c1b1d", "tertiary-fixed": "#ffdad2", "background": "#131315", "tertiary-container": "#e96a4a", "error-container": "#93000a", "secondary-fixed-dim": "#ffb955", "on-error-container": "#ffdad6", "surface-tint": "#ffb3ae", "on-error": "#690005", "surface-variant": "#353437", "on-secondary-container": "#4f3100", "on-primary-fixed": "#410004", "surface-container": "#201f21", "surface-container-high": "#2a2a2c", "outline-variant": "#5b403e", "on-surface-variant": "#e4bdba", "tertiary-fixed-dim": "#ffb4a2", "primary-fixed-dim": "#ffb3ae", "on-secondary-fixed": "#291800", "secondary": "#ffb955", "inverse-surface": "#e5e1e4", "primary-container": "#ff5351", "primary-fixed": "#ffdad7", "inverse-primary": "#bb1522", "on-primary": "#68000b", "surface-container-highest": "#353437", "error": "#ffb4ab", "surface": "#131315", "on-primary-container": "#5c0008", "on-background": "#e5e1e4", "on-surface": "#e5e1e4", "outline": "#ab8886", "surface-container-lowest": "#0e0e10", "on-tertiary": "#621100", "on-tertiary-fixed": "#3c0700", "on-tertiary-container": "#560e00", "surface-dim": "#131315", "secondary-container": "#dc9100" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "space-xl": "2rem", "margin": "1.25rem", "space-md": "0.75rem", "gutter": "1rem", "space-lg": "1.25rem", "space-sm": "0.5rem", "space-xs": "0.25rem" }, fontFamily: { "display-lg-mobile": ["Plus Jakarta Sans"], "display-lg": ["Plus Jakarta Sans"], "body-sm": ["Inter"], "body-lg": ["Inter"], "body-md": ["Inter"], "headline-sm": ["Plus Jakarta Sans"], "mono-num": ["Inter"], "label-lg": ["Inter"], "headline-lg": ["Plus Jakarta Sans"], "label-md": ["Inter"], "headline-md": ["Plus Jakarta Sans"], "label-sm": ["Inter"] }, fontSize: { "display-lg-mobile": ["28px", { "lineHeight": "34px", "letterSpacing": "-0.025em", "fontWeight": "800" }], "display-lg": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.03em", "fontWeight": "800" }], "body-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "400" }], "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "400" }], "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }], "headline-sm": ["18px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "mono-num": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "500" }], "label-lg": ["14px", { "lineHeight": "18px", "letterSpacing": "0.01em", "fontWeight": "600" }], "headline-lg": ["24px", { "lineHeight": "30px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }], "headline-md": ["20px", { "lineHeight": "26px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "label-sm": ["10px", { "lineHeight": "12px", "letterSpacing": "0.06em", "fontWeight": "700" }] } } } };</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface text-on-surface font-body-md text-body-md flex flex-col min-h-screen selection:bg-primary-container selection:text-on-primary-container"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/85 backdrop-blur-xl shadow-[0_4px_24px_rgba(0,0,0,0.45)]"><div class="h-16 px-margin flex items-center justify-between"><div class="flex items-center gap-space-sm"><div class="w-9 h-9 rounded-xl bg-primary-container/20 flex items-center justify-center text-primary-container"><span class="material-symbols-outlined text-[22px]">graphic_eq</span></div><div><div class="flex items-center gap-1.5"><span class="font-headline-sm text-headline-sm tracking-tight text-on-surface">Mmusic</span><span class="px-1.5 py-0.5 rounded-full bg-surface-container-highest text-primary font-label-sm text-label-sm uppercase tracking-wider">Studio</span></div><h1 class="font-label-sm text-label-sm text-on-surface-variant font-normal leading-none tracking-normal">Artist Promotion Dashboard</h1></div></div><div class="flex items-center gap-space-sm"><button aria-label="Notifications" class="w-11 h-11 rounded-full flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors"><span class="material-symbols-outlined text-[20px]">notifications</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-[0_2px_8px_rgba(255,179,174,0.25)]"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex flex-col relative w-full pt-16 pb-28 bg-surface min-h-screen"><div class="flex flex-col w-full text-on-surface">
+<!-- Dynamic Ambient Nebula Backdrop for Artist Studio -->
+<div class="relative w-full overflow-hidden px-margin pb-space-lg">
+<!-- Artist Mini Header Card -->
+<div class="flex items-center justify-between py-space-sm mb-space-md">
+<div class="flex items-center gap-space-sm">
+<div class="relative w-11 h-11 rounded-full p-0.5 bg-gradient-to-tr from-primary-container via-secondary to-tertiary shadow-[0_0_16px_rgba(255,83,81,0.25)]">
+<img class="w-full h-full rounded-full object-cover" data-alt="Futuristic electronic musician Solaris Echo portrait bathed in cosmic violet neon and deep amber backlight, wearing subtle audio production monitors in a dim studio sanctuary" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD_2bEkjsX4z7SXRyZjTFN1JCC1t_i3KpCqx9yodezr-egVhTREo9Hr6BlH7mJMUOpWCzkB20T08b95RZGQQFBcQ6AnuP9RE6DYHx91cpbX4kueyo_ltQR3nyBCYpzYni2ZdzgkzgDeXBqNIDRzLeUeYw87zNmcUDkAwUku_-oFM95Vqb1MK895bAdYwxzRDEzgC-jnwi35D8eG6gKB0nbXoXlB75G-DVy_DrVSf1kFrNdhs0eNRS0l"/>
+<div class="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-secondary text-surface flex items-center justify-center ring-2 ring-surface">
+<span class="material-symbols-outlined text-[11px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+</div>
+<div>
+<div class="flex items-center gap-1.5">
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-bold tracking-tight">Solaris Echo</h2>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-secondary font-mono-num text-mono-num font-semibold uppercase tracking-wider">PRO ARTIST</span>
+</div>
+<div class="flex items-center gap-1.5 text-on-surface-variant font-body-sm text-body-sm">
+<span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+<span>Кыргызстан и СНГ • Смарт-таргет активен</span>
+</div>
+</div>
+</div>
+<button aria-label="Справка по кампаниям" class="w-9 h-9 rounded-full bg-surface-container-high hover:bg-surface-bright flex items-center justify-center text-on-surface-variant transition-colors active:scale-95" type="button">
+<span class="material-symbols-outlined text-[18px]">help_outline</span>
+</button>
+</div>
+<!-- Hero Launch Card with Mmusic Sound Aura Glow -->
+<div class="relative rounded-2xl overflow-hidden p-space-lg bg-surface-container shadow-[0_16px_36px_-12px_rgba(0,0,0,0.8)]">
+<!-- Glow bleed behind card -->
+<div class="absolute -top-16 -right-16 w-52 h-52 bg-primary-container/25 rounded-full blur-3xl pointer-events-none"></div>
+<div class="absolute -bottom-20 -left-12 w-48 h-48 bg-secondary/15 rounded-full blur-2xl pointer-events-none"></div>
+<div class="relative z-10 flex flex-col gap-space-sm">
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary-container/20 text-primary-container font-label-sm text-label-sm tracking-wider uppercase">
+<span class="material-symbols-outlined text-[14px]">local_fire_department</span>
+            Smart Push AI
+          </span>
+<span class="text-on-surface-variant font-mono-num text-mono-num">mBank Audio Hub</span>
+</div>
+<h3 class="font-headline-lg text-headline-lg font-bold text-on-surface tracking-tight leading-tight">
+          Запустите продвижение трека
+        </h3>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+          Привлекайте целевых слушателей в Кыргызстане и Центральной Азии через смарт-алгоритмы экосистемы <span class="text-on-surface font-semibold">Mmusic</span>.
+        </p>
+<div class="pt-space-xs flex items-center gap-space-md">
+<button class="relative group overflow-hidden px-space-lg py-3 rounded-full bg-primary-container text-on-primary font-label-lg text-label-lg shadow-[0_4px_22px_rgba(255,83,81,0.4)] hover:shadow-[0_6px_28px_rgba(255,83,81,0.55)] active:scale-95 transition-all flex items-center gap-2" id="btn-quick-launch" type="button">
+<span class="material-symbols-outlined text-[18px] group-hover:rotate-12 transition-transform" style="font-variation-settings: 'FILL' 1;">rocket_launch</span>
+<span>Продвигать музыку</span>
+</button>
+<div class="flex flex-col">
+<span class="font-mono-num text-mono-num text-on-surface-variant">Старт от</span>
+<span class="font-label-md text-label-md text-secondary font-bold">250 сом / день</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Overview Metrics Grid -->
+<div class="mt-space-lg flex flex-col gap-space-sm">
+<div class="flex items-center justify-between px-1">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[20px]">insights</span>
+<h4 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Сводка за 30 дней</h4>
+</div>
+<span class="font-mono-num text-mono-num text-on-surface-variant">Обновлено 8м назад</span>
+</div>
+<div class="grid grid-cols-2 gap-space-sm">
+<!-- Stat 1: Охват -->
+<div class="bg-surface-container rounded-xl p-space-md flex flex-col justify-between shadow-sm relative overflow-hidden">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Охват аудитории</span>
+<span class="material-symbols-outlined text-primary text-[18px]">graphic_eq</span>
+</div>
+<div class="mt-space-md">
+<div class="font-display-lg-mobile text-display-lg-mobile text-on-surface font-bold tracking-tight">48 200</div>
+<div class="flex items-center gap-1 text-emerald-400 font-label-sm text-label-sm mt-1">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+<span>+24% к прошл. месяцу</span>
+</div>
+</div>
+</div>
+<!-- Stat 2: Конверсия в фаны -->
+<div class="bg-surface-container rounded-xl p-space-md flex flex-col justify-between shadow-sm relative overflow-hidden">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">В фаны</span>
+<span class="material-symbols-outlined text-secondary text-[18px]">favorite</span>
+</div>
+<div class="mt-space-md">
+<div class="font-display-lg-mobile text-display-lg-mobile text-on-surface font-bold tracking-tight">8.6%</div>
+<div class="flex items-center gap-1 text-on-surface-variant font-body-sm text-body-sm mt-1 truncate">
+<span>сохранения в медиатеку</span>
+</div>
+</div>
+</div>
+<!-- Stat 3: Активные кампании -->
+<div class="bg-surface-container rounded-xl p-space-md flex flex-col justify-between shadow-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">В ротации</span>
+<span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+</div>
+<div class="mt-space-md">
+<div class="font-headline-lg text-headline-lg text-on-surface font-bold">1 кампания</div>
+<div class="font-body-sm text-body-sm text-primary-container font-medium truncate mt-1">
+              «Midnight Mirage»
+            </div>
+</div>
+</div>
+<!-- Stat 4: Инвестиции -->
+<div class="bg-surface-container rounded-xl p-space-md flex flex-col justify-between shadow-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Инвестиции</span>
+<span class="material-symbols-outlined text-secondary-fixed text-[18px]">account_balance_wallet</span>
+</div>
+<div class="mt-space-md">
+<div class="font-headline-lg text-headline-lg text-on-surface font-bold flex items-baseline gap-1">
+<span>4 500</span>
+<span class="font-label-md text-label-md text-on-surface-variant font-normal">сом</span>
+</div>
+<div class="font-body-sm text-body-sm text-emerald-400 font-medium mt-1">
+              ROI: +180% стримов
+            </div>
+</div>
+</div>
+</div>
+</div>
+<!-- Active Campaign Interactive Focus Section -->
+<div class="mt-space-xl flex flex-col gap-space-sm">
+<div class="flex items-center justify-between px-1">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary-container text-[20px]">radio_button_checked</span>
+<h4 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Текущая кампания</h4>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-label-sm text-label-sm font-semibold flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+          В ЭФИРЕ • День 4 из 14
+        </span>
+</div>
+<!-- Live Track Card with Acoustic Realism styling -->
+<div class="relative bg-surface-container-high rounded-2xl p-space-md shadow-[0_12px_32px_rgba(0,0,0,0.5)]">
+<div class="flex items-start gap-space-md">
+<!-- Album Cover with Dynamic Color Bleed -->
+<div class="relative flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden shadow-lg group">
+<img class="w-full h-full object-cover" data-alt="Album artwork for Midnight Mirage by Solaris Echo featuring abstract cosmic nebula explosion in deep purple, vivid magenta, cyan starry dust clouds and glowing celestial core" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCg1m9lfWNy3sY4WqMFXQiW7m9k5uLcNmJvpDgtcn6TDdH0WM0m5SrBSg6nehVXuw3-AfH5LEBQOS_VDsJS1OVAQVw7Y2jT9yMxmTq5ODs_OBuq6LYyMRZ9vrY3EFkzORpPVrQWTBQVu1vD3juiytS9dcN3ZZxfSC7NeOBhoMzd0qsQjNAIWYMwOSp11Kj7Cs3tnl_8o4qMB6edySuqH257PWY7WEsRCWBdBg7hC6MhEBKHIiPknE23"/>
+<div class="absolute inset-0 bg-black/30 flex items-center justify-center opacity-90 group-hover:opacity-100 transition-opacity">
+<!-- Live 3-bar Soundwave Equalizer -->
+<div class="flex items-end gap-1 h-5">
+<span class="w-1 bg-primary-container rounded-full animate-bounce h-5" style="animation-duration: 0.8s;"></span>
+<span class="w-1 bg-primary-container rounded-full animate-bounce h-3" style="animation-duration: 0.5s;"></span>
+<span class="w-1 bg-primary-container rounded-full animate-bounce h-4" style="animation-duration: 0.7s;"></span>
+</div>
+</div>
+</div>
+<!-- Metadata & Details -->
+<div class="flex flex-col min-w-0 flex-1">
+<div class="flex items-center justify-between gap-1">
+<span class="font-label-sm text-label-sm text-secondary font-bold uppercase tracking-wider">Электронный смарт-поток</span>
+<span class="font-mono-num text-mono-num text-on-surface-variant">ID: 884-KY</span>
+</div>
+<h5 class="font-headline-sm text-headline-sm text-on-surface font-bold truncate mt-0.5">Midnight Mirage</h5>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">Solaris Echo • LP "Starlight Drift"</p>
+<div class="flex items-center gap-3 mt-2 text-on-surface-variant font-mono-num text-mono-num">
+<span class="flex items-center gap-1 text-on-surface">
+<span class="material-symbols-outlined text-[14px] text-primary-container">play_circle</span> 15 600 показов
+              </span>
+<span>Цель: 24 000</span>
+</div>
+</div>
+</div>
+<!-- Real-time Progress Bar -->
+<div class="mt-space-md pt-space-xs">
+<div class="flex justify-between items-center text-body-sm font-body-sm mb-1.5">
+<span class="text-on-surface font-medium">Прогресс ротации</span>
+<span class="font-mono-num text-mono-num font-bold text-primary-container">65% выполнено</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container-highest overflow-hidden">
+<div class="h-full bg-gradient-to-r from-primary-container via-secondary to-tertiary rounded-full transition-all duration-700" style="width: 65%;"></div>
+</div>
+<div class="flex justify-between items-center text-mono-num font-mono-num text-on-surface-variant mt-1.5">
+<span>Осталось: 8 400 показов</span>
+<span>Финиш: 22 сен</span>
+</div>
+</div>
+<!-- Action Row -->
+<div class="mt-space-md pt-space-xs flex items-center justify-between gap-space-sm">
+<button class="flex-1 py-2.5 px-space-md rounded-xl bg-surface-container-highest hover:bg-surface-bright text-on-surface font-label-md text-label-md flex items-center justify-center gap-1.5 transition-colors" type="button">
+<span>Детальная статистика</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+<button aria-label="Пауза кампании" class="w-10 h-10 rounded-xl bg-surface-container-highest hover:bg-surface-bright text-on-surface-variant hover:text-on-surface flex items-center justify-center transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">pause</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Audience Geography & Target Audiences Widget -->
+<div class="mt-space-lg bg-surface-container rounded-2xl p-space-md shadow-sm">
+<div class="flex items-center justify-between mb-space-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[20px]">public</span>
+<h4 class="font-headline-sm text-headline-sm text-on-surface font-semibold">География слушателей</h4>
+</div>
+<span class="font-mono-num text-mono-num text-primary font-semibold">Бишкек + Ош (68%)</span>
+</div>
+<div class="space-y-2.5 pt-1">
+<div>
+<div class="flex justify-between font-body-sm text-body-sm mb-1">
+<span class="text-on-surface">Бишкек (Столица и клубы)</span>
+<span class="font-mono-num text-mono-num text-on-surface-variant">42% (20 240 чел)</span>
+</div>
+<div class="w-full h-1.5 rounded-full bg-surface-container-high overflow-hidden">
+<div class="h-full bg-primary-container rounded-full" style="width: 42%;"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between font-body-sm text-body-sm mb-1">
+<span class="text-on-surface">Ош и Южный регион</span>
+<span class="font-mono-num text-mono-num text-on-surface-variant">26% (12 530 чел)</span>
+</div>
+<div class="w-full h-1.5 rounded-full bg-surface-container-high overflow-hidden">
+<div class="h-full bg-secondary rounded-full" style="width: 26%;"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between font-body-sm text-body-sm mb-1">
+<span class="text-on-surface">Алматы и Астана (Реком. фид)</span>
+<span class="font-mono-num text-mono-num text-on-surface-variant">19% (9 150 чел)</span>
+</div>
+<div class="w-full h-1.5 rounded-full bg-surface-container-high overflow-hidden">
+<div class="h-full bg-tertiary rounded-full" style="width: 19%;"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- History of Campaigns Section -->
+<div class="mt-space-xl flex flex-col gap-space-sm">
+<div class="flex items-center justify-between px-1">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]">history</span>
+<h4 class="font-headline-sm text-headline-sm text-on-surface font-semibold">История кампаний</h4>
+</div>
+<button class="text-primary font-label-sm text-label-sm hover:underline" type="button">Все 14</button>
+</div>
+<!-- History List Items -->
+<div class="flex flex-col gap-space-xs">
+<!-- Item 1 -->
+<div class="flex items-center justify-between p-space-sm rounded-xl bg-surface-container hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-surface-container-highest">
+<img class="w-full h-full object-cover" data-alt="Album cover art for Vapor Trails by Solaris Echo in neon cyberpunk aesthetics with retro synthesizer grid lines, deep obsidian violet reflections" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDqiira3LGopAwe4gl9WbBRr4eNTHuELzp220k4kCW0VUt6fgd3kbqC9VP7vQsMISVQ6c9EV4m_dHvi9YDj6YSvXYE5otxMvYi0vUjNPhqeXqXYxVPEoBjuRU3Rta99vdCk3KzJY2D5G09x8snzEF2S92xqKvDaSEYrBD5pL-DRt_wCva61yrSy1c3eT2gJRaoDUqh9fLtVb2fGk_Nc3kQI3TA8Nl7jW4jG4FRH2F6iNVwJ630K8Ci_"/>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-label-lg text-label-lg text-on-surface font-semibold truncate">Vapor Trails</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-highest text-on-surface-variant font-mono-num text-[10px]">Сингл</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Завершена 12 сен • Бюджет 900 сом</span>
+</div>
+</div>
+<div class="flex flex-col items-end flex-shrink-0 pl-2">
+<span class="font-mono-num text-mono-num text-emerald-400 font-bold">+1 420 стримов</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">18 400 охват</span>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="flex items-center justify-between p-space-sm rounded-xl bg-surface-container hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-surface-container-highest">
+<img class="w-full h-full object-cover" data-alt="Cover artwork for single Horizon showing minimalist mountain silhouettes under an iridescent dawn sky with gold and cyan lighting accents" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDNbXxoYqy5nkbuCuL_KiRqa2O6rkG5ToqQhskjdJo2U0ip8gjXrWT9sm_H4re3qskINIJdVtcWt-0ShbvTY1-EWtBPS-A6VfxJWbMn8Bxbth22fWL3EQZeX67uSE69wRVTT34FksiOFrc2IiZvm_t3v2REOW9Gn5u-vunIaRzqbCx4Uy_p27r7qK23KR2Pp9Pn3c8AWJ6GENcHVSZYt0konB4n8-bXVsAzHrwiq7VdhWB-0muA0M3F"/>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-label-lg text-label-lg text-on-surface font-semibold truncate">Horizon (Single)</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-highest text-on-surface-variant font-mono-num text-[10px]">Релиз</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Завершена 28 авг • Бюджет 500 сом</span>
+</div>
+</div>
+<div class="flex flex-col items-end flex-shrink-0 pl-2">
+<span class="font-mono-num text-mono-num text-emerald-400 font-bold">+890 стримов</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">12 100 охват</span>
+</div>
+</div>
+<!-- Item 3 -->
+<div class="flex items-center justify-between p-space-sm rounded-xl bg-surface-container hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-surface-container-highest">
+<img class="w-full h-full object-cover" data-alt="Album art for Kyrgyz Electronic Sessions featuring futuristic Bishkek Ala-Too square rendered in isometric synthwave glow and deep dark night shadows" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC7TOEuLbvS-tO8FbxZOom85yIw1TEqB0BobI9I_qPFTTRuBidcm9pzbBrpojgMOBNxdq7wVSa7dNF8tLLo3r-xTf-m0p-UuIhI39lpx8D7xrL_TJ1xMBvx9KHs8FTz-l2ihJQE5NDw9oBmaJ3Wa7mIRef-BMKfXKQnPTAMH1x-29Yx-waYBu9rhJt3vvUqon_Xa7PhQK7x7inmE27uKdY9kxPHWH4qWlIxq9QvLXkUmsPLmJE2gYyk"/>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-label-lg text-label-lg text-on-surface font-semibold truncate">Ala-Too Dreams</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-highest text-on-surface-variant font-mono-num text-[10px]">EP</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Завершена 10 авг • Бюджет 1 200 сом</span>
+</div>
+</div>
+<div class="flex flex-col items-end flex-shrink-0 pl-2">
+<span class="font-mono-num text-mono-num text-emerald-400 font-bold">+2 110 стримов</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">29 800 охват</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Smart Monetization & Tip Banner -->
+<div class="mt-space-lg rounded-xl bg-gradient-to-r from-surface-container-high to-surface-container p-space-md flex items-center justify-between shadow-sm">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-full bg-secondary-container/20 text-secondary flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[20px]">monetization_on</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface font-semibold">Баланс промо-кошелька</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Пополняйте через mBank без комиссии</span>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface">3 850 сом</span>
+<button class="text-secondary font-label-sm text-label-sm hover:underline mt-0.5" type="button">Пополнить</button>
+</div>
+</div>
+<!-- Floating Docked Action Container -->
+<div class="sticky bottom-4 z-40 mt-space-xl">
+<button class="w-full py-4 px-space-lg rounded-2xl bg-gradient-to-r from-primary-container via-[#ff6a5c] to-tertiary text-on-primary font-headline-sm text-headline-sm font-bold shadow-[0_8px_30px_rgba(255,83,81,0.5)] active:scale-[0.98] transition-all flex items-center justify-center gap-2" id="btn-create-campaign" type="button">
+<span class="material-symbols-outlined text-[22px]" style="font-variation-settings: 'FILL' 1;">add_circle</span>
+<span>Создать новую кампанию</span>
+</button>
+</div>
+</div>
+</div>
+<script>
+  (function() {
+    const launchBtn = document.getElementById('btn-quick-launch');
+    const createBtn = document.getElementById('btn-create-campaign');
+
+    const handleTap = (btn, label) => {
+      if (!btn) return;
+      btn.addEventListener('click', () => {
+        const originalContent = btn.innerHTML;
+        btn.innerHTML = `<span class="material-symbols-outlined text-[20px] animate-spin">progress_activity</span><span>Загрузка смарт-мастера...</span>`;
+        setTimeout(() => {
+          btn.innerHTML = originalContent;
+          // Feedback pulse
+          btn.classList.add('ring-4', 'ring-primary/40');
+          setTimeout(() => btn.classList.remove('ring-4', 'ring-primary/40'), 600);
+        }, 800);
+      });
+    };
+
+    handleTap(launchBtn, 'launch');
+    handleTap(createBtn, 'create');
+  })();
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface-container-lowest/90 backdrop-blur-2xl shadow-[0_-8px_32px_rgba(0,0,0,0.6)]" data-active-classes="text-primary-container font-semibold"><div class="flex justify-around items-center h-16 px-space-xs"><a class="flex flex-col items-center justify-center gap-1 w-16 h-12 text-on-surface-variant hover:text-on-surface transition-colors" data-path="artist-music" href="#"><span class="material-symbols-outlined text-[22px]">library_music</span><span class="font-label-sm text-label-sm">Tracks</span></a><a aria-current="page" class="flex flex-col items-center justify-center gap-1 w-16 h-12 transition-colors text-primary-container font-semibold" data-path="artist-promotion-dashboard" href="#"><span class="material-symbols-outlined text-[22px]">rocket_launch</span><span class="font-label-sm text-label-sm">Promotion</span></a><a class="flex flex-col items-center justify-center gap-1 w-16 h-12 text-on-surface-variant hover:text-on-surface transition-colors" data-path="artist-analytics" href="#"><span class="material-symbols-outlined text-[22px]">monitoring</span><span class="font-label-sm text-label-sm">Insights</span></a><a class="flex flex-col items-center justify-center gap-1 w-16 h-12 text-on-surface-variant hover:text-on-surface transition-colors" data-path="artist-profile" href="#"><span class="material-symbols-outlined text-[22px]">account_circle</span><span class="font-label-sm text-label-sm">Studio ID</span></a></div></nav></body></html>

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { guardStoreActions } from '@/demo/guest-mode';
 
 import type { LocalOrRemoteImage } from '@/constants/stitch-artwork';
 import { addMockArtist, addMockTrack, currentUser, type Artist, type ArtistId, type Track, type TrackId } from '@/mocks';
@@ -9,6 +10,8 @@ export type ArtistTrackEntry = {
   track: Track;
   status: UploadStatus;
   createdAt: string;
+  /** Genre picked at upload (free-text option from the upload form). */
+  genre?: string;
 };
 
 export type ArtistSetupInput = {
@@ -100,7 +103,7 @@ export const useArtistStore = create<ArtistState>((set, get) => ({
       coverUri: input.coverUri,
       explicit: input.explicit,
     };
-    const entry: ArtistTrackEntry = { track, status: 'draft', createdAt: new Date().toISOString() };
+    const entry: ArtistTrackEntry = { track, status: 'draft', createdAt: new Date().toISOString(), genre: input.genre };
     set((state) => ({ entries: [entry, ...state.entries] }));
     return entry;
   },
@@ -143,3 +146,10 @@ export const useArtistStore = create<ArtistState>((set, get) => ({
     await get().publishTrack(trackId);
   },
 }));
+
+// Guest Demo Preview (/demo/artist) is read-only: no profile edits, uploads,
+// publishing or deletions — enforced here, not only in the UI.
+guardStoreActions(useArtistStore, ['createArtistProfile', 'saveDraft', 'publishTrack', 'simulateError', 'retryPublish'], {
+  throwing: ['createArtistProfile', 'saveDraft'],
+  blocked: { publishTrack: Promise.resolve(), retryPublish: Promise.resolve() },
+});

@@ -23,9 +23,23 @@ function check(label, condition) {
   }
 }
 
-// Every catalog track must have a demo-audio credit (Demo Audio Experience).
+const demoSourcesSrc = await import('node:fs/promises').then((fs) => fs.readFile(join(__dirname, '..', 'src', 'audio', 'demo-sources.ts'), 'utf8'));
+// PENDING_AUDIO_TRACK_IDS lives in demo-sources.ts, which can't be imported
+// from plain Node (its require() calls load .mp3 files), so parse it as text.
+const pendingBlock = demoSourcesSrc.match(/PENDING_AUDIO_TRACK_IDS[^=]*=\s*\[([^\]]*)\]/);
+const PENDING_AUDIO_TRACK_IDS = pendingBlock ? [...pendingBlock[1].matchAll(/'([\w-]+)'/g)].map((m) => m[1]) : [];
+check('PENDING_AUDIO_TRACK_IDS export found in demo-sources.ts', Boolean(pendingBlock));
+check('every PENDING_AUDIO_TRACK_IDS entry is a catalog track id', PENDING_AUDIO_TRACK_IDS.every((id) => tracks.some((t) => t.id === id)));
+
+// Every catalog track must have a demo-audio credit (Demo Audio Experience),
+// except tracks explicitly pending real licensed audio (2026-10-12 Kyrgyz
+// catalog plan) — those must instead have NO credit at all, never a fake one.
 for (const track of tracks) {
-  check(`"${track.title}" (${track.id}) has demo audio`, hasDemoAudio(track.id));
+  if (PENDING_AUDIO_TRACK_IDS.includes(track.id)) {
+    check(`"${track.title}" (${track.id}) is pending audio and correctly has no demo-audio credit`, !hasDemoAudio(track.id));
+  } else {
+    check(`"${track.title}" (${track.id}) has demo audio`, hasDemoAudio(track.id));
+  }
 }
 check('no stray demoAudioCredits entries for ids not in the catalog', Object.keys(demoAudioCredits).every((id) => tracks.some((t) => t.id === id)));
 
@@ -47,7 +61,6 @@ check('every demo recording title is used by exactly one catalog track (no undis
 // credited track, under assets/audio — read as text since it's a Metro-style
 // `require()` map that can't be imported directly from plain Node. Strip
 // commented-out lines first so a disabled entry can't look like a live one.
-const demoSourcesSrc = await import('node:fs/promises').then((fs) => fs.readFile(join(__dirname, '..', 'src', 'audio', 'demo-sources.ts'), 'utf8'));
 const activeDemoSourcesSrc = demoSourcesSrc
   .split('\n')
   .filter((line) => !line.trim().startsWith('//'))

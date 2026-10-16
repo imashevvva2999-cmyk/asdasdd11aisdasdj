@@ -30,7 +30,7 @@ export function PlayerTransport() {
   if (!track) return null;
 
   // The engine's real duration once loaded; the catalog value until then.
-  const durationSec = engineDurationSec ?? track.durationSec;
+  const durationSec = engineDurationSec ?? track.durationSec ?? 0;
   const unavailable = playback === 'unavailable';
   const failed = playback === 'error';
 

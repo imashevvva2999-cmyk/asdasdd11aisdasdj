@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   Easing,
@@ -231,7 +231,7 @@ export function DiscoveryFeed({ size }: { size: { width: number; height: number 
     [reduceMotion, swipeTo, genreCount, commitGenreChange],
   );
 
-  const genreStripStyle = useAnimatedStyle(() => ({ transform: [{ translateX: genrePos.value * width }] }));
+  const genreStripStyle = useAnimatedStyle(() => ({ transform: [{ translateX: -genrePos.value * width }] }));
 
   const genreSlots = ([-1, 0, 1] as const)
     .map((offset) => {
@@ -287,7 +287,7 @@ function CurrentGenreSongs({
   step: number;
   isPlaying: boolean;
 }) {
-  const stripStyle = useAnimatedStyle(() => ({ transform: [{ translateY: carouselPos.value * step }] }));
+  const stripStyle = useAnimatedStyle(() => ({ transform: [{ translateY: -carouselPos.value * step }] }));
 
   // Defensive only — `genreIds` is the already-filtered, non-empty-only list
   // (Task 11's `getPlayableGenreIds`), so the current genre always has a
@@ -338,17 +338,19 @@ function Slot({
 }) {
   const track = getTrackById(trackId);
   const style = useAnimatedStyle(() => ({ opacity: fade(carouselPos, at) }));
+  const cover = Math.min(size.width * 0.74, 340, size.height * 0.42);
   return (
     <Animated.View style={[styles.slot, { width: size.width, height: size.height, top: at * step }, style]}>
-      {current ? (
-        <ParticleWaveArtwork uri={track?.coverUri ?? ''} trackId={trackId} playing={playing} />
-      ) : (
-        // Full-screen, not square: `Artwork`'s `size` alone produces a square
-        // (height = size unless `aspectRatio` is given), so the neighbour
-        // slide needs the real width/height ratio to fill the slot, and no
-        // corner radius — this is a full-bleed background, not a card.
-        <Artwork uri={track?.coverUri} size={size.width} aspectRatio={size.width / size.height} radius={0} />
+      {current && (
+        <View style={StyleSheet.absoluteFill} pointerEvents="none">
+          <ParticleWaveArtwork uri={track?.coverUri ?? ''} trackId={trackId} playing={playing} />
+        </View>
       )}
+      <View style={styles.coverWrap} pointerEvents="none">
+        <View style={styles.coverShadow}>
+          <Artwork uri={track?.coverUri} size={cover} radius={16} />
+        </View>
+      </View>
     </Animated.View>
   );
 }
@@ -362,4 +364,6 @@ const styles = StyleSheet.create({
   clip: { overflow: 'hidden' },
   genreSlot: { position: 'absolute', top: 0, overflow: 'hidden' },
   slot: { position: 'absolute', left: 0 },
+  coverWrap: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', paddingBottom: 80 },
+  coverShadow: { borderRadius: 16, boxShadow: '0 24px 60px rgba(0, 0, 0, 0.55)' },
 });

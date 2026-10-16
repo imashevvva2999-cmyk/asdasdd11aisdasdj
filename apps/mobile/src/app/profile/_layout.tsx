@@ -1,6 +1,7 @@
 import { Stack } from 'expo-router';
 
 import { Colors } from '@/constants/theme';
+import { DemoStrings } from '@/demo/demo-strings';
 import { useAppStrings } from '@/state/locale-store';
 
 /**
@@ -10,7 +11,7 @@ import { useAppStrings } from '@/state/locale-store';
  * decision in docs/screens.md §1 and docs/open-questions.md OQ-51.
  */
 export default function ProfileStackLayout() {
-  const { t } = useAppStrings();
+  const { t, locale } = useAppStrings();
   return (
     <Stack
       screenOptions={{
@@ -27,10 +28,22 @@ export default function ProfileStackLayout() {
       <Stack.Screen name="downloads" options={{ title: t('menuDownloads') }} />
       <Stack.Screen name="account" options={{ title: t('menuAccount') }} />
       <Stack.Screen name="support-history" options={{ title: t('menuSupportHistory') }} />
+      <Stack.Screen name="demo-login" options={{ title: DemoStrings[locale].loginTitle }} />
+      <Stack.Screen name="demo-account" options={{ title: DemoStrings[locale].accountTitle }} />
       <Stack.Screen name="artist/become-artist" options={{ title: t('becomeArtistTitle') }} />
       <Stack.Screen name="artist/setup" options={{ title: t('artistSetupTitle') }} />
       <Stack.Screen name="artist/dashboard" options={{ title: t('artistDashboardTitle') }} />
       <Stack.Screen name="artist/upload-track" options={{ title: t('uploadTrackTitle') }} />
+      <Stack.Screen name="artist/campaign/select-track" options={{ headerShown: false }} />
+      <Stack.Screen name="artist/campaign/select-package" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="artist/campaign/package-details"
+        options={{ headerShown: false, presentation: 'transparentModal', animation: 'fade', contentStyle: { backgroundColor: 'transparent' } }}
+      />
+      <Stack.Screen name="artist/campaign/setup" options={{ headerShown: false }} />
+      <Stack.Screen name="artist/campaign/confirm" options={{ headerShown: false }} />
+      <Stack.Screen name="artist/campaign/success" options={{ headerShown: false }} />
+      <Stack.Screen name="artist/campaign/statistics" options={{ headerShown: false }} />
     </Stack>
   );
 }

@@ -239,3 +239,27 @@ export const sampleImageChoices: LocalOrRemoteImage[] = [
   safeRequire(() => require('../../assets/artwork/samples/sample-5.jpg')),
   safeRequire(() => require('../../assets/artwork/samples/sample-6.jpg')),
 ].filter((value): value is LocalOrRemoteImage => Boolean(value));
+
+/**
+ * Catalog entries with no artwork yet, by design (docs/superpowers/plans/
+ * 2026-10-12-kyrgyz-track-catalog.md): real songs/artists whose official
+ * covers are copyrighted and whose generated art is a pending product
+ * decision. List rows/cards render the deterministic gradient fallback
+ * (src/constants/fallback-artwork.ts); the `Artwork` hero component shows
+ * its icon placeholder instead. Read by
+ * scripts/verify-artwork-coverage.mjs and scripts/verify-palettes.mjs to
+ * exempt exactly these ids — every other entry keeps the full check.
+ */
+export const PENDING_ARTWORK_TRACK_IDS: string[] = [
+  'kyrgyzstanym', 'muras', 'ene-til', 'alai', 'kachan-kaitat', 'jazym-kelchi',
+  'kyrgyz-biyi', 'ne-segodnya', 'kirgiz-jeri', 'erke-kyz', 'chopo-choor-fantasy',
+  'kyrgyzstanym-remix', 'jashtyk-kez', 'kambarkan', 'esimde', 'kyrgyz-bala',
+  'taimuras', 'ananayyn', 'eto-lyubov', 'issyk-kulskiy-vaib',
+];
+
+export const PENDING_ARTWORK_ARTIST_IDS: string[] = [
+  'amirchik', 'mirbek-atabekov', 'bayastan', 'begish', 'gulnur-satylganova',
+  'sultan-sadyraliev', 'ulukmanapo', 'salamat-sadikova', 'tengir-too',
+  'nurlanbek-nyshanov', 'omar-zhanyshov', 'kairat-kyrgyz', 'nurak-abdrakhmanov',
+  'toktobek-asanaliev', 'kiggaz', 'g-voo', 'tamga', 'aibek-zamirov', 'freeman996',
+];

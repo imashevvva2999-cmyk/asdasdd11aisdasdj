@@ -16,8 +16,10 @@
 
 - No audio file is downloaded, bundled, or referenced for these 20 tracks (spec: "no copyrighted audio is downloaded or bundled").
 - `GENRE_TAG_MAP` in `apps/mobile/src/lib/genre-tracks.ts` is not modified by Task 3 unless the user has given separate, explicit sign-off beyond approving this plan's other tasks — see Task 3's own gate.
-- The existing 13 tracks, their `DEMO_SOURCES` entries, and `assets/audio/CREDITS.md`'s existing content are untouched.
+- The existing 13 tracks, their `DEMO_SOURCES`/`demoAudioCredits` entries, and `assets/audio/CREDITS.md`'s existing content are untouched.
 - New artist/track ids must not collide with any id in the current `apps/mobile/src/mocks/artists.ts` / `tracks.ts`.
+- **This project has no test framework (no Jest/Vitest).** Verification is a set of standalone `scripts/verify-*.mjs` files, each run via `tsx` (or `node` for pure-JS ones), using a local `check(label, condition)` helper and `process.exit(1)` on any failure — see any existing file under `apps/mobile/scripts/` (e.g. `verify-artist-store.mjs`, `verify-genre-tracks.mjs`) for the exact pattern. Every new verify script gets a `"verify:<name>"` entry in `apps/mobile/package.json`'s `scripts` block and is appended to the end of the existing `"test"` script's `&&`-chain. Scripts import project source via relative paths (`'../src/mocks/tracks.ts'`), not the `@/` alias — `tsx` does not resolve it the way Metro/the app bundler does.
+- `apps/mobile/scripts/verify-demo-audio-coverage.mjs` already asserts **every** track in the static `tracks` array has `hasDemoAudio(track.id) === true`. Adding 20 tracks with no demo audio will fail that existing check unless Task 1 also adds an explicit, honest exemption (see Step 7-8) — this is not optional cleanup, it is required to keep `pnpm test` green.
 
 ## Review Focus
 
@@ -25,7 +27,8 @@
 - A track/artist id containing Cyrillic or spaces would break route params (`/artist/[id]`, `/track/[id]`) that treat ids as URL-safe strings — all new ids are ASCII kebab-case slugs (Task 1).
 - Reusing an existing artist id (e.g. accidentally picking `kaelen`) would silently merge a new Kyrgyz artist into an unrelated existing fictional artist's profile — Task 1 Step 4 checks for collisions before inserting.
 - A track with a `coverUri` pointing at a non-existent local asset would throw at bundle time (Metro `require()` resolves at build, not runtime) — Task 1 omits `coverUri` entirely for these entries (falls back to the existing deterministic gradient placeholder, per `types.ts`'s documented fallback policy), rather than inventing a path.
-- Running `getPlayableGenreIds()` or the Discover feed after Task 1 but before any `GENRE_TAG_MAP` change must still show zero regression for the 12 genres — Task 1's Step 7 verifies the 13 existing demo tracks' genre/discovery behavior is unchanged.
+- Running `getPlayableGenreIds()` or the Discover feed after Task 1 but before any `GENRE_TAG_MAP` change must still show zero regression for the 12 genres — Task 1's Step 10 verifies the 13 existing demo tracks' genre/discovery behavior is unchanged.
+- Adding tracks absent from `demoAudioCredits` would silently fail the existing `verify-demo-audio-coverage.mjs` invariant ("every catalog track has demo audio") — Task 1 Steps 7-8 add a named, explicit `PENDING_AUDIO_TRACK_IDS` exemption (not a weakening of the check: pending tracks are still verified to have zero fake/invented credits).
 
 ---
 
@@ -61,68 +64,82 @@ Research method: for each entry, the artist's official Apple Music artist page w
 **Files:**
 - Modify: `apps/mobile/src/mocks/artists.ts` (append to the `artists` array, before line 29's closing `];`)
 - Modify: `apps/mobile/src/mocks/tracks.ts` (append to the `tracks` array, before line 22's closing `];`)
-- Test: `apps/mobile/src/mocks/__tests__/kyrgyz-catalog.test.ts` (new)
+- Modify: `apps/mobile/src/audio/demo-sources.ts` (add `PENDING_AUDIO_TRACK_IDS` export)
+- Modify: `apps/mobile/scripts/verify-demo-audio-coverage.mjs` (exempt pending ids)
+- Modify: `apps/mobile/package.json` (register the new verify script)
+- Test: `apps/mobile/scripts/verify-kyrgyz-catalog.mjs` (new — this project has no Jest/Vitest; see Global Constraints)
 
 **Interfaces:**
-- Consumes: `Artist`, `Track` types from `./types` (unchanged).
-- Produces: 20 new `Artist.id` and `Track.id` values (listed above) that Task 2 reads by id. No new exported functions.
+- Consumes: `Artist`, `Track` types from `./types` (unchanged); `demoAudioCredits`/`hasDemoAudio` from `apps/mobile/src/audio/demo-audio.ts` (unchanged).
+- Produces: 20 new `Artist.id` and `Track.id` values (listed above) that Task 2 reads by id; a new `PENDING_AUDIO_TRACK_IDS: TrackId[]` export from `demo-sources.ts` that Task 2's import workflow and `verify-demo-audio-coverage.mjs` both read.
 
-- [ ] **Step 1: Write the failing test**
+- [ ] **Step 1: Write the failing verify script**
 
-```typescript
-// apps/mobile/src/mocks/__tests__/kyrgyz-catalog.test.ts
-import { artists } from '../artists';
-import { tracks } from '../tracks';
+Create `apps/mobile/scripts/verify-kyrgyz-catalog.mjs` with this exact content (the `#!/usr/bin/env node` shebang must be the file's literal first line):
 
-describe('Kyrgyz catalog entries', () => {
-  const kyrgyzArtistIds = [
-    'amirchik', 'mirbek-atabekov', 'bayastan', 'begish', 'gulnur-satylganova',
-    'sultan-sadyraliev', 'ulukmanapo', 'salamat-sadikova', 'tengir-too',
-    'nurlanbek-nyshanov', 'omar-zhanyshov', 'kairat-kyrgyz', 'nurak-abdrakhmanov',
-    'toktobek-asanaliev', 'kiggaz', 'g-voo', 'tamga', 'aibek-zamirov', 'freeman996',
-  ];
-  const kyrgyzTrackIds = [
-    'kyrgyzstanym', 'muras', 'ene-til', 'alai', 'kachan-kaitat', 'jazym-kelchi',
-    'kyrgyz-biyi', 'ne-segodnya', 'kirgiz-jeri', 'erke-kyz', 'chopo-choor-fantasy',
-    'kyrgyzstanym-remix', 'jashtyk-kez', 'kambarkan', 'esimde', 'kyrgyz-bala',
-    'taimuras', 'ananayyn', 'eto-lyubov', 'issyk-kulskiy-vaib',
-  ];
+```javascript
+#!/usr/bin/env node
+/**
+ * Kyrgyz catalog metadata entries (docs/superpowers/plans/
+ * 2026-10-12-kyrgyz-track-catalog.md, Task 1). Usage:
+ * npx tsx scripts/verify-kyrgyz-catalog.mjs
+ */
+import { artists } from '../src/mocks/artists.ts';
+import { tracks } from '../src/mocks/tracks.ts';
+import { hasDemoAudio } from '../src/audio/demo-audio.ts';
 
-  it('adds exactly 19 new artists and 20 new tracks', () => {
-    expect(artists.filter((a) => kyrgyzArtistIds.includes(a.id))).toHaveLength(19);
-    expect(tracks.filter((t) => kyrgyzTrackIds.includes(t.id))).toHaveLength(20);
-  });
+let failures = 0;
+function check(label, condition) {
+  if (condition) console.log(`✓ OK       ${label}`);
+  else {
+    console.error(`✗ FAIL     ${label}`);
+    failures += 1;
+  }
+}
 
-  it('every new track has a matching artist id in the artists array', () => {
-    const artistIds = new Set(artists.map((a) => a.id));
-    for (const trackId of kyrgyzTrackIds) {
-      const track = tracks.find((t) => t.id === trackId);
-      expect(track).toBeDefined();
-      expect(artistIds.has(track!.artistId)).toBe(true);
-    }
-  });
+const KYRGYZ_ARTIST_IDS = [
+  'amirchik', 'mirbek-atabekov', 'bayastan', 'begish', 'gulnur-satylganova',
+  'sultan-sadyraliev', 'ulukmanapo', 'salamat-sadikova', 'tengir-too',
+  'nurlanbek-nyshanov', 'omar-zhanyshov', 'kairat-kyrgyz', 'nurak-abdrakhmanov',
+  'toktobek-asanaliev', 'kiggaz', 'g-voo', 'tamga', 'aibek-zamirov', 'freeman996',
+];
+const KYRGYZ_TRACK_IDS = [
+  'kyrgyzstanym', 'muras', 'ene-til', 'alai', 'kachan-kaitat', 'jazym-kelchi',
+  'kyrgyz-biyi', 'ne-segodnya', 'kirgiz-jeri', 'erke-kyz', 'chopo-choor-fantasy',
+  'kyrgyzstanym-remix', 'jashtyk-kez', 'kambarkan', 'esimde', 'kyrgyz-bala',
+  'taimuras', 'ananayyn', 'eto-lyubov', 'issyk-kulskiy-vaib',
+];
 
-  it('introduces no duplicate ids against the pre-existing catalog', () => {
-    const allTrackIds = tracks.map((t) => t.id);
-    expect(new Set(allTrackIds).size).toBe(allTrackIds.length);
-    const allArtistIds = artists.map((a) => a.id);
-    expect(new Set(allArtistIds).size).toBe(allArtistIds.length);
-  });
+check('exactly 19 new Kyrgyz artists present', artists.filter((a) => KYRGYZ_ARTIST_IDS.includes(a.id)).length === 19);
+check('exactly 20 new Kyrgyz tracks present', tracks.filter((t) => KYRGYZ_TRACK_IDS.includes(t.id)).length === 20);
 
-  it('none of the new tracks have a DEMO_SOURCES entry (honest unavailable state)', () => {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { DEMO_SOURCES } = require('../../audio/demo-sources');
-    for (const trackId of kyrgyzTrackIds) {
-      expect(DEMO_SOURCES[trackId]).toBeUndefined();
-    }
-  });
-});
+const artistIds = new Set(artists.map((a) => a.id));
+for (const trackId of KYRGYZ_TRACK_IDS) {
+  const track = tracks.find((t) => t.id === trackId);
+  check(`"${trackId}" exists in the tracks array`, !!track);
+  if (track) check(`"${trackId}"'s artistId ("${track.artistId}") resolves to a real artist`, artistIds.has(track.artistId));
+}
+
+const allTrackIds = tracks.map((t) => t.id);
+check('no duplicate track ids in the full catalog', new Set(allTrackIds).size === allTrackIds.length);
+const allArtistIds = artists.map((a) => a.id);
+check('no duplicate artist ids in the full catalog', new Set(allArtistIds).size === allArtistIds.length);
+
+for (const trackId of KYRGYZ_TRACK_IDS) {
+  check(`"${trackId}" has no demo audio (honest unavailable state, no audio supplied yet)`, hasDemoAudio(trackId) === false);
+}
+
+if (failures > 0) {
+  console.error(`\n${failures} kyrgyz-catalog check(s) failed.`);
+  process.exit(1);
+}
+console.log('\nAll kyrgyz-catalog checks passed.');
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [ ] **Step 2: Run it to verify it fails**
 
-Run: `cd apps/mobile && npx jest mocks/__tests__/kyrgyz-catalog.test.ts`
-Expected: FAIL — 0 of the 20 expected tracks found.
+Run: `cd apps/mobile && npx tsx scripts/verify-kyrgyz-catalog.mjs`
+Expected: FAIL — 0 of the 20 expected tracks found, 0 of 19 artists found.
 
 - [ ] **Step 3: Add the 19 `Artist` entries**
 
@@ -192,20 +209,83 @@ In `apps/mobile/src/mocks/tracks.ts`, insert before the array's closing `];` (cu
 
 No `coverUri` field is set — these fall back to the existing deterministic gradient placeholder per `types.ts`'s documented artwork policy, not an invented image.
 
-- [ ] **Step 6: Run the test again to verify it passes**
+- [ ] **Step 6: Run it again to verify it passes**
 
-Run: `cd apps/mobile && npx jest mocks/__tests__/kyrgyz-catalog.test.ts`
-Expected: PASS (4/4).
+Run: `cd apps/mobile && npx tsx scripts/verify-kyrgyz-catalog.mjs`
+Expected: PASS — all checks print `✓ OK`, script exits 0.
 
-- [ ] **Step 7: Run the full mocks test suite and typecheck to confirm no regression**
+- [ ] **Step 7: Add the `PENDING_AUDIO_TRACK_IDS` export to `demo-sources.ts`**
 
-Run: `cd apps/mobile && npx jest mocks && npx tsc --noEmit`
-Expected: all PASS, no new type errors, no change to any existing (non-Kyrgyz) test's output.
+In `apps/mobile/src/audio/demo-sources.ts`, add after the `DEMO_SOURCES` object's closing `};`:
 
-- [ ] **Step 8: Commit**
+```typescript
+/**
+ * Catalog tracks with no demo audio yet, by design (docs/superpowers/plans/
+ * 2026-10-12-kyrgyz-track-catalog.md) — real licensed audio pending, see
+ * assets/audio/kyrgyz/PENDING.md. Read by
+ * scripts/verify-demo-audio-coverage.mjs to exempt these ids from its
+ * "every catalog track has demo audio" check without weakening it for
+ * every other track.
+ */
+export const PENDING_AUDIO_TRACK_IDS: TrackId[] = [
+  'kyrgyzstanym', 'muras', 'ene-til', 'alai', 'kachan-kaitat', 'jazym-kelchi',
+  'kyrgyz-biyi', 'ne-segodnya', 'kirgiz-jeri', 'erke-kyz', 'chopo-choor-fantasy',
+  'kyrgyzstanym-remix', 'jashtyk-kez', 'kambarkan', 'esimde', 'kyrgyz-bala',
+  'taimuras', 'ananayyn', 'eto-lyubov', 'issyk-kulskiy-vaib',
+];
+```
+
+- [ ] **Step 8: Exempt pending tracks in `verify-demo-audio-coverage.mjs`**
+
+In `apps/mobile/scripts/verify-demo-audio-coverage.mjs`, add the import alongside the existing ones (near line 11-12):
+
+```javascript
+import { PENDING_AUDIO_TRACK_IDS } from '../src/audio/demo-sources.ts';
+```
+
+Replace the coverage loop (lines 26-29):
+
+```javascript
+// Every catalog track must have a demo-audio credit (Demo Audio Experience).
+for (const track of tracks) {
+  check(`"${track.title}" (${track.id}) has demo audio`, hasDemoAudio(track.id));
+}
+```
+
+with:
+
+```javascript
+// Every catalog track must have a demo-audio credit (Demo Audio Experience),
+// except tracks explicitly pending real licensed audio (2026-10-12 Kyrgyz
+// catalog plan) — those must instead have NO credit at all, never a fake one.
+for (const track of tracks) {
+  if (PENDING_AUDIO_TRACK_IDS.includes(track.id)) {
+    check(`"${track.title}" (${track.id}) is pending audio and correctly has no demo-audio credit`, !hasDemoAudio(track.id));
+  } else {
+    check(`"${track.title}" (${track.id}) has demo audio`, hasDemoAudio(track.id));
+  }
+}
+```
+
+- [ ] **Step 9: Register the new verify script**
+
+In `apps/mobile/package.json`, add a line after the existing `"verify:dashboard-routes"` entry:
+
+```json
+    "verify:kyrgyz-catalog": "tsx scripts/verify-kyrgyz-catalog.mjs",
+```
+
+Append ` && tsx scripts/verify-kyrgyz-catalog.mjs` to the end of the `"test"` script's `&&`-chain (after the existing trailing `tsx scripts/verify-genre-tracks.mjs`).
+
+- [ ] **Step 10: Run the full existing test chain and typecheck to confirm no regression**
+
+Run: `cd apps/mobile && pnpm run typecheck && pnpm test`
+Expected: both PASS — every existing verify script still prints all `✓ OK` (including `verify-demo-audio-coverage.mjs`, now correctly treating the 20 new tracks as pending rather than failing), and the new `verify-kyrgyz-catalog.mjs` passes as part of the chain.
+
+- [ ] **Step 11: Commit**
 
 ```bash
-git add apps/mobile/src/mocks/artists.ts apps/mobile/src/mocks/tracks.ts apps/mobile/src/mocks/__tests__/kyrgyz-catalog.test.ts
+git add apps/mobile/src/mocks/artists.ts apps/mobile/src/mocks/tracks.ts apps/mobile/src/audio/demo-sources.ts apps/mobile/scripts/verify-kyrgyz-catalog.mjs apps/mobile/scripts/verify-demo-audio-coverage.mjs apps/mobile/package.json
 git commit -m "feat: add 20 Kyrgyz track/artist metadata entries (no audio yet)"
 ```
 
@@ -243,11 +323,13 @@ For each track you have a licensed file for:
    the date added.
 4. Update this track's `durationSec` in `apps/mobile/src/mocks/tracks.ts`
    from the 180-second placeholder to the real file's duration.
-5. Remove this track's row from the table below.
-6. Run `cd apps/mobile && npx jest` — the "honest unavailable state" test
-   in `src/mocks/__tests__/kyrgyz-catalog.test.ts` will now fail for this
-   track id by design; update that test to drop the now-playable id from
-   its `DEMO_SOURCES`-undefined assertion list.
+5. Remove this track's row from the table below, and remove its id from
+   `PENDING_AUDIO_TRACK_IDS` in `apps/mobile/src/audio/demo-sources.ts`.
+6. Run `cd apps/mobile && pnpm test` — `verify-kyrgyz-catalog.mjs`'s "no
+   demo audio" check and `verify-demo-audio-coverage.mjs`'s pending-id
+   exemption will now correctly fail for this track id (it has real audio
+   now); update `verify-kyrgyz-catalog.mjs` to drop the now-playable id
+   from its `hasDemoAudio(trackId) === false` assertion list.
 7. Manually verify playback: `npx expo start --web`, open the track from
    its artist/genre page, confirm it plays and `now-playing.tsx`'s credits
    sheet reads correctly.
@@ -292,7 +374,7 @@ This task is written out for completeness but **must not be executed** as part o
 **Files:**
 - Modify: `apps/mobile/src/lib/genre-tracks.ts:10-15`
 - Modify: `apps/mobile/src/mocks/artists.ts` (the 19 artists from Task 1 each get a `'Kyrgyz'` tag added to their `genres` array, alongside their existing `'Kyrgyz Pop'/'Kyrgyz Rap'/'Kyrgyz Folk'` tag)
-- Test: `apps/mobile/src/lib/__tests__/genre-tracks.test.ts` (extend if it exists, else create it)
+- Modify: `apps/mobile/scripts/verify-genre-tracks.mjs` (extend its checks to cover the now-non-empty `kyrgyz-music` genre)
 
 - [ ] **Step 1 (on approval only): add the map entry**
 
@@ -308,5 +390,5 @@ export const GENRE_TAG_MAP: Record<string, string[]> = {
 
 - [ ] **Step 2 (on approval only): verify and commit**
 
-Run: `cd apps/mobile && npx jest lib && npx tsc --noEmit`
+Run: `cd apps/mobile && pnpm run typecheck && pnpm test`
 Then: `git commit -m "feat: surface Kyrgyz tracks under the kyrgyz-music genre (explicit user approval YYYY-MM-DD)"` — the commit message must record the approval date, since the code comment calls out that this change needs it.

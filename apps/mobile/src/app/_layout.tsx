@@ -14,6 +14,7 @@ import { RouteTitle } from '@/components/web/route-title';
 import { PlayerSurfaceSync } from '@/state/player-surface';
 import { usePlayerStore } from '@/state/player-store';
 import { useAppStrings, useLocaleStore } from '@/state/locale-store';
+import { useDemoSessionStore } from '@/state/demo-session-store';
 import { loadedFonts } from '@/constants/fonts';
 import { Colors } from '@/constants/theme';
 import { MAX_CONTENT_WIDTH } from '@/hooks/use-content-width';
@@ -67,6 +68,14 @@ export default function RootLayout() {
   // + client-only rehydrate pattern as likedTrackIds above.
   useEffect(() => {
     useLocaleStore.persist.rehydrate();
+  }, []);
+
+  // Demo Artist Account (dev/demo only): restores a signed-in demo session.
+  // Skipped entirely under the public guest preview (/demo/*), which must never
+  // read the personal demo account's storage.
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/demo')) return;
+    useDemoSessionStore.persist.rehydrate();
   }, []);
 
   const { t } = useAppStrings();

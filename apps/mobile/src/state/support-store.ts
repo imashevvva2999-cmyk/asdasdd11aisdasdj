@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { guardStoreActions } from '@/demo/guest-mode';
 
 import { initialSupportHistory, type ArtistId, type SupportHistoryEntry } from '@/mocks';
 
@@ -70,3 +71,6 @@ export const useSupportStore = create<SupportState>((set, get) => ({
 
   reset: () => set({ artistId: undefined, amount: undefined, stage: 'selecting' }),
 }));
+
+// Guest Demo Preview (/demo/artist) never makes donations/payments.
+guardStoreActions(useSupportStore, ['startSupport', 'selectAmount', 'goToConfirm', 'confirm', 'reset'], { blocked: { confirm: Promise.resolve() } });

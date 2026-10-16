@@ -14,6 +14,7 @@
 
 ## Global Constraints
 
+- **This project has no test framework (no Jest/Vitest).** Verification is a set of standalone `scripts/verify-*.mjs` files, run via `tsx`, using a local `check(label, condition)` helper and `process.exit(1)` on any failure — see `apps/mobile/scripts/verify-artist-store.mjs` for the exact pattern this plan's tasks follow. Every new verify script gets a `"verify:<name>"` entry in `apps/mobile/package.json`'s `scripts` block and is appended to the `"test"` script's `&&`-chain. Scripts import project source via relative paths (`'../src/state/artist-store.ts'`), not the `@/` alias.
 - The local artist is always `id: 'me'` (`artist-store.ts:35`) — there is exactly one artist this flow can create per session. This plan does not add multi-artist support.
 - No fabricated numbers are attributed to any of the catalog's existing fictional artists (Solaris Echo, Kaelen, etc.) — only the demo session's own local `'me'` artist gets seeded.
 - The new dev route must follow `dev-ui-kit.tsx`'s existing pattern: `__DEV__`-gated, rendering `<NotFoundScreen />` otherwise, so it is automatically absent from production and from `scripts/web-postexport.mjs`'s stripped export.
@@ -35,20 +36,36 @@
 **Files:**
 - Modify: `apps/mobile/src/app/profile/artist/dashboard/index.tsx:106-110`
 - Create: `apps/mobile/src/lib/artist-support-total.ts`
-- Test: `apps/mobile/src/lib/__tests__/artist-support-total.test.ts` (new)
+- Create: `apps/mobile/scripts/verify-artist-support-total.mjs` (new — see Global Constraints: no Jest/Vitest in this project)
+- Modify: `apps/mobile/package.json` (register the new verify script)
 
 **Interfaces:**
 - Consumes: `useSupportStore((s) => s.history)` (`SupportHistoryEntry[]`, from `apps/mobile/src/state/support-store.ts`), `artist.id` (string).
 - Produces: `getArtistSupportTotalKgs(history: SupportHistoryEntry[], artistId: string): number` — a pure function other screens (e.g. a future Analytics card) can reuse.
 
-- [ ] **Step 1: Write the failing test**
+- [ ] **Step 1: Write the failing verify script**
 
-```typescript
-// apps/mobile/src/lib/__tests__/artist-support-total.test.ts
-import { getArtistSupportTotalKgs } from '../artist-support-total';
-import type { SupportHistoryEntry } from '@/mocks';
+Create `apps/mobile/scripts/verify-artist-support-total.mjs` with this exact content (the `#!/usr/bin/env node` shebang must be the file's literal first line):
 
-const entry = (artistId: string, amount: number): SupportHistoryEntry => ({
+```javascript
+#!/usr/bin/env node
+/**
+ * Artist Dashboard Support stat card total (docs/superpowers/plans/
+ * 2026-10-12-artist-dashboard-demo-seed.md, Task 1). Usage:
+ * npx tsx scripts/verify-artist-support-total.mjs
+ */
+import { getArtistSupportTotalKgs } from '../src/lib/artist-support-total.ts';
+
+let failures = 0;
+function check(label, condition) {
+  if (condition) console.log(`✓ OK       ${label}`);
+  else {
+    console.error(`✗ FAIL     ${label}`);
+    failures += 1;
+  }
+}
+
+const entry = (artistId, amount) => ({
   id: `sup-${artistId}-${amount}`,
   artistId,
   amount,
@@ -57,27 +74,24 @@ const entry = (artistId: string, amount: number): SupportHistoryEntry => ({
   createdAt: '2026-10-12T00:00:00+06:00',
 });
 
-describe('getArtistSupportTotalKgs', () => {
-  it('sums only the entries matching the given artist id', () => {
-    const history = [entry('me', 100), entry('solaris-echo', 9999), entry('me', 50)];
-    expect(getArtistSupportTotalKgs(history, 'me')).toBe(150);
-  });
+check(
+  'sums only the entries matching the given artist id',
+  getArtistSupportTotalKgs([entry('me', 100), entry('solaris-echo', 9999), entry('me', 50)], 'me') === 150,
+);
+check('returns 0 for an artist with no entries', getArtistSupportTotalKgs([entry('solaris-echo', 100)], 'me') === 0);
+check('returns 0 for an empty history array', getArtistSupportTotalKgs([], 'me') === 0);
 
-  it('returns 0 for an artist with no entries', () => {
-    const history = [entry('solaris-echo', 100)];
-    expect(getArtistSupportTotalKgs(history, 'me')).toBe(0);
-  });
-
-  it('returns 0 for an empty history array', () => {
-    expect(getArtistSupportTotalKgs([], 'me')).toBe(0);
-  });
-});
+if (failures > 0) {
+  console.error(`\n${failures} artist-support-total check(s) failed.`);
+  process.exit(1);
+}
+console.log('\nAll artist-support-total checks passed.');
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [ ] **Step 2: Run it to verify it fails**
 
-Run: `cd apps/mobile && npx jest lib/__tests__/artist-support-total.test.ts`
-Expected: FAIL — module `../artist-support-total` not found.
+Run: `cd apps/mobile && npx tsx scripts/verify-artist-support-total.mjs`
+Expected: FAIL — cannot resolve `../src/lib/artist-support-total.ts` (module does not exist yet).
 
 - [ ] **Step 3: Write the minimal implementation**
 
@@ -95,10 +109,10 @@ export function getArtistSupportTotalKgs(history: SupportHistoryEntry[], artistI
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [ ] **Step 4: Run it to verify it passes**
 
-Run: `cd apps/mobile && npx jest lib/__tests__/artist-support-total.test.ts`
-Expected: PASS (3/3).
+Run: `cd apps/mobile && npx tsx scripts/verify-artist-support-total.mjs`
+Expected: PASS — all 3 checks print `✓ OK`, script exits 0.
 
 - [ ] **Step 5: Wire it into the dashboard screen**
 
@@ -132,15 +146,23 @@ with:
           />
 ```
 
-- [ ] **Step 6: Run typecheck and the full test suite**
+- [ ] **Step 6: Register the new verify script, then run typecheck and the full test chain**
 
-Run: `cd apps/mobile && npx tsc --noEmit && npx jest`
-Expected: no new errors, all existing tests still pass.
+In `apps/mobile/package.json`, add after the existing `"verify:dashboard-routes"` entry:
+
+```json
+    "verify:artist-support-total": "tsx scripts/verify-artist-support-total.mjs",
+```
+
+Append ` && tsx scripts/verify-artist-support-total.mjs` to the end of the `"test"` script's `&&`-chain.
+
+Run: `cd apps/mobile && pnpm run typecheck && pnpm test`
+Expected: no new type errors, every existing verify script still passes, the new one passes as part of the chain.
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add apps/mobile/src/lib/artist-support-total.ts apps/mobile/src/lib/__tests__/artist-support-total.test.ts apps/mobile/src/app/profile/artist/dashboard/index.tsx
+git add apps/mobile/src/lib/artist-support-total.ts apps/mobile/scripts/verify-artist-support-total.mjs apps/mobile/src/app/profile/artist/dashboard/index.tsx apps/mobile/package.json
 git commit -m "fix: wire Artist Dashboard Support card to real donation history"
 ```
 
@@ -150,49 +172,63 @@ git commit -m "fix: wire Artist Dashboard Support card to real donation history"
 - Modify: `apps/mobile/src/state/artist-store.ts`
 - Modify: `apps/mobile/src/app/profile/artist/dashboard/index.tsx`
 - Create: `apps/mobile/src/app/dev-demo-seed.tsx`
-- Test: `apps/mobile/src/state/__tests__/artist-store-demo-seed.test.ts` (new)
+- Create: `apps/mobile/scripts/verify-artist-store-demo-seed.mjs` (new — see Global Constraints: no Jest/Vitest)
+- Modify: `apps/mobile/package.json` (register the new verify script)
 
 **Interfaces:**
 - Consumes: `useArtistStore`'s existing `artist`/`set`/`get` (unchanged signatures).
 - Produces: `useArtistStore.seedDemoStats(listeners: number, streams: number): void` and a new session-local field, `demoStreams?: number`, read by the dashboard's Streams card. Stored on the Zustand state, not on the shared `Artist` mock type, since it is demo-only data other screens should not see.
 
-- [ ] **Step 1: Write the failing test**
+- [ ] **Step 1: Write the failing verify script**
 
-```typescript
-// apps/mobile/src/state/__tests__/artist-store-demo-seed.test.ts
-import { useArtistStore } from '../artist-store';
+Create `apps/mobile/scripts/verify-artist-store-demo-seed.mjs` with this exact content (the `#!/usr/bin/env node` shebang must be the file's literal first line):
 
-describe('seedDemoStats', () => {
-  beforeEach(() => {
-    useArtistStore.setState({ artist: undefined, entries: [], demoStreams: undefined });
-  });
+```javascript
+#!/usr/bin/env node
+/**
+ * Dev-only demo-stat seeding on the Artist store (docs/superpowers/plans/
+ * 2026-10-12-artist-dashboard-demo-seed.md, Task 2). Exercises the real
+ * store module directly via tsx, same approach as
+ * scripts/verify-artist-store.mjs. Usage:
+ * npx tsx scripts/verify-artist-store-demo-seed.mjs
+ */
+import { useArtistStore } from '../src/state/artist-store.ts';
 
-  it('is a no-op when no artist profile exists yet', () => {
-    useArtistStore.getState().seedDemoStats(12_000, 45_000);
-    expect(useArtistStore.getState().artist).toBeUndefined();
-    expect(useArtistStore.getState().demoStreams).toBeUndefined();
-  });
+let failures = 0;
+function check(label, condition) {
+  if (condition) console.log(`✓ OK       ${label}`);
+  else {
+    console.error(`✗ FAIL     ${label}`);
+    failures += 1;
+  }
+}
 
-  it('sets monthlyListeners on the current artist and demoStreams on state', () => {
-    useArtistStore.getState().createArtistProfile({ stageName: 'Demo Artist' });
-    useArtistStore.getState().seedDemoStats(12_000, 45_000);
-    expect(useArtistStore.getState().artist?.monthlyListeners).toBe(12_000);
-    expect(useArtistStore.getState().demoStreams).toBe(45_000);
-  });
+// --- No-op before a profile exists ---------------------------------------
+useArtistStore.getState().seedDemoStats(12_000, 45_000);
+check('seedDemoStats() is a no-op when no artist profile exists yet (artist stays undefined)', useArtistStore.getState().artist === undefined);
+check('seedDemoStats() is a no-op when no artist profile exists yet (demoStreams stays undefined)', useArtistStore.getState().demoStreams === undefined);
 
-  it('setting it twice sets absolute values, not increments', () => {
-    useArtistStore.getState().createArtistProfile({ stageName: 'Demo Artist' });
-    useArtistStore.getState().seedDemoStats(12_000, 45_000);
-    useArtistStore.getState().seedDemoStats(12_000, 45_000);
-    expect(useArtistStore.getState().demoStreams).toBe(45_000);
-  });
-});
+// --- Sets values once a profile exists ------------------------------------
+useArtistStore.getState().createArtistProfile({ stageName: 'Demo Artist' });
+useArtistStore.getState().seedDemoStats(12_000, 45_000);
+check('seedDemoStats() sets monthlyListeners on the current artist', useArtistStore.getState().artist?.monthlyListeners === 12_000);
+check('seedDemoStats() sets demoStreams on state', useArtistStore.getState().demoStreams === 45_000);
+
+// --- Idempotent on a second call (absolute, not incrementing) -------------
+useArtistStore.getState().seedDemoStats(12_000, 45_000);
+check('calling seedDemoStats() twice sets an absolute value, not an increment', useArtistStore.getState().demoStreams === 45_000);
+
+if (failures > 0) {
+  console.error(`\n${failures} artist-store-demo-seed check(s) failed.`);
+  process.exit(1);
+}
+console.log('\nAll artist-store-demo-seed checks passed.');
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [ ] **Step 2: Run it to verify it fails**
 
-Run: `cd apps/mobile && npx jest state/__tests__/artist-store-demo-seed.test.ts`
-Expected: FAIL — `seedDemoStats` is not a function.
+Run: `cd apps/mobile && npx tsx scripts/verify-artist-store-demo-seed.mjs`
+Expected: FAIL — `useArtistStore.getState().seedDemoStats is not a function`.
 
 - [ ] **Step 3: Add the action to `artist-store.ts`**
 
@@ -233,10 +269,10 @@ Add the implementation inside `create<ArtistState>((set, get) => ({ ... }))`, af
 
 Also add the initial state field `demoStreams: undefined,` next to the existing `entries: [],` at line 71.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [ ] **Step 4: Run it to verify it passes**
 
-Run: `cd apps/mobile && npx jest state/__tests__/artist-store-demo-seed.test.ts`
-Expected: PASS (3/3).
+Run: `cd apps/mobile && npx tsx scripts/verify-artist-store-demo-seed.mjs`
+Expected: PASS — all 5 checks print `✓ OK`, script exits 0.
 
 - [ ] **Step 5: Read `demoStreams` in the Streams stat card**
 
@@ -313,15 +349,23 @@ const styles = StyleSheet.create({
 });
 ```
 
-- [ ] **Step 7: Run typecheck and the full test suite**
+- [ ] **Step 7: Register the new verify script, then run typecheck and the full test chain**
 
-Run: `cd apps/mobile && npx tsc --noEmit && npx jest`
-Expected: no new errors, all existing tests still pass.
+In `apps/mobile/package.json`, add after the `"verify:artist-support-total"` entry added in Task 1:
+
+```json
+    "verify:artist-store-demo-seed": "tsx scripts/verify-artist-store-demo-seed.mjs",
+```
+
+Append ` && tsx scripts/verify-artist-store-demo-seed.mjs` to the end of the `"test"` script's `&&`-chain.
+
+Run: `cd apps/mobile && pnpm run typecheck && pnpm test`
+Expected: no new type errors, every existing verify script (including `verify-artist-store.mjs`, which exercises the same store module) still passes, both new scripts pass as part of the chain.
 
 - [ ] **Step 8: Commit**
 
 ```bash
-git add apps/mobile/src/state/artist-store.ts apps/mobile/src/state/__tests__/artist-store-demo-seed.test.ts apps/mobile/src/app/profile/artist/dashboard/index.tsx apps/mobile/src/app/dev-demo-seed.tsx
+git add apps/mobile/src/state/artist-store.ts apps/mobile/scripts/verify-artist-store-demo-seed.mjs apps/mobile/src/app/profile/artist/dashboard/index.tsx apps/mobile/src/app/dev-demo-seed.tsx apps/mobile/package.json
 git commit -m "feat: add dev-only demo-stat seeding for Artist Dashboard demo"
 ```
 

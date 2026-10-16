@@ -1,0 +1,15 @@
+{
+  "id": "session-1791636094925",
+  "startedAt": "2026-10-10T12:41:34.925Z",
+  "cwd": "/Users/kalemaimasheva/Desktop/Mmusic app/apps/mobile",
+  "context": {},
+  "metrics": {
+    "edits": 288,
+    "commands": 0,
+    "tasks": 0,
+    "errors": 0
+  },
+  "restoredAt": "2026-10-11T23:25:43.100Z",
+  "endedAt": "2026-10-15T10:44:21.413Z",
+  "duration": 424966499
+}
