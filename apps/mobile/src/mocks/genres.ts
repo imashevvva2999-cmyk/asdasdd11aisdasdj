@@ -75,3 +75,20 @@ export const genreDetails: Record<string, GenreDetail> = {
   'classical-film': { label: 'Genre', description: 'Orchestral works and cinematic scores, from quiet to grand.' },
   'fresh-finds': { label: 'Discovery', description: 'New and rising artists worth hearing early.' },
 };
+
+/** RU versions of the genre detail descriptions (same keys as genreDetails). */
+export const genreDescriptionsRu: Record<string, string> = {
+  'kyrgyz-music': 'Этно-синт и комуз: наследие инструментов Центральной Азии в современной электронной музыке.',
+  'made-for-you': 'Миксы по вашим любимым трекам — обновляются вместе с тем, что вы слушаете.',
+  'charts-viral': 'Треки, которые все сейчас слушают и пересылают друг другу.',
+  pop: 'Яркие хуки, сочный продакшн и песни, определяющие момент.',
+  'hip-hop-rnb': 'Мощные биты, острые куплеты и мягкий ночной R&B.',
+  'electronic-dance': 'От тёплых синтезаторов до клубной энергии пикового часа.',
+  'rock-indie': 'Гитарная музыка — от сырого гаражного звука до мечтательного инди.',
+  'jazz-soul': 'Глубокие голоса, живые инструменты и вечные грувы.',
+  'chill-lofi': 'Мягкие биты и спокойные текстуры, чтобы замедлиться.',
+  'deep-focus-ambient': 'Спокойный, просторный звук, который не отвлекает от работы.',
+  'workout-high-energy': 'Драйвовый темп, чтобы держать ритм на каждом подходе.',
+  'classical-film': 'Оркестровые произведения и саундтреки — от камерных до грандиозных.',
+  'fresh-finds': 'Новые и восходящие артисты, которых стоит услышать первыми.',
+};

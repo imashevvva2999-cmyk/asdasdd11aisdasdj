@@ -136,7 +136,7 @@ export default function HomeScreen() {
               height={224}
               trackId={currentTrackId ?? hero.trackIds?.[0]}
               audioPlaying={isPlaying}
-              ctaLabel="Go"
+              ctaLabel={t('starsCtaLabel')}
               onPress={openStars}
               onPlayPress={openStars}
             />

@@ -1,5 +1,10 @@
 # Kyrgyz track audio — pending licensed files
 
+> **2026-10-13:** A 21st Kyrgyz track, `oshondo` ("Ошондо" by Мирбек
+> Атабеков, not one of the 20 below), had real audio wired in for local
+> testing — rights are **not confirmed**. See `CREDITS.md` in this folder.
+> This is additive: none of the 20 tracks below were touched.
+
 None of the 20 Kyrgyz tracks added in
 docs/superpowers/plans/2026-10-12-kyrgyz-track-catalog.md have audio yet.
 This file is the handoff checklist for wiring in real, licensed files once

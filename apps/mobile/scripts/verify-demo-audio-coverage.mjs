@@ -31,6 +31,14 @@ const PENDING_AUDIO_TRACK_IDS = pendingBlock ? [...pendingBlock[1].matchAll(/'([
 check('PENDING_AUDIO_TRACK_IDS export found in demo-sources.ts', Boolean(pendingBlock));
 check('every PENDING_AUDIO_TRACK_IDS entry is a catalog track id', PENDING_AUDIO_TRACK_IDS.every((id) => tracks.some((t) => t.id === id)));
 
+// KYRGYZ_TRACK_IDS (same parsing approach — demo-sources.ts can't be
+// imported from plain Node) scopes the Kevin MacLeod / CC BY 4.0 checks
+// below: real Kyrgyz recordings are licensed/credited separately, per
+// assets/audio/kyrgyz/PENDING.md step 7.
+const kyrgyzBlock = demoSourcesSrc.match(/KYRGYZ_TRACK_IDS[^=]*=\s*\[([^\]]*)\]/);
+const KYRGYZ_TRACK_IDS = kyrgyzBlock ? [...kyrgyzBlock[1].matchAll(/'([\w-]+)'/g)].map((m) => m[1]) : [];
+check('KYRGYZ_TRACK_IDS export found in demo-sources.ts', Boolean(kyrgyzBlock));
+
 // Every catalog track must have a demo-audio credit (Demo Audio Experience),
 // except tracks explicitly pending real licensed audio (2026-10-12 Kyrgyz
 // catalog plan) — those must instead have NO credit at all, never a fake one.
@@ -44,11 +52,16 @@ for (const track of tracks) {
 check('no stray demoAudioCredits entries for ids not in the catalog', Object.keys(demoAudioCredits).every((id) => tracks.some((t) => t.id === id)));
 
 // Every credit must name a real license and point at a real author — the
-// honesty principle this whole feature exists to uphold.
+// honesty principle this whole feature exists to uphold. The Kevin MacLeod /
+// CC BY 4.0 checks apply only to the original demo recordings: real Kyrgyz
+// tracks are licensed/credited separately (PENDING.md step 7) and must not
+// be forced to falsely claim that license.
 for (const [id, credit] of Object.entries(demoAudioCredits)) {
   check(`"${id}": credit has a non-empty originalTitle`, typeof credit.originalTitle === 'string' && credit.originalTitle.length > 0);
-  check(`"${id}": credit names Kevin MacLeod as author`, credit.author === 'Kevin MacLeod');
-  check(`"${id}": credit is CC BY 4.0`, credit.licenseUrl === 'https://creativecommons.org/licenses/by/4.0/');
+  if (!KYRGYZ_TRACK_IDS.includes(id)) {
+    check(`"${id}": credit names Kevin MacLeod as author`, credit.author === 'Kevin MacLeod');
+    check(`"${id}": credit is CC BY 4.0`, credit.licenseUrl === 'https://creativecommons.org/licenses/by/4.0/');
+  }
   check(`"${id}": credit declares isInstrumental explicitly (Lyrics Demo Experience)`, typeof credit.isInstrumental === 'boolean');
 }
 

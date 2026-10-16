@@ -363,12 +363,15 @@ export type StatCardProps = {
   /** 'metric' = centred large value over an uppercase label, no icon
    * (Stitch Profile Hub stats). */
   variant?: 'default' | 'metric';
+  /** Small growth indicator under the value, e.g. "+8.4%" (Artist Dashboard
+   * demo analytics — always period-over-period growth in the seeded data). */
+  trend?: string;
   style?: ViewStyle;
 };
 
 /** Stat tile — big number + label (Saved/Playlists/Supported, Listening Pulse,
  * Artist Dashboard Listeners/Streams/Support — docs/screens.md §3.4). */
-export function StatCard({ label, value, icon, iconColor = Colors.primary, unit, variant = 'default', style }: StatCardProps) {
+export function StatCard({ label, value, icon, iconColor = Colors.primary, unit, variant = 'default', trend, style }: StatCardProps) {
   if (variant === 'metric') {
     return (
       <View style={[cardStyles.stat, cardStyles.statMetric, style]}>
@@ -406,6 +409,11 @@ export function StatCard({ label, value, icon, iconColor = Colors.primary, unit,
           </ThemedText>
         )}
       </View>
+      {trend && (
+        <ThemedText variant="label-sm" style={{ color: Colors.tertiary }}>
+          {trend}
+        </ThemedText>
+      )}
     </View>
   );
 }

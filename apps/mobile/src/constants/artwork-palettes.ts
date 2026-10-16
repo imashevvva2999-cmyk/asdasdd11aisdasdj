@@ -11,7 +11,8 @@ export const artworkPathsByMap: Record<ArtworkMapName, Record<string, string>> =
     'vapor-trails': 'tracks/vapor-trails.jpg',
     'abyssal-bloom': 'tracks/abyssal-bloom.jpg',
     'tape-saturation-4': 'tracks/tape-saturation-4.jpg',
-    'obsidian-frequencies': 'tracks/obsidian-frequencies.jpg'
+    'obsidian-frequencies': 'tracks/obsidian-frequencies.jpg',
+    'oshondo': 'tracks/mirbek-atabekov-oshondo.png'
   },
   'generatedArtworkByTrackId': {
     'horizon': 'generated/horizon.jpg',
@@ -146,6 +147,12 @@ export const palettesByArtworkPath: Record<string, ArtworkPalette> = {
     'deep': '#23223f',
     'mini': '#201f32',
     'accent': '#5d5bbe'
+  },
+  'tracks/mirbek-atabekov-oshondo.png': {
+    'background': '#a15a30',
+    'deep': '#462918',
+    'mini': '#33231d',
+    'accent': '#d57a43'
   },
   'tracks/obsidian-frequencies.jpg': {
     'background': '#5c577f',

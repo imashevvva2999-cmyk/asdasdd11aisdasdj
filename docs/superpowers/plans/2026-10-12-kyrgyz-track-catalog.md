@@ -20,6 +20,7 @@
 - New artist/track ids must not collide with any id in the current `apps/mobile/src/mocks/artists.ts` / `tracks.ts`.
 - **This project has no test framework (no Jest/Vitest).** Verification is a set of standalone `scripts/verify-*.mjs` files, each run via `tsx` (or `node` for pure-JS ones), using a local `check(label, condition)` helper and `process.exit(1)` on any failure — see any existing file under `apps/mobile/scripts/` (e.g. `verify-artist-store.mjs`, `verify-genre-tracks.mjs`) for the exact pattern. Every new verify script gets a `"verify:<name>"` entry in `apps/mobile/package.json`'s `scripts` block and is appended to the end of the existing `"test"` script's `&&`-chain. Scripts import project source via relative paths (`'../src/mocks/tracks.ts'`), not the `@/` alias — `tsx` does not resolve it the way Metro/the app bundler does.
 - `apps/mobile/scripts/verify-demo-audio-coverage.mjs` already asserts **every** track in the static `tracks` array has `hasDemoAudio(track.id) === true`. Adding 20 tracks with no demo audio will fail that existing check unless Task 1 also adds an explicit, honest exemption (see Step 7-8) — this is not optional cleanup, it is required to keep `pnpm test` green.
+- **Controller amendment (2026-10-12, pre-flight):** two more existing checks iterate the whole catalog — `scripts/verify-artwork-coverage.mjs` (every track and every artist must have an artwork source) and `scripts/verify-palettes.mjs` (every track must have its own non-default palette). No artwork is added for the 20 Kyrgyz tracks/19 artists: official covers are copyrighted, and the project's generated art comes from a paid external service with a no-real-person-likeness rule — that is a separate product decision for the user. These entries keep the existing deterministic gradient fallback (`src/constants/fallback-artwork.ts`). Step 8b adds explicit `PENDING_ARTWORK_TRACK_IDS` / `PENDING_ARTWORK_ARTIST_IDS` exemptions, mirroring the audio one: pending entries must have **no** artwork source (never a fabricated one), every other entry keeps the full check.
 
 ## Review Focus
 
@@ -66,6 +67,8 @@ Research method: for each entry, the artist's official Apple Music artist page w
 - Modify: `apps/mobile/src/mocks/tracks.ts` (append to the `tracks` array, before line 22's closing `];`)
 - Modify: `apps/mobile/src/audio/demo-sources.ts` (add `PENDING_AUDIO_TRACK_IDS` export)
 - Modify: `apps/mobile/scripts/verify-demo-audio-coverage.mjs` (exempt pending ids)
+- Modify: `apps/mobile/src/constants/stitch-artwork.ts` (add `PENDING_ARTWORK_TRACK_IDS` / `PENDING_ARTWORK_ARTIST_IDS` exports — Step 8b)
+- Modify: `apps/mobile/scripts/verify-artwork-coverage.mjs` and `apps/mobile/scripts/verify-palettes.mjs` (exempt pending ids — Step 8b)
 - Modify: `apps/mobile/package.json` (register the new verify script)
 - Test: `apps/mobile/scripts/verify-kyrgyz-catalog.mjs` (new — this project has no Jest/Vitest; see Global Constraints)
 
@@ -267,6 +270,95 @@ for (const track of tracks) {
 }
 ```
 
+- [ ] **Step 8b: Exempt pending entries from the artwork and palette checks (controller amendment)**
+
+In `apps/mobile/src/constants/stitch-artwork.ts`, add at the end of the file (do NOT add them inside any existing `*ArtworkBy*Id` map — `scripts/generate-palettes.py` parses those blocks by regex):
+
+```typescript
+/**
+ * Catalog entries with no artwork yet, by design (docs/superpowers/plans/
+ * 2026-10-12-kyrgyz-track-catalog.md): real songs/artists whose official
+ * covers are copyrighted and whose generated art is a pending product
+ * decision. They render the deterministic gradient fallback
+ * (src/constants/fallback-artwork.ts). Read by
+ * scripts/verify-artwork-coverage.mjs and scripts/verify-palettes.mjs to
+ * exempt exactly these ids — every other entry keeps the full check.
+ */
+export const PENDING_ARTWORK_TRACK_IDS: string[] = [
+  'kyrgyzstanym', 'muras', 'ene-til', 'alai', 'kachan-kaitat', 'jazym-kelchi',
+  'kyrgyz-biyi', 'ne-segodnya', 'kirgiz-jeri', 'erke-kyz', 'chopo-choor-fantasy',
+  'kyrgyzstanym-remix', 'jashtyk-kez', 'kambarkan', 'esimde', 'kyrgyz-bala',
+  'taimuras', 'ananayyn', 'eto-lyubov', 'issyk-kulskiy-vaib',
+];
+
+export const PENDING_ARTWORK_ARTIST_IDS: string[] = [
+  'amirchik', 'mirbek-atabekov', 'bayastan', 'begish', 'gulnur-satylganova',
+  'sultan-sadyraliev', 'ulukmanapo', 'salamat-sadikova', 'tengir-too',
+  'nurlanbek-nyshanov', 'omar-zhanyshov', 'kairat-kyrgyz', 'nurak-abdrakhmanov',
+  'toktobek-asanaliev', 'kiggaz', 'g-voo', 'tamga', 'aibek-zamirov', 'freeman996',
+];
+```
+
+In `apps/mobile/scripts/verify-artwork-coverage.mjs`, import the two lists from `'../src/constants/stitch-artwork.ts'` (add them to the existing import from that module), then replace the track loop:
+
+```javascript
+for (const track of tracks) {
+  const ownArtwork = hasKey(track.id, stitchArtworkByTrackId, generatedArtworkByTrackId);
+  const albumArtwork = Boolean(track.albumId) && albumHasArtwork(track.albumId);
+  check(`track "${track.title}" (${track.id}) has an artwork source`, ownArtwork || albumArtwork);
+}
+```
+
+with:
+
+```javascript
+for (const track of tracks) {
+  const ownArtwork = hasKey(track.id, stitchArtworkByTrackId, generatedArtworkByTrackId);
+  const albumArtwork = Boolean(track.albumId) && albumHasArtwork(track.albumId);
+  if (PENDING_ARTWORK_TRACK_IDS.includes(track.id)) {
+    check(`track "${track.title}" (${track.id}) is pending artwork and correctly has no artwork source`, !ownArtwork && !albumArtwork);
+  } else {
+    check(`track "${track.title}" (${track.id}) has an artwork source`, ownArtwork || albumArtwork);
+  }
+}
+```
+
+and the artist loop:
+
+```javascript
+for (const artist of artists) {
+  check(`artist "${artist.name}" (${artist.id}) has a photo source`, hasKey(artist.id, stitchArtworkByArtistId, generatedArtworkByArtistId));
+}
+```
+
+with:
+
+```javascript
+for (const artist of artists) {
+  const hasPhoto = hasKey(artist.id, stitchArtworkByArtistId, generatedArtworkByArtistId);
+  if (PENDING_ARTWORK_ARTIST_IDS.includes(artist.id)) {
+    check(`artist "${artist.name}" (${artist.id}) is pending artwork and correctly has no photo source`, !hasPhoto);
+  } else {
+    check(`artist "${artist.name}" (${artist.id}) has a photo source`, hasPhoto);
+  }
+}
+```
+
+In `apps/mobile/scripts/verify-palettes.mjs`, add `import { PENDING_ARTWORK_TRACK_IDS } from '../src/constants/stitch-artwork.ts';` and change the start of the track loop to skip pending ids (they correctly use `DEFAULT_PALETTE`, whose contrast is already checked separately by the existing "default palette keeps white text readable" check):
+
+```javascript
+for (const track of tracks) {
+  if (PENDING_ARTWORK_TRACK_IDS.includes(track.id)) {
+    check(`"${track.title}" (${track.id}) is pending artwork and uses the default palette`, paletteForTrack(track) === DEFAULT_PALETTE);
+    continue;
+  }
+  const palette = paletteForTrack(track);
+```
+
+(the rest of the loop body is unchanged).
+
+If importing `stitch-artwork.ts` from a `.mjs` script fails under `tsx` for any reason (it uses `require()` for images), report NEEDS_CONTEXT rather than inventing a workaround — note that `verify-artwork-coverage.mjs` already imports from that module, so it is expected to work.
+
 - [ ] **Step 9: Register the new verify script**
 
 In `apps/mobile/package.json`, add a line after the existing `"verify:dashboard-routes"` entry:
@@ -285,7 +377,7 @@ Expected: both PASS — every existing verify script still prints all `✓ OK` (
 - [ ] **Step 11: Commit**
 
 ```bash
-git add apps/mobile/src/mocks/artists.ts apps/mobile/src/mocks/tracks.ts apps/mobile/src/audio/demo-sources.ts apps/mobile/scripts/verify-kyrgyz-catalog.mjs apps/mobile/scripts/verify-demo-audio-coverage.mjs apps/mobile/package.json
+git add apps/mobile/src/mocks/artists.ts apps/mobile/src/mocks/tracks.ts apps/mobile/src/audio/demo-sources.ts apps/mobile/src/constants/stitch-artwork.ts apps/mobile/scripts/verify-kyrgyz-catalog.mjs apps/mobile/scripts/verify-demo-audio-coverage.mjs apps/mobile/scripts/verify-artwork-coverage.mjs apps/mobile/scripts/verify-palettes.mjs apps/mobile/package.json
 git commit -m "feat: add 20 Kyrgyz track/artist metadata entries (no audio yet)"
 ```
 
@@ -325,6 +417,10 @@ For each track you have a licensed file for:
    from the 180-second placeholder to the real file's duration.
 5. Remove this track's row from the table below, and remove its id from
    `PENDING_AUDIO_TRACK_IDS` in `apps/mobile/src/audio/demo-sources.ts`.
+   (Artwork is separate: an id leaves `PENDING_ARTWORK_TRACK_IDS` /
+   `PENDING_ARTWORK_ARTIST_IDS` in `src/constants/stitch-artwork.ts` only
+   when approved artwork is added to the artwork maps — then re-run
+   `python3 scripts/generate-palettes.py`.)
 6. Run `cd apps/mobile && pnpm test` — `verify-kyrgyz-catalog.mjs`'s "no
    demo audio" check and `verify-demo-audio-coverage.mjs`'s pending-id
    exemption will now correctly fail for this track id (it has real audio

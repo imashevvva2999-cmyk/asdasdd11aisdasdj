@@ -71,7 +71,11 @@ for (const artistId of KYRGYZ_ARTIST_IDS) {
   check(`"${artistId}" has at least one popularTrackId`, ids.length >= 1);
   for (const id of ids) {
     const track = tracks.find((t) => t.id === id);
-    check(`"${artistId}" popularTrackId "${id}" is a Kyrgyz track by that artist`, !!track && KYRGYZ_TRACK_IDS.includes(id) && track.artistId === artistId);
+    // Not restricted to KYRGYZ_TRACK_IDS (the original 20): an artist may
+    // also have a later, real-audio track added on top of their planned one
+    // (e.g. 'oshondo' for mirbek-atabekov) — this just checks the id exists
+    // and genuinely belongs to this artist.
+    check(`"${artistId}" popularTrackId "${id}" is a real track by that artist`, !!track && track.artistId === artistId);
   }
 }
 

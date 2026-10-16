@@ -52,7 +52,6 @@ export default function AlbumScreen() {
     <ThemedView surface="canvas" style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.hero}>
-          <View style={styles.coverGlow} pointerEvents="none" />
           <Artwork uri={album.coverUri} size={256} radius={Radii.md} />
           <ThemedText variant="headline-lg" style={styles.title} numberOfLines={2}>
             {album.title}
@@ -165,16 +164,6 @@ const styles = StyleSheet.create({
   hero: {
     alignItems: 'center',
     gap: 4,
-  },
-  coverGlow: {
-    position: 'absolute',
-    top: 24,
-    width: 220,
-    height: 220,
-    borderRadius: Radii.full,
-    backgroundColor: Colors.primary,
-    opacity: 0.06,
-    transform: [{ scale: 1.25 }],
   },
   overline: {
     textTransform: 'uppercase',

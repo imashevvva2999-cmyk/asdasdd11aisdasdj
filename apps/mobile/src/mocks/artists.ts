@@ -29,7 +29,7 @@ export const artists: Artist[] = [
   // Kyrgyz catalog — real artists, metadata only (docs/superpowers/plans/2026-10-12-kyrgyz-track-catalog.md).
   // No audio exists for these yet; see Task 2 for the import workflow once licensed files are supplied.
   { id: 'amirchik', name: 'Амирчик', genres: ['Kyrgyz Pop'], location: 'Kyrgyzstan', popularTrackIds: ['kyrgyzstanym'] },
-  { id: 'mirbek-atabekov', name: 'Мирбек Атабеков', genres: ['Kyrgyz Pop'], location: 'Kyrgyzstan', popularTrackIds: ['muras'] },
+  { id: 'mirbek-atabekov', name: 'Мирбек Атабеков', genres: ['Kyrgyz Pop'], location: 'Kyrgyzstan', popularTrackIds: ['muras', 'oshondo'] },
   { id: 'bayastan', name: 'Баястан', genres: ['Kyrgyz Rap'], location: 'Kyrgyzstan', popularTrackIds: ['ene-til', 'kachan-kaitat'] },
   { id: 'begish', name: 'Бегиш', genres: ['Kyrgyz Rap'], location: 'Kyrgyzstan', popularTrackIds: ['alai'] },
   { id: 'gulnur-satylganova', name: 'Гульнур Сатылганова', genres: ['Kyrgyz Pop'], location: 'Kyrgyzstan', popularTrackIds: ['jazym-kelchi'] },

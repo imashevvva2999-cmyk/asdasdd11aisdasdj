@@ -11,7 +11,30 @@ import { currentUser } from '@/mocks';
 import { manageReleasesLabel } from '@/lib/i18n';
 import { useArtistStore } from '@/state/artist-store';
 import { useAppStrings } from '@/state/locale-store';
+import { useProfileAvatarStore } from '@/state/profile-avatar-store';
 import { useSupportStore } from '@/state/support-store';
+
+/**
+ * Opens the OS photo/gallery picker via a native `<input type="file">` (web —
+ * this project's deploy target; expo-image-picker isn't a dependency, see
+ * upload-track.tsx) and reads the chosen image as a data URL.
+ */
+function pickPhoto(onPicked: (dataUri: string) => void) {
+  if (typeof document === 'undefined') return;
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.onchange = () => {
+    const file = input.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') onPicked(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+  input.click();
+}
 
 /**
  * S-23 Profile Hub (docs/screens.md §3.11). Mock/local auth state only — no
@@ -25,11 +48,17 @@ import { useSupportStore } from '@/state/support-store';
 export default function ProfileScreen() {
   const history = useSupportStore((s) => s.history);
   const myArtist = useArtistStore((s) => s.artist);
+  const avatarPhotoUri = useProfileAvatarStore((s) => s.photoUri);
+  const setAvatarPhotoUri = useProfileAvatarStore((s) => s.setPhotoUri);
   const { showToast, toast } = useToast();
   const { t, locale } = useAppStrings();
 
   const totalSupported = history.reduce((sum, entry) => sum + entry.amount, 0);
   const distinctArtistCount = new Set(history.map((entry) => entry.artistId)).size;
+
+  function handleChangePhoto() {
+    pickPhoto((dataUri) => setAvatarPhotoUri(dataUri));
+  }
 
   /** No real account/session exists in the frontend-only build (MBANK auth is
    * a backend concern), so Log Out says so honestly instead of pretending. */
@@ -49,9 +78,9 @@ export default function ProfileScreen() {
               shape="circle"
               size={96}
               radius={48}
-              uri={currentUser.photoUri}
+              uri={avatarPhotoUri ?? currentUser.photoUri}
               placeholderIcon="person"
-              onPress={() => showToast(t('toastChangePhoto'), 'edit')}
+              onPress={handleChangePhoto}
               accessibilityLabel={t('changeProfilePhotoLabel')}
             />
             <IconButton
@@ -59,7 +88,7 @@ export default function ProfileScreen() {
               accessibilityLabel={t('editProfilePhotoLabel')}
               size={32}
               style={styles.editAvatarButton}
-              onPress={() => showToast(t('toastChangePhoto'), 'edit')}
+              onPress={handleChangePhoto}
             />
           </View>
           <View style={styles.nameRow}>

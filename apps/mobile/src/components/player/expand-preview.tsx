@@ -75,6 +75,10 @@ const styles = StyleSheet.create({
   },
   art: {
     position: 'absolute',
+    // Matches the Artwork's own radius (Radii.lg below) — otherwise the
+    // shadow's box has square corners and shows through as a sharp
+    // rectangle behind the rounded cover during the expand transition.
+    borderRadius: Radii.lg,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 18 },
     shadowOpacity: 0.35,

@@ -35,7 +35,8 @@ const HEX = /^#[0-9a-f]{6}$/;
 const artworkSource = readFileSync(join(root, 'src/constants/stitch-artwork.ts'), 'utf8');
 for (const [mapName, paths] of Object.entries(artworkPathsByMap)) {
   const block = artworkSource.split(`export const ${mapName}`)[1]?.split('};')[0] ?? '';
-  const sourceKeys = [...block.matchAll(/^\s*'?([a-z0-9-]+)'?:\s*safeRequire/gm)].map((m) => m[1]).sort();
+  // Also matches dev-only entries spread in as `...(cond ? { key: safeRequire(...) } : {})`.
+  const sourceKeys = [...block.matchAll(/(?:^\s*|\{\s*)'?([a-z0-9-]+)'?:\s*safeRequire/gm)].map((m) => m[1]).sort();
   check(`${mapName}: generated paths match stitch-artwork.ts keys`, JSON.stringify(Object.keys(paths).sort()) === JSON.stringify(sourceKeys));
 }
 

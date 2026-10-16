@@ -40,7 +40,7 @@ export default function DemoAudioSheet() {
                 {playsAsLabel(locale, track?.title ?? trackId)}
               </ThemedText>
               <ThemedText variant="label-lg">
-                “{credit.originalTitle}” {credit.author} (incompetech.com)
+                “{credit.originalTitle}” {credit.author}
               </ThemedText>
               <ThemedText variant="body-sm" emphasis="medium">
                 {licensedUnderLabel(locale, credit.licenseName)}

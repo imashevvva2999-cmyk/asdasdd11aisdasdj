@@ -103,6 +103,11 @@ export const stitchArtworkByTrackId: Record<string, LocalOrRemoteImage | undefin
   'abyssal-bloom': safeRequire(() => require('../../assets/artwork/tracks/abyssal-bloom.jpg')),
   'tape-saturation-4': safeRequire(() => require('../../assets/artwork/tracks/tape-saturation-4.jpg')),
   'obsidian-frequencies': safeRequire(() => require('../../assets/artwork/tracks/obsidian-frequencies.jpg')),
+  // User-supplied cover for the first real Kyrgyz audio import (see
+  // assets/audio/kyrgyz/CREDITS.md) — not Stitch-recovered, but wired the
+  // same way as every other real cover here.
+  // __DEV__ only, like its audio (rights not confirmed): never bundled in production.
+  ...(typeof __DEV__ === 'undefined' || __DEV__ ? { oshondo: safeRequire(() => require('../../assets/artwork/tracks/mirbek-atabekov-oshondo.png')) } : {}),
 };
 
 export const stitchArtworkByPlaylistId: Record<string, LocalOrRemoteImage | undefined> = {
