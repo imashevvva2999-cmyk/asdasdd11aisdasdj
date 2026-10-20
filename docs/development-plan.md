@@ -176,3 +176,60 @@
 | Admin Panel и модель Free/Premium подтверждены как требования, но без детального скоупа (OQ-54, OQ-05) | Риск позднего обнаружения зависимостей от каталога/прав доступа | Не проектировать и не реализовывать раньше ответа; закладывать модульность каталога/прав в Фазе 8, чтобы Admin Panel можно было добавить позже без переделки |
 | Lossless и Atmos удорожают CDN (OQ-22) | Бюджет | Включать поэтапно, после MVP |
 | Нет ответа по привязке счёта выплат и состояниям публикации трека (OQ-48, OQ-50) | Artist Flow (Фаза A) нельзя завершить end-to-end | Решить в начале Фазы A; без ответа — ограничиться happy-path публикацией без обработки ошибок, явно помеченной в UI как временная |
+
+---
+
+## W2.4b, Группа 6 — перенос Zustand-сторов в общий пакет `@mmusic/core`
+
+> Добавлено 2026-10-20. Ветка `w2-shared-foundations`. Каждый батч — отдельный локальный коммит, отдельное одобрение и тег `checkpoint/w2.4b-g6.N`. Метки: [Ф] факт аудита, [П] предложение, [Р] риск.
+
+### Решения заказчика (2026-10-20)
+1. `@mmusic/core` использует уже установленные Zustand 5.0.15 и React 19 как peer-зависимости; в репозитории должен быть ровно один экземпляр React и один Zustand.
+2. Минимальные кроссплатформенные типы таймеров — только когда понадобятся (батч 6.5), без DOM- и Node-типов в core.
+3. Хранилище внедряется через адаптер; инициализация и безопасность записи до инициализации проверяются тестами.
+4. Батчи 6.0–6.5 — раздельные коммиты и одобрения.
+5. План хранится в этом документе.
+
+### Инвентаризация [Ф]
+| Модуль | Хранение | Платформа | Зависит от сторов |
+|---|---|---|---|
+| settings, notifications, library, playlists, discovery, dashboard-locale (хук) | — | — | dashboard-locale → locale |
+| guest-mode | — | — | — |
+| support, payment, campaign, artist | — | — | guest-mode (защита действий в гостевом режиме) |
+| locale | `mmusic:locale` | `window.localStorage` | — |
+| profile-avatar | `mmusic:profile-avatar` | `window.localStorage` | — |
+| floating-button | `mmusic:mbank-floating-button` | `window.localStorage` | — |
+| artist-account-persistence (не стор) | `mmusic:artist-account:<user>` | `window.localStorage` | artist, campaign, guest-mode |
+| demo-session | `mmusic:demo-artist` | `window.localStorage` | artist, campaign, guest-mode, artist-account-persistence |
+| player | `mmusic:liked-tracks:<user>` | `window.localStorage`, `setTimeout` | — (аудио — через интерфейс `AudioEngine`) |
+| player-surface, discovery-surface | — | Reanimated / Worklets | player — **остаются в мобильном приложении** |
+
+Отложенные из Группы 5: `demo-fixture`, `demo-analytics`, `campaign-view` переносятся вместе с типами сторов (батч 6.2); `guest-mode` — в 6.2; `demo-config` (переменные демо-входа) остаётся в приложении навсегда.
+
+### Форматы хранения — не меняются ни на байт [Ф]
+- Zustand `persist`: `{"state":{…},"version":N}`; ключи и `version`, `partialize`, `merge` сохраняются как есть. `skipHydration` + регидрация в клиентских эффектах `app/_layout.tsx`.
+- `mmusic:artist-account:<user>`: собственный формат `{v:1, savedAt, artist, entries, campaign}`, повреждённые данные откладываются в `…:invalid`.
+- Zustand захватывает объект хранилища при создании стора и пишет при каждом `setState` — даже до гидрации. Поэтому адаптер — стабильный объект, а не «текущий backend».
+
+### Адаптер хранилища (батч 6.0, `core/platform/storage.ts`)
+- Стор создаётся с `createJSONStorage(() => platformStorage)`; core не обращается к `window`, `localStorage`, AsyncStorage.
+- Приложение один раз при старте вызывает `configureStorage(backend | null)`.
+- Состояния: `pending` (backend не выбран — записи ставятся в очередь и воспроизводятся по порядку при настройке, чтение бросает `StorageNotConfiguredError`), `unavailable` (`null` — статический рендеринг, сервер, платформа без хранилища: чтение `null`, запись — явный учитываемый no-op, как сейчас), `ready` (прямая передача, ошибки backend не перехватываются).
+- Порядок вычисления ES-модулей не влияет на корректность: запись до настройки не теряется. Единственное правило — настроить хранилище до регидрации; приложения регидрируют только в клиентских эффектах.
+- Мобильное приложение (подключается в 6.3): `configureStorage(typeof window !== 'undefined' && window.localStorage ? window.localStorage : null)` — первым side-effect-импортом в файлах-реэкспортах сохраняемых сторов. Ровно то же условие, что сейчас: на сервере и в нативном приложении без localStorage — `unavailable`.
+- Сайт (W2.4c): тот же вызов в точке входа Vite до первого рендера, те же ключи и форматы.
+
+### Батчи
+| Батч | Содержание | Дополнительная проверка |
+|---|---|---|
+| 6.0 | Zustand и React для core, адаптер, тесты, правила границ (Zustand разрешён только в `core/state/`) | один React и один Zustand; тесты адаптера; приложения не меняются |
+| 6.1 | settings, notifications, library, playlists, discovery, dashboard-locale | отпечаток состояния: начальное состояние и сценарии действий |
+| 6.2 | guest-mode, support, payment, campaign, artist; затем campaign-view, demo-fixture, demo-analytics | 13 сценариев оплат, демо и гостевого режима; гостевой режим только для чтения; отпечаток демо-аналитики |
+| 6.3 | locale, profile-avatar, floating-button + подключение адаптера в приложении | хранимые значения побайтно; данные старой сборки читаются новой и наоборот; русский по умолчанию; без ошибок гидрации |
+| 6.4 | artist-account-persistence, demo-session | сохранение и восстановление аккаунта артиста, `…:invalid`, исключение `/demo`, демо-сессия в dev, кошелёк, приостановленные кампании |
+| 6.5 | player (+ интерфейс `AudioEngine`, типы таймеров) | воспроизведение, очередь, жесты, избранное, реактивность Particle Wave, Media Session |
+
+Общий набор для каждого батча: typecheck и границы core, тесты core; typecheck, lint, все тесты и production-сборка мобильного приложения; сравнение бандла и 100 скриншотов; поиск Ошондо и секретов в production; сборка сайта побайтно без изменений; A3 и design-review не меняются.
+
+### Откат
+Каждый батч — отдельный коммит и тег; форматы хранения не меняются, поэтому `git revert` безопасен для данных пользователей (в 6.3 это проверяется явно: данные новой сборки читает старая). Перемещения — только `git mv`.

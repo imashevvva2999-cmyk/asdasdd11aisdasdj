@@ -12,8 +12,10 @@ import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const SOURCE_DIRS = ['audio', 'constants', 'demo', 'lib', 'mocks', 'promotion'];
-const ALLOWED_PACKAGES = []; // e.g. 'zustand', '@mmusic/ui-kit/tokens' — added per migration group, with approval
+const SOURCE_DIRS = ['audio', 'constants', 'demo', 'lib', 'mocks', 'platform', 'promotion', 'state'];
+// Packages core may import, and where. Zustand (5.0.15, one shared copy; React is a peer) is for stores only (W2.4b group 6).
+const ALLOWED_PACKAGES = { zustand: ['state/'], 'zustand/middleware': ['state/'] };
+const packageAllowed = (spec, file) => (ALLOWED_PACKAGES[spec] ?? []).some((dir) => file.startsWith(dir));
 
 const walk = (dir) =>
   readdirSync(dir).flatMap((name) => {
@@ -49,7 +51,7 @@ for (const file of files) {
       // Type-only imports are erased at build time, so they cannot form a runtime cycle.
       if (resolved && !/^(?:import|export)\s+type\s/.test(m[0])) deps.push(relative(root, resolved));
     } else {
-      check(`${name}: package "${spec}" is allowed in core`, ALLOWED_PACKAGES.includes(spec));
+      check(`${name}: package "${spec}" is allowed here`, packageAllowed(spec, name));
     }
   }
   check(`${name}: no "@/" app alias, React Native, Expo or DOM-only code`, !/['"](@\/|react-native(?:[-/][\w./-]*)?['"]|expo(?:-[\w-]+)?(?:\/[\w./-]*)?['"]|@expo\/|react-dom|@mmusic\/ui-kit\/web)/.test(code));

@@ -404,9 +404,18 @@ importers:
 
   core:
     devDependencies:
+      '@types/react':
+        specifier: 19.2.18
+        version: 19.2.18
+      react:
+        specifier: 19.2.3
+        version: 19.2.3
       typescript:
         specifier: ~5.7.3
         version: 5.7.3
+      zustand:
+        specifier: 5.0.15
+        version: 5.0.15(@types/react@19.2.18)(react@19.2.3)
 
   ui-kit:
     dependencies:
