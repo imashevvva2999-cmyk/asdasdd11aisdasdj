@@ -1,6 +1,9 @@
 // First: configures @mmusic/core storage before the persisted player store is used.
 import '@/platform/storage';
 
+import { Link } from 'react-router';
+
+import { nowPlayingAccessibilityLabel } from '@mmusic/core/lib/i18n';
 import { usePlayerStore } from '@mmusic/core/state/player-store';
 import { Icon } from '@mmusic/ui-kit/web';
 
@@ -15,7 +18,7 @@ import './mini-player.css';
  * A track without audio in this preview shows the store's honest "unavailable" state instead of pretending to play.
  */
 export function MiniPlayer() {
-  const { t } = useAppStrings();
+  const { t, locale } = useAppStrings();
   const playback = usePlayerStore((s) => s.playback);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const track = usePlayerStore((s) => s.currentTrack());
@@ -28,18 +31,21 @@ export function MiniPlayer() {
 
   return (
     <section className="capsule glass" aria-label={`${track.title} — ${track.artistName}`}>
-      <Artwork source={track.coverUri} className="c-cover" />
-      <div className="c-text">
-        <span className="t-label-lg ellipsis">{track.title}</span>
-        <span className="t-body-sm c-artist ellipsis">
-          {track.artistName}
-          {isPlaying && (
-            <span className="c-eq" aria-hidden="true">
-              <Icon name="graphic-eq" size={14} />
-            </span>
-          )}
-        </span>
-      </div>
+      {/* Cover + title open the full player (the app's mini-player tap). */}
+      <Link to="/player/now-playing" className="c-open" aria-label={nowPlayingAccessibilityLabel(locale, track.title, track.artistName)}>
+        <Artwork source={track.coverUri} className="c-cover" />
+        <div className="c-text">
+          <span className="t-label-lg ellipsis">{track.title}</span>
+          <span className="t-body-sm c-artist ellipsis">
+            {track.artistName}
+            {isPlaying && (
+              <span className="c-eq" aria-hidden="true">
+                <Icon name="graphic-eq" size={14} />
+              </span>
+            )}
+          </span>
+        </div>
+      </Link>
       <button type="button" className={liked ? 'c-btn on' : 'c-btn'} aria-label={liked ? t('likedStateLabel') : t('likeLabel')} aria-pressed={liked} onClick={() => toggleLike(track.id)}>
         <Icon name={liked ? 'favorite' : 'favorite-border'} size={22} />
       </button>

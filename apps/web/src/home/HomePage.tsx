@@ -2,6 +2,7 @@
 import '@/platform/storage';
 
 import { useEffect, type CSSProperties, type KeyboardEvent } from 'react';
+import { useNavigate } from 'react-router';
 
 import { forYouTiles, getAlbumById, getPlaylistById, getTrackById, heroPlaylistId, jumpBackInTrackIds, moodMixes, newReleases, trendingNowAlbumIds, type Album } from '@mmusic/core/mocks';
 import { useLibraryStore } from '@mmusic/core/state/library-store';
@@ -48,6 +49,7 @@ export function HomePage() {
   const savedItems = useLibraryStore((s) => s.items);
   const toggleSaved = useLibraryStore((s) => s.toggleSaved);
   const hero = getPlaylistById(heroPlaylistId);
+  const navigate = useNavigate();
 
   useEffect(() => {
     document.title = `${t('homeTab')} – Mmusic`;
@@ -56,13 +58,20 @@ export function HomePage() {
   const playList = (ids: readonly string[] | undefined) => {
     if (ids && ids.length > 0) play(ids[0]!, [...ids]);
   };
-  // MMusic Stars: starts the hero playlist (or resumes it when it is already in the player).
+  // MMusic Stars: starts the hero playlist (or resumes it when it is already in the player), then opens Discover
+  // on that track — the app's openStars().
   const startStars = () => {
     const ids = hero?.trackIds ?? [];
     const heroInPlayer = !!currentTrackId && ids.includes(currentTrackId) && queue.length === ids.length;
+    let targetTrackId = currentTrackId;
     if (heroInPlayer) {
       if (!usePlayerStore.getState().isPlaying) togglePlayPause();
-    } else playList(ids);
+    } else if (ids.length > 0) {
+      targetTrackId = ids[0];
+      playList(ids);
+    }
+    const entry = targetTrackId ?? ids[0];
+    void navigate(entry ? `/player/discover?trackId=${encodeURIComponent(entry)}` : '/player/discover');
   };
   const isSaved = (albumId: string) => savedItems.some((item) => item.kind === 'album' && item.refId === albumId);
 
