@@ -1,5 +1,7 @@
 // First: configures @mmusic/core storage before anything else is evaluated.
 import '@/platform/storage';
+// Then: the remaining start-up restores (profile avatar, artist account, demo session), in the app's order.
+import '@/app/startup';
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';

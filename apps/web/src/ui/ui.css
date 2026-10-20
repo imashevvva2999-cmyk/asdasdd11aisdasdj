@@ -1,0 +1,122 @@
+/* Shared website page primitives (W3 full-site sprint) — the A3 visual language (docs/design-review/desktop-home)
+   applied to every page: tokens from ui-kit, the same cards, rows, buttons and spacing as the approved Home. */
+
+.page { position: relative; z-index: 1; padding-bottom: 72px; }
+.page > section { margin-bottom: 40px; }
+.page .medium { color: var(--text-medium); }
+.ellipsis { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Page header: optional back button + title + actions */
+.page-header { display: flex; align-items: center; gap: 12px; min-height: 48px; margin: 4px 0 20px; }
+.page-header h1 { flex: 1; min-width: 0; margin: 0; font: 800 32px/38px "Plus Jakarta Sans", system-ui, sans-serif; letter-spacing: -0.9px; }
+.page-header .actions { display: flex; gap: 8px; align-items: center; }
+
+/* Buttons */
+.ui-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 44px; padding: 0 20px;
+  border: 0; border-radius: var(--radius-full); cursor: pointer; text-decoration: none; white-space: nowrap;
+  background: var(--primary); color: #fff; font: 600 15px/1 "Inter", system-ui, sans-serif; letter-spacing: 0.2px;
+  box-shadow: 0 8px 24px rgba(255, 75, 75, 0.35); transition: transform 0.15s, box-shadow 0.15s, background-color 0.15s;
+}
+.ui-btn:hover { transform: translateY(-1px); }
+.ui-btn:active { transform: scale(0.97); }
+.ui-btn:disabled { opacity: 0.45; cursor: default; transform: none; box-shadow: none; }
+.ui-btn.ghost { background: var(--surface-l2); color: var(--text-high); box-shadow: none; }
+.ui-btn.ghost:hover { background: var(--surface-l3); }
+.ui-btn.small { height: 36px; padding: 0 14px; font-size: 13px; }
+.icon-btn {
+  width: 44px; height: 44px; flex-shrink: 0; display: grid; place-items: center; padding: 0; border: 0; cursor: pointer;
+  border-radius: var(--radius-full); background: var(--surface-l2); color: var(--text-high); text-decoration: none; transition: background-color 0.15s;
+}
+.icon-btn:hover { background: var(--surface-l3); }
+.icon-btn.plain { background: none; }
+.icon-btn.plain:hover { background: rgba(255, 255, 255, 0.06); }
+.icon-btn.on { color: var(--primary); }
+
+/* Hero header for album / playlist / artist / genre */
+.detail-hero { display: grid; grid-template-columns: 232px minmax(0, 1fr); gap: 32px; align-items: end; margin-bottom: 32px; }
+.detail-hero .cover { width: 232px; aspect-ratio: 1; border-radius: var(--radius-lg); overflow: hidden; background: var(--surface-l3); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5); }
+.detail-hero .cover.round { border-radius: 50%; }
+.detail-hero .eyebrow { color: var(--text-medium); font: 700 11px/14px "Inter", system-ui, sans-serif; letter-spacing: 0.66px; text-transform: uppercase; }
+.detail-hero h1 { margin: 6px 0 8px; font: 800 44px/50px "Plus Jakarta Sans", system-ui, sans-serif; letter-spacing: -1.3px; }
+.detail-hero .sub { color: var(--text-medium); margin: 0 0 18px; }
+.detail-hero .buttons { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+/* Track list (same look as the Home "Continue Listening" rows) */
+.ui-tracks { display: grid; gap: 2px; padding: 6px; border-radius: var(--radius-md); background: var(--surface-l1); }
+.ui-track { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 8px 10px; border-radius: 8px; transition: background-color 0.15s; }
+.ui-track:hover { background: rgba(255, 255, 255, 0.04); }
+.ui-track.active { background: var(--surface-l2); }
+.ui-track.active .t-title { color: var(--primary); }
+.ui-track .main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.ui-track .num { width: 22px; flex-shrink: 0; text-align: right; color: var(--text-medium); font: 500 12px/1 "Inter", system-ui, sans-serif; }
+.ui-track .art { width: 48px; height: 48px; flex-shrink: 0; border-radius: 8px; }
+.ui-track .t-text { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.ui-track .t-sub { display: flex; align-items: center; gap: 6px; min-width: 0; color: var(--text-medium); }
+.ui-track .dur { color: var(--text-medium); font: 500 12px/1 "Inter", system-ui, sans-serif; flex-shrink: 0; }
+.ui-track.unavailable .t-title { color: var(--text-medium); }
+.badge-e { padding: 2px 3px; border: 1px solid var(--text-medium); border-radius: 2px; color: var(--text-medium); font: 700 9px/1 "Inter", system-ui, sans-serif; }
+
+/* Cover grid (4 columns on desktop, like the Home grids) */
+.ui-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 24px; }
+.ui-card { min-width: 0; display: grid; gap: 8px; color: inherit; text-decoration: none; padding: 0; border: 0; background: none; font: inherit; text-align: left; cursor: pointer; }
+.ui-card .cover { position: relative; aspect-ratio: 1; overflow: hidden; border-radius: var(--radius-md); background: var(--surface-l3); transition: box-shadow 0.25s; }
+.ui-card .cover > .artwork { transition: transform 0.35s ease; }
+.ui-card:hover .cover { box-shadow: 0 14px 30px rgba(0, 0, 0, 0.4); }
+.ui-card:hover .cover > .artwork { transform: scale(1.03); }
+.ui-card.round .cover { border-radius: 50%; }
+.ui-card.round { text-align: center; }
+.ui-card .meta { display: grid; gap: 2px; min-width: 0; }
+
+/* List rows (settings, library items, search results of any kind) */
+.ui-list { display: grid; gap: 2px; padding: 6px; border-radius: var(--radius-md); background: var(--surface-l1); }
+.ui-row { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 10px; border-radius: 8px; color: inherit; text-decoration: none; border: 0; background: none; font: inherit; text-align: left; width: 100%; cursor: pointer; transition: background-color 0.15s; }
+.ui-row:hover { background: rgba(255, 255, 255, 0.04); }
+.ui-row .art { width: 48px; height: 48px; flex-shrink: 0; border-radius: 8px; }
+.ui-row .art.round { border-radius: 50%; }
+.ui-row .lead { width: 40px; height: 40px; flex-shrink: 0; display: grid; place-items: center; border-radius: var(--radius-full); background: var(--surface-l2); color: var(--text-high); }
+.ui-row .text { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.ui-row .trail { color: var(--text-medium); display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.ui-row.static { cursor: default; }
+.ui-row.static:hover { background: none; }
+
+/* Chips / segmented filters */
+.ui-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.ui-chip { height: 34px; padding: 0 14px; border-radius: var(--radius-full); border: 1px solid var(--border); background: var(--surface-l1); color: var(--text-high); font: 600 13px/1 "Inter", system-ui, sans-serif; cursor: pointer; }
+.ui-chip.on { background: rgba(255, 122, 89, 0.14); color: var(--primary); border-color: transparent; }
+
+/* Form fields */
+.ui-field { display: grid; gap: 6px; margin-bottom: 14px; }
+.ui-field label { color: var(--text-medium); font: 600 12px/16px "Inter", system-ui, sans-serif; letter-spacing: 0.24px; }
+.ui-input {
+  height: 48px; padding: 0 16px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--surface-l1);
+  color: var(--text-high); font: 400 15px/20px "Inter", system-ui, sans-serif; outline: none;
+}
+.ui-input:focus { border-color: var(--primary); }
+textarea.ui-input { height: auto; min-height: 96px; padding: 12px 16px; resize: vertical; }
+
+/* Empty / demo state */
+.ui-empty { display: grid; justify-items: center; gap: 10px; padding: 48px 20px; text-align: center; color: var(--text-medium); border-radius: var(--radius-md); background: var(--surface-l1); }
+.ui-empty .title { color: var(--text-high); font: 700 18px/24px "Plus Jakarta Sans", system-ui, sans-serif; }
+.ui-notice { padding: 10px 14px; border-radius: var(--radius-md); background: rgba(245, 166, 35, 0.12); color: var(--secondary); font: 600 12px/16px "Inter", system-ui, sans-serif; margin-bottom: 16px; }
+
+/* Narrow column for forms / settings on desktop */
+.narrow { max-width: 720px; }
+
+/* tablet */
+@media (max-width: 1099px) {
+  .detail-hero { grid-template-columns: 180px minmax(0, 1fr); gap: 24px; }
+  .detail-hero .cover { width: 180px; }
+  .detail-hero h1 { font-size: 34px; line-height: 40px; }
+}
+/* phone: the mobile app's single column */
+@media (max-width: 767px) {
+  .page-header h1 { font: 700 24px/30px "Plus Jakarta Sans", system-ui, sans-serif; letter-spacing: -0.48px; }
+  .detail-hero { grid-template-columns: 1fr; justify-items: center; text-align: center; gap: 16px; }
+  .detail-hero .cover { width: min(232px, 70vw); }
+  .detail-hero h1 { font: 800 28px/34px "Plus Jakarta Sans", system-ui, sans-serif; letter-spacing: -0.7px; }
+  .detail-hero .buttons { justify-content: center; }
+  .ui-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .ui-track .dur { display: none; }
+  .page > section { margin-bottom: 24px; }
+}
