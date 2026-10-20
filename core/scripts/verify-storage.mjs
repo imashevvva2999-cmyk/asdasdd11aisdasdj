@@ -16,6 +16,7 @@ import {
   configureStorage,
   platformStorage,
   resetStorageForTests,
+  setStorageMisuseListener,
   storageDiagnostics,
   storageState,
 } from '../platform/storage.ts';
@@ -61,14 +62,16 @@ check('pending: 5 writes/removes queued', storageDiagnostics().pendingWrites ===
 check('pending: a read throws StorageNotConfiguredError', throwsNotConfigured(() => platformStorage.getItem('a')));
 check('pending: the error names the key', (() => { try { platformStorage.getItem('mmusic:locale'); } catch (e) { return e.message.includes('mmusic:locale'); } return false; })());
 
-// --- 2. Configuring replays the queue in order --------------------------------
+// --- 2. Configuring replays the queue in order — but never over saved data -----
 const first = memoryStorage({ b: 'old', keep: 'x' });
 configureStorage(first);
 check('ready after configureStorage(backend)', storageState() === 'ready');
-check('queued writes replayed in order (a set, set, removed; b removed then set)', !first.data.has('a') && first.data.get('b') === '3');
+check('queued writes for a key without stored data replayed in order (a set, set, removed)', !first.data.has('a'));
+check('a key that already holds stored data keeps it (b stays "old")', first.data.get('b') === 'old');
 check('untouched keys survive the replay', first.data.get('keep') === 'x');
-check('replay used the backend 5 times, in order', JSON.stringify(first.calls) === JSON.stringify([['set', 'a', '1'], ['set', 'a', '2'], ['remove', 'b'], ['set', 'b', '3'], ['remove', 'a']]));
-check('diagnostics: 5 replayed, none pending or dropped', (({ pendingWrites, replayed, dropped }) => pendingWrites === 0 && replayed === 5 && dropped === 0)(storageDiagnostics()));
+check('replay wrote only the unsaved key, in order', JSON.stringify(first.calls.filter(([op]) => op !== 'get')) === JSON.stringify([['set', 'a', '1'], ['set', 'a', '2'], ['remove', 'a']]));
+check('diagnostics: 3 replayed, 2 skipped to protect stored data, none pending or dropped', (({ pendingWrites, replayed, skipped, dropped }) => pendingWrites === 0 && replayed === 3 && skipped === 2 && dropped === 0)(storageDiagnostics()));
+check('the protected key is reported (key only)', storageDiagnostics().misuse.some((e) => e.kind === 'replay-skipped-existing-data' && e.key === 'b'));
 
 // --- 3. Ready: exact pass-through ---------------------------------------------
 const tricky = '{"state":{"likedTrackIds":["ошондо?","日本","a\\"b"]},"version":0}';
@@ -131,6 +134,7 @@ let hydrationError;
 const tooEarly = makeLocaleStore((state, error) => { hydrationError = error; });
 await tooEarly.persist.rehydrate();
 check('hydrate before configuration reports StorageNotConfiguredError', hydrationError instanceof StorageNotConfiguredError);
+check('…and is recorded as a read-before-configure misuse of that key', storageDiagnostics().misuse.some((e) => e.kind === 'read-before-configure' && e.key === 'mmusic:locale'));
 check('…and the store keeps its default instead of a wrong value', tooEarly.getState().locale === 'ru');
 const saved = memoryStorage({ 'mmusic:locale': '{"state":{"locale":"en"},"version":0}' });
 configureStorage(saved);
@@ -159,6 +163,31 @@ const likedStore = create()(
 );
 likedStore.getState().like('horizon');
 check('partialize: only the persisted subset, same JSON layout', liked.data.get('mmusic:liked-tracks:alexrivers') === '{"state":{"likedTrackIds":["midnight-mirage","horizon"]},"version":0}');
+
+// --- 11. A write made before configuration never overwrites saved user data ----
+resetStorageForTests();
+const preConfig = makeLocaleStore();
+preConfig.getState().setLocale('ru'); // e.g. a default written before the app configured storage
+const savedUser = memoryStorage({ 'mmusic:locale': '{"state":{"locale":"en"},"version":0}' });
+configureStorage(savedUser);
+check('saved user data survives a pre-configuration write', savedUser.data.get('mmusic:locale') === '{"state":{"locale":"en"},"version":0}');
+await preConfig.persist.rehydrate();
+check('…and hydration then restores the saved value', preConfig.getState().locale === 'en');
+check('…and the skipped write is reported', storageDiagnostics().skipped === 1 && storageDiagnostics().misuse.some((e) => e.kind === 'replay-skipped-existing-data'));
+
+// --- 12. Misuse listener: late registration still sees earlier events; keys only --
+resetStorageForTests();
+platformStorage.setItem('mmusic:profile-avatar', 'data:image/png;base64,SECRETPIXELS');
+try { platformStorage.getItem('mmusic:locale'); } catch { /* expected while pending */ }
+const seen = [];
+setStorageMisuseListener((e) => seen.push(e));
+check('listener receives events recorded before it was set', seen.length === 2 && seen[0].kind === 'write-before-configure' && seen[1].kind === 'read-before-configure');
+check('events carry the key only, never the stored value', !JSON.stringify(seen).includes('SECRETPIXELS') && seen.every((e) => Object.keys(e).sort().join() === 'key,kind'));
+platformStorage.setItem('x', '1');
+check('listener receives new events as they happen', seen.length === 3 && seen[2].key === 'x');
+configureStorage(memoryStorage());
+platformStorage.setItem('y', '1');
+check('no events once storage is ready and used normally', seen.length === 3);
 
 if (failures > 0) {
   console.error(`\n${failures} storage check(s) failed.`);
