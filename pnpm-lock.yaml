@@ -364,6 +364,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@mmusic/core':
+        specifier: workspace:*
+        version: link:../../core
       '@mmusic/ui-kit':
         specifier: workspace:*
         version: link:../../ui-kit

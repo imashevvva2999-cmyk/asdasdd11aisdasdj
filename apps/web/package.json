@@ -13,6 +13,7 @@
     "verify:no-native": "node scripts/verify-no-native.mjs"
   },
   "dependencies": {
+    "@mmusic/core": "workspace:*",
     "@mmusic/ui-kit": "workspace:*",
     "react": "19.2.3",
     "react-dom": "19.2.3",

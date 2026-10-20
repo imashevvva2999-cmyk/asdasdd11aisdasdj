@@ -1,3 +1,6 @@
+// First: configures @mmusic/core storage before anything else is evaluated.
+import '@/platform/storage';
+
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { RouterProvider } from 'react-router/dom';
