@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "oxlint --type-aware src scripts vite.config.ts",
-    "verify:no-native": "node scripts/verify-no-native.mjs"
+    "verify:no-native": "node scripts/verify-no-native.mjs",
+    "verify:assets": "node scripts/verify-assets.mjs"
   },
   "dependencies": {
     "@mmusic/core": "workspace:*",
