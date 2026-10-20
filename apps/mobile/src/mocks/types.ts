@@ -6,11 +6,12 @@
  * screen components — only this folder's internals.
  *
  * `coverUri`/`photoUri` are `LocalOrRemoteImage` (src/constants/stitch-artwork.ts):
- * a `string` is a remote URL (none currently used — see docs/screens.md §0 on
- * why Stitch's own temporary Google-hosted preview URLs are never hot-linked),
- * a `number` or `{ uri, width, height }` object is whatever a local bundled
- * asset's `require()` resolves to on the current platform (Фаза 4 artwork
- * restoration pass). Where an entity has neither (no recovered Stitch asset
+ * catalog artwork is an `asset:…` key for a local bundled file (W2.4a; the Expo
+ * app resolves it in src/constants/artwork-sources.ts), any other `string` is a
+ * remote URL (none currently used — see docs/screens.md §0 on why Stitch's own
+ * temporary Google-hosted preview URLs are never hot-linked), and a `number` or
+ * `{ uri, width, height }` object is an already-bundled image (e.g. saved by an
+ * earlier build). Where an entity has none (no recovered Stitch asset
  * exists for it), components fall back to a deterministic gradient
  * placeholder (src/constants/fallback-artwork.ts) instead of a flat grey box
  * — never generated/invented artwork.

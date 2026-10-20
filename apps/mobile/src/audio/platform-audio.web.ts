@@ -2,6 +2,7 @@
 // the website serves it from, exactly as expo-audio does. No new dependency.
 import { getSourceUri } from 'expo-audio/build/AudioUtils.web';
 
+import { toImageSource } from '@/constants/artwork-sources';
 import type { Track } from '@/mocks';
 import { bindAudioEngine, usePlayerStore } from '@/state/player-store';
 
@@ -50,6 +51,6 @@ export function startAudio() {
 /** Absolute cover URL for the lock screen. */
 function resolveArtwork(track: Track): string | undefined {
   if (track.coverUri === undefined) return undefined;
-  const uri = getSourceUri(track.coverUri as Parameters<typeof getSourceUri>[0]);
+  const uri = getSourceUri(toImageSource(track.coverUri) as Parameters<typeof getSourceUri>[0]);
   return uri ? new URL(uri, window.location.href).href : undefined;
 }

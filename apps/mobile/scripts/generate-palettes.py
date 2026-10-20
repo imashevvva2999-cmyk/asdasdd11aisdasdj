@@ -31,7 +31,7 @@ def parse_maps(text):
     maps = {}
     for name in MAPS:
         block = text.split(f'export const {name}')[1].split('};')[0]
-        entries = re.findall(r"^\s*'?([a-z0-9-]+)'?:\s*safeRequire\(\(\) => require\('\.\./\.\./assets/artwork/([^']+)'\)\)", block, re.M)
+        entries = re.findall(r"^\s*'?([a-z0-9-]+)'?:\s*'asset:([^']+)'", block, re.M)
         maps[name] = {key: path for key, path in entries}
     return maps
 

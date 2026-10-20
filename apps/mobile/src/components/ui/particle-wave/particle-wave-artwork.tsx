@@ -1,7 +1,8 @@
 import { Image } from 'expo-image';
 import { StyleSheet } from 'react-native';
 
-import { type LocalOrRemoteImage, toImageSource } from '@/constants/stitch-artwork';
+import { toImageSource } from '@/constants/artwork-sources';
+import type { LocalOrRemoteImage } from '@/constants/stitch-artwork';
 import type { TrackId } from '@/mocks';
 
 export type ParticleWaveArtworkProps = {

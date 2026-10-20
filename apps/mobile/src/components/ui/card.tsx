@@ -3,7 +3,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, View, type GestureResponderEvent, type ViewStyle } from 'react-native';
 
 import { getFallbackGradient } from '@/constants/fallback-artwork';
-import { type LocalOrRemoteImage, toImageSource } from '@/constants/stitch-artwork';
+import { toImageSource } from '@/constants/artwork-sources';
+import type { LocalOrRemoteImage } from '@/constants/stitch-artwork';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { useHydrated } from '@/hooks/use-hydrated';
 import { moreOptionsForAccessibilityLabel, playItemAccessibilityLabel, playPauseTrackLabel } from '@/lib/i18n';

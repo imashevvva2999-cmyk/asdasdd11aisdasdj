@@ -11,7 +11,8 @@ import Animated, {
   type SharedValue,
 } from 'react-native-reanimated';
 
-import { type LocalOrRemoteImage, toImageSource } from '@/constants/stitch-artwork';
+import { toImageSource } from '@/constants/artwork-sources';
+import type { LocalOrRemoteImage } from '@/constants/stitch-artwork';
 import { WAVE_SLICES, waveSliceMotion } from '@/lib/wave-motion';
 
 /** The motion grows in from the still artwork instead of snapping to a bent pose. */

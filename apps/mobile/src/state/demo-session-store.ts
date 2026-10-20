@@ -10,6 +10,7 @@ import {
   demoCoverFor,
   type DemoCampaignSeed,
 } from '@/demo/demo-fixture';
+import { isArtworkKey } from '@/constants/stitch-artwork';
 import { isGuestPreview, useGuestPreviewStore } from '@/demo/guest-mode';
 import { addMockArtist, addMockTrack, getArtistById, type Artist } from '@/mocks';
 import { restoreArtistAccount, setArtistPersistencePaused } from '@/state/artist-account-persistence';
@@ -47,9 +48,9 @@ function freshSnapshot(): DemoSnapshot {
   return { version: DEMO_FIXTURE_VERSION, artist: buildDemoArtist(entries), entries, campaign: buildDemoCampaign() };
 }
 
-/** Drop bundle-local asset ids (numbers) before saving; remote URIs stay. */
+/** Drop bundled artwork (asset keys, module ids) before saving; remote URIs stay. */
 function stripAssets(entries: ArtistTrackEntry[]): ArtistTrackEntry[] {
-  return entries.map((e) => (typeof e.track.coverUri === 'string' ? e : { ...e, track: { ...e.track, coverUri: undefined } }));
+  return entries.map((e) => (typeof e.track.coverUri === 'string' && !isArtworkKey(e.track.coverUri) ? e : { ...e, track: { ...e.track, coverUri: undefined } }));
 }
 
 let applying = false;

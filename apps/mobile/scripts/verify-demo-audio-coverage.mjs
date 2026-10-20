@@ -10,6 +10,7 @@ import { dirname, join } from 'node:path';
 
 import { tracks } from '../src/mocks/tracks.ts';
 import { demoAudioCredits, hasDemoAudio } from '../src/audio/demo-audio.ts';
+import { demoAudioKeys, KYRGYZ_TRACK_IDS, PENDING_AUDIO_TRACK_IDS } from '../src/audio/demo-audio-keys.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const AUDIO_DIR = join(__dirname, '..', 'assets', 'audio');
@@ -24,20 +25,15 @@ function check(label, condition) {
 }
 
 const demoSourcesSrc = await import('node:fs/promises').then((fs) => fs.readFile(join(__dirname, '..', 'src', 'audio', 'demo-sources.ts'), 'utf8'));
-// PENDING_AUDIO_TRACK_IDS lives in demo-sources.ts, which can't be imported
-// from plain Node (its require() calls load .mp3 files), so parse it as text.
-const pendingBlock = demoSourcesSrc.match(/PENDING_AUDIO_TRACK_IDS[^=]*=\s*\[([^\]]*)\]/);
-const PENDING_AUDIO_TRACK_IDS = pendingBlock ? [...pendingBlock[1].matchAll(/'([\w-]+)'/g)].map((m) => m[1]) : [];
-check('PENDING_AUDIO_TRACK_IDS export found in demo-sources.ts', Boolean(pendingBlock));
+// PENDING_AUDIO_TRACK_IDS and KYRGYZ_TRACK_IDS live in the pure
+// demo-audio-keys.ts (W2.4a), so they are imported directly.
+check('PENDING_AUDIO_TRACK_IDS export found in demo-audio-keys.ts', Array.isArray(PENDING_AUDIO_TRACK_IDS) && PENDING_AUDIO_TRACK_IDS.length > 0);
 check('every PENDING_AUDIO_TRACK_IDS entry is a catalog track id', PENDING_AUDIO_TRACK_IDS.every((id) => tracks.some((t) => t.id === id)));
 
-// KYRGYZ_TRACK_IDS (same parsing approach — demo-sources.ts can't be
-// imported from plain Node) scopes the Kevin MacLeod / CC BY 4.0 checks
-// below: real Kyrgyz recordings are licensed/credited separately, per
+// KYRGYZ_TRACK_IDS scopes the Kevin MacLeod / CC BY 4.0 checks below: real
+// Kyrgyz recordings are licensed/credited separately, per
 // assets/audio/kyrgyz/PENDING.md step 7.
-const kyrgyzBlock = demoSourcesSrc.match(/KYRGYZ_TRACK_IDS[^=]*=\s*\[([^\]]*)\]/);
-const KYRGYZ_TRACK_IDS = kyrgyzBlock ? [...kyrgyzBlock[1].matchAll(/'([\w-]+)'/g)].map((m) => m[1]) : [];
-check('KYRGYZ_TRACK_IDS export found in demo-sources.ts', Boolean(kyrgyzBlock));
+check('KYRGYZ_TRACK_IDS export found in demo-audio-keys.ts', Array.isArray(KYRGYZ_TRACK_IDS) && KYRGYZ_TRACK_IDS.length > 0);
 
 // Every catalog track must have a demo-audio credit (Demo Audio Experience),
 // except tracks explicitly pending real licensed audio (2026-10-12 Kyrgyz
@@ -71,14 +67,21 @@ const titles = Object.values(demoAudioCredits).map((c) => c.originalTitle);
 check('every demo recording title is used by exactly one catalog track (no undisclosed reuse)', new Set(titles).size === titles.length);
 
 // DEMO_SOURCES (the actual require()'d files) must exist on disk, one per
-// credited track, under assets/audio — read as text since it's a Metro-style
-// `require()` map that can't be imported directly from plain Node. Strip
-// commented-out lines first so a disabled entry can't look like a live one.
+// credited track, under assets/audio. Each track's audio key (demoAudioKeys)
+// must have a live `require()` in the audioSources table — read as text since
+// it's a Metro-style `require()` map that can't be imported directly from
+// plain Node. Strip commented-out lines first so a disabled entry can't look
+// like a live one.
 const activeDemoSourcesSrc = demoSourcesSrc
   .split('\n')
   .filter((line) => !line.trim().startsWith('//'))
   .join('\n');
-const allEntries = [...activeDemoSourcesSrc.matchAll(/'?([\w-]+)'?:\s*require\('\.\.\/\.\.\/assets\/audio\/([^']+)'\)/g)];
+const requiredFiles = new Set(
+  [...activeDemoSourcesSrc.matchAll(/'audio:([^']+)':\s*require\('\.\.\/\.\.\/assets\/audio\/([^']+)'\)/g)].filter(([, key, file]) => key === file).map(([, key]) => key),
+);
+const allEntries = Object.entries(demoAudioKeys)
+  .filter(([, key]) => requiredFiles.has(key.slice('audio:'.length)))
+  .map(([id, key]) => [undefined, id, key.slice('audio:'.length)]);
 const allEntryIds = allEntries.map(([, id]) => id);
 
 check('DEMO_SOURCES has exactly one entry per credited track (no extras, none missing)', new Set(allEntryIds).size === allEntryIds.length && allEntryIds.length === Object.keys(demoAudioCredits).length && allEntryIds.every((id) => id in demoAudioCredits));

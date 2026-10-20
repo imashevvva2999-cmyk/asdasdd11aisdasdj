@@ -4,7 +4,8 @@ import { StyleSheet, View } from 'react-native';
 
 import { getSharedAnalyser } from '@/audio/audio-analyser.web';
 import { hasDemoAudio } from '@/audio/demo-audio';
-import { type LocalOrRemoteImage, toImageSource } from '@/constants/stitch-artwork';
+import { toImageSource } from '@/constants/artwork-sources';
+import type { LocalOrRemoteImage } from '@/constants/stitch-artwork';
 import { Radii } from '@/constants/theme';
 import { paletteForTrack } from '@/lib/palette';
 import { hexToRgb01, lerpRgb, type RGB } from '@/lib/particle-tint';

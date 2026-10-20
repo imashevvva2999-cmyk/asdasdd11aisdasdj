@@ -9,46 +9,24 @@
  * not hot-linked at runtime — see docs/screens.md §0). No AI art was
  * generated for this project; every file here is Stitch's own output.
  *
- * Values are whatever `require()` of a local image returns, taken as-is —
- * that shape differs by platform/target: a plain numeric module id on
- * native, but on this project's web/Metro config already a resolved
- * `{ uri, width, height }` object. Re-wrapping that object in a second
- * `{ uri: ... } ` (treating it like a remote-URL string) breaks `<Image>` at
- * runtime ("s?.uri?.startsWith is not a function") since its `.uri` is then
- * itself an object, not a string — `toImageSource` below passes an
- * already-object value straight through instead.
- *
- * `require()` targets must be static string literals for Metro to bundle
- * them, so every file is required explicitly in this one place — mocks
- * files only do a plain object lookup by id, never a require() of their own.
- *
- * Each call is wrapped in `safeRequire` because `scripts/verify-*-store.mjs`
- * import the mocks (transitively, this file) through plain `tsx`/Node, not
- * Metro — Node has no asset transform and throws trying to `require()` a raw
- * `.jpg` as CommonJS. Metro still finds the literal string argument to the
- * inner `require()` call for real bundling either way; the wrapper only
- * changes what happens when that call throws outside Metro.
+ * Values are stable asset keys (W2.4a): `asset:<path under assets/artwork>`,
+ * e.g. `asset:albums/nebula-dreams.jpg`. This file has no `require()`, so the
+ * catalog can be shared with the Vite website, which resolves the same keys
+ * itself. The Expo app resolves them through the static Metro `require()`
+ * table in src/constants/artwork-sources.ts — `toImageSource` there turns a
+ * key into the bundled image; screens keep passing `coverUri`/`photoUri`
+ * through `toImageSource` exactly as before. scripts/verify-asset-keys.mjs
+ * checks that every key here has a table entry and a file on disk.
  */
+export type ArtworkKey = `asset:${string}`;
+
+/** An artwork key, a remote/data URL string, or an already-bundled image
+ * (module number on native, `{ uri, width, height }` on web — e.g. one saved
+ * by an earlier build). */
 export type LocalOrRemoteImage = string | number | { uri: string; width?: number; height?: number };
 
-/** `expo-image`'s `source` prop accepts a required module number directly,
- * an already-resolved `{ uri, width, height }` object (this project's web
- * target — see above), or `{ uri: string }` for a remote URL — this picks
- * the right shape for whichever kind of value a mock entity's cover/photo
- * field holds. */
-export function toImageSource(value: LocalOrRemoteImage): number | { uri: string } {
-  if (typeof value === 'string') {
-    return { uri: value };
-  }
-  return value;
-}
-
-function safeRequire(loadModule: () => LocalOrRemoteImage): LocalOrRemoteImage | undefined {
-  try {
-    return loadModule();
-  } catch {
-    return undefined;
-  }
+export function isArtworkKey(value: unknown): value is ArtworkKey {
+  return typeof value === 'string' && value.startsWith('asset:');
 }
 
 /**
@@ -76,71 +54,71 @@ export function resolveArtwork(...sources: (LocalOrRemoteImage | undefined)[]): 
 }
 
 export const stitchArtworkByAlbumId: Record<string, LocalOrRemoteImage | undefined> = {
-  'nebula-dreams': safeRequire(() => require('../../assets/artwork/albums/nebula-dreams.jpg')),
+  'nebula-dreams': 'asset:albums/nebula-dreams.jpg',
   // lost-frequencies, velvet-skyline, chronos-echoes and resonant-field (and
   // the kaelen avatar below) are the clean artwork cropped out of what were
   // captured UI/design frames (status bars, cards, captions with other names).
-  'lost-frequencies': safeRequire(() => require('../../assets/artwork/albums/lost-frequencies.jpg')),
-  'velvet-skyline': safeRequire(() => require('../../assets/artwork/albums/velvet-skyline.jpg')),
-  'chronos-echoes': safeRequire(() => require('../../assets/artwork/albums/chronos-echoes.jpg')),
+  'lost-frequencies': 'asset:albums/lost-frequencies.jpg',
+  'velvet-skyline': 'asset:albums/velvet-skyline.jpg',
+  'chronos-echoes': 'asset:albums/chronos-echoes.jpg',
   // Cropped to the inner art (the export was a framed card).
-  'refraction-horizon': safeRequire(() => require('../../assets/artwork/albums/refraction-horizon.jpg')),
-  'resonant-field': safeRequire(() => require('../../assets/artwork/albums/resonant-field.jpg')),
+  'refraction-horizon': 'asset:albums/refraction-horizon.jpg',
+  'resonant-field': 'asset:albums/resonant-field.jpg',
   // Generated (the Stitch frame credited a different release); see generatedArtworkByTrackId.
-  'solitary-echo': safeRequire(() => require('../../assets/artwork/albums/solitary-echo.jpg')),
+  'solitary-echo': 'asset:albums/solitary-echo.jpg',
   // Cropped from the approved album_horizon_deluxe/screen.png cover (the
   // previous file was an accidental design-spec screenshot with UI chrome).
-  'horizon-deluxe': safeRequire(() => require('../../assets/artwork/albums/horizon-deluxe.jpg')),
+  'horizon-deluxe': 'asset:albums/horizon-deluxe.jpg',
   // Generated replacement (the export showed a piano brand name).
-  'neo-classical-horizons': safeRequire(() => require('../../assets/artwork/albums/neo-classical-horizons.jpg')),
+  'neo-classical-horizons': 'asset:albums/neo-classical-horizons.jpg',
 };
 
 export const stitchArtworkByTrackId: Record<string, LocalOrRemoteImage | undefined> = {
-  'midnight-mirage': safeRequire(() => require('../../assets/artwork/tracks/midnight-mirage.jpg')),
+  'midnight-mirage': 'asset:tracks/midnight-mirage.jpg',
   // vapor-trails, abyssal-bloom, obsidian-frequencies: generated replacements for
   // captured UI frames (see generatedArtworkByTrackId for provenance).
-  'vapor-trails': safeRequire(() => require('../../assets/artwork/tracks/vapor-trails.jpg')),
-  'abyssal-bloom': safeRequire(() => require('../../assets/artwork/tracks/abyssal-bloom.jpg')),
-  'tape-saturation-4': safeRequire(() => require('../../assets/artwork/tracks/tape-saturation-4.jpg')),
-  'obsidian-frequencies': safeRequire(() => require('../../assets/artwork/tracks/obsidian-frequencies.jpg')),
+  'vapor-trails': 'asset:tracks/vapor-trails.jpg',
+  'abyssal-bloom': 'asset:tracks/abyssal-bloom.jpg',
+  'tape-saturation-4': 'asset:tracks/tape-saturation-4.jpg',
+  'obsidian-frequencies': 'asset:tracks/obsidian-frequencies.jpg',
   // User-supplied cover for the first real Kyrgyz audio import (see
   // assets/audio/kyrgyz/CREDITS.md) — not Stitch-recovered, but wired the
   // same way as every other real cover here.
   // __DEV__ only, like its audio (rights not confirmed): never bundled in production.
-  ...(typeof __DEV__ === 'undefined' || __DEV__ ? { oshondo: safeRequire(() => require('../../assets/artwork/tracks/mirbek-atabekov-oshondo.png')) } : {}),
+  ...(typeof __DEV__ === 'undefined' || __DEV__ ? { oshondo: 'asset:tracks/mirbek-atabekov-oshondo.png' } : {}),
 };
 
 export const stitchArtworkByPlaylistId: Record<string, LocalOrRemoteImage | undefined> = {
-  'late-night-flow': safeRequire(() => require('../../assets/artwork/playlists/late-night-flow.jpg')),
+  'late-night-flow': 'asset:playlists/late-night-flow.jpg',
   // Generated replacement (the export showed a car badge and dashboard UI).
-  'late-night-driving': safeRequire(() => require('../../assets/artwork/playlists/late-night-driving.jpg')),
+  'late-night-driving': 'asset:playlists/late-night-driving.jpg',
   // Generated replacement (the export had an app window baked in).
-  'lofi-beats-to-code': safeRequire(() => require('../../assets/artwork/playlists/lofi-beats-to-code.jpg')),
-  'electronic-essentials': safeRequire(() => require('../../assets/artwork/playlists/electronic-essentials.jpg')),
+  'lofi-beats-to-code': 'asset:playlists/lofi-beats-to-code.jpg',
+  'electronic-essentials': 'asset:playlists/electronic-essentials.jpg',
 };
 
 export const stitchArtworkByArtistId: Record<string, LocalOrRemoteImage | undefined> = {
-  'solaris-echo': safeRequire(() => require('../../assets/artwork/artists/solaris-echo.jpg')),
-  kaelen: safeRequire(() => require('../../assets/artwork/artists/kaelen.jpg')),
+  'solaris-echo': 'asset:artists/solaris-echo.jpg',
+  kaelen: 'asset:artists/kaelen.jpg',
 };
 
 export const stitchArtworkByGenreId: Record<string, LocalOrRemoteImage | undefined> = {
-  'kyrgyz-music': safeRequire(() => require('../../assets/artwork/genres/kyrgyz-music.jpg')),
+  'kyrgyz-music': 'asset:genres/kyrgyz-music.jpg',
 };
 
 /** Keyed by `forYouTiles[].id` (docs/screens.md §3.1 S-01 "For you"). */
 export const stitchArtworkByForYouTileId: Record<string, LocalOrRemoteImage | undefined> = {
   // after-hours, chill-electronic, deep-focus, synthetic-waves: generated
   // replacements for captured UI frames (see generatedArtworkByTrackId).
-  'after-hours': safeRequire(() => require('../../assets/artwork/foryou/after-hours.jpg')),
-  'synthetic-waves': safeRequire(() => require('../../assets/artwork/foryou/synthetic-waves.jpg')),
-  'deep-focus': safeRequire(() => require('../../assets/artwork/foryou/deep-focus.jpg')),
+  'after-hours': 'asset:foryou/after-hours.jpg',
+  'synthetic-waves': 'asset:foryou/synthetic-waves.jpg',
+  'deep-focus': 'asset:foryou/deep-focus.jpg',
   // The Solaris Echo radio tile opens the artist, so it shows the artist's own
   // photo (the old tile image was a captured phone-UI frame).
-  'solaris-echo-radio': safeRequire(() => require('../../assets/artwork/artists/solaris-echo.jpg')),
-  'chill-electronic': safeRequire(() => require('../../assets/artwork/foryou/chill-electronic.jpg')),
+  'solaris-echo-radio': 'asset:artists/solaris-echo.jpg',
+  'chill-electronic': 'asset:foryou/chill-electronic.jpg',
   // Generated replacement (the export showed a brand logo and spec captions).
-  'neo-soul': safeRequire(() => require('../../assets/artwork/foryou/neo-soul.jpg')),
+  'neo-soul': 'asset:foryou/neo-soul.jpg',
 };
 
 /**
@@ -158,10 +136,10 @@ export const stitchArtworkByForYouTileId: Record<string, LocalOrRemoteImage | un
  * entry, so every screen reading `track.coverUri` stays consistent.
  */
 export const generatedArtworkByTrackId: Record<string, LocalOrRemoteImage | undefined> = {
-  horizon: safeRequire(() => require('../../assets/artwork/generated/horizon.jpg')),
-  'abyssal-bloom-feat': safeRequire(() => require('../../assets/artwork/generated/abyssal-bloom-feat.jpg')),
-  'ember-tide': safeRequire(() => require('../../assets/artwork/generated/ember-tide.jpg')),
-  'resonant-field-reprise': safeRequire(() => require('../../assets/artwork/generated/resonant-field-reprise.jpg')),
+  horizon: 'asset:generated/horizon.jpg',
+  'abyssal-bloom-feat': 'asset:generated/abyssal-bloom-feat.jpg',
+  'ember-tide': 'asset:generated/ember-tide.jpg',
+  'resonant-field-reprise': 'asset:generated/resonant-field-reprise.jpg',
 };
 
 /**
@@ -169,7 +147,7 @@ export const generatedArtworkByTrackId: Record<string, LocalOrRemoteImage | unde
  * is Solaris Echo". Same provenance rules as `generatedArtworkByTrackId`.
  */
 export const generatedArtworkByPlaylistId: Record<string, LocalOrRemoteImage | undefined> = {
-  'this-is-solaris-echo': safeRequire(() => require('../../assets/artwork/generated/this-is-solaris-echo.jpg')),
+  'this-is-solaris-echo': 'asset:generated/this-is-solaris-echo.jpg',
 };
 
 /**
@@ -180,19 +158,19 @@ export const generatedArtworkByPlaylistId: Record<string, LocalOrRemoteImage | u
  * Same provenance rules as `generatedArtworkByTrackId`.
  */
 export const generatedArtworkByArtistId: Record<string, LocalOrRemoteImage | undefined> = {
-  arlo: safeRequire(() => require('../../assets/artwork/generated/arlo.jpg')),
-  'maya-lin': safeRequire(() => require('../../assets/artwork/generated/maya-lin.jpg')),
-  'tate-vane': safeRequire(() => require('../../assets/artwork/generated/tate-vane.jpg')),
-  'clover-and-the-pulse': safeRequire(() => require('../../assets/artwork/generated/clover-and-the-pulse.jpg')),
-  'sable-duo': safeRequire(() => require('../../assets/artwork/generated/sable-duo.jpg')),
-  'yuki-tanaka': safeRequire(() => require('../../assets/artwork/generated/yuki-tanaka.jpg')),
-  'elena-rostova': safeRequire(() => require('../../assets/artwork/generated/elena-rostova.jpg')),
-  'nils-frahm': safeRequire(() => require('../../assets/artwork/generated/nils-frahm.jpg')),
+  arlo: 'asset:generated/arlo.jpg',
+  'maya-lin': 'asset:generated/maya-lin.jpg',
+  'tate-vane': 'asset:generated/tate-vane.jpg',
+  'clover-and-the-pulse': 'asset:generated/clover-and-the-pulse.jpg',
+  'sable-duo': 'asset:generated/sable-duo.jpg',
+  'yuki-tanaka': 'asset:generated/yuki-tanaka.jpg',
+  'elena-rostova': 'asset:generated/elena-rostova.jpg',
+  'nils-frahm': 'asset:generated/nils-frahm.jpg',
   // analog-dreamers, overcast-skies: single-release mock artists added for the
   // Donate/View Artist fix — no dedicated portrait exists, so each reuses
   // their own (already-credited) track cover rather than a fabricated photo.
-  'analog-dreamers': safeRequire(() => require('../../assets/artwork/tracks/tape-saturation-4.jpg')),
-  'overcast-skies': safeRequire(() => require('../../assets/artwork/tracks/vapor-trails.jpg')),
+  'analog-dreamers': 'asset:tracks/tape-saturation-4.jpg',
+  'overcast-skies': 'asset:tracks/vapor-trails.jpg',
 };
 
 /**
@@ -201,9 +179,9 @@ export const generatedArtworkByArtistId: Record<string, LocalOrRemoteImage | und
  * (Sable Duo). Same provenance rules as `generatedArtworkByTrackId`.
  */
 export const generatedArtworkByAlbumId: Record<string, LocalOrRemoteImage | undefined> = {
-  afterimage: safeRequire(() => require('../../assets/artwork/generated/afterimage.jpg')),
-  'still-water': safeRequire(() => require('../../assets/artwork/generated/still-water.jpg')),
-  'night-signal': safeRequire(() => require('../../assets/artwork/generated/night-signal.jpg')),
+  afterimage: 'asset:generated/afterimage.jpg',
+  'still-water': 'asset:generated/still-water.jpg',
+  'night-signal': 'asset:generated/night-signal.jpg',
 };
 
 /**
@@ -214,18 +192,18 @@ export const generatedArtworkByAlbumId: Record<string, LocalOrRemoteImage | unde
  * `generatedArtworkByTrackId`.
  */
 export const generatedArtworkByGenreId: Record<string, LocalOrRemoteImage | undefined> = {
-  'made-for-you': safeRequire(() => require('../../assets/artwork/generated/made-for-you.jpg')),
-  'charts-viral': safeRequire(() => require('../../assets/artwork/generated/charts-viral.jpg')),
-  pop: safeRequire(() => require('../../assets/artwork/generated/pop.jpg')),
-  'hip-hop-rnb': safeRequire(() => require('../../assets/artwork/generated/hip-hop-rnb.jpg')),
-  'electronic-dance': safeRequire(() => require('../../assets/artwork/generated/electronic-dance.jpg')),
-  'rock-indie': safeRequire(() => require('../../assets/artwork/generated/rock-indie.jpg')),
-  'jazz-soul': safeRequire(() => require('../../assets/artwork/generated/jazz-soul.jpg')),
-  'chill-lofi': safeRequire(() => require('../../assets/artwork/generated/chill-lofi.jpg')),
-  'deep-focus-ambient': safeRequire(() => require('../../assets/artwork/generated/deep-focus-ambient.jpg')),
-  'workout-high-energy': safeRequire(() => require('../../assets/artwork/generated/workout-high-energy.jpg')),
-  'classical-film': safeRequire(() => require('../../assets/artwork/generated/classical-film.jpg')),
-  'fresh-finds': safeRequire(() => require('../../assets/artwork/generated/fresh-finds.jpg')),
+  'made-for-you': 'asset:generated/made-for-you.jpg',
+  'charts-viral': 'asset:generated/charts-viral.jpg',
+  pop: 'asset:generated/pop.jpg',
+  'hip-hop-rnb': 'asset:generated/hip-hop-rnb.jpg',
+  'electronic-dance': 'asset:generated/electronic-dance.jpg',
+  'rock-indie': 'asset:generated/rock-indie.jpg',
+  'jazz-soul': 'asset:generated/jazz-soul.jpg',
+  'chill-lofi': 'asset:generated/chill-lofi.jpg',
+  'deep-focus-ambient': 'asset:generated/deep-focus-ambient.jpg',
+  'workout-high-energy': 'asset:generated/workout-high-energy.jpg',
+  'classical-film': 'asset:generated/classical-film.jpg',
+  'fresh-finds': 'asset:generated/fresh-finds.jpg',
 };
 
 /**
@@ -237,13 +215,13 @@ export const generatedArtworkByGenreId: Record<string, LocalOrRemoteImage | unde
  * so a user's pick never duplicates another entity's artwork.
  */
 export const sampleImageChoices: LocalOrRemoteImage[] = [
-  safeRequire(() => require('../../assets/artwork/samples/sample-1.jpg')),
-  safeRequire(() => require('../../assets/artwork/samples/sample-2.jpg')),
-  safeRequire(() => require('../../assets/artwork/samples/sample-3.jpg')),
-  safeRequire(() => require('../../assets/artwork/samples/sample-4.jpg')),
-  safeRequire(() => require('../../assets/artwork/samples/sample-5.jpg')),
-  safeRequire(() => require('../../assets/artwork/samples/sample-6.jpg')),
-].filter((value): value is LocalOrRemoteImage => Boolean(value));
+  'asset:samples/sample-1.jpg',
+  'asset:samples/sample-2.jpg',
+  'asset:samples/sample-3.jpg',
+  'asset:samples/sample-4.jpg',
+  'asset:samples/sample-5.jpg',
+  'asset:samples/sample-6.jpg',
+];
 
 /**
  * Catalog entries with no artwork yet, by design (docs/superpowers/plans/
