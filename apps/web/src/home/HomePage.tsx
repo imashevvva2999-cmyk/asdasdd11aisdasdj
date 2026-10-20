@@ -1,0 +1,210 @@
+// First: configures @mmusic/core storage before the persisted player store is used.
+import '@/platform/storage';
+
+import { useEffect, type CSSProperties, type KeyboardEvent } from 'react';
+
+import { forYouTiles, getAlbumById, getPlaylistById, getTrackById, heroPlaylistId, jumpBackInTrackIds, moodMixes, newReleases, trendingNowAlbumIds, type Album } from '@mmusic/core/mocks';
+import { useLibraryStore } from '@mmusic/core/state/library-store';
+import { usePlayerStore } from '@mmusic/core/state/player-store';
+import { Icon, type IconName } from '@mmusic/ui-kit/web';
+
+import { Artwork } from '@/components/Artwork';
+import { Backdrop } from '@/components/Backdrop';
+import { SectionHead } from '@/components/SectionHead';
+import { useAppStrings } from '@/i18n/locale';
+
+import './home.css';
+
+/** The hero's title, as in the approved app and A3 (a brand name, not translated). */
+const STARS_TITLE = 'MMusic Stars';
+const MOOD_TINT: Record<string, string> = { primary: 'var(--primary)', secondary: 'var(--secondary)', tertiary: 'var(--tertiary)' };
+/** Gradient behind each mood card (the colours of its approved scene; the WebGL scenes come after the demo). */
+const MOOD_COLORS: Record<string, [string, string]> = {
+  'late-night': ['#0a0e16', '#162038'],
+  melancholy: ['#1a1a1f', '#3a3a42'],
+  'high-energy': ['#120a16', '#2a1638'],
+  'flow-state': ['#1a1014', '#3a1f28'],
+};
+
+/** Enter / Space activate a role="button" element, like a native button. */
+const onKeyActivate = (action: () => void) => (e: KeyboardEvent) => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    action();
+  }
+};
+
+/**
+ * S-01 Home — the approved A3 Refined Hybrid layout (docs/design-review/desktop-home/a3.html) with the app's own
+ * catalog: MMusic Stars + For You, Trending Now, New Releases, Continue Listening, Mood & Vibes. Everything that
+ * looks interactive plays through the shared player store; entries without a destination are shown, not faked.
+ */
+export function HomePage() {
+  const { t } = useAppStrings();
+  const play = usePlayerStore((s) => s.play);
+  const togglePlayPause = usePlayerStore((s) => s.togglePlayPause);
+  const currentTrackId = usePlayerStore((s) => s.currentTrackId());
+  const queue = usePlayerStore((s) => s.queue);
+  const savedItems = useLibraryStore((s) => s.items);
+  const toggleSaved = useLibraryStore((s) => s.toggleSaved);
+  const hero = getPlaylistById(heroPlaylistId);
+
+  useEffect(() => {
+    document.title = `${t('homeTab')} – Mmusic`;
+  }, [t]);
+
+  const playList = (ids: readonly string[] | undefined) => {
+    if (ids && ids.length > 0) play(ids[0]!, [...ids]);
+  };
+  // MMusic Stars: starts the hero playlist (or resumes it when it is already in the player).
+  const startStars = () => {
+    const ids = hero?.trackIds ?? [];
+    const heroInPlayer = !!currentTrackId && ids.includes(currentTrackId) && queue.length === ids.length;
+    if (heroInPlayer) {
+      if (!usePlayerStore.getState().isPlaying) togglePlayPause();
+    } else playList(ids);
+  };
+  const isSaved = (albumId: string) => savedItems.some((item) => item.kind === 'album' && item.refId === albumId);
+
+  return (
+    <div className="home">
+      <Backdrop />
+
+      <section className="hero" aria-label={STARS_TITLE}>
+        <div className="area-stars">
+          <button type="button" className="stars" aria-label={`${STARS_TITLE} — ${t('starsCtaLabel')}`} onClick={startStars}>
+            <span className="art">
+              <Artwork source={hero?.coverUri} loading="eager" />
+            </span>
+            <span className="foot">
+              <span className="title">{STARS_TITLE}</span>
+              <span className="cta" aria-hidden="true">
+                {t('starsCtaLabel')}
+              </span>
+            </span>
+          </button>
+        </div>
+        <div className="area-foryou">
+          <SectionHead title={t('forYou')} />
+          <div className="list">
+            {forYouTiles.map((tile) => (
+              <button key={tile.id} type="button" className="tile" onClick={() => playList(tile.trackIds)}>
+                <Artwork source={tile.coverUri} className="tile-art" />
+                <span className="t-label-md label ellipsis">{tile.title}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="home-trending">
+        <SectionHead id="home-trending" title={t('trendingNow')} />
+        <div className="cards">
+          {trendingNowAlbumIds.map((id) => getAlbumById(id)).filter((a): a is Album => !!a).map((album) => (
+            <AlbumCard key={album.id} album={album} meta={`${album.trackCount} ${t('tracksCountSuffix')}`} onPlay={() => playList(album.trackIds)} saved={isSaved(album.id)} onToggleSaved={() => toggleSaved('album', album.id)} likeLabel={isSaved(album.id) ? t('likedStateLabel') : t('likeLabel')} />
+          ))}
+        </div>
+      </section>
+
+      <section aria-labelledby="home-new">
+        <SectionHead id="home-new" title={t('newReleases')} />
+        <div className="cards">
+          {newReleases.map(({ albumId, label }) => {
+            const album = getAlbumById(albumId);
+            return album ? <AlbumCard key={album.id} album={album} meta={label} surfaced onPlay={album.trackIds?.length ? () => playList(album.trackIds) : undefined} /> : null;
+          })}
+        </div>
+      </section>
+
+      <section className="duo">
+        <div aria-labelledby="home-jump">
+          <SectionHead id="home-jump" title={t('jumpBackIn')} />
+          <div className="track-list">
+            {jumpBackInTrackIds.map((id) => getTrackById(id)).map((track) =>
+              track ? (
+                <button key={track.id} type="button" className={currentTrackId === track.id ? 'track active' : 'track'} aria-label={`${track.title} — ${track.artistName}`} aria-current={currentTrackId === track.id ? 'true' : undefined} onClick={() => play(track.id, [...jumpBackInTrackIds])}>
+                  <Artwork source={track.coverUri} className="track-art" />
+                  <span className="t-text">
+                    <span className="t-label-lg t-title ellipsis">{track.title}</span>
+                    <span className="t-sub">
+                      <span className="t-body-sm medium ellipsis">{track.artistName}</span>
+                      {track.explicit && <span className="badge-e">E</span>}
+                    </span>
+                  </span>
+                </button>
+              ) : null,
+            )}
+          </div>
+        </div>
+        <div aria-labelledby="home-moods">
+          <SectionHead id="home-moods" title={t('moodVibeMixes')} />
+          <div className="moods">
+            {moodMixes.map((mix) => {
+              const [c0, c1] = MOOD_COLORS[mix.id] ?? ['#141418', '#282834'];
+              return (
+                <button key={mix.id} type="button" className="mood" aria-label={`${mix.title} — ${mix.subtitle}`} style={{ '--c0': c0, '--c1': c1 } as CSSProperties} onClick={() => playList(mix.trackIds)}>
+                  <span className="row">
+                    <span style={{ color: MOOD_TINT[mix.tint] ?? 'var(--primary)', display: 'inline-flex' }}>
+                      <Icon name={mix.icon as IconName} size={24} />
+                    </span>
+                    <span className="t-mono-num medium">
+                      {mix.trackCount} {t('tracksCountSuffix')}
+                    </span>
+                  </span>
+                  <span className="txt">
+                    <span className="t-label-lg">{mix.title}</span>
+                    <span className="t-body-sm medium">{mix.subtitle}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+type AlbumCardProps = {
+  album: Album;
+  meta: string;
+  surfaced?: boolean;
+  /** Plays the album; absent when the album has no tracks in the catalog (the card is then not interactive). */
+  onPlay?: () => void;
+  saved?: boolean;
+  onToggleSaved?: () => void;
+  likeLabel?: string;
+};
+
+/** A3 cover card: square cover with a soft glow on hover, title, artist and a meta line. */
+function AlbumCard({ album, meta, surfaced, onPlay, saved, onToggleSaved, likeLabel }: AlbumCardProps) {
+  const interactive = onPlay ? { role: 'button', tabIndex: 0, 'aria-label': `${album.title} — ${album.artistName}`, onClick: onPlay, onKeyDown: onKeyActivate(onPlay) } : {};
+  return (
+    <div className={['cover-card', surfaced && 'surfaced', onPlay && 'playable'].filter(Boolean).join(' ')} {...interactive}>
+      <Artwork source={album.coverUri} className="glow" />
+      <div className="cover">
+        <Artwork source={album.coverUri} />
+        {onToggleSaved && (
+          <button
+            type="button"
+            className={saved ? 'like on' : 'like'}
+            aria-label={likeLabel}
+            aria-pressed={saved}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleSaved();
+            }}
+            onKeyDown={(e) => e.stopPropagation()}
+          >
+            <Icon name={saved ? 'favorite' : 'favorite-border'} size={16} />
+          </button>
+        )}
+      </div>
+      <div className="meta-text">
+        <span className="t-label-lg ellipsis">{album.title}</span>
+        <span className="t-body-sm medium ellipsis">{album.artistName}</span>
+        <span className={surfaced ? 't-body-sm release-label ellipsis' : 't-mono-num medium'}>{meta}</span>
+      </div>
+    </div>
+  );
+}

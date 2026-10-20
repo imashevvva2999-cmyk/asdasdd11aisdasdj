@@ -4,7 +4,9 @@ import { Link, NavLink, Outlet } from 'react-router';
 import type { AppStringKey } from '@mmusic/core/lib/i18n';
 import { Brand, Icon, type IconName } from '@mmusic/ui-kit/web';
 
+import { startAudio } from '@/audio/web-audio';
 import { useAppStrings, useWebStrings } from '@/i18n/locale';
+import { MiniPlayer } from '@/player/MiniPlayer';
 
 // Labels come from the shared app strings (RU by default, the saved language otherwise).
 const TABS: Array<{ to: string; label: AppStringKey; icon: IconName }> = [
@@ -38,6 +40,10 @@ export function AppShell() {
   const { t } = useAppStrings();
   const web = useWebStrings();
   const [scrolled, setScrolled] = useState(false);
+  // Website audio for every page (W3.2): one <audio>, the shared engine + Media Session, liked tracks loaded once.
+  useEffect(() => {
+    startAudio();
+  }, []);
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
     onScroll();
@@ -73,6 +79,8 @@ export function AppShell() {
       <main id="main" className="content" tabIndex={-1}>
         <Outlet />
       </main>
+
+      <MiniPlayer />
 
       <nav className="bottom-nav glass" aria-label={web('sectionsNav')}>
         {TABS.map((tab) => (

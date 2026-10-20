@@ -21,7 +21,6 @@ function Scaffold({ title, phase }: { title: string; phase: string }) {
   );
 }
 
-export const HomePage = () => <Scaffold title="Главная" phase="W3" />;
 export const SearchPage = () => <Scaffold title="Поиск" phase="W4" />;
 export const LibraryPage = () => <Scaffold title="Библиотека" phase="W4" />;
 export const ProfilePage = () => <Scaffold title="Профиль" phase="W4–W5" />;

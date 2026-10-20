@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router';
 
-import { HomePage, LibraryPage, NotFoundPage, ProfilePage, SearchPage } from '@/routes/pages';
+import { HomePage } from '@/home/HomePage';
+import { LibraryPage, NotFoundPage, ProfilePage, SearchPage } from '@/routes/pages';
 import { AppShell } from '@/shell/AppShell';
 
 // URLs mirror the Expo app (/home, /search, /library, /profile) for page-by-page parity checks later.

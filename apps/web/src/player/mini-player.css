@@ -1,0 +1,32 @@
+/* Mini-player capsule — the approved A3 treatment (docs/design-review/desktop-home/shared.css `.capsule`). */
+.capsule {
+  position: fixed; left: 50%; bottom: 24px; z-index: 19; transform: translateX(-50%);
+  width: min(560px, calc(100vw - 32px)); height: 64px; padding: 0 8px 0 10px;
+  display: flex; align-items: center; gap: 10px;
+  border-radius: var(--radius-full); background: rgba(28, 28, 36, 0.85);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  animation: capsule-in 0.25s ease;
+}
+@keyframes capsule-in { from { opacity: 0; transform: translate(-50%, 16px); } to { opacity: 1; transform: translateX(-50%); } }
+.capsule .c-cover { width: 44px; height: 44px; flex-shrink: 0; border-radius: 10px; }
+.capsule .c-text { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.capsule .ellipsis { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.capsule .c-artist { color: var(--text-medium); }
+.capsule .c-eq { margin-left: 4px; color: var(--primary); vertical-align: -2px; display: inline-flex; }
+.capsule button { padding: 0; border: 0; cursor: pointer; color: var(--text-high); }
+.capsule .c-btn { width: 40px; height: 40px; flex-shrink: 0; display: grid; place-items: center; border-radius: var(--radius-full); background: none; transition: background-color 0.15s; }
+.capsule .c-btn:hover { background: rgba(255, 255, 255, 0.06); }
+.capsule .c-btn.on { color: var(--primary); }
+.capsule .c-play {
+  width: 44px; height: 44px; flex-shrink: 0; display: grid; place-items: center;
+  border-radius: var(--radius-full); background: var(--primary); box-shadow: 0 8px 24px rgba(255, 75, 75, 0.45);
+}
+.capsule .c-play:disabled { cursor: default; opacity: 0.45; box-shadow: none; }
+
+/* Phone: above the floating tab bar. */
+@media (max-width: 767px) {
+  .capsule { bottom: calc(72px + env(safe-area-inset-bottom)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .capsule { animation: none; }
+}
