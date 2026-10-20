@@ -13,6 +13,7 @@ import {
 import { isArtworkKey } from '@/constants/stitch-artwork';
 import { isGuestPreview, useGuestPreviewStore } from '@/demo/guest-mode';
 import { addMockArtist, addMockTrack, getArtistById, type Artist } from '@/mocks';
+import { browserLocalStorage } from '@/platform/browser-storage';
 import { restoreArtistAccount, setArtistPersistencePaused } from '@/state/artist-account-persistence';
 import { useArtistStore, type ArtistTrackEntry } from '@/state/artist-store';
 import { PROMO_WALLET_START_KGS, useCampaignStore, type CampaignStage } from '@/state/campaign-store';
@@ -37,7 +38,7 @@ type DemoSessionState = {
 };
 
 const noopStorage: StateStorage = { getItem: () => null, setItem: () => {}, removeItem: () => {} };
-const demoStorage: StateStorage = typeof window !== 'undefined' && window.localStorage ? window.localStorage : noopStorage;
+const demoStorage: StateStorage = browserLocalStorage() ?? noopStorage;
 
 // The catalog's own Solaris Echo profile, restored when the demo signs out.
 const catalogArtist = getArtistById(DEMO_ARTIST_ID);

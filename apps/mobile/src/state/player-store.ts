@@ -5,6 +5,7 @@ import { silentEngine, type AudioEngine, type EngineStatus } from '@/audio/audio
 import { hasDemoAudio } from '@/audio/demo-audio';
 import { deserializeLikedTrackIds, serializeLikedTrackIds } from '@/lib/liked-tracks-storage';
 import { currentUser, getTrackById, tracks as allTracks, type Track, type TrackId } from '@/mocks';
+import { browserLocalStorage } from '@/platform/browser-storage';
 
 export type RepeatMode = 'off' | 'all' | 'one';
 
@@ -97,7 +98,7 @@ let pendingStart: ReturnType<typeof setTimeout> | null = null;
 /** No-ops on native (this app's persistence target is the web CEO demo) and in any
  * environment without a real `localStorage` (SSR/tests), instead of throwing. */
 const noopStorage = { getItem: () => null, setItem: () => {}, removeItem: () => {} };
-const likeStorage = typeof window !== 'undefined' && window.localStorage ? window.localStorage : noopStorage;
+const likeStorage = browserLocalStorage() ?? noopStorage;
 
 function cancelPendingStart() {
   if (pendingStart) {
