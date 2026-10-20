@@ -10,7 +10,7 @@ import { paletteForTrack } from '@/lib/palette';
 import { hexToRgb01, lerpRgb, type RGB } from '@/lib/particle-tint';
 import { getTrackById, type TrackId } from '@/mocks';
 
-import { APPROVED_DENSITY, APPROVED_SPEED, DEFAULT_TINT, ParticleWave, type ReactiveInput } from './engine';
+import { APPROVED_DENSITY, APPROVED_SPEED, DEFAULT_TINT, ParticleWave, type ReactiveInput } from '@mmusic/ui-kit/visuals/particle-wave/engine';
 
 export type ParticleWaveArtworkProps = {
   /** The approved still artwork: shown if WebGL is unavailable or cannot recover. */

@@ -92,7 +92,7 @@ void main() {
 }
 `;
 
-/** Mmusic palette (`packages/design-tokens/src/colors.ts`), used at normal
+/** Mmusic palette (`ui-kit/tokens/colors.ts`), used at normal
  * (non-scaled) saturation here — unlike `liquid-chrome-scene.ts`'s `uColorA`
  * /`uColorB`, this shader's colors feed an additive diffuse/specular light
  * rather than a division, so full saturation is correct. */

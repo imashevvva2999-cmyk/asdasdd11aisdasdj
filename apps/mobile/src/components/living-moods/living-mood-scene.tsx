@@ -1,6 +1,6 @@
 import { StyleSheet, View, type ViewStyle } from 'react-native';
 
-import type { WebGLSceneController } from './webgl-scene-controller';
+import type { WebGLSceneController } from '@mmusic/ui-kit/visuals/living-moods/webgl-scene-controller';
 
 export type SceneEngineCtor = new (canvas: HTMLCanvasElement, onFallback: () => void) => WebGLSceneController;
 

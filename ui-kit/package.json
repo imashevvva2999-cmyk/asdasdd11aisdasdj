@@ -6,6 +6,7 @@
   "sideEffects": false,
   "exports": {
     "./tokens": "./tokens/index.ts",
+    "./visuals/*": "./visuals/*.ts",
     "./package.json": "./package.json"
   },
   "scripts": {

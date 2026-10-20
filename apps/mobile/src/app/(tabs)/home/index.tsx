@@ -26,10 +26,10 @@ import {
 import { useLibraryStore } from '@/state/library-store';
 import { useAppStrings } from '@/state/locale-store';
 import { type SceneEngineCtor } from '@/components/living-moods/living-mood-scene';
-import { GalaxyScene } from '@/components/living-moods/scenes/galaxy-scene';
-import { LiquidChromeScene } from '@/components/living-moods/scenes/liquid-chrome-scene';
-import { MetaBallsScene } from '@/components/living-moods/scenes/meta-balls-scene';
-import { OrbScene } from '@/components/living-moods/scenes/orb-scene';
+import { GalaxyScene } from '@mmusic/ui-kit/visuals/living-moods/scenes/galaxy-scene';
+import { LiquidChromeScene } from '@mmusic/ui-kit/visuals/living-moods/scenes/liquid-chrome-scene';
+import { MetaBallsScene } from '@mmusic/ui-kit/visuals/living-moods/scenes/meta-balls-scene';
+import { OrbScene } from '@mmusic/ui-kit/visuals/living-moods/scenes/orb-scene';
 import { usePlayerStore } from '@/state/player-store';
 import { expandOrigin, stageVisible } from '@/state/player-surface';
 

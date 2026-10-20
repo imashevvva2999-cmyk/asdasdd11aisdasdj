@@ -100,7 +100,7 @@ void main() {
 }
 `;
 
-/** Mmusic palette (`packages/design-tokens/src/colors.ts`). `uColorA`/
+/** Mmusic palette (`ui-kit/tokens/colors.ts`). `uColorA`/
  * `uColorB` feed the `body / shade` division, so — exactly like the
  * reference's own `[0.1, 0.1, 0.1]` base — they stay at a small ambient
  * magnitude (hue preserved, scaled down ~6x from the raw hex) rather than

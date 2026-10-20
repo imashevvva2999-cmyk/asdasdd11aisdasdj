@@ -6,10 +6,10 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { LivingMoodScene, type SceneEngineCtor } from '@/components/living-moods/living-mood-scene';
-import { GalaxyScene } from '@/components/living-moods/scenes/galaxy-scene';
-import { LiquidChromeScene } from '@/components/living-moods/scenes/liquid-chrome-scene';
-import { MetaBallsScene } from '@/components/living-moods/scenes/meta-balls-scene';
-import { OrbScene } from '@/components/living-moods/scenes/orb-scene';
+import { GalaxyScene } from '@mmusic/ui-kit/visuals/living-moods/scenes/galaxy-scene';
+import { LiquidChromeScene } from '@mmusic/ui-kit/visuals/living-moods/scenes/liquid-chrome-scene';
+import { MetaBallsScene } from '@mmusic/ui-kit/visuals/living-moods/scenes/meta-balls-scene';
+import { OrbScene } from '@mmusic/ui-kit/visuals/living-moods/scenes/orb-scene';
 
 type CardId = 'liquid-chrome' | 'meta-balls' | 'orb' | 'galaxy';
 

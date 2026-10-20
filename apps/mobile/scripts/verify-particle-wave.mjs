@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Late Night Flow particle wave (src/components/ui/particle-wave/engine.ts):
+ * Late Night Flow particle wave (ui-kit/visuals/particle-wave/engine.ts):
  * the approved Particle Wave B configuration, deterministic particles and the
  * adaptive-quality steps. The WebGL drawing itself is checked in the browser.
  * Usage: npx tsx scripts/verify-particle-wave.mjs
@@ -14,7 +14,7 @@ import {
   INITIAL_QUALITY,
   buildParticles,
   nextQuality,
-} from '../src/components/ui/particle-wave/engine.ts';
+} from '../../../ui-kit/visuals/particle-wave/engine.ts';
 
 let failures = 0;
 function check(label, condition) {

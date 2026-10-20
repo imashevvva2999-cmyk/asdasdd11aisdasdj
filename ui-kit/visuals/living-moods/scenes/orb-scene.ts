@@ -160,7 +160,7 @@ void main() {
 }
 `;
 
-/** Mmusic palette (`packages/design-tokens/src/colors.ts`). `uColor1`/
+/** Mmusic palette (`ui-kit/tokens/colors.ts`). `uColor1`/
  * `uColor2` are the coral-to-coral-orange gradient the orbiting highlight and
  * boundary band swirl between (`colBase` in the shader); `uColor3` is the
  * near-black canvas tone the boundary fades toward at its darkest, so the
