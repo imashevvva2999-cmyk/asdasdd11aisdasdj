@@ -10,5 +10,5 @@
     "skipLibCheck": true,
     "types": []
   },
-  "include": ["lib"]
+  "include": ["lib", "audio"]
 }

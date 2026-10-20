@@ -12,7 +12,7 @@ import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const SOURCE_DIRS = ['lib'];
+const SOURCE_DIRS = ['lib', 'audio'];
 const ALLOWED_PACKAGES = []; // e.g. 'zustand', '@mmusic/ui-kit/tokens' — added per migration group, with approval
 
 const walk = (dir) =>
