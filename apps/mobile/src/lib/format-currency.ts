@@ -1,4 +1,2 @@
-/** Thousands-separated KGS amount, no currency unit — every call site appends its own "сом". */
-export function formatKgsAmount(amount: number): string {
-  return Math.round(amount).toLocaleString('en-US');
-}
+// Moved to @mmusic/core (W2.4b group 1); this path keeps existing imports working.
+export { formatKgsAmount } from '@mmusic/core/lib/format-currency';
