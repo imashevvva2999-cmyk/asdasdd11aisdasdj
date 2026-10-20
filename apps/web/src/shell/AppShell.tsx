@@ -6,6 +6,7 @@ import { Brand, Icon, type IconName } from '@mmusic/ui-kit/web';
 
 import { startAudio } from '@/audio/web-audio';
 import { useAppStrings, useWebStrings } from '@/i18n/locale';
+import { MbankButton } from '@/features/studio/MbankButton';
 import { MiniPlayer } from '@/player/MiniPlayer';
 
 // Labels come from the shared app strings (RU by default, the saved language otherwise).
@@ -81,6 +82,7 @@ export function AppShell() {
       </main>
 
       <MiniPlayer />
+      <MbankButton />
 
       <nav className="bottom-nav glass" aria-label={web('sectionsNav')}>
         {TABS.map((tab) => (

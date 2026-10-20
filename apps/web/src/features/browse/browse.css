@@ -159,8 +159,6 @@ input[type="checkbox"][role="switch"]:focus-visible { outline: 2px solid var(--p
 .br-dl-row > .ui-row { flex: 1; min-width: 0; }
 .br-total { display: grid; gap: 6px; padding: 20px; margin-bottom: 20px; border-radius: var(--radius-lg); background: var(--surface-l1); }
 .br-total .ui-notice { justify-self: start; margin: 8px 0 0; }
-.br-confirm { margin-top: 16px; }
-.br-confirm .buttons { display: flex; gap: 10px; }
 .br-about { max-width: 760px; padding: 20px; border-radius: var(--radius-md); background: var(--surface-l1); }
 .br-about p { margin: 0; line-height: 1.6; }
 .br-about-meta { color: var(--primary); font-weight: 600; margin-bottom: 8px !important; }

@@ -2,7 +2,6 @@
 import '@/platform/storage';
 
 import { useMemo, useState, type ReactNode } from 'react';
-import { Link, useNavigate } from 'react-router';
 
 import type { LocalOrRemoteImage } from '@mmusic/core/constants/stitch-artwork';
 import { DemoStrings } from '@mmusic/core/demo/demo-strings';
@@ -504,73 +503,6 @@ export function SupportHistoryPage() {
           </section>
         ))
       )}
-    </Page>
-  );
-}
-
-/** Demo artist account (mobile: profile/demo-account.tsx) — only meaningful while a demo session is signed in. */
-export function DemoAccountPage() {
-  const { locale } = useAppStrings();
-  const d = DemoStrings[locale];
-  const navigate = useNavigate();
-  const active = useDemoSessionStore((s) => s.active);
-  const resetDemo = useDemoSessionStore((s) => s.resetDemo);
-  const signOut = useDemoSessionStore((s) => s.signOut);
-  const [confirming, setConfirming] = useState(false);
-  const { showToast, toast } = useBrowseToast();
-  usePageTitle(d.accountTitle);
-  return (
-    <Page narrow>
-      <Backdrop />
-      <PageHeader title={d.accountTitle} back="/profile" />
-      {!active ? (
-        <EmptyState icon="lock" title={d.accountTitle} body={d.settingsRowSignedOut}>
-          <Link className="ui-btn ghost small" to="/profile">
-            {d.cancel}
-          </Link>
-        </EmptyState>
-      ) : (
-        <>
-          <p className="br-lede medium">{d.accountIntro}</p>
-          <div className="ui-list">
-            <ListRow icon="dashboard" title={d.openDashboard} to="/profile/artist/dashboard" />
-            <ListRow icon="restart-alt" title={d.resetTitle} subtitle={d.resetHint} onClick={() => setConfirming(true)} />
-            <ListRow
-              icon="logout"
-              title={d.logOut}
-              onClick={() => {
-                signOut();
-                void navigate('/profile', { replace: true });
-              }}
-            />
-          </div>
-          {confirming && (
-            <div className="ui-empty br-confirm" role="alertdialog" aria-labelledby="br-reset-t">
-              <span id="br-reset-t" className="title">
-                {d.resetConfirmTitle}
-              </span>
-              <span className="t-body-md">{d.resetConfirmBody}</span>
-              <div className="buttons">
-                <button type="button" className="ui-btn ghost" onClick={() => setConfirming(false)}>
-                  {d.cancel}
-                </button>
-                <button
-                  type="button"
-                  className="ui-btn"
-                  onClick={() => {
-                    resetDemo();
-                    setConfirming(false);
-                    showToast(d.resetDone, 'check-circle');
-                  }}
-                >
-                  {d.resetConfirm}
-                </button>
-              </div>
-            </div>
-          )}
-        </>
-      )}
-      {toast}
     </Page>
   );
 }

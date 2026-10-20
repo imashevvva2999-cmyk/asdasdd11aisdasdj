@@ -10,7 +10,7 @@ import './sheets/sheets.css';
  * Floating MBANK payment button (mobile components/mbank/floating-payment-button.tsx): a round glass button,
  * bottom-right, opening the demo payment widget's scenario launcher. Hidden on full-screen playback, on any open
  * sheet (including the payment sheets themselves) and in the read-only guest preview — exactly like the app.
- * Provided for the site shell; not mounted here.
+ * Mounted once by the site shell (AppShell).
  */
 export function MbankButton() {
   const { pathname } = useLocation();

@@ -2,7 +2,7 @@ import type { RouteObject } from 'react-router';
 
 import { AlbumPage, ArtistPage, CreatePlaylistPage, PlaylistPage } from './DetailPages';
 import { LibraryPage, LikedSongsPage } from './LibraryPages';
-import { AccountPage, AudioQualityPage, DemoAccountPage, DownloadsPage, LanguagePage, ProfilePage, SettingsPage, SupportHistoryPage } from './ProfilePages';
+import { AccountPage, AudioQualityPage, DownloadsPage, LanguagePage, ProfilePage, SettingsPage, SupportHistoryPage } from './ProfilePages';
 import { AllGenresPage, GenrePage, SearchPage, SearchResultsPage } from './SearchPages';
 
 /**
@@ -27,5 +27,4 @@ export const browseShellRoutes: RouteObject[] = [
   { path: 'profile/downloads', element: <DownloadsPage /> },
   { path: 'profile/account', element: <AccountPage /> },
   { path: 'profile/support-history', element: <SupportHistoryPage /> },
-  { path: 'profile/demo-account', element: <DemoAccountPage /> },
 ];
