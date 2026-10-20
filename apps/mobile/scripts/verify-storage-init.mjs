@@ -88,7 +88,8 @@ for (const file of appFiles) {
     isMobile && specs[0] === '@/platform/storage',
   );
 }
-check('the four compatibility re-exports are the only app importers', JSON.stringify(importers.sort()) === JSON.stringify(['locale-store', 'profile-avatar-store', 'floating-button-store', 'dashboard-locale-store'].map((n) => `apps/mobile/src/state/${n}.ts`).sort()));
+const REEXPORTS = ['locale-store', 'profile-avatar-store', 'floating-button-store', 'dashboard-locale-store', 'artist-account-persistence', 'demo-session-store'];
+check('the compatibility re-exports in src/state are the only app importers', JSON.stringify(importers.sort()) === JSON.stringify(REEXPORTS.map((n) => `apps/mobile/src/state/${n}.ts`).sort()));
 const setup = readFileSync(join(MOBILE, 'src', 'platform', 'storage.ts'), 'utf8');
 check('src/platform/storage.ts configures storage at module level', /^configureStorage\(browserLocalStorage\(\)\);$/m.test(setup));
 
