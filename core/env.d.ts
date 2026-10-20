@@ -8,6 +8,7 @@ declare const __DEV__: boolean | undefined;
 
 /**
  * Timers exist in every runtime core targets (React Native, browsers, Node), but core's typecheck loads no DOM or
- * Node types — so only what core uses is declared, deliberately minimal (stores simulate processing delays with it).
+ * Node types — so only what core uses is declared, deliberately minimal (stores simulate processing delays; the player defers swipe audio starts).
  */
 declare function setTimeout(handler: (...args: never[]) => void, timeout?: number): unknown;
+declare function clearTimeout(handle: unknown): void;
