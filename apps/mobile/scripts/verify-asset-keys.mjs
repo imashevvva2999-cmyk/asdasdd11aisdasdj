@@ -9,6 +9,7 @@
  *
  * Usage: npx tsx scripts/verify-asset-keys.mjs
  */
+import './dev-mode.mjs'; // checks development-only (Ошондо) content
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';

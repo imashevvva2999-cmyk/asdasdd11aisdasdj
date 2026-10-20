@@ -4,6 +4,7 @@
  * discovery player, Task 11 of the localization-and-discovery-player plan).
  * Usage: npx tsx scripts/verify-genre-tracks.mjs
  */
+import './dev-mode.mjs'; // checks development-only (Ошондо) content
 import { getPlayableGenreIds, getTrackIdsForGenre } from '../src/lib/genre-tracks.ts';
 import { genreNameLabel } from '../src/lib/i18n.ts';
 

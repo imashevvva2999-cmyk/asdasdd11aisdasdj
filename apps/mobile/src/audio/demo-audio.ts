@@ -132,7 +132,7 @@ export const demoAudioCredits: Partial<Record<TrackId, DemoAudioCredit>> = {
   // `isInstrumental: true` is a safe UI default (no lyrics text exists for
   // this track to show), not a claim about the actual recording's content.
   // __DEV__ only (rights not confirmed): production builds show Ошондо as unavailable.
-  ...(typeof __DEV__ === 'undefined' || __DEV__
+  ...(typeof __DEV__ !== 'undefined' && __DEV__
     ? {
         oshondo: {
           originalTitle: 'Ошондо (Mood Video)',

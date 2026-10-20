@@ -91,7 +91,7 @@ export const artworkSources: Record<ArtworkKey, LocalOrRemoteImage | undefined> 
   'asset:tracks/tape-saturation-4.jpg': safeRequire(() => require('../../assets/artwork/tracks/tape-saturation-4.jpg')),
   'asset:tracks/vapor-trails.jpg': safeRequire(() => require('../../assets/artwork/tracks/vapor-trails.jpg')),
   // __DEV__ only, like its key in stitchArtworkByTrackId and its audio (rights not confirmed): never bundled in production.
-  ...(typeof __DEV__ === 'undefined' || __DEV__
+  ...(typeof __DEV__ !== 'undefined' && __DEV__
     ? { 'asset:tracks/mirbek-atabekov-oshondo.png': safeRequire(() => require('../../assets/artwork/tracks/mirbek-atabekov-oshondo.png')) }
     : {}),
 };

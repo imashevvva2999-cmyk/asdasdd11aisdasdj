@@ -29,7 +29,7 @@ export const audioSources: Partial<Record<AudioKey, AudioSource>> = {
   // First real Kyrgyz audio import — rights NOT confirmed, local/dev testing
   // only (assets/audio/kyrgyz/CREDITS.md).
   // __DEV__ only: production/Vercel builds never bundle or serve this file.
-  ...(typeof __DEV__ === 'undefined' || __DEV__ ? { 'audio:kyrgyz/oshondo.mp3': require('../../assets/audio/kyrgyz/oshondo.mp3') } : {}),
+  ...(typeof __DEV__ !== 'undefined' && __DEV__ ? { 'audio:kyrgyz/oshondo.mp3': require('../../assets/audio/kyrgyz/oshondo.mp3') } : {}),
 };
 
 /** Track → bundled demo audio, shared by the native (expo-audio) and browser engines. */

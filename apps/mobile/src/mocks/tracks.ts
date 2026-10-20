@@ -49,7 +49,8 @@ export const tracks: Track[] = [
   // added on top of them, never replacing any). Rights are NOT confirmed —
   // local/dev testing only, see assets/audio/kyrgyz/CREDITS.md. durationSec
   // is the real file's measured length (ffprobe).
-  { id: 'oshondo', title: 'Ошондо', artistId: 'mirbek-atabekov', artistName: 'Мирбек Атабеков', durationSec: 201 },
+  // __DEV__ only (rights not confirmed): absent from production catalogs, pages and bundles.
+  ...(typeof __DEV__ !== 'undefined' && __DEV__ ? [{ id: 'oshondo', title: 'Ошондо', artistId: 'mirbek-atabekov', artistName: 'Мирбек Атабеков', durationSec: 201 }] : []),
 ];
 
 // Fill in recovered Stitch artwork (Фаза 4 restoration pass) — a plain id

@@ -29,7 +29,7 @@ export const demoAudioKeys: Partial<Record<TrackId, AudioKey>> = {
   // only (assets/audio/kyrgyz/CREDITS.md). Not CC BY 4.0 / Kevin MacLeod like
   // the entries above; see the Kyrgyz-catalog id list further down this file.
   // __DEV__ only: production/Vercel builds never bundle or serve this file.
-  ...(typeof __DEV__ === 'undefined' || __DEV__ ? { oshondo: 'audio:kyrgyz/oshondo.mp3' as const } : {}),
+  ...(typeof __DEV__ !== 'undefined' && __DEV__ ? { oshondo: 'audio:kyrgyz/oshondo.mp3' as const } : {}),
 };
 
 /**
@@ -59,5 +59,7 @@ export const KYRGYZ_TRACK_IDS: TrackId[] = [
   'kyrgyzstanym', 'muras', 'ene-til', 'alai', 'kachan-kaitat', 'jazym-kelchi',
   'kyrgyz-biyi', 'ne-segodnya', 'kirgiz-jeri', 'erke-kyz', 'chopo-choor-fantasy',
   'kyrgyzstanym-remix', 'jashtyk-kez', 'kambarkan', 'esimde', 'kyrgyz-bala',
-  'taimuras', 'ananayyn', 'eto-lyubov', 'issyk-kulskiy-vaib', 'oshondo',
+  'taimuras', 'ananayyn', 'eto-lyubov', 'issyk-kulskiy-vaib',
+  // __DEV__ only (rights not confirmed): absent from production builds.
+  ...(typeof __DEV__ !== 'undefined' && __DEV__ ? ['oshondo'] : []),
 ];

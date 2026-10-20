@@ -85,7 +85,7 @@ export const stitchArtworkByTrackId: Record<string, LocalOrRemoteImage | undefin
   // assets/audio/kyrgyz/CREDITS.md) — not Stitch-recovered, but wired the
   // same way as every other real cover here.
   // __DEV__ only, like its audio (rights not confirmed): never bundled in production.
-  ...(typeof __DEV__ === 'undefined' || __DEV__ ? { oshondo: 'asset:tracks/mirbek-atabekov-oshondo.png' } : {}),
+  ...(typeof __DEV__ !== 'undefined' && __DEV__ ? { oshondo: 'asset:tracks/mirbek-atabekov-oshondo.png' } : {}),
 };
 
 export const stitchArtworkByPlaylistId: Record<string, LocalOrRemoteImage | undefined> = {
