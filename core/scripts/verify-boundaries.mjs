@@ -58,6 +58,8 @@ for (const file of files) {
   const uncommented = code.replace(/(^|[^:\\])\/\/.*$/gm, '$1');
   check(`${name}: every __DEV__ check is fail-closed (typeof __DEV__ !== 'undefined' && __DEV__)`,
     !/__DEV__/.test(uncommented.replace(/typeof __DEV__ !== 'undefined' && __DEV__/g, '')));
+  // Core ships in every app bundle: build-time configuration (and any credential in it) is read by the apps, never here.
+  check(`${name}: reads no build-time environment (process.env, import.meta.env)`, !/\bprocess\.env\b|\bimport\.meta\.env\b/.test(uncommented));
   graph.set(name, deps);
 }
 

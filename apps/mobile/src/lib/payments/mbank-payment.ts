@@ -1,50 +1,23 @@
 /**
- * MBANK payment adapter (integration-ready). See docs/mbank-payment-integration.md.
+ * MBANK payment adapter selection for the Expo app. See docs/mbank-payment-integration.md.
  *
- * No official MBANK merchant integration exists in this project yet (OQ-10,
- * OQ-14, OQ-15). The default adapter is DEMO: it opens the in-app demo
- * checkout sheet and NEVER moves money. The `live` adapter expects a backend
- * that holds the MBANK merchant credentials and creates the payment session —
- * secrets must never live in this frontend bundle.
+ * The payment types, the demo adapter and the id helpers live in
+ * @mmusic/core (W2.4b group 5). This app-side part reads EXPO_PUBLIC_* build
+ * configuration and holds the live adapter's backend call; secrets must
+ * never live in this frontend bundle.
  */
-export type PaymentPurpose = 'promotion' | 'studio-pro' | 'donation' | 'purchase';
+import { demoMbankPaymentAdapter, type MbankPaymentAdapter } from '@mmusic/core/lib/payments/mbank-payment';
 
-export type PaymentOrder = {
-  id: string;
-  amountKgs: number;
-  currency: 'KGS';
-  /** Human-readable line shown in the checkout (e.g. campaign summary). */
-  description: string;
-  purpose: PaymentPurpose;
-};
-
-export type PaymentOutcome = 'success' | 'cancelled' | 'failed';
-
-export type PaymentResult = {
-  outcome: PaymentOutcome;
-  /** Payment reference; demo references start with "DEMO-". */
-  reference?: string;
-  /** True for the demo adapter — a simulated payment is never a real charge. */
-  simulated: boolean;
-  message?: string;
-};
-
-export type PaymentSession =
-  | { kind: 'in-app-demo' }
-  /** Live: open the official MBANK widget/checkout URL returned by the backend. */
-  | { kind: 'redirect'; checkoutUrl: string };
-
-export interface MbankPaymentAdapter {
-  readonly mode: 'demo' | 'live';
-  createSession(order: PaymentOrder): Promise<PaymentSession>;
-}
-
-const demoAdapter: MbankPaymentAdapter = {
-  mode: 'demo',
-  async createSession() {
-    return { kind: 'in-app-demo' };
-  },
-};
+export {
+  demoPaymentReference,
+  newOrderId,
+  type MbankPaymentAdapter,
+  type PaymentOrder,
+  type PaymentOutcome,
+  type PaymentPurpose,
+  type PaymentResult,
+  type PaymentSession,
+} from '@mmusic/core/lib/payments/mbank-payment';
 
 /** Live adapter: requires EXPO_PUBLIC_PAYMENTS_API_URL (a backend you operate). */
 function createLiveAdapter(apiUrl: string): MbankPaymentAdapter {
@@ -68,13 +41,5 @@ export function getMbankPaymentAdapter(): MbankPaymentAdapter {
   const mode = process.env.EXPO_PUBLIC_MBANK_PAYMENT_MODE;
   const apiUrl = process.env.EXPO_PUBLIC_PAYMENTS_API_URL;
   if (mode === 'live' && apiUrl) return createLiveAdapter(apiUrl);
-  return demoAdapter;
-}
-
-export function newOrderId(prefix: string): string {
-  return `${prefix}-${Date.now().toString(36)}`;
-}
-
-export function demoPaymentReference(): string {
-  return `DEMO-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+  return demoMbankPaymentAdapter;
 }
