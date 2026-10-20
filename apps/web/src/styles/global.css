@@ -1,0 +1,130 @@
+/* Base + application shell. Colors, radii and spacing come from token variables (see tokens.ts). */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html { background: var(--canvas); color-scheme: dark; scroll-padding-top: 100px; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--canvas);
+  color: var(--text-high);
+  font-family: "Inter", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+.skip-link {
+  position: fixed; left: 16px; top: -64px; z-index: 100;
+  padding: 10px 16px; border-radius: var(--radius-full);
+  background: var(--surface-l2); color: var(--text-high); text-decoration: none;
+  font: 600 14px/1 "Inter", system-ui, sans-serif;
+}
+.skip-link:focus { top: 16px; }
+
+/* Brand: "Mmusic" + five coral bars (approved mark) */
+.brand { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: var(--text-high); }
+.brand-bars { display: inline-flex; align-items: center; gap: 2px; height: 20px; }
+.brand-bars i { width: 2.5px; border-radius: 2px; background: var(--primary); animation: brand-bar var(--d) ease-in-out var(--delay) infinite alternate; }
+@keyframes brand-bar { from { transform: scaleY(1); } to { transform: scaleY(0.45); } }
+
+/* Desktop / tablet header: its own sticky band so the glass pill never floats over content */
+.site-head {
+  position: sticky; top: 0; z-index: 30;
+  height: 88px; display: flex; align-items: center; justify-content: center;
+}
+.site-head::before {
+  content: ""; position: absolute; inset: 0 0 -24px; pointer-events: none; opacity: 0;
+  background: linear-gradient(to bottom, rgba(10, 10, 12, 0.96) 0%, rgba(10, 10, 12, 0.9) 70%, rgba(10, 10, 12, 0) 100%);
+  transition: opacity 0.25s ease;
+}
+.site-head[data-scrolled="true"]::before { opacity: 1; }
+
+.glass {
+  background: rgba(20, 20, 24, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-top-color: rgba(255, 255, 255, 0.4);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+}
+.top-pill {
+  position: relative; height: 60px; padding: 6px; border-radius: var(--radius-full);
+  display: flex; align-items: center; gap: 6px;
+  transition: background 0.25s ease, box-shadow 0.25s ease;
+}
+.site-head[data-scrolled="true"] .top-pill { background: rgba(20, 20, 24, 0.78); box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5); }
+.top-pill .brand { height: 48px; padding: 0 16px 0 14px; border-radius: var(--radius-full); }
+.top-pill .divider { width: 1px; height: 24px; background: rgba(255, 255, 255, 0.1); margin: 0 2px; }
+.top-tabs { display: flex; gap: 4px; }
+
+.tab-link {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  height: 48px; padding: 0 18px; border-radius: var(--radius-full);
+  color: var(--text-medium); text-decoration: none;
+  font: 600 14px/1 "Inter", system-ui, sans-serif; letter-spacing: 0.1px;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+.tab-link:hover { color: var(--text-high); }
+.tab-link.active { color: var(--primary); background: rgba(255, 122, 89, 0.14); }
+
+.profile-link {
+  width: 48px; height: 48px; margin-left: 2px; border-radius: var(--radius-full);
+  display: grid; place-items: center; color: var(--text-high);
+  background: rgba(255, 255, 255, 0.06); transition: background-color 0.15s ease, color 0.15s ease;
+}
+.profile-link:hover { background: var(--surface-l3); }
+.profile-link.active { color: var(--primary); background: rgba(255, 122, 89, 0.14); }
+
+.mobile-head, .bottom-nav { display: none; }
+
+.content {
+  width: min(1280px, calc(100% - 2 * clamp(24px, 4vw, 56px)));
+  margin: 0 auto;
+  padding: 16px 0 96px;
+}
+
+/* W1 scaffolding placeholder */
+.w1-page { display: grid; gap: 12px; max-width: 720px; }
+.w1-badge {
+  justify-self: start; padding: 6px 12px; border-radius: var(--radius-full);
+  border: 1px solid rgba(255, 75, 75, 0.45); color: var(--primary);
+  font: 700 11px/1 "Inter", system-ui, sans-serif; letter-spacing: 0.66px; text-transform: uppercase;
+}
+.w1-page h1 { margin: 0; }
+.w1-page p { margin: 0; color: var(--text-medium); }
+.w1-page a { color: var(--primary); }
+
+/* Phone: approved Mmusic header + floating bottom navigation */
+@media (max-width: 767px) {
+  html { scroll-padding-top: 64px; }
+  .site-head {
+    height: 56px; background: var(--canvas);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  .site-head::before, .top-pill { display: none; }
+  .mobile-head {
+    display: flex; align-items: center; justify-content: space-between;
+    width: min(440px, calc(100% - 40px));
+  }
+  .mobile-head .profile-link { width: 44px; height: 44px; background: var(--surface-l2); margin: 0; }
+  .content { width: min(440px, calc(100% - 40px)); padding: 12px 0 150px; }
+
+  .bottom-nav {
+    display: flex; align-items: center; gap: 0;
+    position: fixed; left: 50%; bottom: calc(8px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 20;
+    height: 56px; padding: 0 4px; border-radius: var(--radius-full);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  }
+  .bottom-nav .tab-link {
+    width: 76px; padding: 0; flex-direction: column; gap: 2px;
+    font: 700 10px/12px "Inter", system-ui, sans-serif; letter-spacing: 0.3px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-bars i { animation: none; }
+  *, *::before, *::after { transition-duration: 0.01ms !important; }
+}
