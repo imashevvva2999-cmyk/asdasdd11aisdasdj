@@ -13,6 +13,7 @@
     "./audio/*": "./audio/*.ts",
     "./demo/*": "./demo/*.ts",
     "./promotion/*": "./promotion/*.ts",
+    "./state/*": "./state/*.ts",
     "./package.json": "./package.json"
   },
   "scripts": {
