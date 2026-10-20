@@ -1,4 +1,4 @@
-import { colors, radii, spacing, typeScale, type TypeScaleToken } from '@mmusic/design-tokens';
+import { colors, radii, spacing, typeScale, type TypeScaleToken } from '@mmusic/ui-kit/tokens';
 
 const cssName = (key: string) => key.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
 

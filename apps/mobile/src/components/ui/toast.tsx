@@ -2,7 +2,7 @@ import { BlurView } from 'expo-blur';
 import { StyleSheet, View } from 'react-native';
 
 import { Colors, Radii, Spacing } from '@/constants/theme';
-import { blur } from '@mmusic/design-tokens';
+import { blur } from '@mmusic/ui-kit/tokens';
 
 import { Icon } from './icon';
 import { ThemedText } from '../themed-text';

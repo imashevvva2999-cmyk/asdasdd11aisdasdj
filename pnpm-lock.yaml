@@ -258,9 +258,9 @@ importers:
       '@gorhom/bottom-sheet':
         specifier: ^5.2.14
         version: 5.2.14(20ce80513f02af8b893cd40f83470b50)
-      '@mmusic/design-tokens':
+      '@mmusic/ui-kit':
         specifier: workspace:*
-        version: link:../../packages/design-tokens
+        version: link:../../ui-kit
       expo:
         specifier: ~57.0.26
         version: 57.0.26(@babel/core@7.29.7(supports-color@8.1.1))(@expo/metro-runtime@57.0.16)(expo-router@57.0.24)(react-dom@19.2.3(react@19.2.3))(react-native-web@0.21.3(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-native-worklets@0.10.1(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.87.1(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(react-native@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.87.1(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(react-native@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.87.1(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1)(typescript@6.0.3)
@@ -367,9 +367,9 @@ importers:
       '@expo-google-fonts/plus-jakarta-sans':
         specifier: 0.4.2
         version: 0.4.2
-      '@mmusic/design-tokens':
+      '@mmusic/ui-kit':
         specifier: workspace:*
-        version: link:../../packages/design-tokens
+        version: link:../../ui-kit
       react:
         specifier: 19.2.3
         version: 19.2.3
@@ -405,7 +405,7 @@ importers:
         specifier: 8.3.2
         version: 8.3.2(@types/node@24.19.1)(esbuild@0.28.2)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)
 
-  packages/design-tokens:
+  ui-kit:
     devDependencies:
       typescript:
         specifier: ~5.7.3

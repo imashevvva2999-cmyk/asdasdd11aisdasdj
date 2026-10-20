@@ -38,7 +38,7 @@
 ```
 apps/mobile/                           # Expo + TypeScript + Expo Router (React Native)
 apps/api/                              # NestJS backend, /health живой
-packages/design-tokens/                # токены Nocturne Audio из DESIGN.md — источник истины для стилей
+ui-kit/tokens/                         # @mmusic/ui-kit/tokens — токены Nocturne Audio из DESIGN.md, источник истины для стилей
 docs/                                  # ТЗ и проектная документация
 stitch_mmusic_mobile_streaming_app/    # исходный дизайн (не изменяется)
 docker-compose.yml                     # Postgres + Redis для локальной разработки

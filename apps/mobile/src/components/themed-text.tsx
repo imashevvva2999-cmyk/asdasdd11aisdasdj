@@ -2,7 +2,7 @@ import { Text, type TextProps, type TextStyle } from 'react-native';
 
 import { resolveFontFamily } from '@/constants/fonts';
 import { Colors, TypeScale } from '@/constants/theme';
-import type { TypeScaleToken } from '@mmusic/design-tokens';
+import type { TypeScaleToken } from '@mmusic/ui-kit/tokens';
 
 export type ThemedTextProps = TextProps & {
   /** Nocturne Audio type-scale token (docs/screens.md §3.2). Defaults to body-md. */

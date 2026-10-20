@@ -13,6 +13,6 @@ pnpm --filter @mmusic/web lint
 pnpm --filter @mmusic/web verify:no-native   # после build
 ```
 
-- Дизайн-токены: `@mmusic/design-tokens` (только чтение) → CSS-переменные и классы `.t-*` (`src/styles/tokens.ts`).
+- Дизайн-токены: `@mmusic/ui-kit/tokens` (только чтение) → CSS-переменные и классы `.t-*` (`src/styles/tokens.ts`).
 - Шрифты: те же файлы Inter и Plus Jakarta Sans, что в мобильном приложении (`src/styles/fonts.ts`).
 - Иконки вкладок: Material Icons (Apache-2.0), временно встроенные SVG до набора в `ui-kit` (W2).

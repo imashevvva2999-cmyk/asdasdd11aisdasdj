@@ -1,7 +1,7 @@
 import { Text, type TextProps } from 'react-native';
 
 import { TypeScale } from '@/constants/theme';
-import type { TypeScaleToken } from '@mmusic/design-tokens';
+import type { TypeScaleToken } from '@mmusic/ui-kit/tokens';
 
 import { S, sf, type StitchWeight } from './theme';
 

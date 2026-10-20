@@ -1,7 +1,7 @@
 /**
  * Mmusic is dark-first / dark-only (DESIGN.md "Визуальный стиль"; OQ-34 — no light
  * theme planned). This module re-exports the single source of truth,
- * `@mmusic/design-tokens`, instead of maintaining a second copy of the palette —
+ * `@mmusic/ui-kit/tokens`, instead of maintaining a second copy of the palette —
  * do not add ad-hoc colors here.
  */
 
@@ -15,6 +15,6 @@ export {
   shadow as Shadow,
   pressState,
   artworkGlowOpacity,
-} from '@mmusic/design-tokens';
+} from '@mmusic/ui-kit/tokens';
 
 export const MaxContentWidth = 800;

@@ -1,7 +1,7 @@
 import { ActivityIndicator, StyleSheet, View, type GestureResponderEvent, type ViewStyle } from 'react-native';
 
 import { Colors, Radii, Spacing } from '@/constants/theme';
-import { shadow } from '@mmusic/design-tokens';
+import { shadow } from '@mmusic/ui-kit/tokens';
 
 import { AnimatedIcon } from './animated-icon';
 import { Icon } from './icon';

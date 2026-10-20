@@ -12,7 +12,7 @@ import {
 import { Colors, Radii, Spacing } from '@/constants/theme';
 import { goBack } from '@/lib/navigation';
 import { useAppStrings } from '@/state/locale-store';
-import { blur } from '@mmusic/design-tokens';
+import { blur } from '@mmusic/ui-kit/tokens';
 
 export type AppBottomSheetProps = {
   children: ReactNode;
