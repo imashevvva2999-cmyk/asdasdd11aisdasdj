@@ -38,7 +38,7 @@ const onKeyActivate = (action: () => void) => (e: KeyboardEvent) => {
 /**
  * S-01 Home — the approved A3 Refined Hybrid layout (docs/design-review/desktop-home/a3.html) with the app's own
  * catalog: MMusic Stars + For You, Trending Now, New Releases, Continue Listening, Mood & Vibes. Everything that
- * looks interactive plays through the shared player store; entries without a destination are shown, not faked.
+ * looks interactive plays through the shared player store or opens its page (albums, the artist radio tile), as in the app.
  */
 export function HomePage() {
   const { t } = useAppStrings();
@@ -97,7 +97,7 @@ export function HomePage() {
           <SectionHead title={t('forYou')} />
           <div className="list">
             {forYouTiles.map((tile) => (
-              <button key={tile.id} type="button" className="tile" onClick={() => playList(tile.trackIds)}>
+              <button key={tile.id} type="button" className="tile" onClick={() => (tile.artistId ? void navigate(`/artist/${tile.artistId}`) : playList(tile.trackIds))}>
                 <Artwork source={tile.coverUri} className="tile-art" />
                 <span className="t-label-md label ellipsis">{tile.title}</span>
               </button>
@@ -110,7 +110,7 @@ export function HomePage() {
         <SectionHead id="home-trending" title={t('trendingNow')} />
         <div className="cards">
           {trendingNowAlbumIds.map((id) => getAlbumById(id)).filter((a): a is Album => !!a).map((album) => (
-            <AlbumCard key={album.id} album={album} meta={`${album.trackCount} ${t('tracksCountSuffix')}`} onPlay={() => playList(album.trackIds)} saved={isSaved(album.id)} onToggleSaved={() => toggleSaved('album', album.id)} likeLabel={isSaved(album.id) ? t('likedStateLabel') : t('likeLabel')} />
+            <AlbumCard key={album.id} album={album} meta={`${album.trackCount} ${t('tracksCountSuffix')}`} onPlay={() => void navigate(`/album/${album.id}`)} saved={isSaved(album.id)} onToggleSaved={() => toggleSaved('album', album.id)} likeLabel={isSaved(album.id) ? t('likedStateLabel') : t('likeLabel')} />
           ))}
         </div>
       </section>
@@ -120,7 +120,7 @@ export function HomePage() {
         <div className="cards">
           {newReleases.map(({ albumId, label }) => {
             const album = getAlbumById(albumId);
-            return album ? <AlbumCard key={album.id} album={album} meta={label} surfaced onPlay={album.trackIds?.length ? () => playList(album.trackIds) : undefined} /> : null;
+            return album ? <AlbumCard key={album.id} album={album} meta={label} surfaced onPlay={() => void navigate(`/album/${album.id}`)} /> : null;
           })}
         </div>
       </section>
@@ -178,7 +178,7 @@ type AlbumCardProps = {
   album: Album;
   meta: string;
   surfaced?: boolean;
-  /** Plays the album; absent when the album has no tracks in the catalog (the card is then not interactive). */
+  /** Opens the album page (as in the app); absent → the card is not interactive. */
   onPlay?: () => void;
   saved?: boolean;
   onToggleSaved?: () => void;
