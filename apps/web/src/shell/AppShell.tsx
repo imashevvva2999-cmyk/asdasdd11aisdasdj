@@ -1,36 +1,42 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet } from 'react-router';
 
+import type { AppStringKey } from '@mmusic/core/lib/i18n';
 import { Brand, Icon, type IconName } from '@mmusic/ui-kit/web';
 
-// W1 labels (RU default, as in the app); W2 moves them to the shared i18n strings.
-const TABS: Array<{ to: string; label: string; icon: IconName }> = [
-  { to: '/home', label: 'Главная', icon: 'home' },
-  { to: '/search', label: 'Поиск', icon: 'search' },
-  { to: '/library', label: 'Библиотека', icon: 'library-music' },
+import { useAppStrings, useWebStrings } from '@/i18n/locale';
+
+// Labels come from the shared app strings (RU by default, the saved language otherwise).
+const TABS: Array<{ to: string; label: AppStringKey; icon: IconName }> = [
+  { to: '/home', label: 'homeTab', icon: 'home' },
+  { to: '/search', label: 'searchTab', icon: 'search' },
+  { to: '/library', label: 'libraryTab', icon: 'library-music' },
 ];
-const PROFILE_LABEL = 'Профиль';
 
 const tabClass = ({ isActive }: { isActive: boolean }) => (isActive ? 'tab-link active' : 'tab-link');
 const profileClass = ({ isActive }: { isActive: boolean }) => (isActive ? 'profile-link active' : 'profile-link');
 
 function BrandLink() {
+  const { t } = useAppStrings();
   return (
-    <Link to="/home" className="brand" aria-label="Mmusic — Главная">
+    <Link to="/home" className="brand" aria-label={`Mmusic — ${t('homeTab')}`}>
       <Brand />
     </Link>
   );
 }
 
 function ProfileLink({ size }: { size: number }) {
+  const { t } = useAppStrings();
   return (
-    <NavLink to="/profile" className={profileClass} aria-label={PROFILE_LABEL}>
+    <NavLink to="/profile" className={profileClass} aria-label={t('profileTitle')}>
       <Icon name="person" size={size} />
     </NavLink>
   );
 }
 
 export function AppShell() {
+  const { t } = useAppStrings();
+  const web = useWebStrings();
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -42,17 +48,17 @@ export function AppShell() {
   return (
     <>
       <a className="skip-link" href="#main">
-        Перейти к содержимому
+        {web('skipToContent')}
       </a>
       <header className="site-head" data-scrolled={scrolled}>
         <div className="top-pill glass">
           <BrandLink />
           <span className="divider" aria-hidden="true" />
-          <nav className="top-tabs" aria-label="Разделы">
+          <nav className="top-tabs" aria-label={web('sectionsNav')}>
             {TABS.map((tab) => (
               <NavLink key={tab.to} to={tab.to} className={tabClass}>
                 <Icon name={tab.icon} size={20} />
-                <span>{tab.label}</span>
+                <span>{t(tab.label)}</span>
               </NavLink>
             ))}
           </nav>
@@ -68,11 +74,11 @@ export function AppShell() {
         <Outlet />
       </main>
 
-      <nav className="bottom-nav glass" aria-label="Разделы">
+      <nav className="bottom-nav glass" aria-label={web('sectionsNav')}>
         {TABS.map((tab) => (
           <NavLink key={tab.to} to={tab.to} className={tabClass}>
             <Icon name={tab.icon} size={22} />
-            <span>{tab.label}</span>
+            <span>{t(tab.label)}</span>
           </NavLink>
         ))}
       </nav>

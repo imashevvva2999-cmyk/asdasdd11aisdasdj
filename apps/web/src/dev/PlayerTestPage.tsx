@@ -9,11 +9,13 @@ import { playPosition, usePlayerStore } from '@mmusic/core/state/player-store';
 import { artworkUrl } from '@/assets/artwork-assets';
 import { audioUrlForTrack } from '@/assets/audio-assets';
 import { startAudio } from '@/audio/web-audio';
+import { useAppStrings } from '@/i18n/locale';
 
 /**
  * DEVELOPMENT ONLY (W2.4c-3): /dev/player, registered in src/router.tsx behind `import.meta.env.DEV`, so it is
  * absent from production builds and from the site navigation. A functional test bench for the website audio
  * start-up — playback, queue, repeat/shuffle, liked tracks, Media Session — not the W3 player design.
+ * Also switches the saved website language (W3.0), until Profile → Language exists on the website.
  */
 const playable = tracks.filter((t) => audioUrlForTrack(t.id) !== undefined);
 const playableIds = playable.map((t) => t.id);
@@ -36,6 +38,7 @@ export function PlayerTestPage() {
   }, []);
 
   const s = usePlayerStore();
+  const { locale, setLocale } = useAppStrings();
   const track = s.currentTrack();
   const session = useMediaSessionSnapshot();
   const duration = s.durationSec ?? track?.durationSec ?? 0;
@@ -64,6 +67,9 @@ export function PlayerTestPage() {
             {track && s.isLiked(track.id) ? 'Unlike' : 'Like'}
           </button>
           <button type="button" style={button} onClick={() => s.seekTo(s.progressSec + 30)}>+30 s</button>
+          <button type="button" style={button} onClick={() => setLocale(locale === 'ru' ? 'en' : 'ru')} data-testid="language">
+            Language: {locale.toUpperCase()}
+          </button>
         </div>
         <label style={row}>
           Seek
