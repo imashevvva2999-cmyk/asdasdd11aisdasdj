@@ -12,7 +12,7 @@ import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const SOURCE_DIRS = ['lib', 'audio'];
+const SOURCE_DIRS = ['lib', 'audio', 'demo', 'promotion'];
 const ALLOWED_PACKAGES = []; // e.g. 'zustand', '@mmusic/ui-kit/tokens' — added per migration group, with approval
 
 const walk = (dir) =>
@@ -51,7 +51,7 @@ for (const file of files) {
       check(`${name}: package "${spec}" is allowed in core`, ALLOWED_PACKAGES.includes(spec));
     }
   }
-  check(`${name}: no "@/" app alias, React Native, Expo or DOM-only code`, !/['"](@\/|react-native|expo|@expo\/|react-dom|@mmusic\/ui-kit\/web)/.test(code));
+  check(`${name}: no "@/" app alias, React Native, Expo or DOM-only code`, !/['"](@\/|react-native(?:[-/][\w./-]*)?['"]|expo(?:-[\w-]+)?(?:\/[\w./-]*)?['"]|@expo\/|react-dom|@mmusic\/ui-kit\/web)/.test(code));
   graph.set(name, deps);
 }
 
