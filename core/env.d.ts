@@ -12,3 +12,19 @@ declare const __DEV__: boolean | undefined;
  */
 declare function setTimeout(handler: (...args: never[]) => void, timeout?: number): unknown;
 declare function clearTimeout(handle: unknown): void;
+// The browser audio engine's status ticker.
+declare function setInterval(handler: () => void, timeout?: number): unknown;
+declare function clearInterval(handle: unknown): void;
+
+/**
+ * Event types, only as far as audio/browser-audio-engine.ts uses them: it is handed an <audio> element and a gesture
+ * target by the app (it never touches the DOM itself), listens with add/removeEventListener (optionally in the
+ * capture phase) and reads `event.type`. Type declarations only — no runtime code.
+ */
+interface Event {
+  readonly type: string;
+}
+interface EventTarget {
+  addEventListener(type: string, listener: (event: Event) => void, useCapture?: boolean): void;
+  removeEventListener(type: string, listener: (event: Event) => void, useCapture?: boolean): void;
+}
