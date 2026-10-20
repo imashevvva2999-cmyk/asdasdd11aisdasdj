@@ -5,3 +5,9 @@
  * Only core's own typecheck reads this file; inside the app, React Native's declaration applies.
  */
 declare const __DEV__: boolean | undefined;
+
+/**
+ * Timers exist in every runtime core targets (React Native, browsers, Node), but core's typecheck loads no DOM or
+ * Node types — so only what core uses is declared, deliberately minimal (stores simulate processing delays with it).
+ */
+declare function setTimeout(handler: (...args: never[]) => void, timeout?: number): unknown;

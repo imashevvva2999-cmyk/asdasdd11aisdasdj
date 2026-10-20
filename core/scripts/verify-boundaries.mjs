@@ -14,7 +14,8 @@ import { fileURLToPath } from 'node:url';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SOURCE_DIRS = ['audio', 'constants', 'demo', 'lib', 'mocks', 'platform', 'promotion', 'state'];
 // Packages core may import, and where. Zustand (5.0.15, one shared copy; React is a peer) is for stores only (W2.4b group 6).
-const ALLOWED_PACKAGES = { zustand: ['state/'], 'zustand/middleware': ['state/'] };
+// demo/guest-mode.ts is the Guest Preview flag store (W2.4b group 6.2), so it is named explicitly.
+const ALLOWED_PACKAGES = { zustand: ['state/', 'demo/guest-mode.ts'], 'zustand/middleware': ['state/'] };
 const packageAllowed = (spec, file) => (ALLOWED_PACKAGES[spec] ?? []).some((dir) => file.startsWith(dir));
 
 const walk = (dir) =>
