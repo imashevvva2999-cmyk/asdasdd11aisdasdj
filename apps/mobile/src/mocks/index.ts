@@ -1,14 +1,52 @@
-export * from './types';
-export { artists, getArtistById, addMockArtist } from './artists';
-export { albums, getAlbumById } from './albums';
-export { tracks, getTrackById, addMockTrack } from './tracks';
-export { playlists, getPlaylistById, playlistDurationLabel, playlistUpdatedLabel } from './playlists';
-export { genres, featuredGenre, getGenreById, genreDetails, genreDescriptionsRu } from './genres';
-export { moodMixes } from './moods';
-export { forYouTiles, heroPlaylistId, trendingNowAlbumIds, newReleases, jumpBackInTrackIds } from './home';
-export { initialRecentSearches, trendingSearches } from './search';
-export { libraryItems } from './library';
-export { lyricsByTrackId, getLyricsForTrack } from './lyrics';
-export type { LyricLine, LyricsSource, TrackLyrics } from './lyrics';
-export { initialSupportHistory, quickDonationAmountsKgs } from './support';
-export { currentUser } from './user';
+// Moved to @mmusic/core (W2.4b group 4); this path keeps existing imports working.
+export {
+  addMockArtist,
+  addMockTrack,
+  albums,
+  artists,
+  currentUser,
+  featuredGenre,
+  forYouTiles,
+  genreDescriptionsRu,
+  genreDetails,
+  genres,
+  getAlbumById,
+  getArtistById,
+  getGenreById,
+  getLyricsForTrack,
+  getPlaylistById,
+  getTrackById,
+  heroPlaylistId,
+  initialRecentSearches,
+  initialSupportHistory,
+  jumpBackInTrackIds,
+  libraryItems,
+  lyricsByTrackId,
+  moodMixes,
+  newReleases,
+  playlistDurationLabel,
+  playlistUpdatedLabel,
+  playlists,
+  quickDonationAmountsKgs,
+  tracks,
+  trendingNowAlbumIds,
+  trendingSearches,
+  type Album,
+  type AlbumId,
+  type Artist,
+  type ArtistId,
+  type CurrentUser,
+  type Genre,
+  type GenreId,
+  type LibraryItem,
+  type LibraryItemKind,
+  type LyricLine,
+  type LyricsSource,
+  type MoodMix,
+  type Playlist,
+  type PlaylistId,
+  type SupportHistoryEntry,
+  type Track,
+  type TrackId,
+  type TrackLyrics,
+} from '@mmusic/core/mocks';

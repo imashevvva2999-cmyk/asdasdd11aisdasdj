@@ -10,5 +10,5 @@
     "skipLibCheck": true,
     "types": []
   },
-  "include": ["lib", "audio", "demo", "promotion"]
+  "include": ["env.d.ts", "audio", "constants", "demo", "lib", "mocks", "promotion"]
 }

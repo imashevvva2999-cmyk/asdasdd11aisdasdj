@@ -96,9 +96,9 @@ check('every audio key names a distinct file', new Set(audioKeys.map(([, key]) =
 
 // --- Dev-only assets (rights not confirmed) stay behind __DEV__ ---------------
 const DEV_ONLY = [
-  ['src/constants/stitch-artwork.ts', "oshondo: 'asset:tracks/mirbek-atabekov-oshondo.png'"],
+  ['../../core/constants/stitch-artwork.ts', "oshondo: 'asset:tracks/mirbek-atabekov-oshondo.png'"],
   ['src/constants/artwork-sources.ts', "'asset:tracks/mirbek-atabekov-oshondo.png': safeRequire"],
-  ['src/audio/demo-audio-keys.ts', "oshondo: 'audio:kyrgyz/oshondo.mp3'"],
+  ['../../core/audio/demo-audio-keys.ts', "oshondo: 'audio:kyrgyz/oshondo.mp3'"],
   ['src/audio/demo-sources.ts', "'audio:kyrgyz/oshondo.mp3': require"],
 ];
 for (const [file, entry] of DEV_ONLY) {

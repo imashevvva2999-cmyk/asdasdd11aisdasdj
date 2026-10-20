@@ -5,7 +5,10 @@
   "description": "Shared Mmusic logic for the Expo app and the Vite website: pure TypeScript only — no React Native, Expo, DOM components or bundled assets",
   "sideEffects": false,
   "exports": {
+    "./constants/*": "./constants/*.ts",
     "./lib/*": "./lib/*.ts",
+    "./mocks": "./mocks/index.ts",
+    "./mocks/*": "./mocks/*.ts",
     "./audio/*": "./audio/*.ts",
     "./demo/*": "./demo/*.ts",
     "./promotion/*": "./promotion/*.ts",

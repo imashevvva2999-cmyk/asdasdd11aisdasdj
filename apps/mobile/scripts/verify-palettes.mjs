@@ -33,7 +33,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const HEX = /^#[0-9a-f]{6}$/;
 
 // The generated path maps must list exactly the keys of the artwork maps they mirror.
-const artworkSource = readFileSync(join(root, 'src/constants/stitch-artwork.ts'), 'utf8');
+const artworkSource = readFileSync(join(root, '../../core/constants/stitch-artwork.ts'), 'utf8'); // the source, not the app's re-export
 for (const [mapName, paths] of Object.entries(artworkPathsByMap)) {
   const block = artworkSource.split(`export const ${mapName}`)[1]?.split('};')[0] ?? '';
   // Also matches dev-only entries spread in as `...(cond ? { key: 'asset:…' } : {})`.

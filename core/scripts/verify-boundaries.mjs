@@ -12,7 +12,7 @@ import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const SOURCE_DIRS = ['lib', 'audio', 'demo', 'promotion'];
+const SOURCE_DIRS = ['audio', 'constants', 'demo', 'lib', 'mocks', 'promotion'];
 const ALLOWED_PACKAGES = []; // e.g. 'zustand', '@mmusic/ui-kit/tokens' — added per migration group, with approval
 
 const walk = (dir) =>
@@ -46,12 +46,18 @@ for (const file of files) {
       const resolved = [target, `${target}.ts`, join(target, 'index.ts')].find((p) => existsSync(p) && statSync(p).isFile());
       check(`${name}: "${spec}" stays inside core and resolves`, Boolean(resolved) && !relative(root, resolved).startsWith('..'));
       check(`${name}: "${spec}" is not a bundled asset`, !/\.(jpe?g|png|webp|gif|mp3|ttf|otf)$/.test(spec));
-      if (resolved) deps.push(relative(root, resolved));
+      // Type-only imports are erased at build time, so they cannot form a runtime cycle.
+      if (resolved && !/^(?:import|export)\s+type\s/.test(m[0])) deps.push(relative(root, resolved));
     } else {
       check(`${name}: package "${spec}" is allowed in core`, ALLOWED_PACKAGES.includes(spec));
     }
   }
   check(`${name}: no "@/" app alias, React Native, Expo or DOM-only code`, !/['"](@\/|react-native(?:[-/][\w./-]*)?['"]|expo(?:-[\w-]+)?(?:\/[\w./-]*)?['"]|@expo\/|react-dom|@mmusic\/ui-kit\/web)/.test(code));
+  // Development-only content must be fail-closed: a bundler that does not define __DEV__ gets production data.
+  // Outside comments, every __DEV__ must sit in exactly `typeof __DEV__ !== 'undefined' && __DEV__`.
+  const uncommented = code.replace(/(^|[^:\\])\/\/.*$/gm, '$1');
+  check(`${name}: every __DEV__ check is fail-closed (typeof __DEV__ !== 'undefined' && __DEV__)`,
+    !/__DEV__/.test(uncommented.replace(/typeof __DEV__ !== 'undefined' && __DEV__/g, '')));
   graph.set(name, deps);
 }
 
@@ -67,7 +73,7 @@ function visit(node, path) {
   state.set(node, 'done');
 }
 for (const node of graph.keys()) if (!state.has(node)) visit(node, [node]);
-check(`no import cycles inside core (${graph.size} modules)`, cycles.length === 0);
+check(`no runtime import cycles inside core (${graph.size} modules)`, cycles.length === 0);
 for (const cycle of cycles) console.error(`  cycle: ${cycle}`);
 
 if (failures > 0) {
