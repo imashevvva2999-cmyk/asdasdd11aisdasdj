@@ -24,11 +24,8 @@ a { color: inherit; }
 }
 .skip-link:focus { top: 16px; }
 
-/* Brand: "Mmusic" + five coral bars (approved mark) */
+/* Brand link around the shared ui-kit Brand mark ("Mmusic" + five coral bars, styled in ui-kit/web) */
 .brand { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: var(--text-high); }
-.brand-bars { display: inline-flex; align-items: center; gap: 2px; height: 20px; }
-.brand-bars i { width: 2.5px; border-radius: 2px; background: var(--primary); animation: brand-bar var(--d) ease-in-out var(--delay) infinite alternate; }
-@keyframes brand-bar { from { transform: scaleY(1); } to { transform: scaleY(0.45); } }
 
 /* Desktop / tablet header: its own sticky band so the glass pill never floats over content */
 .site-head {
@@ -72,7 +69,7 @@ a { color: inherit; }
 
 .profile-link {
   width: 48px; height: 48px; margin-left: 2px; border-radius: var(--radius-full);
-  display: grid; place-items: center; color: var(--text-high);
+  display: grid; place-items: center; color: var(--text-high); text-decoration: none;
   background: rgba(255, 255, 255, 0.06); transition: background-color 0.15s ease, color 0.15s ease;
 }
 .profile-link:hover { background: var(--surface-l3); }
@@ -125,6 +122,5 @@ a { color: inherit; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .brand-bars i { animation: none; }
   *, *::before, *::after { transition-duration: 0.01ms !important; }
 }

@@ -13,8 +13,6 @@
     "verify:no-native": "node scripts/verify-no-native.mjs"
   },
   "dependencies": {
-    "@expo-google-fonts/inter": "0.4.2",
-    "@expo-google-fonts/plus-jakarta-sans": "0.4.2",
     "@mmusic/ui-kit": "workspace:*",
     "react": "19.2.3",
     "react-dom": "19.2.3",

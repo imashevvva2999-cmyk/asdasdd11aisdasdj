@@ -6,7 +6,7 @@ import inter700 from '@expo-google-fonts/inter/700Bold/Inter_700Bold.ttf';
 import jakarta600 from '@expo-google-fonts/plus-jakarta-sans/600SemiBold/PlusJakartaSans_600SemiBold.ttf';
 import jakarta700 from '@expo-google-fonts/plus-jakarta-sans/700Bold/PlusJakartaSans_700Bold.ttf';
 import jakarta800 from '@expo-google-fonts/plus-jakarta-sans/800ExtraBold/PlusJakartaSans_800ExtraBold.ttf';
-import { fontFamilies } from '@mmusic/ui-kit/tokens';
+import { fontFamilies } from '../../tokens';
 
 const FACES: Array<[family: string, weight: number, url: string]> = [
   [fontFamilies.body, 400, inter400],
