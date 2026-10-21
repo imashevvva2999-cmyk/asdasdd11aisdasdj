@@ -22,6 +22,7 @@ import { useAppStrings } from '@/i18n/locale';
 import { CoverCard, EmptyState, ListRow, Page, PageHeader } from '@/ui';
 
 import { BrowseTrackList, formatListeners, PlayButtons, useBrowseToast, usePageTitle, useSongCount } from './shared';
+import { useBrowseStrings } from './strings';
 
 const albumTypeKey = (type: Album['type']) => (type === 'ep' ? 'albumTypeEp' : type === 'single' ? 'albumTypeSingle' : 'albumTypeAlbum') satisfies AppStringKey;
 const resultsUrl = (q: string) => (q.trim() ? `/search/results?q=${encodeURIComponent(q.trim())}` : '/search/results');
@@ -124,7 +125,8 @@ export function SearchPage() {
       </section>
 
       <section aria-labelledby="br-browse">
-        <SectionHead id="br-browse" title={t('browseAll')} action={{ label: t('allGenresTitle'), to: '/search/all-genres' }} />
+        {/* Every genre and mood card is in this grid, so no separate "all genres" link here. */}
+        <SectionHead id="br-browse" title={t('browseAll')} />
         <FeaturedBanner />
         <div className="br-genres">
           {genres.map((genre) => (
@@ -346,6 +348,7 @@ export function AllGenresPage() {
 export function GenrePage() {
   const { id = '' } = useParams();
   const { t, locale } = useAppStrings();
+  const ts = useBrowseStrings();
   const genre = getGenreById(id);
   const detail = genreDetails[id];
   const followed = useLibraryStore((s) => s.followedGenreIds.has(id));
@@ -423,11 +426,11 @@ export function GenrePage() {
       </section>
 
       <section aria-labelledby="br-gart">
-        <SectionHead id="br-gart" title={t('genrePioneeringArtistsTitle')} />
-        <p className="br-sub medium">{t('genrePioneeringArtistsSubtitle')}</p>
+        <SectionHead id="br-gart" title={ts('genreArtistsTitle')} />
+        <p className="br-sub medium">{ts('genreArtistsSubtitle')}</p>
         <div className="ui-grid br-grid-sm">
           {artists.slice(0, 4).map((a) => (
-            <CoverCard key={a.id} round cover={a.photoUri} title={a.name} subtitle={a.monthlyListeners ? `${(a.monthlyListeners / 1_000_000).toFixed(1)}M ${t('fansSuffix')}` : undefined} to={`/artist/${a.id}`} />
+            <CoverCard key={a.id} round cover={a.photoUri} title={a.name} to={`/artist/${a.id}`} />
           ))}
         </div>
       </section>

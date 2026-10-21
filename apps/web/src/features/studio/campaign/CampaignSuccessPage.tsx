@@ -139,7 +139,7 @@ export function CampaignSuccessPage() {
       </section>
 
       <div className="cp-actions">
-        <button type="button" className="ui-btn cp-cta" onClick={() => void navigate('/profile/artist/campaign/statistics')}>
+        <button type="button" className="ui-btn cp-cta" onClick={() => void navigate(latest ? `/profile/artist/campaign/statistics?campaign=${encodeURIComponent(latest.id)}` : '/profile/artist/campaign/statistics')}>
           <Icon name="insights" size={20} />
           {s.viewAnalytics}
         </button>

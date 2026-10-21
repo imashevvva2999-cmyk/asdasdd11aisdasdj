@@ -97,6 +97,12 @@
 .st-dialog-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
 /* Banners (demo account / guest preview) */
+/* "Мой кабинет" / "Demo Artist" mode switch */
+.st-modes { display: inline-flex; gap: 4px; padding: 4px; margin-bottom: 16px; border-radius: var(--radius-full); background: var(--surface-l1); border: 1px solid var(--border); max-width: 100%; }
+.st-mode { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 0 18px; border-radius: var(--radius-full); color: var(--text-medium); text-decoration: none; font: 600 14px/1 "Inter", system-ui, sans-serif; white-space: nowrap; }
+.st-mode:hover { color: var(--text-high); }
+.st-mode.on { background: var(--primary); color: #fff; }
+@media (max-width: 767px) { .st-modes { display: flex; } .st-mode { flex: 1; padding: 0 10px; font-size: 13px; } }
 .st-banner { display: flex; align-items: center; gap: 8px; padding: 8px 14px; margin-bottom: 16px; border-radius: var(--radius-md); background: rgba(245, 166, 35, 0.12); color: var(--secondary); font: 600 12px/16px "Inter", system-ui, sans-serif; }
 .st-banner .text { flex: 1; min-width: 0; }
 .st-banner a, .st-banner .link { color: var(--primary); text-decoration: none; font: inherit; background: none; border: 0; padding: 0; cursor: pointer; }

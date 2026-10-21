@@ -1,7 +1,7 @@
 // First: configures @mmusic/core storage before the persisted demo-session / dashboard-locale stores are used.
 import '@/platform/storage';
 
-import { Link, NavLink, Outlet } from 'react-router';
+import { Link, Navigate, NavLink, Outlet, useLocation } from 'react-router';
 
 import { artistBase, useIsGuestPreview } from '@mmusic/core/demo/guest-mode';
 import type { DashboardStringKey } from '@mmusic/core/lib/dashboard-i18n';
@@ -13,6 +13,7 @@ import { Icon, type IconName } from '@mmusic/ui-kit/web';
 import { useAppStrings } from '@/i18n/locale';
 import { Page, PageHeader } from '@/ui';
 
+import { DashboardModeSwitch, readDashboardMode } from '../DashboardModeSwitch';
 import { useDemoStrings, usePageTitle } from '../kit';
 
 const TABS: { path: string; label: DashboardStringKey; icon: IconName }[] = [
@@ -61,6 +62,8 @@ export function DashboardLayout() {
   const guest = useIsGuestPreview();
   const artist = useArtistStore((s) => s.artist);
   const base = artistBase(guest).dashboard;
+  // The open tab ('' | '/analytics' | …), kept when switching between "Мой кабинет" and "Demo Artist".
+  const tab = useLocation().pathname.slice(base.length);
   usePageTitle(t('artistDashboardTitle'));
 
   const tabs = (
@@ -77,12 +80,16 @@ export function DashboardLayout() {
   if (guest) {
     return (
       <>
+        <DashboardModeSwitch tab={tab} />
         <DemoBanner />
         {tabs}
         <Outlet />
       </>
     );
   }
+
+  // Remembered "Demo Artist" mode: entering the dashboard (or refreshing it) opens the demo until switched back.
+  if (readDashboardMode() === 'demo') return <Navigate to={`/demo/artist${tab}`} replace />;
 
   return (
     <Page>
@@ -97,6 +104,7 @@ export function DashboardLayout() {
           ) : undefined
         }
       />
+      <DashboardModeSwitch tab={tab} />
       <DemoBanner />
       {tabs}
       <Outlet />

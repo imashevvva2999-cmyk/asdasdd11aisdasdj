@@ -1,22 +1,16 @@
 // First: configures @mmusic/core storage before the persisted player store is used.
 import '@/platform/storage';
 
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { Link } from 'react-router';
 
 import type { LocalOrRemoteImage } from '@mmusic/core/constants/stitch-artwork';
 import { getArtistById, getPlaylistById, getTrackById, heroPlaylistId, type Artist } from '@mmusic/core/mocks';
-import type { AppLocale } from '@mmusic/core/state/locale-store';
 import { Icon } from '@mmusic/ui-kit/web';
 
 import { Artwork } from '@/components/Artwork';
+import { ParticleWave } from '@/components/ParticleWave';
 import { useAppStrings } from '@/i18n/locale';
-
-/** Website-only hero copy (desktop editorial hero; the app has no counterpart). */
-const HERO_STRINGS = {
-  ru: { lead: 'Музыка,', accent: 'созданная', tail: 'для тебя', body: 'Персональные подборки, свежие релизы и артисты Кыргызстана — в одном месте.', explore: 'Найти музыку', artists: 'Артисты' },
-  en: { lead: 'Discover', accent: 'music made', tail: 'for you', body: 'Personal mixes, fresh releases and artists from Kyrgyzstan — all in one place.', explore: 'Explore music', artists: 'Artists' },
-} as const satisfies Record<AppLocale, Record<string, string>>;
 
 /** Artists on the wheel: catalog artists with a photo, in this order. */
 const WHEEL_ARTIST_IDS = ['solaris-echo', 'maya-lin', 'kaelen', 'clover-and-the-pulse', 'arlo', 'tate-vane'];
@@ -32,13 +26,12 @@ function wedge(from: number, to: number): string {
 }
 
 /**
- * Desktop-only editorial hero (≥1024 px; hidden below, where the approved mobile Home is unchanged): a bold
- * discovery message with the MMusic Stars start button, and a wheel of catalog artists around the Stars cover.
- * Every segment opens its artist page; the centre starts MMusic Stars (the same action as the Stars card).
+ * Desktop-only hero (rendered by Home only at ≥1024 px; below that the approved mobile Home is unchanged): "Для вас"
+ * (passed in as `children`) in the upper-left, and on the right the wheel of catalog artists around the particle-wave
+ * MMusic Stars core. Every segment opens its artist page; the centre starts MMusic Stars (the Stars card's action).
  */
-export function DesktopHero({ onStartStars }: { onStartStars: () => void }) {
-  const { t, locale } = useAppStrings();
-  const s = HERO_STRINGS[locale];
+export function DesktopHero({ onStartStars, waveTrackId, children }: { onStartStars: () => void; waveTrackId?: string; children: ReactNode }) {
+  const { t } = useAppStrings();
   const hero = getPlaylistById(heroPlaylistId);
   const wheel = WHEEL_ARTIST_IDS.map((id) => getArtistById(id)).filter((a): a is Artist & { photoUri: LocalOrRemoteImage } => !!a?.photoUri);
   const step = 360 / Math.max(1, wheel.length);
@@ -46,39 +39,7 @@ export function DesktopHero({ onStartStars }: { onStartStars: () => void }) {
 
   return (
     <section className="d-hero" aria-label={STARS_TITLE}>
-      <div className="d-hero-copy">
-        <span className="d-hero-eq" aria-hidden="true">
-          <Icon name="graphic-eq" size={40} />
-        </span>
-        <h1 className="d-hero-title">
-          {s.lead} <em>{s.accent}</em> {s.tail}
-        </h1>
-        <p className="d-hero-body">{s.body}</p>
-        <div className="d-hero-actions">
-          <button type="button" className="d-hero-cta" onClick={onStartStars}>
-            <span className="d-hero-cta-text">
-              <span className="d-hero-cta-eyebrow">{STARS_TITLE}</span>
-              <span>{t('starsCtaLabel')}</span>
-            </span>
-            <span className="d-hero-cta-icon" aria-hidden="true">
-              <Icon name="play-arrow" size={26} />
-            </span>
-          </button>
-          <Link className="d-hero-explore" to="/search">
-            <Icon name="search" size={20} />
-            <span>{s.explore}</span>
-          </Link>
-        </div>
-        <ul className="d-hero-faces" aria-label={s.artists}>
-          {wheel.slice(0, 4).map((artist) => (
-            <li key={artist.id}>
-              <Link to={`/artist/${artist.id}`} aria-label={artist.name} title={artist.name}>
-                <Artwork source={artist.photoUri} />
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </div>
+      <div className="d-hero-side">{children}</div>
 
       <div className="d-wheel-wrap">
         {ringText && (
@@ -104,7 +65,8 @@ export function DesktopHero({ onStartStars }: { onStartStars: () => void }) {
             );
           })}
           <button type="button" className="d-wheel-core" aria-label={`${STARS_TITLE} — ${t('starsCtaLabel')}`} onClick={onStartStars}>
-            <Artwork source={hero?.coverUri} loading="eager" />
+            {/* The approved particle wave lives here on desktop (the Stars card has it below 1024 px; never both). */}
+            <ParticleWave cover={hero?.coverUri} trackId={waveTrackId} className="artwork" />
             <span className="d-wheel-core-label">
               <span className="d-wheel-core-title">{STARS_TITLE}</span>
               <span className="d-wheel-core-play" aria-hidden="true">

@@ -1,16 +1,22 @@
 // First: configures @mmusic/core storage before the persisted player store is used.
 import '@/platform/storage';
 
-import { useEffect, type CSSProperties, type KeyboardEvent } from 'react';
+import { useEffect, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { useNavigate } from 'react-router';
 
 import { forYouTiles, getAlbumById, getPlaylistById, getTrackById, heroPlaylistId, jumpBackInTrackIds, moodMixes, newReleases, trendingNowAlbumIds, type Album } from '@mmusic/core/mocks';
 import { useLibraryStore } from '@mmusic/core/state/library-store';
 import { usePlayerStore } from '@mmusic/core/state/player-store';
+import { GalaxyScene } from '@mmusic/ui-kit/visuals/living-moods/scenes/galaxy-scene';
+import { LiquidChromeScene } from '@mmusic/ui-kit/visuals/living-moods/scenes/liquid-chrome-scene';
+import { MetaBallsScene } from '@mmusic/ui-kit/visuals/living-moods/scenes/meta-balls-scene';
+import { OrbScene } from '@mmusic/ui-kit/visuals/living-moods/scenes/orb-scene';
 import { Icon, type IconName } from '@mmusic/ui-kit/web';
 
 import { Artwork } from '@/components/Artwork';
 import { Backdrop } from '@/components/Backdrop';
+import { LivingMood, type SceneEngineCtor } from '@/components/LivingMood';
+import { ParticleWave } from '@/components/ParticleWave';
 import { SectionHead } from '@/components/SectionHead';
 import { useAppStrings } from '@/i18n/locale';
 
@@ -21,13 +27,26 @@ import './desktop.css';
 /** The hero's title, as in the approved app and A3 (a brand name, not translated). */
 const STARS_TITLE = 'MMusic Stars';
 const MOOD_TINT: Record<string, string> = { primary: 'var(--primary)', secondary: 'var(--secondary)', tertiary: 'var(--tertiary)' };
-/** Gradient behind each mood card (the colours of its approved scene; the WebGL scenes come after the demo). */
-const MOOD_COLORS: Record<string, [string, string]> = {
-  'late-night': ['#0a0e16', '#162038'],
-  melancholy: ['#1a1a1f', '#3a3a42'],
-  'high-energy': ['#120a16', '#2a1638'],
-  'flow-state': ['#1a1014', '#3a1f28'],
+/** The app's Living Moods scene per mood card (mobile home MOOD_SCENES) and its approved gradient fallback. */
+const MOOD_SCENES: Record<string, { scene: SceneEngineCtor; colors: [string, string] }> = {
+  'late-night': { scene: GalaxyScene, colors: ['#0a0e16', '#162038'] },
+  melancholy: { scene: LiquidChromeScene, colors: ['#1a1a1f', '#3a3a42'] },
+  'high-energy': { scene: OrbScene, colors: ['#120a16', '#2a1638'] },
+  'flow-state': { scene: MetaBallsScene, colors: ['#1a1014', '#3a1f28'] },
 };
+const DESKTOP_QUERY = '(min-width: 1024px)';
+
+/** Desktop (≥1024 px) vs phone/tablet, so only one particle-wave WebGL context exists: the desktop hero or the Stars card. */
+function useIsDesktop() {
+  const [desktop, setDesktop] = useState(() => window.matchMedia(DESKTOP_QUERY).matches);
+  useEffect(() => {
+    const query = window.matchMedia(DESKTOP_QUERY);
+    const onChange = () => setDesktop(query.matches);
+    query.addEventListener('change', onChange);
+    return () => query.removeEventListener('change', onChange);
+  }, []);
+  return desktop;
+}
 
 /** Enter / Space activate a role="button" element, like a native button. */
 const onKeyActivate = (action: () => void) => (e: KeyboardEvent) => {
@@ -52,6 +71,8 @@ export function HomePage() {
   const toggleSaved = useLibraryStore((s) => s.toggleSaved);
   const hero = getPlaylistById(heroPlaylistId);
   const navigate = useNavigate();
+  const isDesktop = useIsDesktop();
+  const waveTrackId = currentTrackId ?? hero?.trackIds?.[0];
 
   useEffect(() => {
     document.title = `${t('homeTab')} – Mmusic`;
@@ -77,41 +98,54 @@ export function HomePage() {
   };
   const isSaved = (albumId: string) => savedItems.some((item) => item.kind === 'album' && item.refId === albumId);
 
+  // "Для вас": in the desktop hero's upper-left (next to the wheel) on ≥1024 px, under the Stars card below that.
+  const forYou = (
+    <div className="area-foryou">
+      <SectionHead title={t('forYou')} />
+      <div className="list">
+        {forYouTiles.map((tile) => (
+          <button key={tile.id} type="button" className="tile" onClick={() => (tile.artistId ? void navigate(`/artist/${tile.artistId}`) : playList(tile.trackIds))}>
+            <Artwork source={tile.coverUri} className="tile-art" />
+            <span className="label">
+              <span className="label-title">{tile.title}</span>
+              {tile.artistId && <span className="d-kind">{t('artistLabel')}</span>}
+            </span>
+            {/* Artist tiles open the artist page (as in the app): a profile badge, not a play button. */}
+            <span className={tile.artistId ? 'd-play artist' : 'd-play'} aria-hidden="true">
+              <Icon name={tile.artistId ? 'person' : 'play-arrow'} size={20} />
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
   return (
     <div className="home">
       <Backdrop />
 
-      <DesktopHero onStartStars={startStars} />
-
-      <section className="hero" aria-label={STARS_TITLE}>
-        <div className="area-stars">
-          <button type="button" className="stars" aria-label={`${STARS_TITLE} — ${t('starsCtaLabel')}`} onClick={startStars}>
-            <span className="art">
-              <Artwork source={hero?.coverUri} loading="eager" />
-            </span>
-            <span className="foot">
-              <span className="title">{STARS_TITLE}</span>
-              <span className="cta" aria-hidden="true">
-                {t('starsCtaLabel')}
+      {isDesktop ? (
+        <DesktopHero onStartStars={startStars} waveTrackId={waveTrackId}>
+          {forYou}
+        </DesktopHero>
+      ) : (
+        <section className="hero" aria-label={STARS_TITLE}>
+          <div className="area-stars">
+            <button type="button" className="stars" aria-label={`${STARS_TITLE} — ${t('starsCtaLabel')}`} onClick={startStars}>
+              <span className="art">
+                <ParticleWave cover={hero?.coverUri} trackId={waveTrackId} className="artwork" />
               </span>
-            </span>
-          </button>
-        </div>
-        <div className="area-foryou">
-          <SectionHead title={t('forYou')} />
-          <div className="list">
-            {forYouTiles.map((tile) => (
-              <button key={tile.id} type="button" className="tile" onClick={() => (tile.artistId ? void navigate(`/artist/${tile.artistId}`) : playList(tile.trackIds))}>
-                <Artwork source={tile.coverUri} className="tile-art" />
-                <span className="t-label-md label ellipsis">{tile.title}</span>
-                <span className="d-play" aria-hidden="true">
-                  <Icon name={tile.artistId ? 'arrow-forward' : 'play-arrow'} size={20} />
+              <span className="foot">
+                <span className="title">{STARS_TITLE}</span>
+                <span className="cta" aria-hidden="true">
+                  {t('starsCtaLabel')}
                 </span>
-              </button>
-            ))}
+              </span>
+            </button>
           </div>
-        </div>
-      </section>
+          {forYou}
+        </section>
+      )}
 
       <section aria-labelledby="home-trending">
         <SectionHead id="home-trending" title={t('trendingNow')} />
@@ -159,9 +193,11 @@ export function HomePage() {
           <SectionHead id="home-moods" title={t('moodVibeMixes')} />
           <div className="moods">
             {moodMixes.map((mix) => {
-              const [c0, c1] = MOOD_COLORS[mix.id] ?? ['#141418', '#282834'];
+              const mood = MOOD_SCENES[mix.id];
+              const [c0, c1] = mood?.colors ?? ['#141418', '#282834'];
               return (
                 <button key={mix.id} type="button" className="mood" aria-label={`${mix.title} — ${mix.subtitle}`} style={{ '--c0': c0, '--c1': c1 } as CSSProperties} onClick={() => playList(mix.trackIds)}>
+                  {mood && <LivingMood engine={mood.scene} fallbackColors={mood.colors} />}
                   <span className="row">
                     <span style={{ color: MOOD_TINT[mix.tint] ?? 'var(--primary)', display: 'inline-flex' }}>
                       <Icon name={mix.icon as IconName} size={24} />

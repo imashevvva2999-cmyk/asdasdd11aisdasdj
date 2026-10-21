@@ -39,3 +39,9 @@
   .backdrop { display: none; }
   .toast { top: 64px; }
 }
+
+/* Particle wave canvas (MMusic Stars) and Living Moods scene layer behind a mood card */
+.particle-wave { display: block; width: 100%; height: 100%; }
+.particle-wave > canvas { display: block; width: 100%; height: 100%; }
+.living-mood { position: absolute; inset: 0; z-index: 0; display: block; }
+.living-mood > canvas { display: block; width: 100%; height: 100%; }

@@ -11,7 +11,7 @@ import { ACTIVE_CAMPAIGN, CAMPAIGN_HISTORY, PROMO_PACKAGES, type CampaignHistory
 import { DashboardPromoStrings } from '@mmusic/core/promotion/strings/dashboard';
 import { InteractionPromoStrings } from '@mmusic/core/promotion/strings/interactions';
 import { useArtistStore } from '@mmusic/core/state/artist-store';
-import { ACTIVE_CAMPAIGN_KEY, useCampaignStore } from '@mmusic/core/state/campaign-store';
+import { ACTIVE_CAMPAIGN_KEY, PROMO_WALLET_START_KGS, useCampaignStore } from '@mmusic/core/state/campaign-store';
 import { useDashboardStrings } from '@mmusic/core/state/dashboard-locale-store';
 import { useIsDemoArtist } from '@mmusic/core/state/demo-session-store';
 import { Icon } from '@mmusic/ui-kit/web';
@@ -24,11 +24,17 @@ import { NoArtist } from './OverviewTab';
 /** History rows shown before "All N" expands the list. */
 const HISTORY_PREVIEW = 2;
 const GEO_TONES = ['var(--st-primary-container)', 'var(--st-secondary)', 'var(--st-tertiary)'];
+/** Website-only copy for a real artist's empty promotion state (the shared tables have no counterpart). */
+const REAL_STRINGS = {
+  ru: { noActive: 'Активных кампаний пока нет', noActiveHint: 'Запустите продвижение трека — статистика появится после старта кампании.', noHistory: 'Кампаний пока нет' },
+  en: { noActive: 'No active campaigns yet', noActiveHint: 'Promote a track — statistics appear once a campaign starts.', noHistory: 'No campaigns yet' },
+} as const;
 
 /**
  * Artist Dashboard — Promotion (mobile app/profile/artist/dashboard/promotion.tsx, Stitch "1. mmusic_studio"). Entry
- * into the local campaign wizard (core campaign-store); campaign figures come from the shared promotion mocks / demo
- * fixture, Stitch-only labels from the shared copy tables.
+ * into the local campaign wizard (core campaign-store). The shared promotion mocks / demo fixture are shown only to the
+ * Solaris Echo demo (guest preview or demo login), labelled "Демо-данные"; a regular artist sees only their own
+ * campaigns from the campaign store, with "—" / "no data" where no real metric exists.
  */
 export function PromotionTab() {
   const { t, locale } = useDashboardStrings();
@@ -50,6 +56,8 @@ export function PromotionTab() {
   const demo = useIsDemoArtist();
   const guest = useIsGuestPreview();
   const dStr = DemoStrings[locale];
+  const sample = demo || guest;
+  const rs = REAL_STRINGS[locale];
 
   if (!artist) return <NoArtist />;
 
@@ -76,8 +84,8 @@ export function PromotionTab() {
     reach: 0,
     budgetKgs: c.totalKgs,
   }));
-  // Demo account: completed campaigns for its own catalog.
-  const completedHistory = demo ? DEMO_CAMPAIGN_HISTORY : CAMPAIGN_HISTORY;
+  // Sample completed campaigns only for the demo (its own catalog when signed in); none for a regular artist.
+  const completedHistory = demo ? DEMO_CAMPAIGN_HISTORY : guest ? CAMPAIGN_HISTORY : [];
   // An unfinished wizard draft is listed first and resumes where it stopped.
   const draftOpen = !!draftTrackId && !!draftPackageId && ['settingUp', 'confirming', 'failed'].includes(draftStage);
   const draftPkg = PROMO_PACKAGES.find((p) => p.id === draftPackageId);
@@ -103,7 +111,10 @@ export function PromotionTab() {
   };
   const visibleHistory = historyExpanded ? history : history.slice(0, HISTORY_PREVIEW);
 
-  const investmentKgs = completedHistory.reduce((sum, h) => sum + (h.budgetKgs ?? 0), 0);
+  // Regular artist: their own launched budgets (real, from this account); demo: the sample history.
+  const investmentKgs = sample ? completedHistory.reduce((sum, h) => sum + (h.budgetKgs ?? 0), 0) : launched.reduce((sum, c) => sum + c.totalKgs, 0);
+  const latestLaunched = launched[0];
+  const latestLaunchedTrack = entries.find((e) => e.track.id === latestLaunched?.trackId)?.track;
   const minPerDayKgs = Math.round(Math.min(...PROMO_PACKAGES.filter((p) => p.durationDays > 0).map((p) => p.priceKgs / p.durationDays)));
   const campaignTitle = activeTrack?.title ?? published[0]?.track.title ?? t('activeCampaignFallbackLabel');
   const campaignCover = activeTrack?.coverUri ?? published[0]?.track.coverUri;
@@ -125,9 +136,10 @@ export function PromotionTab() {
           <span className="st-grow">
             <span className="st-row" style={{ gap: 8 }}>
               <span className="t-headline-sm ellipsis">{artist.name}</span>
-              <span className="st-promo-badge">{s.artistBadge}</span>
+              {sample && <span className="st-promo-badge">{s.artistBadge}</span>}
             </span>
-            <span className="t-body-sm promo-muted">{s.artistMeta}</span>
+            {/* "PRO ARTIST" / "smart targeting active" are demo claims; a regular artist just sees their name. */}
+            {sample && <span className="t-body-sm promo-muted">{s.artistMeta}</span>}
           </span>
         </div>
         <button type="button" className="icon-btn" aria-label={s.helpLabel} onClick={() => showToast(si.helpToast, 'help-outline')}>
@@ -179,7 +191,7 @@ export function PromotionTab() {
             </span>
             {s.summaryTitle}
           </h2>
-          <span className="t-mono-num promo-muted">{s.updated}</span>
+          {sample ? <span className="st-pill t-mono-num">{t('demoDataBadge')}</span> : null}
         </div>
         <div className="st-stats four">
           <div className="st-promo-stat">
@@ -187,29 +199,37 @@ export function PromotionTab() {
               {s.reachLabel}
               <Icon name="graphic-eq" size={18} />
             </span>
-            <span className="value">{fmt(ACTIVE_CAMPAIGN.reach)}</span>
-            <span className="t-label-sm st-emerald st-row" style={{ gap: 4 }}>
-              <Icon name="trending-up" size={14} />
-              {s.reachDelta}
-            </span>
+            <span className="value">{sample ? fmt(ACTIVE_CAMPAIGN.reach) : '—'}</span>
+            {sample ? (
+              <span className="t-label-sm st-emerald st-row" style={{ gap: 4 }}>
+                <Icon name="trending-up" size={14} />
+                {s.reachDelta}
+              </span>
+            ) : (
+              <span className="t-body-sm promo-muted">{dStr.anNoData}</span>
+            )}
           </div>
           <div className="st-promo-stat">
             <span className="head">
               {s.fansLabel}
               <Icon name="favorite-border" size={18} />
             </span>
-            <span className="value">{ACTIVE_CAMPAIGN.conversionRatePct}%</span>
-            <span className="t-body-sm promo-muted ellipsis">{s.fansHint}</span>
+            <span className="value">{sample ? `${ACTIVE_CAMPAIGN.conversionRatePct}%` : '—'}</span>
+            <span className="t-body-sm promo-muted ellipsis">{sample ? s.fansHint : dStr.anNoData}</span>
           </div>
           <div className="st-promo-stat">
             <span className="head">
               {s.rotationLabel}
-              <span className="st-live-dot" />
+              {(sample || launched.length > 0) && <span className="st-live-dot" />}
             </span>
-            <span className="value small">1 {s.campaignWord}</span>
-            <span className="t-body-sm ellipsis" style={{ color: 'var(--st-primary-container)' }}>
-              «{campaignTitle}»
-            </span>
+            <span className="value small">{sample ? `1 ${s.campaignWord}` : launched.length > 0 ? `${launched.length} ${s.campaignWord}` : '—'}</span>
+            {sample || latestLaunchedTrack ? (
+              <span className="t-body-sm ellipsis" style={{ color: 'var(--st-primary-container)' }}>
+                «{sample ? campaignTitle : latestLaunchedTrack?.title}»
+              </span>
+            ) : (
+              <span className="t-body-sm promo-muted">{rs.noActive}</span>
+            )}
           </div>
           <div className="st-promo-stat">
             <span className="head">
@@ -219,12 +239,13 @@ export function PromotionTab() {
             <span className="value small">
               {fmt(investmentKgs)} <span className="t-label-md promo-muted">{s.currency}</span>
             </span>
-            <span className="t-body-sm st-emerald">{s.roi}</span>
+            {sample ? <span className="t-body-sm st-emerald">{s.roi}</span> : <span className="t-body-sm promo-muted">{dStr.anNoData}</span>}
           </div>
         </div>
       </section>
 
-      {/* Current campaign */}
+      {/* Current campaign (demo sample) */}
+      {sample && (
       <section className="st-col" style={{ gap: 12 }}>
         <div className="st-row" style={{ justifyContent: 'space-between' }}>
           <h2 className="t-headline-sm st-row" style={{ margin: 0, gap: 8 }}>
@@ -291,8 +312,51 @@ export function PromotionTab() {
           </div>
         </div>
       </section>
+      )}
 
-      {/* Listener geography */}
+      {/* Current campaign (regular artist): their latest launched campaign, in review — no invented delivery figures */}
+      {!sample && (
+        <section className="st-col" style={{ gap: 12 }}>
+          <h2 className="t-headline-sm st-row" style={{ margin: 0, gap: 8 }}>
+            <span style={{ color: 'var(--st-primary-container)' }}>
+              <Icon name="radio-button-checked" size={20} />
+            </span>
+            {s.currentTitle}
+          </h2>
+          {latestLaunched ? (
+            <div className="st-promo-card">
+              <div className="st-row" style={{ alignItems: 'flex-start', gap: 16 }}>
+                <Artwork source={latestLaunchedTrack?.coverUri} className="st-promo-cover" />
+                <span className="st-grow">
+                  <span className="t-label-sm st-promo-gold block" style={{ textTransform: 'uppercase', letterSpacing: 0.6 }}>
+                    {si.inReview}
+                  </span>
+                  <span className="t-headline-sm ellipsis block">{latestLaunchedTrack?.title ?? t('activeCampaignFallbackLabel')}</span>
+                  <span className="t-body-sm promo-muted ellipsis block">
+                    {artist.name} • {s.budget} {fmt(latestLaunched.totalKgs)} {s.currency}
+                  </span>
+                  <span className="t-mono-num promo-muted block" style={{ marginTop: 8 }}>
+                    {s.impressions}: —
+                  </span>
+                </span>
+              </div>
+              <button type="button" className="ui-btn ghost" onClick={() => toStatistics(latestLaunched.id)}>
+                {s.details}
+                <Icon name="arrow-forward" size={16} />
+              </button>
+            </div>
+          ) : (
+            <div className="ui-empty">
+              <Icon name="campaign" size={32} />
+              <span className="title">{rs.noActive}</span>
+              <span className="t-body-md">{rs.noActiveHint}</span>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Listener geography (demo sample) */}
+      {sample && (
       <section className="st-promo-card">
         <div className="st-row" style={{ justifyContent: 'space-between' }}>
           <h2 className="t-headline-sm st-row" style={{ margin: 0, gap: 8 }}>
@@ -319,6 +383,7 @@ export function PromotionTab() {
           </div>
         ))}
       </section>
+      )}
 
       {/* Campaign history */}
       <section className="st-col" style={{ gap: 12 }}>
@@ -329,10 +394,13 @@ export function PromotionTab() {
             </span>
             {s.historyTitle}
           </h2>
-          <button type="button" className="st-link-btn" aria-expanded={historyExpanded} onClick={() => setHistoryExpanded((v) => !v)}>
-            {historyExpanded ? si.collapse : `${s.all} ${history.length}`}
-          </button>
+          {history.length > HISTORY_PREVIEW && (
+            <button type="button" className="st-link-btn" aria-expanded={historyExpanded} onClick={() => setHistoryExpanded((v) => !v)}>
+              {historyExpanded ? si.collapse : `${s.all} ${history.length}`}
+            </button>
+          )}
         </div>
+        {history.length === 0 && <p className="t-body-sm promo-muted" style={{ margin: 0 }}>{rs.noHistory}</p>}
         <div className="ui-list">
           {visibleHistory.map((h) => (
             <button key={h.id} type="button" className="ui-row" onClick={() => openHistory(h)}>
@@ -351,9 +419,7 @@ export function PromotionTab() {
                 <span className="t-mono-num st-emerald" style={{ fontWeight: 700 }}>
                   {h.metric[locale]}
                 </span>
-                <span className="t-body-sm">
-                  {fmt(h.reach)} {s.reachSuffix}
-                </span>
+                <span className="t-body-sm">{h.reach > 0 ? `${fmt(h.reach)} ${s.reachSuffix}` : `— ${s.reachSuffix}`}</span>
               </span>
             </button>
           ))}
@@ -372,9 +438,11 @@ export function PromotionTab() {
           </span>
         </div>
         <div style={{ textAlign: 'right' }}>
+          {/* Guest preview: the demo account's balance, labelled; otherwise the account's own stored balance (0 for a regular artist). */}
           <span className="t-headline-sm block">
-            {fmt(walletBalanceKgs)} {s.currency}
+            {fmt(guest ? PROMO_WALLET_START_KGS : walletBalanceKgs)} {s.currency}
           </span>
+          {sample && <span className="st-pill t-mono-num">{t('demoDataBadge')}</span>}
           <button type="button" className="st-link-btn st-promo-gold" onClick={() => showToast(guest ? dStr.readOnlyToast : si.topUpToast, guest ? 'lock' : undefined)}>
             {s.walletTopUp}
           </button>

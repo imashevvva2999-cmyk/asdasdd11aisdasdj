@@ -50,6 +50,8 @@
 .tile .tile-art { width: 64px; height: 64px; flex-shrink: 0; transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }
 .tile:hover .tile-art { transform: scale(1.06); }
 .tile .label { flex: 1; min-width: 0; margin: 0 14px; font: 600 14px/18px "Inter", system-ui, sans-serif; letter-spacing: 0.14px; }
+.tile .label-title { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tile .d-kind { display: none; }
 
 /* Cover cards: one equal 4-column rhythm for Trending and New Releases */
 .cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 28px; }

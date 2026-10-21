@@ -1,5 +1,5 @@
-/* Desktop Home redesign (≥1024 px only): an editorial discovery hero with an artist wheel, pill playlist rows
-   with round artwork and play badges, glassy panels. Below 1024 px nothing here applies — the approved tablet and
+/* Desktop Home redesign (≥1024 px only): "Для вас" beside the artist wheel, pill playlist rows with round artwork
+   and play badges, glassy panels. Below 1024 px nothing here applies — the approved tablet and
    mobile Home stay exactly as they were. */
 
 .d-hero, .home .d-play { display: none; }
@@ -7,7 +7,7 @@
 @media (min-width: 1024px) {
   .home > section { margin-bottom: 64px; }
 
-  /* Editorial hero */
+  /* Hero: "Для вас" (left) + artist wheel (right) */
   .d-hero {
     position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center;
     gap: clamp(24px, 4vw, 64px); min-height: min(600px, calc(100vh - 140px)); margin: 0 0 56px;
@@ -16,39 +16,9 @@
     content: ""; position: absolute; right: 0; top: 50%; width: 60%; aspect-ratio: 1; transform: translateY(-50%); z-index: -1; pointer-events: none;
     background: radial-gradient(closest-side, rgba(255, 75, 75, 0.28), rgba(255, 75, 75, 0.08) 55%, transparent); filter: blur(30px);
   }
-  .d-hero-copy { display: grid; justify-items: start; gap: 22px; }
-  .d-hero-eq { color: var(--primary); display: inline-flex; }
-  .d-hero-title {
-    margin: 0; max-width: 11ch; font: 800 clamp(52px, 5.4vw, 80px)/1.02 "Plus Jakarta Sans", system-ui, sans-serif; letter-spacing: -0.035em;
-  }
-  .d-hero-title em { display: block; color: var(--primary); font-style: italic; }
-  .d-hero-body { margin: 0; max-width: 440px; color: var(--text-medium); font: 400 17px/26px "Inter", system-ui, sans-serif; }
-  .d-hero-actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 6px; }
-  .d-hero-cta {
-    display: inline-flex; align-items: center; gap: 18px; height: 64px; padding: 0 8px 0 28px; border-radius: var(--radius-full); cursor: pointer;
-    color: var(--text-high); font: 600 16px/1 "Inter", system-ui, sans-serif; text-align: left;
-    background: rgba(20, 20, 24, 0.6); border: 1px solid rgba(255, 255, 255, 0.14); border-top-color: rgba(255, 255, 255, 0.3);
-    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); transition: transform 0.15s, background-color 0.15s;
-  }
-  .d-hero-cta:hover { background: rgba(32, 32, 38, 0.75); transform: translateY(-1px); }
-  .d-hero-cta:active { transform: scale(0.97); }
-  .d-hero-cta-text { display: grid; gap: 4px; }
-  .d-hero-cta-eyebrow { color: var(--primary); font: 700 11px/1 "Inter", system-ui, sans-serif; letter-spacing: 1px; text-transform: uppercase; }
-  .d-hero-cta-icon {
-    width: 48px; height: 48px; display: grid; place-items: center; border-radius: 50%; background: var(--primary); color: #fff;
-    box-shadow: 0 8px 24px rgba(255, 75, 75, 0.5);
-  }
-  .d-hero-explore {
-    display: inline-flex; align-items: center; gap: 8px; height: 52px; padding: 0 22px; border-radius: var(--radius-full);
-    color: var(--text-high); text-decoration: none; font: 600 15px/1 "Inter", system-ui, sans-serif; background: rgba(255, 255, 255, 0.06);
-    transition: background-color 0.15s;
-  }
-  .d-hero-explore:hover { background: rgba(255, 255, 255, 0.12); }
-  .d-hero-faces { display: flex; list-style: none; margin: 8px 0 0; padding: 0; }
-  .d-hero-faces li + li { margin-left: -12px; }
-  .d-hero-faces a { display: block; width: 44px; height: 44px; border-radius: 50%; overflow: hidden; border: 3px solid var(--canvas); transition: transform 0.15s; }
-  .d-hero-faces a:hover { transform: translateY(-3px); }
-  .d-hero-faces .artwork { width: 100%; height: 100%; object-fit: cover; display: block; }
+  /* Upper-left: "Для вас" as one column of pill rows beside the wheel */
+  .d-hero-side { min-width: 0; align-self: center; }
+  .d-hero-side .area-foryou .list { grid-template-columns: minmax(0, 1fr); gap: 12px; }
 
   /* Artist wheel */
   .d-wheel-wrap { position: relative; justify-self: center; width: min(100%, 580px, calc(100vh - 160px)); aspect-ratio: 1; }
@@ -88,10 +58,8 @@
     box-shadow: 0 8px 24px rgba(255, 75, 75, 0.55);
   }
 
-  /* For You: the Stars card is the hero now, so For You becomes three columns of pill playlist rows */
-  .hero { grid-template-columns: minmax(0, 1fr); grid-template-areas: "foryou"; }
-  .hero .area-stars { display: none; }
-  .area-foryou .list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+  /* For You rows (the Stars card is the hero wheel's centre on desktop) */
+  .area-foryou .list { display: grid; }
   .tile {
     height: 76px; padding: 0 12px 0 8px; gap: 2px; border-radius: var(--radius-full);
     background: linear-gradient(100deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02)); border: 1px solid rgba(255, 255, 255, 0.07);
@@ -99,6 +67,10 @@
   .tile:hover { background: linear-gradient(100deg, rgba(255, 75, 75, 0.16), rgba(255, 255, 255, 0.03)); }
   .tile .tile-art { width: 60px; height: 60px; border-radius: 50%; box-shadow: 0 0 0 2px rgba(255, 75, 75, 0.45); }
   .tile .label { font: 600 15px/20px "Inter", system-ui, sans-serif; }
+  .tile .d-kind { display: block; margin-top: 2px; color: var(--text-medium); font: 600 11px/14px "Inter", system-ui, sans-serif; letter-spacing: 0.6px; text-transform: uppercase; }
+  /* Artist tile: a quiet outlined profile badge (it opens the artist page), never a play button. */
+  .home .d-play.artist { background: none; box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.28); }
+  .tile:hover .d-play.artist { background: rgba(255, 255, 255, 0.1); box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.5); }
   .home .d-play {
     display: grid; place-items: center; width: 40px; height: 40px; flex-shrink: 0; border-radius: 50%;
     background: rgba(255, 255, 255, 0.1); color: var(--text-high); transition: background-color 0.15s, transform 0.15s;
@@ -119,11 +91,6 @@
   .track.active { background: linear-gradient(100deg, rgba(255, 75, 75, 0.2), rgba(255, 255, 255, 0.04)); }
   .track .track-art { width: 52px; height: 52px; border-radius: 50%; }
   .mood { border-radius: 24px; padding: 18px; }
-}
-
-@media (min-width: 1024px) and (max-width: 1199px) {
-  .area-foryou .list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .d-hero-title { font-size: 52px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
