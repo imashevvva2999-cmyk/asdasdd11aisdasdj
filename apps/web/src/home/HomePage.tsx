@@ -14,7 +14,9 @@ import { Backdrop } from '@/components/Backdrop';
 import { SectionHead } from '@/components/SectionHead';
 import { useAppStrings } from '@/i18n/locale';
 
+import { DesktopHero } from './DesktopHero';
 import './home.css';
+import './desktop.css';
 
 /** The hero's title, as in the approved app and A3 (a brand name, not translated). */
 const STARS_TITLE = 'MMusic Stars';
@@ -79,6 +81,8 @@ export function HomePage() {
     <div className="home">
       <Backdrop />
 
+      <DesktopHero onStartStars={startStars} />
+
       <section className="hero" aria-label={STARS_TITLE}>
         <div className="area-stars">
           <button type="button" className="stars" aria-label={`${STARS_TITLE} — ${t('starsCtaLabel')}`} onClick={startStars}>
@@ -100,6 +104,9 @@ export function HomePage() {
               <button key={tile.id} type="button" className="tile" onClick={() => (tile.artistId ? void navigate(`/artist/${tile.artistId}`) : playList(tile.trackIds))}>
                 <Artwork source={tile.coverUri} className="tile-art" />
                 <span className="t-label-md label ellipsis">{tile.title}</span>
+                <span className="d-play" aria-hidden="true">
+                  <Icon name={tile.artistId ? 'arrow-forward' : 'play-arrow'} size={20} />
+                </span>
               </button>
             ))}
           </div>
@@ -139,6 +146,9 @@ export function HomePage() {
                       <span className="t-body-sm medium ellipsis">{track.artistName}</span>
                       {track.explicit && <span className="badge-e">E</span>}
                     </span>
+                  </span>
+                  <span className="d-play" aria-hidden="true">
+                    <Icon name={currentTrackId === track.id ? 'graphic-eq' : 'play-arrow'} size={20} />
                   </span>
                 </button>
               ) : null,

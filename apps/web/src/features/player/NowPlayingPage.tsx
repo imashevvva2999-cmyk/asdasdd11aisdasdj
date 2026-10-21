@@ -14,6 +14,7 @@ import { Artwork } from '@/components/Artwork';
 import { useAppStrings } from '@/i18n/locale';
 import { EmptyState } from '@/ui';
 
+import { ProgressRing, Waveform } from './desktop';
 import { PlayButton, Screen, SeekBar, useDocumentTitle, useEscape, useGoBack } from './shared';
 import { usePlayerStrings } from './strings';
 
@@ -82,8 +83,12 @@ export function NowPlayingPage() {
       </header>
 
       <main className="np-body">
-        <div className={isPlaying ? 'np-art playing' : 'np-art'}>
-          <Artwork source={track.coverUri} alt={album?.title ?? track.title} loading="eager" />
+        {/* np-disc / np-seek are layout-neutral (display: contents) below 1024 px; desktop adds the ring and waveform. */}
+        <div className="np-disc">
+          <ProgressRing />
+          <div className={isPlaying ? 'np-art playing' : 'np-art'}>
+            <Artwork source={track.coverUri} alt={album?.title ?? track.title} loading="eager" />
+          </div>
         </div>
 
         <div className="np-panel">
@@ -100,7 +105,10 @@ export function NowPlayingPage() {
             </button>
           </div>
 
-          <SeekBar />
+          <div className="np-seek">
+            <Waveform trackId={track.id} />
+            <SeekBar />
+          </div>
 
           <div className="np-transport">
             <button type="button" className={shuffle ? 'pl-ghost pl-mode on' : 'pl-ghost pl-mode'} aria-label={`${t('shuffleLabel')} — ${shuffle ? ps('shuffleOn') : ps('shuffleOff')}`} aria-pressed={shuffle} title={shuffle ? ps('shuffleOn') : ps('shuffleOff')} onClick={toggleShuffle}>
