@@ -99,6 +99,13 @@ export function useRole(): RoleDefinition | undefined {
   return bo.roles.find((r) => r.id === roleId);
 }
 
+/** The demo staff member acting under the dev role switcher (the first fictional staff member with that role). */
+export function useActor(): { roleId: string; staff: StaffUser | undefined } {
+  const bo = useBackoffice();
+  const roleId = useStore(bo.session, (s) => s.roleId);
+  return { roleId, staff: bo.staff.find((member) => member.roleId === roleId) };
+}
+
 export function useCan(permission: Permission): boolean {
   const bo = useBackoffice();
   const roleId = useStore(bo.session, (s) => s.roleId);

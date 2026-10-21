@@ -31,7 +31,7 @@ export function DemoBadge() {
 }
 
 /** A dashboard figure. `demo` adds the demo-data label (fictional figures); public catalog counts pass false. */
-export function KpiCard({ label, value, hint, icon, demo }: { label: string; value: string; hint?: string; icon: IconName; demo: boolean }) {
+export function KpiCard({ label, value, hint, icon, demo, footer }: { label: string; value: string; hint?: string; icon: IconName; demo: boolean; footer?: ReactNode }) {
   return (
     <div className="bo-kpi">
       <div className="bo-kpi-head">
@@ -43,6 +43,7 @@ export function KpiCard({ label, value, hint, icon, demo }: { label: string; val
       <span className="bo-kpi-value">{value}</span>
       <span className="bo-kpi-label">{label}</span>
       {hint && <span className="bo-kpi-hint">{hint}</span>}
+      {footer && <span className="bo-kpi-foot">{footer}</span>}
     </div>
   );
 }

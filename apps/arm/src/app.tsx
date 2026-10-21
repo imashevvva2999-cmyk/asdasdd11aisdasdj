@@ -1,20 +1,28 @@
+import type { ReactNode } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router';
 
-import type { ActivityEvent, Localized } from '@mmusic/backoffice/domain';
+import type { Localized } from '@mmusic/backoffice/domain';
 import { DEMO_STAFF } from '@mmusic/backoffice/mocks';
+import type { Permission } from '@mmusic/backoffice/rbac';
 import { createBackoffice, useLocalized } from '@mmusic/backoffice/react';
 import { AppShell, ComingSoonPage, NotFoundPage, RequirePermission, type NavGroup, type NavItem } from '@mmusic/backoffice/ui';
 
+import { armSeed } from '@/domain/seed';
+import { ActivityPage } from '@/pages/ActivityPage';
+import { ArtistDetailPage, ArtistsPage } from '@/pages/ArtistPages';
 import { DashboardPage } from '@/pages/DashboardPage';
+import { ModerationDetailPage, ModerationListPage } from '@/pages/ModerationPages';
+import { UserDetailPage, UsersPage } from '@/pages/UserPages';
 
 /** ARM's own back-office instance: storage namespace `mmusic-arm`, fictional demo data, provisional ARM roles. */
 export const backoffice = createBackoffice({
   app: 'arm',
   appName: { ru: 'АРМ — администрирование', en: 'ARM — Administration' },
   namespace: 'mmusic-arm',
-  dataVersion: 1,
-  // M1: the activity log collection exists (empty); moderation, catalog, users… arrive with their milestones.
-  seed: () => ({ activity: [] as ActivityEvent[] }),
+  // v2 (M2): fictional submissions, demo artist applications, demo users and their audit events.
+  // v3: + the playable demo submission sub-demo-horizon (saved v2 data is re-seeded so it appears).
+  dataVersion: 3,
+  seed: armSeed,
   staff: DEMO_STAFF,
 });
 
@@ -29,15 +37,15 @@ const GROUPS: { label: Localized; sections: Section[] }[] = [
   {
     label: { ru: 'Контент', en: 'Content' },
     sections: [
-      { path: '/moderation', label: { ru: 'Модерация', en: 'Moderation' }, icon: 'gavel', permission: 'arm.moderation.view', milestone: 'M2', description: { ru: 'Очередь треков и релизов: одобрить, отклонить, запросить правки.', en: 'Track and release queue: approve, reject, request changes.' } },
+      { path: '/moderation', label: { ru: 'Модерация', en: 'Moderation' }, icon: 'gavel', permission: 'arm.moderation.view' },
       { path: '/catalog', label: { ru: 'Каталог', en: 'Catalog' }, icon: 'library-music', permission: 'arm.catalog.view', milestone: 'M3', description: { ru: 'Артисты, альбомы, треки, жанры и редакционные плейлисты (FR-19.1).', en: 'Artists, albums, tracks, genres and editorial playlists (FR-19.1).' } },
     ],
   },
   {
     label: { ru: 'Люди', en: 'People' },
     sections: [
-      { path: '/artists', label: { ru: 'Артисты', en: 'Artists' }, icon: 'mic', permission: 'arm.artists.view', milestone: 'M2', description: { ru: 'Профили артистов, статус верификации (OQ-49), релизы.', en: 'Artist profiles, verification status (OQ-49), releases.' } },
-      { path: '/users', label: { ru: 'Пользователи', en: 'Users' }, icon: 'group', permission: 'arm.users.view', milestone: 'M2', description: { ru: 'Вымышленные пользователи с замаскированными данными.', en: 'Fictional users with masked personal data.' } },
+      { path: '/artists', label: { ru: 'Артисты', en: 'Artists' }, icon: 'mic', permission: 'arm.artists.view' },
+      { path: '/users', label: { ru: 'Пользователи', en: 'Users' }, icon: 'group', permission: 'arm.users.view' },
     ],
   },
   {
@@ -51,7 +59,7 @@ const GROUPS: { label: Localized; sections: Section[] }[] = [
   {
     label: { ru: 'Система', en: 'System' },
     sections: [
-      { path: '/activity', label: { ru: 'Журнал действий', en: 'Activity log' }, icon: 'history', permission: 'arm.activity.view', milestone: 'M2' },
+      { path: '/activity', label: { ru: 'Журнал действий', en: 'Activity log' }, icon: 'history', permission: 'arm.activity.view' },
       { path: '/settings', label: { ru: 'Сотрудники и роли', en: 'Staff and roles' }, icon: 'admin-panel-settings', permission: 'arm.settings.manage', milestone: 'M6', description: { ru: 'Матрица ролей и прав (сейчас — предварительная, настраивается в коде).', en: 'Role and permission matrix (provisional for now, configured in code).' } },
     ],
   },
@@ -66,29 +74,35 @@ function SectionPlaceholder({ section }: { section: Section }) {
 
 const planned = GROUPS.flatMap((g) => g.sections).filter((s) => s.milestone);
 
+/** Direct navigation respects the (prototype, client-side) permission matrix: no right → "Нет доступа". */
+const guard = (permission: Permission, page: ReactNode) => <RequirePermission permission={permission}>{page}</RequirePermission>;
+
 export const router = createBrowserRouter([
   {
     path: '/',
     element: <AppShell nav={NAV} />,
     children: [
       { index: true, element: <Navigate to="/dashboard" replace /> },
-      {
-        path: 'dashboard',
-        element: (
-          <RequirePermission permission="arm.dashboard.view">
-            <DashboardPage />
-          </RequirePermission>
-        ),
-      },
+      { path: 'dashboard', element: guard('arm.dashboard.view', <DashboardPage />) },
+      { path: 'moderation', element: <Navigate to="/moderation/tracks" replace /> },
+      { path: 'moderation/tracks', element: guard('arm.moderation.view', <ModerationListPage kind="track" />) },
+      { path: 'moderation/tracks/:id', element: guard('arm.moderation.view', <ModerationDetailPage kind="track" />) },
+      { path: 'moderation/releases', element: guard('arm.moderation.view', <ModerationListPage kind="release" />) },
+      { path: 'moderation/releases/:id', element: guard('arm.moderation.view', <ModerationDetailPage kind="release" />) },
+      { path: 'artists', element: guard('arm.artists.view', <ArtistsPage />) },
+      { path: 'artists/:id', element: guard('arm.artists.view', <ArtistDetailPage />) },
+      { path: 'users', element: guard('arm.users.view', <UsersPage />) },
+      { path: 'users/:id', element: guard('arm.users.view', <UserDetailPage />) },
+      { path: 'activity', element: guard('arm.activity.view', <ActivityPage />) },
       ...planned.map((section) => ({
         path: section.path.slice(1),
-        element: (
-          <RequirePermission permission={section.permission}>
-            <SectionPlaceholder section={section} />
-          </RequirePermission>
-        ),
+        element: guard(section.permission, <SectionPlaceholder section={section} />),
       })),
       { path: '*', element: <NotFoundPage /> },
     ],
   },
+  // Development-only audio preview test bench (not in production builds, not linked from the app).
+  ...(import.meta.env.DEV
+    ? [{ path: '/dev/audio-preview', HydrateFallback: () => null, lazy: async () => ({ Component: (await import('@/dev/AudioPreviewHarness')).AudioPreviewHarness }) }]
+    : []),
 ]);

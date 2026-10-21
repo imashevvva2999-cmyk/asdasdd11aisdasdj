@@ -42,11 +42,19 @@ export type Contact = Entity & {
   createdAt: string;
 };
 
-/** One recorded staff action (filled by M2+ screens; the log itself is part of the foundation). */
+/**
+ * One audit event: what was done (`action`, e.g. 'track.reject'), to which entity, the status change, the acting
+ * demo staff member and their role, when, and the reason when one is required. Written by every state-changing
+ * action of the back-office apps; never edited afterwards.
+ */
 export type ActivityEvent = Entity & {
   at: string;
+  /** Demo staff member (StaffUser.id) acting under the dev role switcher. */
   actorId: string;
+  actorRoleId: string;
   action: string;
-  entity?: { type: string; id: string };
-  summary: Localized;
+  entity: { type: string; id: string; label: string };
+  fromStatus?: string;
+  toStatus?: string;
+  reason?: string;
 };

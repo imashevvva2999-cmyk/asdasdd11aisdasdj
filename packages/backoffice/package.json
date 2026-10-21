@@ -9,6 +9,7 @@
     "./storage": "./src/storage.ts",
     "./rbac": "./src/rbac.ts",
     "./session": "./src/session.ts",
+    "./review": "./src/review.ts",
     "./i18n": "./src/i18n.ts",
     "./data": "./src/data.ts",
     "./mocks": "./src/mocks.ts",
