@@ -1,39 +1,50 @@
 import { Link } from 'react-router';
 
-import type { OrganizationKind } from '@mmusic/backoffice/domain';
+import type { ActivityEvent } from '@mmusic/backoffice/domain';
 import { formatNumber } from '@mmusic/backoffice/i18n';
 import { useCan, useCollection } from '@mmusic/backoffice/react';
-import { DemoBadge, KpiCard, PageHeader } from '@mmusic/backoffice/ui';
+import { DemoBadge, KpiCard, PageHeader, StatusBadge } from '@mmusic/backoffice/ui';
 
-import { crmSummary, openFollowUps, sortByDate } from '@/domain/rules';
-import type { CrmContact, CrmOrganization, Interaction } from '@/domain/types';
-import { fill, INTERACTION_KIND_KEYS, ORGANIZATION_KIND_LABELS } from '@/strings';
-import { useCrm, useNow } from '@/ui';
+import { dealTotals, pipelineByStage } from '@/domain/analytics';
+import { crmSummary, sortByDate } from '@/domain/rules';
+import { agenda } from '@/domain/tasks';
+import type { CrmContact, CrmOrganization, Deal, Interaction, Task } from '@/domain/types';
+import { DEAL_STAGE_KEYS, fill, INTERACTION_KIND_KEYS } from '@/strings';
+import { STAGE_TONE, useCrm, useNow } from '@/ui';
 
 const cardTitle = { margin: 0, font: '700 18px/24px "Plus Jakarta Sans", system-ui, sans-serif' } as const;
 
 /**
- * CRM dashboard (M4): figures counted from the demo records in this browser (contacts, organizations by
- * relationship, interactions in the last 30 days, open follow-ups), recent interactions and upcoming follow-ups.
- * No pipeline, revenue or performance figures — deals and analytics arrive in M5.
+ * CRM dashboard (M4 + M5): the six M4 figures counted from the demo records, the deal pipeline (counts and
+ * fictional estimates), open tasks and interaction reminders (overdue first), recent deal changes and recent
+ * interactions. Every figure is derived from the records in this browser — the same functions as the analytics.
  */
 export function DashboardPage() {
-  const { t, l, locale, date } = useCrm();
+  const { t, locale, date, kgs, auditText, staffName } = useCrm();
   const contacts = useCollection<CrmContact>('contacts');
   const organizations = useCollection<CrmOrganization>('organizations');
   const interactions = useCollection<Interaction>('interactions');
+  const deals = useCollection<Deal>('deals');
+  const tasks = useCollection<Task>('tasks');
+  const events = useCollection<ActivityEvent>('activity');
   const canContacts = useCan('crm.contacts.view');
   const canOrgs = useCan('crm.organizations.view');
   const canPartners = useCan('crm.partners.view');
   const canActivity = useCan('crm.activity.view');
+  const canDeals = useCan('crm.deals.view');
+  const canTasks = useCan('crm.tasks.view');
   const now = useNow();
   const s = crmSummary({ contacts, organizations, interactions }, now);
   const n = (v: number) => formatNumber(v, locale);
   const link = (to: string, allowed: boolean) => (allowed ? <Link to={to}>{t('viewAll')} →</Link> : undefined);
-  const recent = sortByDate(interactions.filter((i) => i.at <= now)).slice(0, 5);
-  const follow = openFollowUps(interactions, now).slice(0, 5);
+  const recent = sortByDate(interactions.filter((i) => i.at <= now)).slice(0, 4);
+  const items = agenda(tasks, interactions, now);
+  const overdue = items.filter((i) => i.overdue).length;
   const who = (i: Interaction) => contacts.find((c) => c.id === i.contactId)?.name ?? organizations.find((o) => o.id === i.organizationId)?.name ?? '—';
-  const kinds = Object.entries(organizations.reduce<Partial<Record<OrganizationKind, number>>>((acc, o) => ({ ...acc, [o.kind]: (acc[o.kind] ?? 0) + 1 }), {})) as [OrganizationKind, number][];
+  const totals = dealTotals(deals);
+  const stages = pipelineByStage(deals);
+  const maxCount = Math.max(1, ...stages.map((r) => r.count));
+  const dealEvents = [...events].filter((e) => e.entity.type === 'deal').sort((a, b) => b.at.localeCompare(a.at)).slice(0, 4);
 
   return (
     <>
@@ -49,31 +60,113 @@ export function DashboardPage() {
         </div>
       </section>
 
-      <div className="bo-grid bo-section" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(320px, 100%), 1fr))', alignItems: 'start' }}>
-        <section className="bo-card" aria-labelledby="crm-follow">
+      <div className="bo-grid bo-section" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(360px, 100%), 1fr))', alignItems: 'start' }}>
+        <section className="bo-card" aria-labelledby="crm-pipeline" data-card="pipeline">
           <div className="bo-card-head">
-            <h2 id="crm-follow" style={cardTitle}>
-              {t('upcomingFollowUps')}
+            <h2 id="crm-pipeline" style={cardTitle}>
+              {t('pipelineOverview')}
+            </h2>
+            {canDeals ? (
+              <Link className="bo-link" to="/deals" style={{ fontSize: 13 }}>
+                {t('viewAll')} →
+              </Link>
+            ) : (
+              <DemoBadge />
+            )}
+          </div>
+          <p className="bo-muted" style={{ margin: '0 0 12px', fontSize: 13 }}>
+            {fill(t('pipelineTotals'), { open: totals.open, won: totals.won, lost: totals.lost })} · {fill(t('openEstimateLine'), { sum: kgs(totals.openEstimateKgs) })}
+          </p>
+          <div className="bo-bars">
+            {stages.map((r) => (
+              <div key={r.stage} className="bo-bar-row">
+                <div className="bo-bar-head">
+                  <span>{t(DEAL_STAGE_KEYS[r.stage])}</span>
+                  <span className="bo-muted">
+                    {r.count}
+                    {r.estimateKgs ? ` · ${kgs(r.estimateKgs)}` : ''}
+                  </span>
+                </div>
+                <div className="bo-bar" aria-hidden="true">
+                  {r.count > 0 && <span className={STAGE_TONE[r.stage]} style={{ width: `${(r.count / maxCount) * 100}%` }} />}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="bo-card" aria-labelledby="crm-agenda" data-card="agenda">
+          <div className="bo-card-head">
+            <h2 id="crm-agenda" style={cardTitle}>
+              {t('upcomingAgenda')}
+            </h2>
+            {overdue > 0 ? <StatusBadge tone="danger" label={fill(t('overdueCount'), { n: overdue })} /> : <DemoBadge />}
+          </div>
+          {items.length === 0 ? (
+            <p className="bo-muted">{t('noAgenda')}</p>
+          ) : (
+            <ul className="bo-list">
+              {items.slice(0, 6).map((item) => (
+                <li key={`${item.kind}-${item.id}`}>
+                  <span className="grow">
+                    {item.kind === 'task' ? (
+                      <Link className="bo-link bo-ellipsis" to={`/tasks/${item.task.id}`} style={{ fontWeight: 600 }}>
+                        {item.task.title}
+                      </Link>
+                    ) : (
+                      <span className="bo-ellipsis" style={{ fontWeight: 600 }}>
+                        {t('reminderBadge')} · {who(item.interaction)}
+                      </span>
+                    )}
+                    <span className="bo-muted bo-ellipsis" style={{ fontSize: 13 }}>
+                      {item.kind === 'task' ? staffName(item.task.assigneeId) : item.interaction.summary}
+                    </span>
+                  </span>
+                  <span className={item.overdue ? 'crm-follow overdue' : 'crm-follow'} style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
+                    {date(item.due)}
+                    {item.overdue ? ` · ${t('followUpOverdue')}` : ''}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {canTasks && (
+            <Link className="bo-link" to="/tasks" style={{ fontSize: 13 }}>
+              {t('viewAll')} →
+            </Link>
+          )}
+        </section>
+
+        <section className="bo-card" aria-labelledby="crm-deal-activity" data-card="deal-activity">
+          <div className="bo-card-head">
+            <h2 id="crm-deal-activity" style={cardTitle}>
+              {t('recentDeals')}
             </h2>
             <DemoBadge />
           </div>
-          {follow.length === 0 ? (
-            <p className="bo-muted">{t('noFollowUps')}</p>
+          {dealEvents.length === 0 ? (
+            <p className="bo-muted">{t('noDealActivity')}</p>
           ) : (
             <ul className="bo-list">
-              {follow.map(({ interaction: i, overdue }) => (
-                <li key={i.id}>
+              {dealEvents.map((e) => (
+                <li key={e.id}>
                   <span className="grow">
                     <span className="bo-ellipsis" style={{ fontWeight: 600 }}>
-                      {who(i)}
+                      {auditText(e.action)}
+                      {(e.action === 'deal.stage' || e.action === 'deal.reopen' || e.action === 'deal.create') && e.toStatus && e.toStatus in DEAL_STAGE_KEYS ? ` · ${t(DEAL_STAGE_KEYS[e.toStatus as keyof typeof DEAL_STAGE_KEYS])}` : ''}
                     </span>
-                    <span className="bo-muted bo-ellipsis" style={{ fontSize: 13 }}>
-                      {i.summary}
-                    </span>
+                    {canDeals ? (
+                      <Link className="bo-link bo-ellipsis" to={`/deals/${e.entity.id}`} style={{ fontSize: 13 }}>
+                        {e.entity.label}
+                      </Link>
+                    ) : (
+                      <span className="bo-muted bo-ellipsis" style={{ fontSize: 13 }}>
+                        {e.entity.label}
+                      </span>
+                    )}
                   </span>
-                  <span className={overdue ? 'crm-follow overdue' : 'crm-follow'} style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
-                    {date(i.followUpAt)}
-                    {overdue ? ` · ${t('followUpOverdue')}` : ''}
+                  <span className="bo-muted" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
+                    {date(e.at)}
                   </span>
                 </li>
               ))}
@@ -81,7 +174,7 @@ export function DashboardPage() {
           )}
         </section>
 
-        <section className="bo-card" aria-labelledby="crm-recent">
+        <section className="bo-card" aria-labelledby="crm-recent" data-card="recent">
           <div className="bo-card-head">
             <h2 id="crm-recent" style={cardTitle}>
               {t('recentInteractions')}
@@ -106,36 +199,6 @@ export function DashboardPage() {
                 <span className="bo-muted" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
                   {date(i.at)}
                 </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <section className="bo-card" aria-labelledby="crm-kinds">
-          <div className="bo-card-head">
-            <h2 id="crm-kinds" style={cardTitle}>
-              {t('kindsTitle')}
-            </h2>
-            <DemoBadge />
-          </div>
-          <ul className="bo-list">
-            {kinds.map(([kind, count]) => (
-              <li key={kind}>
-                <span className="grow">{l(ORGANIZATION_KIND_LABELS[kind])}</span>
-                <span className="bo-muted">{n(count)}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <section className="bo-card" aria-labelledby="crm-roadmap">
-          <h2 id="crm-roadmap" style={{ ...cardTitle, marginBottom: 8 }}>
-            {t('roadmapTitle')}
-          </h2>
-          <ul className="bo-list">
-            {(['roadmapM5', 'roadmapM6'] as const).map((key) => (
-              <li key={key} className="bo-muted">
-                {t(key)}
               </li>
             ))}
           </ul>

@@ -9,18 +9,34 @@ import type { ContactStatus, CrmCollections, CrmContact, CrmOrganization, Intera
  * the audit event of each change. Screens apply the result through the mock repositories.
  */
 
-export type FieldError = 'required' | 'too-long' | 'email-invalid' | 'email-not-demo' | 'phone-not-demo' | 'unknown-organization' | 'unknown-contact' | 'date-invalid' | 'follow-up-before' | 'target-required';
+export type FieldError =
+  | 'required'
+  | 'too-long'
+  | 'too-short'
+  | 'email-invalid'
+  | 'email-not-demo'
+  | 'phone-not-demo'
+  | 'unknown-organization'
+  | 'unknown-contact'
+  | 'unknown-deal'
+  | 'unknown-staff'
+  | 'contact-not-in-org'
+  | 'deal-not-in-org'
+  | 'value-invalid'
+  | 'stage-invalid'
+  | 'date-invalid'
+  | 'follow-up-before'
+  | 'target-required';
 export type FieldErrors<K extends string> = Partial<Record<K, FieldError>>;
-export type Failure<K extends string> = { ok: false; error: 'forbidden' | 'not-found' | 'same-status' } | { ok: false; error: 'invalid'; fields: FieldErrors<K> };
-type Audit = Omit<ActivityEvent, 'id' | 'mock'>;
-
+export type Failure<K extends string> = { ok: false; error: 'forbidden' | 'not-found' | 'same-status' | 'invalid-transition' } | { ok: false; error: 'invalid'; fields: FieldErrors<K> };
 /** Fictional data only: reserved example.* e-mail domains and the +996 555 000 0xx demo number range. */
 export const DEMO_EMAIL = /^[^\s@]+@example\.(kg|com|org|net)$/i;
 export const DEMO_PHONE = /^\+996 555 000 0\d{2}$/;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const allowed = (ctx: DecisionContext, p: Permission) => can(ctx.matrix, ctx.actor.roleId, p);
-const clean = (s: string | undefined) => (s ?? '').trim();
+export const allowed = (ctx: DecisionContext, p: Permission) => can(ctx.matrix, ctx.actor.roleId, p);
+export const clean = (s: string | undefined) => (s ?? '').trim();
+export type Audit = Omit<ActivityEvent, 'id' | 'mock'>;
 
 // ---------------------------------------------------------------- contacts
 
@@ -148,7 +164,7 @@ export const isProspective = (o: CrmOrganization) => o.relationship === 'prospec
 export type InteractionInput = { kind: InteractionKind; at: string; summary: string; contactId: string; organizationId: string; followUpAt: string };
 export type InteractionField = keyof InteractionInput;
 
-const validDate = (s: string) => s !== '' && !Number.isNaN(Date.parse(s));
+export const validDate = (s: string) => s !== '' && !Number.isNaN(Date.parse(s));
 
 export function logInteraction(input: InteractionInput, contacts: CrmContact[], organizations: CrmOrganization[], ctx: DecisionContext): { ok: true; record: Omit<Interaction, 'id' | 'mock'>; audit: (id: string) => Audit } | Failure<InteractionField> {
   if (!allowed(ctx, 'crm.activity.edit')) return { ok: false, error: 'forbidden' };

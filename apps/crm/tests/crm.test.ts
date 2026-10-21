@@ -53,7 +53,8 @@ void test('seed: fictional, labelled and consistent', () => {
     assert.ok(DEMO_STAFF.some((s) => s.id === i.authorId && s.app === 'crm'));
     assert.ok(!/\d\s?(сом|kgs|\$|usd)|договор подписан|contract signed/i.test(i.summary), `${i.id}: no money or agreements`);
   }
-  assert.deepEqual(seed.activity, []);
+  // The only seeded change-log entries are the M5 deal / task history (tests/m5.test.ts).
+  assert.ok(seed.activity.every((e) => e.entity.type === 'deal' || e.entity.type === 'task'));
 });
 
 void test('contact validation: required fields, fictional e-mail / phone only, normalized tags and position', () => {
@@ -145,9 +146,9 @@ void test('dashboard figures are counted from the demo records', () => {
   assert.equal(follow.find((f) => f.overdue)?.interaction.id, 'int-5');
 });
 
-void test('created contacts persist across reloads; reset restores the seed (data version 2)', async () => {
+void test('created contacts persist across reloads; reset restores the seed', async () => {
   const backend = memoryBackend();
-  const open = () => createMockDataSource<CrmCollections>({ namespace: 'mmusic-crm', version: 2, seed: crmSeed, storage: createSafeStorage(backend) });
+  const open = () => createMockDataSource<CrmCollections>({ namespace: 'mmusic-crm', version: 3, seed: crmSeed, storage: createSafeStorage(backend) });
   const ds = open();
   const out = createContact(NEW, seed.organizations, as('crm-manager'));
   assert.ok(out.ok);
@@ -156,7 +157,7 @@ void test('created contacts persist across reloads; reset restores the seed (dat
   await ds.repository('activity').create(out.audit(created.id));
   const reloaded = open();
   assert.equal(((await reloaded.repository('contacts').get(created.id)) as CrmContact).email, 'test@example.kg');
-  assert.equal((await reloaded.repository('activity').list()).length, 1);
+  assert.equal((await reloaded.repository('activity').list()).length, seed.activity.length + 1);
   reloaded.reset();
   assert.equal(await open().repository('contacts').get(created.id), undefined);
   assert.equal((await open().repository('contacts').list()).length, seed.contacts.length);

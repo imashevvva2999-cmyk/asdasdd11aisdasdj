@@ -1,14 +1,17 @@
 import type { Localized, OrganizationKind } from '@mmusic/backoffice/domain';
 import type { StringTable } from '@mmusic/backoffice/i18n';
 
-import type { InteractionKind, RelationshipStatus } from '@/domain/types';
+import type { DealStage, InteractionKind, RelationshipStatus, TaskPriority, TaskStatus } from '@/domain/types';
+
+import { M5_STRINGS } from './strings-m5';
 
 /** CRM page text (RU default, EN). Shell text lives in @mmusic/backoffice. `{x}` = placeholder. */
 export const CRM_STRINGS = {
   ru: {
+    ...M5_STRINGS.ru,
     // common
     dashboardTitle: 'Дашборд',
-    dashboardSubtitle: 'CRM Mmusic — контакты, организации, партнёры и история взаимодействий (этап M4). Все записи вымышленные.',
+    dashboardSubtitle: 'CRM Mmusic — контакты, организации, партнёры, взаимодействия, сделки и задачи (этап M5). Все записи вымышленные.',
     shown: 'Показано {n} из {total}',
     emptyFiltered: 'Ничего не найдено',
     emptyFilteredHint: 'Измените поиск или фильтры.',
@@ -181,8 +184,9 @@ export const CRM_STRINGS = {
     auditFollowUpDone: 'Напоминание выполнено',
   },
   en: {
+    ...M5_STRINGS.en,
     dashboardTitle: 'Dashboard',
-    dashboardSubtitle: 'Mmusic CRM — contacts, organizations, partners and interaction history (milestone M4). All records are fictional.',
+    dashboardSubtitle: 'Mmusic CRM — contacts, organizations, partners, interactions, deals and tasks (milestone M5). All records are fictional.',
     shown: 'Showing {n} of {total}',
     emptyFiltered: 'Nothing found',
     emptyFilteredHint: 'Change the search or filters.',
@@ -373,3 +377,7 @@ export const RELATIONSHIP_LABELS: Record<RelationshipStatus, Localized> = {
 };
 
 export const INTERACTION_KIND_KEYS: Record<InteractionKind, CrmStringKey> = { meeting: 'kindMeeting', call: 'kindCall', email: 'kindEmail', note: 'kindNote' };
+
+export const DEAL_STAGE_KEYS: Record<DealStage, CrmStringKey> = { lead: 'stageLead', qualified: 'stageQualified', proposal: 'stageProposal', negotiation: 'stageNegotiation', won: 'stageWon', lost: 'stageLost' };
+export const TASK_STATUS_KEYS: Record<TaskStatus, CrmStringKey> = { pending: 'statusPending', 'in-progress': 'statusInProgress', completed: 'statusCompleted', cancelled: 'statusCancelled' };
+export const PRIORITY_KEYS: Record<TaskPriority, CrmStringKey> = { high: 'priorityHigh', normal: 'priorityNormal', low: 'priorityLow' };

@@ -50,10 +50,66 @@ export type Interaction = Entity & {
   createdAt: string;
 };
 
+/**
+ * Pipeline stages [П, provisional — OQ-55 is open]: lead → qualified → proposal → negotiation, then closed as won
+ * (both sides agreed to proceed; no contract is recorded) or lost (reason required).
+ */
+export type DealStage = 'lead' | 'qualified' | 'proposal' | 'negotiation' | 'won' | 'lost';
+export const OPEN_STAGES: readonly DealStage[] = ['lead', 'qualified', 'proposal', 'negotiation'];
+export const DEAL_STAGES: readonly DealStage[] = [...OPEN_STAGES, 'won', 'lost'];
+export type DealOutcome = 'open' | 'won' | 'lost';
+
+/** A fictional partnership opportunity with an organization. The value is a fictional estimate, not revenue. */
+export type Deal = Entity & {
+  title: string;
+  organizationId: string;
+  /** Optional contact person (must belong to the organization). */
+  contactId?: string;
+  /** Responsible CRM staff member (StaffUser.id). */
+  ownerId: string;
+  stage: DealStage;
+  /** Fictional estimate in KGS — never revenue, never a contract amount. */
+  estimatedValueKgs?: number;
+  /** Expected decision date (date only, ISO). */
+  expectedCloseAt?: string;
+  description?: string;
+  lostReason?: string;
+  closedAt?: string;
+  stageChangedAt: string;
+  createdAt: string;
+  updatedAt?: string;
+};
+
+export type TaskStatus = 'pending' | 'in-progress' | 'completed' | 'cancelled';
+export const TASK_STATUSES: readonly TaskStatus[] = ['pending', 'in-progress', 'completed', 'cancelled'];
+export type TaskPriority = 'low' | 'normal' | 'high';
+export const TASK_PRIORITIES: readonly TaskPriority[] = ['high', 'normal', 'low'];
+
+/** A CRM task for a staff member, optionally about a contact, an organization and/or a deal. Reminders stay in-app. */
+export type Task = Entity & {
+  title: string;
+  description?: string;
+  status: TaskStatus;
+  priority: TaskPriority;
+  assigneeId: string;
+  dueAt?: string;
+  contactId?: string;
+  organizationId?: string;
+  dealId?: string;
+  /** Latest completion (the full history is in the change log). */
+  completedAt?: string;
+  completedBy?: string;
+  cancelReason?: string;
+  createdAt: string;
+  updatedAt?: string;
+};
+
 export type CrmCollections = {
   contacts: CrmContact[];
   organizations: CrmOrganization[];
   interactions: Interaction[];
+  deals: Deal[];
+  tasks: Task[];
   /** Audit trail of CRM changes (create / edit / status / link). */
   activity: ActivityEvent[];
 };

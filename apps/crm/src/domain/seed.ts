@@ -1,5 +1,6 @@
 import { DEMO_CONTACTS, DEMO_ORGANIZATIONS } from '@mmusic/backoffice/mocks';
 
+import { DEALS, SEED_M5_EVENTS, TASKS } from './seed-m5.ts';
 import type { CrmCollections, CrmContact, CrmOrganization, Interaction, RelationshipStatus } from './types.ts';
 
 /**
@@ -53,5 +54,5 @@ export function crmSeed(): CrmCollections {
     ...EXTRA_ORGANIZATIONS,
   ];
   const contacts: CrmContact[] = [...DEMO_CONTACTS.map((c) => ({ ...c, status: 'active' as const })), ...EXTRA_CONTACTS];
-  return structuredClone({ contacts, organizations, interactions: INTERACTIONS, activity: [] });
+  return structuredClone({ contacts, organizations, interactions: INTERACTIONS, deals: DEALS, tasks: TASKS, activity: SEED_M5_EVENTS });
 }

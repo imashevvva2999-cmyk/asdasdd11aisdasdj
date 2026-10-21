@@ -2,13 +2,14 @@ import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router';
 
 import type { ActivityEvent, Locale } from '@mmusic/backoffice/domain';
+import { formatNumber } from '@mmusic/backoffice/i18n';
 import { useBackoffice, useLocale, useLocalized, useRole, useT } from '@mmusic/backoffice/react';
 import { StatusBadge, type StatusTone } from '@mmusic/backoffice/ui';
 
 import type { ActionResult } from '@/data/actions';
 import type { FieldError } from '@/domain/rules';
-import type { ContactStatus, CrmContact, CrmOrganization, Interaction, RelationshipStatus } from '@/domain/types';
-import { CRM_STRINGS, fill, INTERACTION_KIND_KEYS, RELATIONSHIP_LABELS, type CrmStringKey } from '@/strings';
+import type { ContactStatus, CrmContact, CrmOrganization, DealStage, Interaction, RelationshipStatus, TaskPriority, TaskStatus } from '@/domain/types';
+import { CRM_STRINGS, DEAL_STAGE_KEYS, fill, INTERACTION_KIND_KEYS, PRIORITY_KEYS, RELATIONSHIP_LABELS, TASK_STATUS_KEYS, type CrmStringKey } from '@/strings';
 
 import './crm.css';
 
@@ -56,6 +57,13 @@ const FIELD_ERROR_KEYS: Record<FieldError, CrmStringKey> = {
   'date-invalid': 'errDateInvalid',
   'follow-up-before': 'errFollowUpBefore',
   'target-required': 'errTargetRequired',
+  'too-short': 'errTooShort',
+  'unknown-deal': 'errUnknownDeal',
+  'unknown-staff': 'errUnknownStaff',
+  'contact-not-in-org': 'errContactNotInOrg',
+  'deal-not-in-org': 'errDealNotInOrg',
+  'value-invalid': 'errValueInvalid',
+  'stage-invalid': 'errStageInvalid',
 };
 
 const AUDIT_KEYS: Record<string, CrmStringKey> = {
@@ -68,6 +76,21 @@ const AUDIT_KEYS: Record<string, CrmStringKey> = {
   'organization.update': 'auditOrgUpdate',
   'organization.relationship': 'auditOrgRelationship',
   'interaction.follow-up-done': 'auditFollowUpDone',
+  'deal.create': 'auditDealCreate',
+  'deal.update': 'auditDealUpdate',
+  'deal.assign': 'auditDealAssign',
+  'deal.stage': 'auditDealStage',
+  'deal.won': 'auditDealWon',
+  'deal.lost': 'auditDealLost',
+  'deal.reopen': 'auditDealReopen',
+  'task.create': 'auditTaskCreate',
+  'task.update': 'auditTaskUpdate',
+  'task.assign': 'auditTaskAssign',
+  'task.start': 'auditTaskStart',
+  'task.pause': 'auditTaskPause',
+  'task.complete': 'auditTaskComplete',
+  'task.cancel': 'auditTaskCancel',
+  'task.reopen': 'auditTaskReopen',
 };
 
 /** CRM page helpers: strings, dates, people, error texts. */
@@ -88,7 +111,9 @@ export function useCrm() {
       return role ? l(role.label) : roleId;
     },
     fieldError: (e: FieldError | undefined) => (e ? t(FIELD_ERROR_KEYS[e]) : undefined),
-    resultError: (r: ActionResult) => (r.ok ? undefined : r.error === 'forbidden' ? t('errForbidden') : r.error === 'not-found' ? t('errNotFound') : r.error === 'same-status' ? t('errSameStatus') : t('errInvalid')),
+    resultError: (r: ActionResult) =>
+      r.ok ? undefined : r.error === 'forbidden' ? t('errForbidden') : r.error === 'not-found' ? t('errNotFound') : r.error === 'same-status' ? t('errSameStatus') : r.error === 'invalid-transition' ? t('errInvalidTransition') : t('errInvalid'),
+    kgs: (n: number) => fill(t('kgs'), { n: formatNumber(n, locale) }),
     auditText: (action: string) => (AUDIT_KEYS[action] ? t(AUDIT_KEYS[action]) : action.startsWith('interaction.') ? t('auditInteraction') : action),
   };
 }
@@ -127,6 +152,25 @@ export function RelationshipBadge({ status }: { status: RelationshipStatus }) {
   return <StatusBadge tone={RELATIONSHIP_TONE[status]} label={l(RELATIONSHIP_LABELS[status])} />;
 }
 
+export const STAGE_TONE: Record<DealStage, StatusTone> = { lead: 'neutral', qualified: 'pending', proposal: 'pending', negotiation: 'warning', won: 'success', lost: 'danger' };
+
+export function DealStageBadge({ stage }: { stage: DealStage }) {
+  const { t } = useCrm();
+  return <StatusBadge tone={STAGE_TONE[stage]} label={t(DEAL_STAGE_KEYS[stage])} />;
+}
+
+export const TASK_TONE: Record<TaskStatus, StatusTone> = { pending: 'pending', 'in-progress': 'warning', completed: 'success', cancelled: 'neutral' };
+
+export function TaskStatusBadge({ status }: { status: TaskStatus }) {
+  const { t } = useCrm();
+  return <StatusBadge tone={TASK_TONE[status]} label={t(TASK_STATUS_KEYS[status])} />;
+}
+
+export function PriorityBadge({ priority }: { priority: TaskPriority }) {
+  const { t } = useCrm();
+  return <StatusBadge tone={priority === 'high' ? 'danger' : 'neutral'} label={t(PRIORITY_KEYS[priority])} />;
+}
+
 // ---------------------------------------------------------------- form fields
 
 type FieldProps = { label: string; error?: string; hint?: string; required?: boolean };
@@ -156,7 +200,7 @@ function Field({ label, error, hint, required, children }: FieldProps & { childr
   );
 }
 
-export function TextField({ value, onChange, type = 'text', placeholder, ...field }: FieldProps & { value: string; onChange: (v: string) => void; type?: 'text' | 'email' | 'tel' | 'datetime-local'; placeholder?: string }) {
+export function TextField({ value, onChange, type = 'text', placeholder, ...field }: FieldProps & { value: string; onChange: (v: string) => void; type?: 'text' | 'email' | 'tel' | 'datetime-local' | 'date'; placeholder?: string }) {
   return <Field {...field}>{(id, d) => <input id={id} type={type} value={value} placeholder={placeholder} aria-invalid={!!field.error} aria-describedby={d} onChange={(e) => onChange(e.target.value)} />}</Field>;
 }
 
@@ -187,7 +231,18 @@ export function AuditTable({ events }: { events: ActivityEvent[] }) {
   const { t, l, date, staffName, roleLabel, auditText } = useCrm();
   const sorted = [...events].sort((a, b) => b.at.localeCompare(a.at));
   if (sorted.length === 0) return <p className="bo-muted">{t('noChanges')}</p>;
-  const statusText = (s: string) => (s in RELATIONSHIP_LABELS ? l(RELATIONSHIP_LABELS[s as RelationshipStatus]) : s === 'active' ? t('statusActive') : s === 'inactive' ? t('statusInactive') : s);
+  const statusText = (s: string) =>
+    s in RELATIONSHIP_LABELS
+      ? l(RELATIONSHIP_LABELS[s as RelationshipStatus])
+      : s in DEAL_STAGE_KEYS
+        ? t(DEAL_STAGE_KEYS[s as DealStage])
+        : s in TASK_STATUS_KEYS
+          ? t(TASK_STATUS_KEYS[s as TaskStatus])
+          : s === 'active'
+            ? t('statusActive')
+            : s === 'inactive'
+              ? t('statusInactive')
+              : s;
   return (
     <div className="bo-table-wrap">
       <table className="bo-table">
