@@ -9,7 +9,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "lint": "oxlint --type-aware src vite.config.ts",
+    "lint": "oxlint --type-aware src tests vite.config.ts",
+    "test": "node --test --disable-warning=MODULE_TYPELESS_PACKAGE_JSON tests/*.test.ts",
     "verify:dist": "node ../../packages/backoffice/scripts/verify-dist.mjs dist"
   },
   "dependencies": {

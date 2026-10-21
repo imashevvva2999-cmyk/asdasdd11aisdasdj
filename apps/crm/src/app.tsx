@@ -1,19 +1,27 @@
+import type { ReactNode } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router';
 
-import type { ActivityEvent, Localized } from '@mmusic/backoffice/domain';
-import { DEMO_CONTACTS, DEMO_ORGANIZATIONS, DEMO_STAFF } from '@mmusic/backoffice/mocks';
+import type { Localized } from '@mmusic/backoffice/domain';
+import { DEMO_STAFF } from '@mmusic/backoffice/mocks';
+import type { Permission } from '@mmusic/backoffice/rbac';
 import { createBackoffice, useLocalized } from '@mmusic/backoffice/react';
 import { AppShell, ComingSoonPage, NotFoundPage, RequirePermission, type NavGroup, type NavItem } from '@mmusic/backoffice/ui';
 
+import { crmSeed } from '@/domain/seed';
+import { ContactDetailPage, ContactFormPage, ContactsPage } from '@/pages/ContactPages';
 import { DashboardPage } from '@/pages/DashboardPage';
+import { InteractionsPage } from '@/pages/InteractionsPage';
+import { OrganizationDetailPage, OrganizationFormPage, OrganizationsPage } from '@/pages/OrganizationPages';
+import { PartnersPage } from '@/pages/PartnersPage';
 
 /** CRM's own back-office instance: storage namespace `mmusic-crm`, fictional contacts and companies, provisional CRM roles. */
 export const backoffice = createBackoffice({
   app: 'crm',
   appName: { ru: 'CRM — отношения', en: 'CRM — Relationships' },
   namespace: 'mmusic-crm',
-  dataVersion: 1,
-  seed: () => ({ contacts: structuredClone(DEMO_CONTACTS), organizations: structuredClone(DEMO_ORGANIZATIONS), activity: [] as ActivityEvent[] }),
+  // v2 (M4): contact status, organization relationship, interactions; saved v1 data is re-seeded.
+  dataVersion: 2,
+  seed: crmSeed,
   staff: DEMO_STAFF,
 });
 
@@ -28,9 +36,9 @@ const GROUPS: { label: Localized; sections: Section[] }[] = [
   {
     label: { ru: 'Отношения', en: 'Relationships' },
     sections: [
-      { path: '/contacts', label: { ru: 'Контакты', en: 'Contacts' }, icon: 'contacts', permission: 'crm.contacts.view', milestone: 'M4', description: { ru: 'Карточки контактов, теги, связь с организациями.', en: 'Contact cards, tags, links to organizations.' } },
-      { path: '/organizations', label: { ru: 'Организации', en: 'Organizations' }, icon: 'business', permission: 'crm.organizations.view', milestone: 'M4', description: { ru: 'Лейблы, площадки, спонсоры, медиа, агентства.', en: 'Labels, venues, sponsors, media, agencies.' } },
-      { path: '/partners', label: { ru: 'Артисты и партнёры', en: 'Artists & partners' }, icon: 'handshake', permission: 'crm.partners.view', milestone: 'M4', description: { ru: 'Профили партнёров; без вымышленных деловых фактов о реальных артистах.', en: 'Partner profiles; no invented business facts about real artists.' } },
+      { path: '/contacts', label: { ru: 'Контакты', en: 'Contacts' }, icon: 'contacts', permission: 'crm.contacts.view', },
+      { path: '/organizations', label: { ru: 'Организации', en: 'Organizations' }, icon: 'business', permission: 'crm.organizations.view', },
+      { path: '/partners', label: { ru: 'Партнёры', en: 'Partners' }, icon: 'handshake', permission: 'crm.partners.view', },
     ],
   },
   {
@@ -43,7 +51,7 @@ const GROUPS: { label: Localized; sections: Section[] }[] = [
   {
     label: { ru: 'Активность', en: 'Activity' },
     sections: [
-      { path: '/activity', label: { ru: 'Взаимодействия', en: 'Interactions' }, icon: 'forum', permission: 'crm.activity.view', milestone: 'M4', description: { ru: 'История звонков, встреч и писем (записывается вручную).', en: 'History of calls, meetings and e-mails (logged manually).' } },
+      { path: '/activity', label: { ru: 'Взаимодействия', en: 'Interactions' }, icon: 'forum', permission: 'crm.activity.view', },
       { path: '/reports', label: { ru: 'Аналитика', en: 'Analytics' }, icon: 'insights', permission: 'crm.reports.view', milestone: 'M5' },
     ],
   },
@@ -62,27 +70,29 @@ function SectionPlaceholder({ section }: { section: Section }) {
 
 const planned = GROUPS.flatMap((g) => g.sections).filter((s) => s.milestone);
 
+/** Direct navigation respects the (prototype, client-side) permission matrix: no right → "Нет доступа". */
+const guard = (permission: Permission, page: ReactNode) => <RequirePermission permission={permission}>{page}</RequirePermission>;
+
 export const router = createBrowserRouter([
   {
     path: '/',
     element: <AppShell nav={NAV} />,
     children: [
       { index: true, element: <Navigate to="/dashboard" replace /> },
-      {
-        path: 'dashboard',
-        element: (
-          <RequirePermission permission="crm.dashboard.view">
-            <DashboardPage />
-          </RequirePermission>
-        ),
-      },
+      { path: 'dashboard', element: guard('crm.dashboard.view', <DashboardPage />) },
+      { path: 'contacts', element: guard('crm.contacts.view', <ContactsPage />) },
+      { path: 'contacts/new', element: guard('crm.contacts.edit', <ContactFormPage key="new" />) },
+      { path: 'contacts/:id', element: guard('crm.contacts.view', <ContactDetailPage />) },
+      { path: 'contacts/:id/edit', element: guard('crm.contacts.edit', <ContactFormPage />) },
+      { path: 'organizations', element: guard('crm.organizations.view', <OrganizationsPage />) },
+      { path: 'organizations/new', element: guard('crm.organizations.edit', <OrganizationFormPage key="new" />) },
+      { path: 'organizations/:id', element: guard('crm.organizations.view', <OrganizationDetailPage />) },
+      { path: 'organizations/:id/edit', element: guard('crm.organizations.edit', <OrganizationFormPage />) },
+      { path: 'partners', element: guard('crm.partners.view', <PartnersPage />) },
+      { path: 'activity', element: guard('crm.activity.view', <InteractionsPage />) },
       ...planned.map((section) => ({
         path: section.path.slice(1),
-        element: (
-          <RequirePermission permission={section.permission}>
-            <SectionPlaceholder section={section} />
-          </RequirePermission>
-        ),
+        element: guard(section.permission, <SectionPlaceholder section={section} />),
       })),
       { path: '*', element: <NotFoundPage /> },
     ],
