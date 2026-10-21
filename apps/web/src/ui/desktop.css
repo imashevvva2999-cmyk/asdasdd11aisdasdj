@@ -1,0 +1,53 @@
+/* Desktop redesign of the shared page primitives (≥1024 px only): glassy panels, pill rows with round artwork,
+   larger headers and framed covers — the Home / player design language on every page. Below 1024 px nothing
+   here applies, so tablet and mobile pages are unchanged. */
+
+@media (min-width: 1024px) {
+  .page { padding-bottom: 96px; }
+  .page > section { margin-bottom: 48px; }
+  .page-header { margin: 12px 0 28px; }
+  .page-header h1 { font-size: 48px; line-height: 54px; letter-spacing: -1.6px; }
+  .narrow { max-width: 880px; }
+
+  /* Detail hero (album, playlist, artist, genre): a glass stage with the cover's glow */
+  .detail-hero {
+    position: relative; grid-template-columns: 280px minmax(0, 1fr); gap: 44px; padding: 32px; margin-bottom: 40px; overflow: hidden;
+    border-radius: 36px; background: linear-gradient(120deg, rgba(255, 75, 75, 0.14), rgba(255, 255, 255, 0.03) 55%);
+    border: 1px solid rgba(255, 255, 255, 0.08); border-top-color: rgba(255, 255, 255, 0.18);
+  }
+  .detail-hero .cover { width: 280px; border-radius: 24px; box-shadow: 0 30px 70px rgba(0, 0, 0, 0.55); }
+  .detail-hero .cover.round { box-shadow: 0 0 0 8px rgba(10, 10, 12, 0.6), 0 0 0 10px rgba(255, 75, 75, 0.5), 0 30px 70px rgba(0, 0, 0, 0.55); }
+  .detail-hero h1 { font-size: 56px; line-height: 60px; letter-spacing: -1.8px; }
+  .detail-hero .eyebrow { color: var(--primary); }
+
+  /* Track lists: pill rows like the Home playlists */
+  .ui-tracks { gap: 6px; padding: 0; background: none; }
+  .ui-track { padding: 6px 10px 6px 8px; border-radius: var(--radius-full); background: rgba(255, 255, 255, 0.035); border: 1px solid rgba(255, 255, 255, 0.05); }
+  .ui-track:hover { background: rgba(255, 255, 255, 0.07); }
+  .ui-track.active { background: linear-gradient(100deg, rgba(255, 75, 75, 0.2), rgba(255, 255, 255, 0.04)); }
+  .ui-track .art { width: 48px; height: 48px; border-radius: 50%; }
+  .ui-track .num { font-size: 13px; }
+
+  /* List rows (library, settings, results) */
+  .ui-list { gap: 8px; padding: 0; background: none; }
+  .ui-row {
+    min-height: 68px; padding: 8px 14px 8px 8px; border-radius: 22px;
+    background: rgba(255, 255, 255, 0.035); border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  .ui-row:hover { background: rgba(255, 255, 255, 0.07); }
+  .ui-row.static:hover { background: rgba(255, 255, 255, 0.035); }
+  .ui-row .art { width: 52px; height: 52px; border-radius: 14px; }
+  .ui-row .lead { width: 48px; height: 48px; background: rgba(255, 75, 75, 0.12); color: var(--primary); }
+  .ui-row .trail { width: 36px; height: 36px; justify-content: center; border-radius: 50%; background: rgba(255, 255, 255, 0.06); }
+
+  /* Cover grids */
+  .ui-grid { grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); gap: 28px; }
+  .ui-card .cover { border-radius: 22px; }
+
+  /* Chips, inputs, empty states */
+  .ui-chip { height: 40px; padding: 0 18px; font-size: 14px; background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.08); }
+  .ui-chip.on { background: var(--primary); color: #fff; box-shadow: 0 6px 18px rgba(255, 75, 75, 0.4); }
+  .ui-input { height: 54px; border-radius: 18px; background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.1); }
+  textarea.ui-input { border-radius: 18px; }
+  .ui-empty { padding: 64px 24px; border-radius: 28px; background: rgba(255, 255, 255, 0.035); border: 1px solid rgba(255, 255, 255, 0.06); }
+}

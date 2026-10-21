@@ -14,6 +14,7 @@ import { Artwork } from '@/components/Artwork';
 import { useAppStrings } from '@/i18n/locale';
 
 import './ui.css';
+import './desktop.css';
 
 /**
  * Shared website page primitives (W3 full-site sprint): the approved A3 look for every page. Pages compose these

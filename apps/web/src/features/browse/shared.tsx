@@ -17,6 +17,7 @@ import { TrackRow } from '@/ui';
 import { useBrowseStrings } from './strings';
 
 import './browse.css';
+import './browse-desktop.css';
 
 /** Browser tab title in the approved "Page – Mmusic" format. */
 export function usePageTitle(title: string) {
