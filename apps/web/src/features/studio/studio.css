@@ -237,3 +237,17 @@ button.main { cursor: pointer; }
   .st-guest-main { padding: 16px 16px 48px; }
   .st-cover { flex-direction: column; align-items: flex-start; }
 }
+
+/* Desktop fixes (≥1024 px only; phone and tablet unchanged) */
+@media (min-width: 1024px) {
+  /* Filter chips wrap instead of a hidden-scrollbar strip: no squeezed multi-line labels, no clipped active-chip glow,
+     and every chip reachable without horizontal scrolling. */
+  .st-chips { flex-wrap: wrap; overflow: visible; }
+  .st-chips > .ui-chip { white-space: nowrap; }
+  /* `.block` (display: block) was overriding the button's flex layout, gluing icons to labels. */
+  .ui-btn.block { display: flex; }
+}
+@media (min-width: 1100px) {
+  /* Three tier cards side by side: stack content from the top (grid rows stretched unevenly), button at the bottom. */
+  .st-tiers > .st-card { display: flex; flex-direction: column; }
+}
