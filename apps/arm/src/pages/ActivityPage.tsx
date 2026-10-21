@@ -7,7 +7,7 @@ import { actionVerb, EventTable, matches, useArm, useQueryState } from '@/ui';
 
 /** The audit log: every decision and administrative action, searchable and filterable (filters kept in the URL). */
 export function ActivityPage() {
-  const { t, l, staffName } = useArm();
+  const { t, l, staffName, entityLabel } = useArm();
   const bo = useBackoffice();
   const events = useCollection<ActivityEvent>('activity');
   const query = useQueryState();
@@ -20,7 +20,7 @@ export function ActivityPage() {
       (!entity || e.entity.type === entity) &&
       (!action || actionVerb(e.action) === action) &&
       (!role || e.actorRoleId === role) &&
-      (!q || matches(`${e.entity.label} ${staffName(e.actorId)} ${e.reason ?? ''}`, q)),
+      (!q || matches(`${entityLabel(e)} ${staffName(e.actorId)} ${e.reason ?? ''}`, q)),
   );
 
   return (
@@ -39,6 +39,9 @@ export function ActivityPage() {
             { value: 'artist', label: t('kindArtist') },
             { value: 'user', label: t('kindUser') },
             { value: 'campaign', label: t('kindCampaign') },
+            { value: 'role', label: t('kindRole') },
+            { value: 'staff', label: t('kindStaff') },
+            { value: 'setting', label: t('kindSetting') },
           ]}
         />
         <FilterSelect
@@ -54,6 +57,11 @@ export function ActivityPage() {
             { value: 'reactivate', label: t('actionReactivate') },
             { value: 'unlist', label: t('actionUnlist') },
             { value: 'relist', label: t('actionRelist') },
+            { value: 'grant', label: t('actionGrant') },
+            { value: 'revoke', label: t('actionRevoke') },
+            { value: 'reset', label: t('actionReset') },
+            { value: 'role', label: t('actionStaffRole') },
+            { value: 'preferences', label: t('actionPreferences') },
           ]}
         />
         <FilterSelect label={t('filterActorRole')} value={role} onChange={(v) => query.set('role', v)} options={[{ value: '', label: '—' }, ...bo.roles.map((r) => ({ value: r.id, label: l(r.label) }))]} />

@@ -6,11 +6,12 @@ import { useCollection } from '@mmusic/backoffice/react';
 import type { ReviewStatus } from '@mmusic/backoffice/review';
 import { BackLink, DemoBadge, DetailList, EmptyState, FilterBar, FilterSelect, PageHeader, PermissionNote, SearchField, StatusBadge } from '@mmusic/backoffice/ui';
 
+import { useArmPreferences } from '@/access';
 import { useArmActions } from '@/data/actions';
 import { catalogArtists, type CatalogArtist } from '@/domain/catalog';
 import type { DemoArtist, Submission } from '@/domain/types';
 import { fill } from '@/strings';
-import { DecisionPanel, EventTable, matches, ReviewBadge, useArm, useQueryState } from '@/ui';
+import { DecisionPanel, EventTable, matches, ReviewBadge, useArm, useDefaultFilter, useQueryState } from '@/ui';
 
 type StatusKey = ReviewStatus | 'catalog-verified' | 'catalog-none';
 type Row = { id: string; name: string; source: 'demo' | 'catalog'; genres: string[]; city: string; status: StatusKey; linked: number };
@@ -31,6 +32,7 @@ export function ArtistsPage() {
   const demo = useCollection<DemoArtist>('artists');
   const subs = useCollection<Submission>('submissions');
   const catalog = useMemo(() => catalogArtists(), []);
+  useDefaultFilter('status', useArmPreferences().artistStatus);
   const query = useQueryState();
   const q = query.get('q');
   const source = query.get('source');

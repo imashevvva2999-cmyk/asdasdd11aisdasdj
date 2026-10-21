@@ -1,15 +1,19 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router';
 
 import type { ActivityEvent, Locale } from '@mmusic/backoffice/domain';
-import type { Permission } from '@mmusic/backoffice/rbac';
-import { useBackoffice, useCan, useLocale, useLocalized, useRole, useT } from '@mmusic/backoffice/react';
+import { useBackoffice, useLocale, useLocalized, useRole, useT } from '@mmusic/backoffice/react';
 import { checkReason, reasonRequired, REVIEW_DECISION_LABELS, REVIEW_STATUS_LABELS, TRANSITION_ERROR_LABELS, type ReviewDecision, type ReviewStatus } from '@mmusic/backoffice/review';
 import { ConfirmDialog, PermissionNote, StatusBadge, type StatusTone } from '@mmusic/backoffice/ui';
 
+import { useArmCan } from '@/access';
 import type { ActionError } from '@/data/actions';
+import { PERMISSION_GROUPS, type ArmPermission } from '@/domain/permissions';
+import type { PreferenceField } from '@/domain/settings';
 import type { ListingStatus, UserStatus } from '@/domain/types';
 import { ARM_STRINGS, fill, type ArmStringKey } from '@/strings';
+
+import './arm.css';
 
 /** Filter state kept in the URL (?q=&status=…): survives navigation and lets the dashboard link to a filtered queue. */
 export function useQueryState() {
@@ -34,6 +38,20 @@ export function useQueryState() {
       setParams(new URLSearchParams(), { replace: true });
     },
   };
+}
+
+/**
+ * Applies a default filter from the ARM settings (M6) once, when a list opens without any filter in the URL. Links
+ * that carry filters (dashboard) and filters chosen or cleared by hand afterwards are left alone.
+ */
+export function useDefaultFilter(key: string, value: string) {
+  const [params, setParams] = useSearchParams();
+  const applied = useRef(false);
+  useEffect(() => {
+    if (applied.current) return;
+    applied.current = true;
+    if (value && params.size === 0) setParams(new URLSearchParams({ [key]: value }), { replace: true });
+  }, [key, value, params, setParams]);
 }
 
 /** Case-insensitive "contains" for search fields. */
@@ -62,18 +80,30 @@ export function useArm() {
       const [kind = '', verb = ''] = action.split('.');
       return [ACTION_KEYS[verb] ? t(ACTION_KEYS[verb]) : action, KIND_KEYS[kind] ? t(KIND_KEYS[kind]) : ''].filter(Boolean).join(' · ');
     },
-    errorText: (error: ActionError) =>
-      error === 'same-status'
-        ? t('errorSameStatus')
-        : error === 'staff-account'
-          ? t('errorStaffAccount')
-          : error === 'item-not-ready'
-            ? t('errorItemNotReady')
-            : error === 'not-approved'
-              ? t('errorNotApproved')
-              : l(TRANSITION_ERROR_LABELS[error]),
+    errorText: (error: ActionError) => (error in ERROR_KEYS ? t(ERROR_KEYS[error as keyof typeof ERROR_KEYS]) : l(TRANSITION_ERROR_LABELS[error as keyof typeof TRANSITION_ERROR_LABELS])),
+    /** Entity name of an audit event (roles by their label, settings by name). */
+    entityLabel: (e: ActivityEvent) => {
+      const role = e.entity.type === 'role' ? bo.roles.find((r) => r.id === e.entity.id) : undefined;
+      return role ? l(role.label) : e.entity.type === 'setting' ? t('kindSetting') : e.entity.label;
+    },
+    /** Name of an ARM right (matrix row label) for audit events of the roles screen. */
+    permissionLabel: (key: string) => {
+      const item = PERMISSION_GROUPS.flatMap((g) => g.items).find((i) => i.key === key);
+      return item ? l(item.label) : key;
+    },
   };
 }
+
+const ERROR_KEYS = {
+  'same-status': 'errorSameStatus',
+  'staff-account': 'errorStaffAccount',
+  'item-not-ready': 'errorItemNotReady',
+  'not-approved': 'errorNotApproved',
+  'last-super-admin': 'errorLastSuperAdmin',
+  'unknown-role': 'errorUnknownRole',
+  locked: 'errorLocked',
+  invalid: 'errorInvalidSettings',
+} as const satisfies Partial<Record<ActionError, ArmStringKey>>;
 
 export function formatDate(iso: string, locale: Locale): string {
   return new Intl.DateTimeFormat(locale === 'ru' ? 'ru-RU' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(iso));
@@ -109,6 +139,8 @@ export function ListingBadge({ status }: { status: ListingStatus }) {
 
 /** Status text for an audit event's entity type. */
 function StatusOf({ type, status }: { type: string; status: string }) {
+  const { roleLabel } = useArm();
+  if (type === 'staff') return <StatusBadge tone="neutral" label={roleLabel(status)} />;
   if (type === 'user') return <UserStatusBadge status={status as UserStatus} />;
   if (status === 'listed' || status === 'unlisted') return <ListingBadge status={status} />;
   return <ReviewBadge status={status as ReviewStatus} artist={type === 'artist'} />;
@@ -122,8 +154,21 @@ const ACTION_KEYS: Record<string, ArmStringKey> = {
   reactivate: 'actionReactivate',
   unlist: 'actionUnlist',
   relist: 'actionRelist',
+  grant: 'actionGrant',
+  revoke: 'actionRevoke',
+  reset: 'actionReset',
+  role: 'actionStaffRole',
+  preferences: 'actionPreferences',
 };
-const KIND_KEYS: Record<string, ArmStringKey> = { track: 'kindTrack', release: 'kindRelease', artist: 'kindArtist', user: 'kindUser', campaign: 'kindCampaign' };
+const KIND_KEYS: Record<string, ArmStringKey> = { track: 'kindTrack', release: 'kindRelease', artist: 'kindArtist', user: 'kindUser', campaign: 'kindCampaign', role: 'kindRole', staff: 'kindStaff', setting: 'kindSetting', settings: 'kindSetting' };
+const PREFERENCE_KEYS: Record<PreferenceField, ArmStringKey> = {
+  moderationStatus: 'prefModerationStatus',
+  artistStatus: 'prefArtistStatus',
+  campaignStatus: 'prefCampaignStatus',
+  catalogTab: 'prefCatalogTab',
+  recentActivity: 'prefRecentActivity',
+  nextAfterDecision: 'prefNextAfterDecision',
+};
 
 export function actionVerb(action: string): string {
   return action.split('.')[1] ?? action;
@@ -134,12 +179,23 @@ export function entityPath(entity: ActivityEvent['entity']): string {
   if (entity.type === 'release') return `/moderation/releases/${entity.id}`;
   if (entity.type === 'artist') return `/artists/${entity.id}`;
   if (entity.type === 'campaign') return `/campaigns/${entity.id}`;
+  if (entity.type === 'role' || entity.type === 'staff') return '/staff';
+  if (entity.type === 'setting') return '/settings';
   return `/users/${entity.id}`;
 }
 
 /** Audit events as a table (activity log and the history of detail pages), newest first. */
 export function EventTable({ events, showEntity = true }: { events: ActivityEvent[]; showEntity?: boolean }) {
-  const { t, date, roleLabel, staffName } = useArm();
+  const { t, date, roleLabel, staffName, permissionLabel, entityLabel } = useArm();
+  /** Role events keep the right's key and settings events the changed fields: shown by name. */
+  const reasonText = (e: ActivityEvent) =>
+    !e.reason
+      ? '—'
+      : e.action === 'role.grant' || e.action === 'role.revoke'
+        ? permissionLabel(e.reason)
+        : e.action === 'settings.preferences'
+          ? e.reason.split(', ').map((k) => (k in PREFERENCE_KEYS ? t(PREFERENCE_KEYS[k as PreferenceField]) : k)).join(', ')
+          : e.reason;
   const sorted = [...events].sort((a, b) => b.at.localeCompare(a.at));
   if (sorted.length === 0) return <p className="bo-muted">{t('noHistory')}</p>;
   return (
@@ -173,7 +229,7 @@ export function EventTable({ events, showEntity = true }: { events: ActivityEven
                 {showEntity && (
                   <td>
                     <Link className="bo-link" to={entityPath(e.entity)}>
-                      {e.entity.label}
+                      {entityLabel(e)}
                     </Link>
                   </td>
                 )}
@@ -183,7 +239,7 @@ export function EventTable({ events, showEntity = true }: { events: ActivityEven
                   {e.toStatus && <StatusOf type={e.entity.type} status={e.toStatus} />}
                 </td>
                 <td className="muted" style={{ minWidth: 200 }}>
-                  {e.reason ?? '—'}
+                  {reasonText(e)}
                 </td>
               </tr>
             );
@@ -211,7 +267,7 @@ export function DecisionPanel({
   heading: string;
   title: string;
   status: ReviewStatus;
-  permission: Permission;
+  permission: ArmPermission;
   artist?: boolean;
   hint: string;
   /** Shown above the decision buttons (the track's audio preview). */
@@ -219,7 +275,7 @@ export function DecisionPanel({
   onDecide: (decision: ReviewDecision, reason: string) => Promise<ActionError | null>;
 }) {
   const { t, l, errorText } = useArm();
-  const allowed = useCan(permission);
+  const allowed = useArmCan(permission);
   const role = useRole();
   const [decision, setDecision] = useState<ReviewDecision | null>(null);
   const [reason, setReason] = useState('');
@@ -288,5 +344,27 @@ export function DecisionPanel({
         onCancel={() => setDecision(null)}
       />
     </section>
+  );
+}
+
+/** A labelled select of the settings and staff screens (M6); `ariaLabel` names it more precisely for screen readers. */
+export function SelectField({ label, ariaLabel, hint, value, onChange, options }: { label: string; ariaLabel?: string; hint?: string; value: string; onChange: (v: string) => void; options: { value: string; label: string }[] }) {
+  const id = useId();
+  return (
+    <div className="bo-field arm-field">
+      <label htmlFor={id}>{label}</label>
+      <select id={id} value={value} aria-label={ariaLabel} aria-describedby={hint ? `${id}-hint` : undefined} onChange={(e) => onChange(e.target.value)}>
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+      {hint && (
+        <span id={`${id}-hint`} className="bo-field-hint">
+          {hint}
+        </span>
+      )}
+    </div>
   );
 }

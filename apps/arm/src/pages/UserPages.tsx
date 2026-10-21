@@ -2,10 +2,11 @@ import { useState, type ReactNode } from 'react';
 import { Link, useParams } from 'react-router';
 
 import type { ActivityEvent } from '@mmusic/backoffice/domain';
-import { useBackoffice, useCan, useCollection, useRole } from '@mmusic/backoffice/react';
+import { useBackoffice, useCollection, useRole } from '@mmusic/backoffice/react';
 import { checkReason, TRANSITION_ERROR_LABELS } from '@mmusic/backoffice/review';
 import { BackLink, ConfirmDialog, DemoBadge, DetailList, EmptyState, FilterBar, FilterSelect, PageHeader, PermissionNote, SearchField } from '@mmusic/backoffice/ui';
 
+import { useArmCan } from '@/access';
 import { useArmActions } from '@/data/actions';
 import type { DemoArtist, DemoUser, UserRole, UserStatus } from '@/domain/types';
 import { fill, type ArmStringKey } from '@/strings';
@@ -85,7 +86,7 @@ export function UserDetailPage() {
   const users = useCollection<DemoUser>('users');
   const artists = useCollection<DemoArtist>('artists');
   const events = useCollection<ActivityEvent>('activity');
-  const allowed = useCan('arm.users.edit');
+  const allowed = useArmCan('arm.users.edit');
   const role = useRole();
   const [target, setTarget] = useState<UserStatus | null>(null);
   const [reason, setReason] = useState('');

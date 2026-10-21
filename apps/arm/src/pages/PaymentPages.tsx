@@ -2,9 +2,10 @@ import type { ReactNode } from 'react';
 import { Link, useParams } from 'react-router';
 
 import { formatNumber } from '@mmusic/backoffice/i18n';
-import { useCan, useCollection } from '@mmusic/backoffice/react';
+import { useCollection } from '@mmusic/backoffice/react';
 import { BackLink, DemoBadge, DetailList, EmptyState, FilterBar, FilterSelect, KpiCard, PageHeader, PermissionNote, SearchField, StatusBadge, type StatusTone } from '@mmusic/backoffice/ui';
 
+import { useArmCan } from '@/access';
 import { paymentsByStatus, TRANSACTION_STATUSES } from '@/domain/reports';
 import type { DemoArtist, DemoTransaction, DemoUser, TransactionStatus } from '@/domain/types';
 import { fill, type ArmStringKey } from '@/strings';
@@ -125,8 +126,8 @@ export function PaymentDetailPage() {
   const { t, l, date } = useArm();
   const kgs = useKgs();
   const { payer, recipient } = usePeople();
-  const canUsers = useCan('arm.users.view');
-  const canArtists = useCan('arm.artists.view');
+  const canUsers = useArmCan('arm.users.view');
+  const canArtists = useArmCan('arm.artists.view');
   const tx = useCollection<DemoTransaction>('transactions').find((x) => x.id === id);
   const back = <BackLink to="/payments" label={t('backToPayments')} />;
 

@@ -1,14 +1,16 @@
 import type { StringTable } from '@mmusic/backoffice/i18n';
 
 import { M3_STRINGS } from './strings-m3';
+import { M6_STRINGS } from './strings-m6';
 
 /** ARM page text (RU default, EN). Shell and shared review labels live in @mmusic/backoffice. `{x}` = placeholder. */
 export const ARM_STRINGS = {
   ru: {
     ...M3_STRINGS.ru,
+    ...M6_STRINGS.ru,
     // dashboard
     dashboardTitle: 'Дашборд',
-    dashboardSubtitle: 'Административное рабочее место Mmusic — модерация, каталог, артисты, пользователи, кампании, платежи и отчёты (этап M3).',
+    dashboardSubtitle: 'Административное рабочее место Mmusic — модерация, каталог, артисты, пользователи, кампании, платежи, отчёты, роли и настройки (этап M6).',
     pendingTracks: 'Треки на проверке',
     pendingReleases: 'Релизы на проверке',
     pendingArtists: 'Артисты на проверке',
@@ -30,8 +32,7 @@ export const ARM_STRINGS = {
     tracks: 'Треки',
     genres: 'Жанры и подборки',
     playlists: 'Плейлисты',
-    roadmapTitle: 'Что появится дальше',
-    roadmapM6: 'M6 — экран ролей и прав, управление сотрудниками',
+    roadmapTitle: 'Состояние прототипа',
     // common
     kindTrack: 'Трек',
     kindRelease: 'Релиз',
@@ -200,8 +201,9 @@ export const ARM_STRINGS = {
   },
   en: {
     ...M3_STRINGS.en,
+    ...M6_STRINGS.en,
     dashboardTitle: 'Dashboard',
-    dashboardSubtitle: 'Mmusic administration workspace — moderation, catalog, artists, users, campaigns, payments and reports (milestone M3).',
+    dashboardSubtitle: 'Mmusic administration workspace — moderation, catalog, artists, users, campaigns, payments, reports, roles and settings (milestone M6).',
     pendingTracks: 'Tracks pending',
     pendingReleases: 'Releases pending',
     pendingArtists: 'Artists pending',
@@ -223,8 +225,7 @@ export const ARM_STRINGS = {
     tracks: 'Tracks',
     genres: 'Genres and collections',
     playlists: 'Playlists',
-    roadmapTitle: 'Coming next',
-    roadmapM6: 'M6 — roles and permissions screen, staff management',
+    roadmapTitle: 'Prototype status',
     kindTrack: 'Track',
     kindRelease: 'Release',
     kindArtist: 'Artist',

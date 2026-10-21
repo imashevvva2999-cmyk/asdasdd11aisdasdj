@@ -1,5 +1,5 @@
 import type { ActivityEvent, Entity, Localized } from '@mmusic/backoffice/domain';
-import type { ReviewFields } from '@mmusic/backoffice/review';
+import type { ReviewFields, ReviewStatus } from '@mmusic/backoffice/review';
 
 /**
  * ARM data (all fictional demo records, `mock: true`). Real catalog artists are not stored here: ARM reads their
@@ -111,11 +111,38 @@ export type DemoUser = Entity & {
   statusChangedAt?: string;
 };
 
+/** Editable rights of one ARM role (M6, id = role id). Browser-local demo data, not access control. */
+export type RoleConfig = Entity & { permissions: string[]; updatedAt?: string };
+
+/** Demo role assignment of an ARM staff member (M6, id = StaffUser.id). */
+export type StaffAssignment = Entity & { roleId: string; updatedAt?: string };
+
+/** Moderation-queue status filter applied when a list opens without filters ('' = all statuses). */
+export type QueueFilter = '' | ReviewStatus;
+
+/** ARM settings (M6): local, frontend-only preferences shared by every role in this browser. */
+export type ArmPreferences = Entity & {
+  moderationStatus: QueueFilter;
+  artistStatus: QueueFilter;
+  campaignStatus: QueueFilter;
+  catalogTab: CatalogTab;
+  recentActivity: number;
+  /** Demo workflow: after a moderation decision, open the next pending item of the same queue. */
+  nextAfterDecision: boolean;
+  updatedAt?: string;
+};
+
+export const CATALOG_TABS = ['tracks', 'albums', 'artists', 'genres', 'playlists', 'demo'] as const;
+export type CatalogTab = (typeof CATALOG_TABS)[number];
+
 export type ArmCollections = {
   submissions: Submission[];
   artists: DemoArtist[];
   campaigns: Campaign[];
   transactions: DemoTransaction[];
   users: DemoUser[];
+  roles: RoleConfig[];
+  staffRoles: StaffAssignment[];
+  preferences: ArmPreferences[];
   activity: ActivityEvent[];
 };

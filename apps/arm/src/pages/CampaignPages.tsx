@@ -3,16 +3,17 @@ import { Link, useParams } from 'react-router';
 
 import type { ActivityEvent } from '@mmusic/backoffice/domain';
 import { formatNumber } from '@mmusic/backoffice/i18n';
-import { useCan, useCollection } from '@mmusic/backoffice/react';
+import { useCollection } from '@mmusic/backoffice/react';
 import { REVIEW_STATUS_LABELS, REVIEW_STATUSES } from '@mmusic/backoffice/review';
 import { BackLink, DemoBadge, DetailList, EmptyState, FilterBar, FilterSelect, PageHeader, PermissionNote, SearchField } from '@mmusic/backoffice/ui';
 import { PROMO_TOOLS } from '@mmusic/core/mocks/promotions';
 
+import { useArmCan, useArmPreferences } from '@/access';
 import { useArmActions } from '@/data/actions';
 import type { Campaign, DemoArtist, PromoToolId, Submission } from '@/domain/types';
 import { isListed, sortQueue } from '@/domain/workflow';
 import { fill } from '@/strings';
-import { DecisionPanel, EventTable, ListingBadge, matches, ReviewBadge, useArm, useQueryState } from '@/ui';
+import { DecisionPanel, EventTable, ListingBadge, matches, ReviewBadge, useArm, useDefaultFilter, useQueryState } from '@/ui';
 
 /** Tool names as the app shows them to artists (core/mocks/promotions.ts). */
 function useToolName() {
@@ -40,6 +41,7 @@ export function CampaignsPage() {
   const campaigns = useCollection<Campaign>('campaigns');
   const subs = useCollection<Submission>('submissions');
   const artists = useCollection<DemoArtist>('artists');
+  useDefaultFilter('status', useArmPreferences().campaignStatus);
   const query = useQueryState();
   const q = query.get('q');
   const status = query.get('status');
@@ -109,8 +111,8 @@ export function CampaignDetailPage() {
   const toolName = useToolName();
   const { day, budget } = useCampaignFormat();
   const actions = useArmActions();
-  const canModeration = useCan('arm.moderation.view');
-  const canArtists = useCan('arm.artists.view');
+  const canModeration = useArmCan('arm.moderation.view');
+  const canArtists = useArmCan('arm.artists.view');
   const campaign = useCollection<Campaign>('campaigns').find((c) => c.id === id);
   const subs = useCollection<Submission>('submissions');
   const artists = useCollection<DemoArtist>('artists');

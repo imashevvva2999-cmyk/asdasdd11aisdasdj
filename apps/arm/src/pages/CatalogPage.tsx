@@ -1,18 +1,19 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
 
-import { useCan, useCollection, useRole } from '@mmusic/backoffice/react';
+import { useCollection, useRole } from '@mmusic/backoffice/react';
 import { checkReason, TRANSITION_ERROR_LABELS } from '@mmusic/backoffice/review';
 import { ConfirmDialog, DemoBadge, EmptyState, FilterBar, FilterSelect, PageHeader, PermissionNote, SearchField, StatusBadge } from '@mmusic/backoffice/ui';
 
+import { useArmCan, useArmPreferences } from '@/access';
 import { useArmActions } from '@/data/actions';
 import { catalogAlbumRows, catalogArtistName, catalogArtists, catalogGenreRows, catalogPlaylistRows, catalogTrackRows, type DemoAudioState } from '@/domain/catalog';
-import type { DemoArtist, ListingStatus, Submission } from '@/domain/types';
+import { CATALOG_TABS, type CatalogTab, type DemoArtist, type ListingStatus, type Submission } from '@/domain/types';
 import { fill, type ArmStringKey } from '@/strings';
 import { formatDuration, ListingBadge, matches, useArm, useQueryState } from '@/ui';
 
-const TABS = ['tracks', 'albums', 'artists', 'genres', 'playlists', 'demo'] as const;
-type Tab = (typeof TABS)[number];
+const TABS = CATALOG_TABS;
+type Tab = CatalogTab;
 const TAB_KEYS: Record<Tab, ArmStringKey> = { tracks: 'tabCatalogTracks', albums: 'tabCatalogAlbums', artists: 'tabCatalogArtists', genres: 'tabCatalogGenres', playlists: 'tabCatalogPlaylists', demo: 'tabDemoListings' };
 const AUDIO_KEYS: Record<DemoAudioState, ArmStringKey> = { demo: 'audioDemo', pending: 'audioPending', none: 'audioNone' };
 const RELEASE_TYPE_KEYS = { single: 'releaseSingle', ep: 'releaseEp', album: 'releaseAlbum' } as const;
@@ -26,7 +27,9 @@ type OnQuery = (key: string, value: string) => void;
 export function CatalogPage() {
   const { t } = useArm();
   const query = useQueryState();
-  const tab = (TABS as readonly string[]).includes(query.get('tab')) ? (query.get('tab') as Tab) : 'tracks';
+  // M6: without ?tab= the catalog opens on the tab chosen in the ARM settings (tracks by default).
+  const preferred = useArmPreferences().catalogTab;
+  const tab = (TABS as readonly string[]).includes(query.get('tab')) ? (query.get('tab') as Tab) : preferred;
   const q = query.get('q');
 
   return (
@@ -56,7 +59,7 @@ function Empty() {
 
 function TracksTab({ q, audio, onQuery }: { q: string; audio: string; onQuery: OnQuery }) {
   const { t } = useArm();
-  const canArtists = useCan('arm.artists.view');
+  const canArtists = useArmCan('arm.artists.view');
   const all = useMemo(() => catalogTrackRows(), []);
   const rows = all.filter((r) => (!audio || r.audio === audio) && (!q || matches(`${r.title} ${r.artistName} ${r.albumTitle ?? ''}`, q)));
   return (
@@ -116,7 +119,7 @@ type Row = { id: string; search: string; cells: ReactNode[] };
 /** Albums, artists, genres and playlists: search + a read-only table. */
 function SimpleTab({ q, onQuery, kind }: { q: string; onQuery: OnQuery; kind: 'albums' | 'artists' | 'genres' | 'playlists' }) {
   const { t } = useArm();
-  const canArtists = useCan('arm.artists.view');
+  const canArtists = useArmCan('arm.artists.view');
   const artistLink = (id: string, name: string) => (canArtists ? <Link className="bo-link" to={`/artists/${id}`}>{name}</Link> : name);
   let head: string[];
   let all: Row[];
@@ -177,8 +180,8 @@ function SimpleTab({ q, onQuery, kind }: { q: string; onQuery: OnQuery; kind: 'a
 function DemoListingsTab({ q, onQuery }: { q: string; onQuery: OnQuery }) {
   const { t, l, date, errorText } = useArm();
   const actions = useArmActions();
-  const canEdit = useCan('arm.catalog.edit');
-  const canModeration = useCan('arm.moderation.view');
+  const canEdit = useArmCan('arm.catalog.edit');
+  const canModeration = useArmCan('arm.moderation.view');
   const role = useRole();
   const subs = useCollection<Submission>('submissions');
   const artists = useCollection<DemoArtist>('artists');

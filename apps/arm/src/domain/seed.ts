@@ -1,6 +1,7 @@
 import type { ActivityEvent } from '@mmusic/backoffice/domain';
 
 import { CAMPAIGNS, TRANSACTIONS } from './seed-m3.ts';
+import { defaultM6Data } from './settings.ts';
 import type { ArmCollections, DemoArtist, DemoUser, Submission } from './types.ts';
 
 /**
@@ -95,7 +96,7 @@ function seedActivity(): ActivityEvent[] {
 }
 
 export function armSeed(): ArmCollections {
-  return structuredClone({ submissions: SUBMISSIONS, artists: ARTISTS, users: USERS, campaigns: CAMPAIGNS, transactions: TRANSACTIONS, activity: seedActivity() });
+  return structuredClone({ submissions: SUBMISSIONS, artists: ARTISTS, users: USERS, campaigns: CAMPAIGNS, transactions: TRANSACTIONS, ...defaultM6Data(), activity: seedActivity() });
 }
 
 /** Upload genre options of the Mmusic app (same list as Artist Setup / Upload Track) plus the catalog's Kyrgyz styles. */

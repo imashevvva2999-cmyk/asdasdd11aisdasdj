@@ -2,11 +2,12 @@ import { Link } from 'react-router';
 
 import type { ActivityEvent } from '@mmusic/backoffice/domain';
 import { formatNumber } from '@mmusic/backoffice/i18n';
-import { useCan, useCollection } from '@mmusic/backoffice/react';
+import { useCollection } from '@mmusic/backoffice/react';
 import { REVIEW_STATUS_LABELS, REVIEW_STATUSES } from '@mmusic/backoffice/review';
 import { DemoBadge, KpiCard, PageHeader } from '@mmusic/backoffice/ui';
 import { albums, artists as catalogArtistList, genres, playlists, tracks as catalogTracks } from '@mmusic/core/mocks';
 
+import { useArmCan, useArmPreferences } from '@/access';
 import type { Campaign, DemoArtist, Submission } from '@/domain/types';
 import { countByStatus, type QueueCounts } from '@/domain/workflow';
 import { entityPath, REVIEW_TONE, useArm } from '@/ui';
@@ -31,24 +32,25 @@ function StatusBar({ label, counts }: { label: string; counts: QueueCounts }) {
 }
 
 /**
- * ARM dashboard (M2, M3): queue sizes and review status of the fictional demo submissions, recent audit events, and the
+ * ARM dashboard (M2, M3; M6: number of recent events from the settings): queue sizes and review status of the fictional demo submissions, recent audit events, and the
  * public demo-catalog counts. Every figure comes from the prototype's own data and is labelled — no platform metrics.
  */
 export function DashboardPage() {
-  const { t, l, locale, date, staffName, actionText } = useArm();
+  const { t, l, locale, date, staffName, actionText, entityLabel } = useArm();
   const subs = useCollection<Submission>('submissions');
   const demoArtists = useCollection<DemoArtist>('artists');
   const events = useCollection<ActivityEvent>('activity');
-  const canModeration = useCan('arm.moderation.view');
-  const canArtists = useCan('arm.artists.view');
-  const canActivity = useCan('arm.activity.view');
-  const canCampaigns = useCan('arm.campaigns.view');
+  const canModeration = useArmCan('arm.moderation.view');
+  const canArtists = useArmCan('arm.artists.view');
+  const canActivity = useArmCan('arm.activity.view');
+  const canCampaigns = useArmCan('arm.campaigns.view');
   const campaigns = useCollection<Campaign>('campaigns');
   const n = (value: number) => formatNumber(value, locale);
   const trackCounts = countByStatus(subs.filter((s) => s.kind === 'track'));
   const releaseCounts = countByStatus(subs.filter((s) => s.kind === 'release'));
   const artistCounts = countByStatus(demoArtists);
-  const recent = [...events].sort((a, b) => b.at.localeCompare(a.at)).slice(0, 6);
+  const prefs = useArmPreferences();
+  const recent = [...events].sort((a, b) => b.at.localeCompare(a.at)).slice(0, prefs.recentActivity);
   const open = (to: string, allowed: boolean) => (allowed ? <Link to={to}>{t('openQueue')} →</Link> : undefined);
 
   return (
@@ -109,7 +111,7 @@ export function DashboardPage() {
                     <span className="bo-ellipsis">
                       {actionText(e.action)}:{' '}
                       <Link className="bo-link" to={entityPath(e.entity)}>
-                        {e.entity.label}
+                        {entityLabel(e)}
                       </Link>
                     </span>
                     <span className="bo-muted bo-ellipsis" style={{ fontSize: 13 }}>
@@ -139,7 +141,7 @@ export function DashboardPage() {
           {t('roadmapTitle')}
         </h2>
         <ul className="bo-list">
-          {(['roadmapM6'] as const).map((key) => (
+          {(['roadmapDone'] as const).map((key) => (
             <li key={key} className="bo-muted">
               {t(key)}
             </li>

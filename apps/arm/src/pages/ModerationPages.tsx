@@ -1,11 +1,12 @@
 import type { ReactNode } from 'react';
-import { Link, NavLink, useParams } from 'react-router';
+import { Link, NavLink, useLocation, useNavigate, useParams } from 'react-router';
 
 import type { ActivityEvent } from '@mmusic/backoffice/domain';
 import { useCollection } from '@mmusic/backoffice/react';
 import { REVIEW_STATUS_LABELS, REVIEW_STATUSES } from '@mmusic/backoffice/review';
 import { BackLink, DemoBadge, DetailList, EmptyState, FilterBar, FilterSelect, PageHeader, SearchField } from '@mmusic/backoffice/ui';
 
+import { useArmPreferences } from '@/access';
 import { AudioPreview } from '@/components/AudioPreview';
 import { useArmActions } from '@/data/actions';
 import { audioCreditFor, audioForSubmission } from '@/domain/audio';
@@ -13,7 +14,7 @@ import { catalogArtistName } from '@/domain/catalog';
 import type { DemoArtist, Submission, SubmissionKind } from '@/domain/types';
 import { sortQueue } from '@/domain/workflow';
 import { fill } from '@/strings';
-import { DecisionPanel, EventTable, formatDuration, ListingBadge, matches, ReviewBadge, useArm, useQueryState } from '@/ui';
+import { DecisionPanel, EventTable, formatDuration, ListingBadge, matches, ReviewBadge, useArm, useDefaultFilter, useQueryState } from '@/ui';
 
 const RELEASE_TYPE_KEYS = { single: 'releaseSingle', ep: 'releaseEp', album: 'releaseAlbum' } as const;
 
@@ -45,6 +46,7 @@ export function ModerationListPage({ kind }: { kind: SubmissionKind }) {
   const { t, l, date } = useArm();
   const subs = useCollection<Submission>('submissions');
   const artists = useCollection<DemoArtist>('artists');
+  useDefaultFilter('status', useArmPreferences().moderationStatus);
   const query = useQueryState();
   const q = query.get('q');
   const status = query.get('status');
@@ -123,6 +125,9 @@ export function ModerationDetailPage({ kind }: { kind: SubmissionKind }) {
   const { id = '' } = useParams();
   const { t, l, date, staffName } = useArm();
   const actions = useArmActions();
+  const prefs = useArmPreferences();
+  const navigate = useNavigate();
+  const nextOpened = (useLocation().state as { nextOpened?: boolean } | null)?.nextOpened === true;
   const subs = useCollection<Submission>('submissions');
   const artists = useCollection<DemoArtist>('artists');
   const events = useCollection<ActivityEvent>('activity');
@@ -175,12 +180,14 @@ export function ModerationDetailPage({ kind }: { kind: SubmissionKind }) {
           </>
         }
       />
+      {nextOpened && <output className="bo-saved">{t('nextOpened')}</output>}
       <div className="bo-detail-grid">
         <section className="bo-card" aria-label={t('detailsTitle')}>
           <h2>{t('detailsTitle')}</h2>
           <DetailList items={details} />
         </section>
         <DecisionPanel
+          key={sub.id}
           heading={t('decisionTitle')}
           title={sub.title}
           status={sub.status}
@@ -194,7 +201,13 @@ export function ModerationDetailPage({ kind }: { kind: SubmissionKind }) {
               </>
             ) : undefined
           }
-          onDecide={(d, r) => actions.decideSubmission(sub.id, d, r)}
+          onDecide={async (d, r) => {
+            const failed = await actions.decideSubmission(sub.id, d, r);
+            // Demo workflow setting (M6): continue with the next pending item of the same queue.
+            const next = sortQueue(subs.filter((s) => s.kind === kind && s.status === 'pending' && s.id !== sub.id))[0];
+            if (!failed && prefs.nextAfterDecision && next) void navigate(`/moderation/${kind}s/${next.id}`, { state: { nextOpened: true } });
+            return failed;
+          }}
         />
       </div>
       <section className="bo-section" aria-label={t('historyTitle')}>
