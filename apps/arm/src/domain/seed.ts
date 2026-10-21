@@ -1,5 +1,6 @@
 import type { ActivityEvent } from '@mmusic/backoffice/domain';
 
+import { CAMPAIGNS, TRANSACTIONS } from './seed-m3.ts';
 import type { ArmCollections, DemoArtist, DemoUser, Submission } from './types.ts';
 
 /**
@@ -68,6 +69,11 @@ const USERS: DemoUser[] = [
   user('u-13', 'Алия Сулайманова', 'aliya@example.kg', 'Бишкек', 'artist', '2026-10-08T09:30:00.000Z', '2026-10-20T08:20:00.000Z', { artistId: 'dart-5' }),
 ];
 
+/** Audit label of a campaign: the promoted item's title (the log shows the kind "Кампания" next to it). */
+export function campaignLabel(submissionId: string, submissions: Submission[] = SUBMISSIONS): string {
+  return submissions.find((s) => s.id === submissionId)?.title ?? submissionId;
+}
+
 /** Audit events matching every decision already present in the seed (oldest first). */
 function seedActivity(): ActivityEvent[] {
   const events: Omit<ActivityEvent, 'id' | 'mock'>[] = [];
@@ -79,13 +85,17 @@ function seedActivity(): ActivityEvent[] {
     const decision = s.status === 'approved' ? 'approve' : s.status === 'rejected' ? 'reject' : 'request-changes';
     events.push({ at: s.decidedAt!, actorId: s.decidedBy!, actorRoleId: 'arm-moderator', action: `${s.kind}.${decision}`, entity: { type: s.kind, id: s.id, label: s.title }, fromStatus: 'pending', toStatus: s.status, ...(s.reason ? { reason: s.reason } : {}) });
   }
+  for (const c of CAMPAIGNS.filter((x) => x.status !== 'pending')) {
+    const decision = c.status === 'approved' ? 'approve' : c.status === 'rejected' ? 'reject' : 'request-changes';
+    events.push({ at: c.decidedAt!, actorId: c.decidedBy!, actorRoleId: 'arm-super-admin', action: `campaign.${decision}`, entity: { type: 'campaign', id: c.id, label: campaignLabel(c.submissionId) }, fromStatus: 'pending', toStatus: c.status, ...(c.reason ? { reason: c.reason } : {}) });
+  }
   const suspended = USERS.find((u) => u.status === 'suspended')!;
   events.push({ at: suspended.statusChangedAt!, actorId: 'staff-arm-3', actorRoleId: 'arm-support', action: 'user.suspend', entity: { type: 'user', id: suspended.id, label: suspended.name }, fromStatus: 'active', toStatus: 'suspended', reason: suspended.statusReason });
   return events.sort((a, b) => a.at.localeCompare(b.at)).map((e, i) => ({ ...e, id: `seed-event-${i + 1}`, mock: true }));
 }
 
 export function armSeed(): ArmCollections {
-  return structuredClone({ submissions: SUBMISSIONS, artists: ARTISTS, users: USERS, activity: seedActivity() });
+  return structuredClone({ submissions: SUBMISSIONS, artists: ARTISTS, users: USERS, campaigns: CAMPAIGNS, transactions: TRANSACTIONS, activity: seedActivity() });
 }
 
 /** Upload genre options of the Mmusic app (same list as Artist Setup / Upload Track) plus the catalog's Kyrgyz styles. */

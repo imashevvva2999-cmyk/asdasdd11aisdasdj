@@ -8,7 +8,7 @@ import { checkReason, reasonRequired, REVIEW_DECISION_LABELS, REVIEW_STATUS_LABE
 import { ConfirmDialog, PermissionNote, StatusBadge, type StatusTone } from '@mmusic/backoffice/ui';
 
 import type { ActionError } from '@/data/actions';
-import type { UserStatus } from '@/domain/types';
+import type { ListingStatus, UserStatus } from '@/domain/types';
 import { ARM_STRINGS, fill, type ArmStringKey } from '@/strings';
 
 /** Filter state kept in the URL (?q=&status=…): survives navigation and lets the dashboard link to a filtered queue. */
@@ -63,7 +63,15 @@ export function useArm() {
       return [ACTION_KEYS[verb] ? t(ACTION_KEYS[verb]) : action, KIND_KEYS[kind] ? t(KIND_KEYS[kind]) : ''].filter(Boolean).join(' · ');
     },
     errorText: (error: ActionError) =>
-      error === 'same-status' ? t('errorSameStatus') : error === 'staff-account' ? t('errorStaffAccount') : l(TRANSITION_ERROR_LABELS[error]),
+      error === 'same-status'
+        ? t('errorSameStatus')
+        : error === 'staff-account'
+          ? t('errorStaffAccount')
+          : error === 'item-not-ready'
+            ? t('errorItemNotReady')
+            : error === 'not-approved'
+              ? t('errorNotApproved')
+              : l(TRANSITION_ERROR_LABELS[error]),
   };
 }
 
@@ -94,9 +102,15 @@ export function UserStatusBadge({ status }: { status: UserStatus }) {
   return <StatusBadge tone={status === 'active' ? 'success' : 'danger'} label={status === 'active' ? t('statusActive') : t('statusSuspended')} />;
 }
 
+export function ListingBadge({ status }: { status: ListingStatus }) {
+  const { t } = useArm();
+  return <StatusBadge tone={status === 'listed' ? 'success' : 'neutral'} label={status === 'listed' ? t('listingListed') : t('listingUnlisted')} />;
+}
+
 /** Status text for an audit event's entity type. */
 function StatusOf({ type, status }: { type: string; status: string }) {
   if (type === 'user') return <UserStatusBadge status={status as UserStatus} />;
+  if (status === 'listed' || status === 'unlisted') return <ListingBadge status={status} />;
   return <ReviewBadge status={status as ReviewStatus} artist={type === 'artist'} />;
 }
 
@@ -106,8 +120,10 @@ const ACTION_KEYS: Record<string, ArmStringKey> = {
   'request-changes': 'actionRequestChanges',
   suspend: 'actionSuspend',
   reactivate: 'actionReactivate',
+  unlist: 'actionUnlist',
+  relist: 'actionRelist',
 };
-const KIND_KEYS: Record<string, ArmStringKey> = { track: 'kindTrack', release: 'kindRelease', artist: 'kindArtist', user: 'kindUser' };
+const KIND_KEYS: Record<string, ArmStringKey> = { track: 'kindTrack', release: 'kindRelease', artist: 'kindArtist', user: 'kindUser', campaign: 'kindCampaign' };
 
 export function actionVerb(action: string): string {
   return action.split('.')[1] ?? action;
@@ -117,6 +133,7 @@ export function entityPath(entity: ActivityEvent['entity']): string {
   if (entity.type === 'track') return `/moderation/tracks/${entity.id}`;
   if (entity.type === 'release') return `/moderation/releases/${entity.id}`;
   if (entity.type === 'artist') return `/artists/${entity.id}`;
+  if (entity.type === 'campaign') return `/campaigns/${entity.id}`;
   return `/users/${entity.id}`;
 }
 

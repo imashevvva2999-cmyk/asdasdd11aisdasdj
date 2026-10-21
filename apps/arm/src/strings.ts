@@ -1,11 +1,14 @@
 import type { StringTable } from '@mmusic/backoffice/i18n';
 
+import { M3_STRINGS } from './strings-m3';
+
 /** ARM page text (RU default, EN). Shell and shared review labels live in @mmusic/backoffice. `{x}` = placeholder. */
 export const ARM_STRINGS = {
   ru: {
+    ...M3_STRINGS.ru,
     // dashboard
     dashboardTitle: 'Дашборд',
-    dashboardSubtitle: 'Административное рабочее место Mmusic — модерация, артисты, пользователи (этап M2).',
+    dashboardSubtitle: 'Административное рабочее место Mmusic — модерация, каталог, артисты, пользователи, кампании, платежи и отчёты (этап M3).',
     pendingTracks: 'Треки на проверке',
     pendingReleases: 'Релизы на проверке',
     pendingArtists: 'Артисты на проверке',
@@ -28,7 +31,6 @@ export const ARM_STRINGS = {
     genres: 'Жанры и подборки',
     playlists: 'Плейлисты',
     roadmapTitle: 'Что появится дальше',
-    roadmapM3: 'M3 — каталог, проверка кампаний, обзор платежей (только просмотр), отчёты',
     roadmapM6: 'M6 — экран ролей и прав, управление сотрудниками',
     // common
     kindTrack: 'Трек',
@@ -128,7 +130,7 @@ export const ARM_STRINGS = {
     colLinked: 'Связано',
     artistNotFound: 'Артист не найден',
     backToArtists: 'К списку артистов',
-    catalogNote: 'Публичные метаданные демо-каталога приложения. Решения модерации и верификации к артистам каталога в прототипе не применяются; редактирование каталога — этап M3.',
+    catalogNote: 'Публичные метаданные демо-каталога приложения. Решения модерации и верификации к артистам каталога в прототипе не применяются; каталог в АРМ — только для чтения (раздел «Каталог»).',
     fieldBio: 'О себе',
     fieldGenres: 'Жанры',
     fieldCity: 'Город',
@@ -197,8 +199,9 @@ export const ARM_STRINGS = {
     unknownStaff: 'Неизвестный сотрудник',
   },
   en: {
+    ...M3_STRINGS.en,
     dashboardTitle: 'Dashboard',
-    dashboardSubtitle: 'Mmusic administration workspace — moderation, artists, users (milestone M2).',
+    dashboardSubtitle: 'Mmusic administration workspace — moderation, catalog, artists, users, campaigns, payments and reports (milestone M3).',
     pendingTracks: 'Tracks pending',
     pendingReleases: 'Releases pending',
     pendingArtists: 'Artists pending',
@@ -221,7 +224,6 @@ export const ARM_STRINGS = {
     genres: 'Genres and collections',
     playlists: 'Playlists',
     roadmapTitle: 'Coming next',
-    roadmapM3: 'M3 — catalog, campaign review, payments overview (view only), reports',
     roadmapM6: 'M6 — roles and permissions screen, staff management',
     kindTrack: 'Track',
     kindRelease: 'Release',
@@ -317,7 +319,7 @@ export const ARM_STRINGS = {
     colLinked: 'Linked',
     artistNotFound: 'Artist not found',
     backToArtists: 'Back to artists',
-    catalogNote: 'Public metadata of the app’s demo catalog. Moderation and verification decisions are not applied to catalog artists in the prototype; catalog editing arrives in M3.',
+    catalogNote: 'Public metadata of the app’s demo catalog. Moderation and verification decisions are not applied to catalog artists in the prototype; the catalog is view only in ARM (Catalog section).',
     fieldBio: 'About',
     fieldGenres: 'Genres',
     fieldCity: 'City',

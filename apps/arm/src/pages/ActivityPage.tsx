@@ -38,6 +38,7 @@ export function ActivityPage() {
             { value: 'release', label: t('kindRelease') },
             { value: 'artist', label: t('kindArtist') },
             { value: 'user', label: t('kindUser') },
+            { value: 'campaign', label: t('kindCampaign') },
           ]}
         />
         <FilterSelect
@@ -51,6 +52,8 @@ export function ActivityPage() {
             { value: 'reject', label: t('actionReject') },
             { value: 'suspend', label: t('actionSuspend') },
             { value: 'reactivate', label: t('actionReactivate') },
+            { value: 'unlist', label: t('actionUnlist') },
+            { value: 'relist', label: t('actionRelist') },
           ]}
         />
         <FilterSelect label={t('filterActorRole')} value={role} onChange={(v) => query.set('role', v)} options={[{ value: '', label: '—' }, ...bo.roles.map((r) => ({ value: r.id, label: l(r.label) }))]} />

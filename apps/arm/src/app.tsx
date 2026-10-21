@@ -10,8 +10,12 @@ import { AppShell, ComingSoonPage, NotFoundPage, RequirePermission, type NavGrou
 import { armSeed } from '@/domain/seed';
 import { ActivityPage } from '@/pages/ActivityPage';
 import { ArtistDetailPage, ArtistsPage } from '@/pages/ArtistPages';
+import { CampaignDetailPage, CampaignsPage } from '@/pages/CampaignPages';
+import { CatalogPage } from '@/pages/CatalogPage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { ModerationDetailPage, ModerationListPage } from '@/pages/ModerationPages';
+import { PaymentDetailPage, PaymentsPage } from '@/pages/PaymentPages';
+import { ReportsPage } from '@/pages/ReportsPage';
 import { UserDetailPage, UsersPage } from '@/pages/UserPages';
 
 /** ARM's own back-office instance: storage namespace `mmusic-arm`, fictional demo data, provisional ARM roles. */
@@ -21,7 +25,8 @@ export const backoffice = createBackoffice({
   namespace: 'mmusic-arm',
   // v2 (M2): fictional submissions, demo artist applications, demo users and their audit events.
   // v3: + the playable demo submission sub-demo-horizon (saved v2 data is re-seeded so it appears).
-  dataVersion: 3,
+  // v4 (M3): + campaign requests and demo donations (collections campaigns, transactions).
+  dataVersion: 4,
   seed: armSeed,
   staff: DEMO_STAFF,
 });
@@ -38,7 +43,7 @@ const GROUPS: { label: Localized; sections: Section[] }[] = [
     label: { ru: 'Контент', en: 'Content' },
     sections: [
       { path: '/moderation', label: { ru: 'Модерация', en: 'Moderation' }, icon: 'gavel', permission: 'arm.moderation.view' },
-      { path: '/catalog', label: { ru: 'Каталог', en: 'Catalog' }, icon: 'library-music', permission: 'arm.catalog.view', milestone: 'M3', description: { ru: 'Артисты, альбомы, треки, жанры и редакционные плейлисты (FR-19.1).', en: 'Artists, albums, tracks, genres and editorial playlists (FR-19.1).' } },
+      { path: '/catalog', label: { ru: 'Каталог', en: 'Catalog' }, icon: 'library-music', permission: 'arm.catalog.view', },
     ],
   },
   {
@@ -51,9 +56,9 @@ const GROUPS: { label: Localized; sections: Section[] }[] = [
   {
     label: { ru: 'Бизнес', en: 'Business' },
     sections: [
-      { path: '/campaigns', label: { ru: 'Кампании', en: 'Campaigns' }, icon: 'campaign', permission: 'arm.campaigns.view', milestone: 'M3', description: { ru: 'Проверка промо-кампаний «на модерации».', en: 'Review of promotion campaigns "in review".' } },
-      { path: '/payments', label: { ru: 'Платежи', en: 'Payments' }, icon: 'payments', permission: 'arm.payments.view', milestone: 'M3', description: { ru: 'Только просмотр вымышленных транзакций; реальной обработки платежей нет.', en: 'View-only fictional transactions; no real payment processing.' } },
-      { path: '/reports', label: { ru: 'Отчёты', en: 'Reports' }, icon: 'assessment', permission: 'arm.reports.view', milestone: 'M3' },
+      { path: '/campaigns', label: { ru: 'Кампании', en: 'Campaigns' }, icon: 'campaign', permission: 'arm.campaigns.view', },
+      { path: '/payments', label: { ru: 'Платежи', en: 'Payments' }, icon: 'payments', permission: 'arm.payments.view', },
+      { path: '/reports', label: { ru: 'Отчёты', en: 'Reports' }, icon: 'assessment', permission: 'arm.reports.view', },
     ],
   },
   {
@@ -93,6 +98,12 @@ export const router = createBrowserRouter([
       { path: 'artists/:id', element: guard('arm.artists.view', <ArtistDetailPage />) },
       { path: 'users', element: guard('arm.users.view', <UsersPage />) },
       { path: 'users/:id', element: guard('arm.users.view', <UserDetailPage />) },
+      { path: 'catalog', element: guard('arm.catalog.view', <CatalogPage />) },
+      { path: 'campaigns', element: guard('arm.campaigns.view', <CampaignsPage />) },
+      { path: 'campaigns/:id', element: guard('arm.campaigns.view', <CampaignDetailPage />) },
+      { path: 'payments', element: guard('arm.payments.view', <PaymentsPage />) },
+      { path: 'payments/:id', element: guard('arm.payments.view', <PaymentDetailPage />) },
+      { path: 'reports', element: guard('arm.reports.view', <ReportsPage />) },
       { path: 'activity', element: guard('arm.activity.view', <ActivityPage />) },
       ...planned.map((section) => ({
         path: section.path.slice(1),

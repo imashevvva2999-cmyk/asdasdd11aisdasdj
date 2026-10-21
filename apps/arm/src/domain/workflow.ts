@@ -2,7 +2,7 @@ import type { ActivityEvent } from '@mmusic/backoffice/domain';
 import { can } from '@mmusic/backoffice/rbac';
 import { auditEvent, checkReason, decide, type DecisionContext, type ReviewDecision, type ReviewOutcome, type ReviewStatus, type TransitionError } from '@mmusic/backoffice/review';
 
-import type { DemoArtist, DemoUser, Submission, UserStatus } from './types.ts';
+import type { Campaign, DemoArtist, DemoUser, ListingStatus, Submission, UserStatus } from './types.ts';
 
 /**
  * ARM actions as pure functions (unit-tested): each validates the permission matrix, the current status and the
@@ -42,6 +42,55 @@ export function changeUserStatus(
     ok: true,
     patch: { status: to, statusReason: clean, statusChangedAt: ctx.now },
     event: auditEvent({ action: to === 'suspended' ? 'user.suspend' : 'user.reactivate', entity: { type: 'user', id: user.id, label: user.name }, fromStatus: user.status, toStatus: to, reason: clean }, ctx),
+  };
+}
+
+export type CampaignError = TransitionError | 'item-not-ready';
+
+/**
+ * Campaign review (permission arm.campaigns.decide). [П] A campaign can only be approved while the item it promotes
+ * is approved by moderation and listed in the catalog; rejecting or requesting changes is always possible.
+ */
+export function decideCampaign(
+  campaign: Campaign,
+  promoted: Submission | undefined,
+  decision: ReviewDecision,
+  reason: string | undefined,
+  ctx: DecisionContext,
+): ReturnType<typeof decide> | { ok: false; error: CampaignError } {
+  const out = decide(campaign, decision, reason, { type: 'campaign', label: promoted?.title ?? campaign.submissionId }, 'arm.campaigns.decide', ctx);
+  if (out.ok && decision === 'approve' && !isListed(promoted)) return { ok: false, error: 'item-not-ready' };
+  return out;
+}
+
+/** An approved submission is in the demo catalog unless staff unlisted it. */
+export function isListed(sub: Submission | undefined): boolean {
+  return sub?.status === 'approved' && sub.listing !== 'unlisted';
+}
+
+export type ListingError = TransitionError | 'not-approved' | 'same-status';
+
+/**
+ * Takes an approved demo item out of the prototype's demo catalog, or lists it again (permission arm.catalog.edit).
+ * Unlisting needs a reason. Only ARM demo data changes — the app's real catalog metadata is read-only here.
+ */
+export function changeListing(
+  sub: Submission,
+  to: ListingStatus,
+  reason: string | undefined,
+  ctx: DecisionContext,
+): { ok: true; patch: Pick<Submission, 'listing' | 'listingReason' | 'listingChangedAt'>; event: Omit<ActivityEvent, 'id' | 'mock'> } | { ok: false; error: ListingError } {
+  if (!can(ctx.matrix, ctx.actor.roleId, 'arm.catalog.edit')) return { ok: false, error: 'forbidden' };
+  if (sub.status !== 'approved') return { ok: false, error: 'not-approved' };
+  const from: ListingStatus = sub.listing ?? 'listed';
+  if (from === to) return { ok: false, error: 'same-status' };
+  const reasonError = checkReason(reason, to === 'unlisted');
+  if (reasonError) return { ok: false, error: reasonError };
+  const clean = reason?.trim() || undefined;
+  return {
+    ok: true,
+    patch: { listing: to, listingReason: clean, listingChangedAt: ctx.now },
+    event: auditEvent({ action: `${sub.kind}.${to === 'unlisted' ? 'unlist' : 'relist'}`, entity: { type: sub.kind, id: sub.id, label: sub.title }, fromStatus: from, toStatus: to, reason: clean }, ctx),
   };
 }
 

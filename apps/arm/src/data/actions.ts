@@ -2,11 +2,11 @@ import type { Repository } from '@mmusic/backoffice/data';
 import { useActor, useBackoffice } from '@mmusic/backoffice/react';
 import type { DecisionContext, ReviewDecision } from '@mmusic/backoffice/review';
 
-import type { ArmCollections, UserStatus } from '@/domain/types';
-import { changeUserStatus, decideSubmission, reviewArtist, type UserStatusError } from '@/domain/workflow';
+import type { ArmCollections, ListingStatus, UserStatus } from '@/domain/types';
+import { changeListing, changeUserStatus, decideCampaign, decideSubmission, reviewArtist, type CampaignError, type ListingError, type UserStatusError } from '@/domain/workflow';
 
-/** Why an action was refused (shared review errors + user-status ones); null = saved. */
-export type ActionError = UserStatusError;
+/** Why an action was refused (shared review errors + user-status, campaign and listing ones); null = saved. */
+export type ActionError = UserStatusError | CampaignError | ListingError;
 
 /**
  * ARM actions wired to the mock repositories: re-read the record, validate with the pure workflow (permission,
@@ -34,6 +34,24 @@ export function useArmActions() {
       const out = reviewArtist(item, decision, reason, ctx());
       if (!out.ok) return out.error;
       await repo('artists').update(id, out.patch);
+      await repo('activity').create(out.event);
+      return null;
+    },
+    async decideCampaign(id: string, decision: ReviewDecision, reason?: string): Promise<ActionError | null> {
+      const item = await repo('campaigns').get(id);
+      if (!item) return 'not-found';
+      const out = decideCampaign(item, await repo('submissions').get(item.submissionId), decision, reason, ctx());
+      if (!out.ok) return out.error;
+      await repo('campaigns').update(id, out.patch);
+      await repo('activity').create(out.event);
+      return null;
+    },
+    async changeListing(id: string, to: ListingStatus, reason?: string): Promise<ActionError | null> {
+      const item = await repo('submissions').get(id);
+      if (!item) return 'not-found';
+      const out = changeListing(item, to, reason, ctx());
+      if (!out.ok) return out.error;
+      await repo('submissions').update(id, out.patch);
       await repo('activity').create(out.event);
       return null;
     },

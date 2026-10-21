@@ -7,7 +7,7 @@ import { REVIEW_STATUS_LABELS, REVIEW_STATUSES } from '@mmusic/backoffice/review
 import { DemoBadge, KpiCard, PageHeader } from '@mmusic/backoffice/ui';
 import { albums, artists as catalogArtistList, genres, playlists, tracks as catalogTracks } from '@mmusic/core/mocks';
 
-import type { DemoArtist, Submission } from '@/domain/types';
+import type { Campaign, DemoArtist, Submission } from '@/domain/types';
 import { countByStatus, type QueueCounts } from '@/domain/workflow';
 import { entityPath, REVIEW_TONE, useArm } from '@/ui';
 
@@ -31,7 +31,7 @@ function StatusBar({ label, counts }: { label: string; counts: QueueCounts }) {
 }
 
 /**
- * ARM dashboard (M2): queue sizes and review status of the fictional demo submissions, recent audit events, and the
+ * ARM dashboard (M2, M3): queue sizes and review status of the fictional demo submissions, recent audit events, and the
  * public demo-catalog counts. Every figure comes from the prototype's own data and is labelled — no platform metrics.
  */
 export function DashboardPage() {
@@ -42,6 +42,8 @@ export function DashboardPage() {
   const canModeration = useCan('arm.moderation.view');
   const canArtists = useCan('arm.artists.view');
   const canActivity = useCan('arm.activity.view');
+  const canCampaigns = useCan('arm.campaigns.view');
+  const campaigns = useCollection<Campaign>('campaigns');
   const n = (value: number) => formatNumber(value, locale);
   const trackCounts = countByStatus(subs.filter((s) => s.kind === 'track'));
   const releaseCounts = countByStatus(subs.filter((s) => s.kind === 'release'));
@@ -58,6 +60,7 @@ export function DashboardPage() {
           <KpiCard icon="music-note" label={t('pendingTracks')} value={n(trackCounts.pending)} hint={t('kpiDemoHint')} demo footer={open('/moderation/tracks?status=pending', canModeration)} />
           <KpiCard icon="album" label={t('pendingReleases')} value={n(releaseCounts.pending)} hint={t('kpiDemoHint')} demo footer={open('/moderation/releases?status=pending', canModeration)} />
           <KpiCard icon="mic" label={t('pendingArtists')} value={n(artistCounts.pending)} hint={t('kpiDemoHint')} demo footer={open('/artists?source=demo&status=pending', canArtists)} />
+          <KpiCard icon="campaign" label={t('pendingCampaigns')} value={n(countByStatus(campaigns).pending)} hint={t('kpiDemoHint')} demo footer={open('/campaigns?status=pending', canCampaigns)} />
           <KpiCard icon="history" label={t('loggedActions')} value={n(events.length)} hint={t('kpiLogHint')} demo footer={open('/activity', canActivity)} />
         </div>
       </section>
@@ -136,7 +139,7 @@ export function DashboardPage() {
           {t('roadmapTitle')}
         </h2>
         <ul className="bo-list">
-          {(['roadmapM3', 'roadmapM6'] as const).map((key) => (
+          {(['roadmapM6'] as const).map((key) => (
             <li key={key} className="bo-muted">
               {t(key)}
             </li>

@@ -13,7 +13,7 @@ import { catalogArtistName } from '@/domain/catalog';
 import type { DemoArtist, Submission, SubmissionKind } from '@/domain/types';
 import { sortQueue } from '@/domain/workflow';
 import { fill } from '@/strings';
-import { DecisionPanel, EventTable, formatDuration, matches, ReviewBadge, useArm, useQueryState } from '@/ui';
+import { DecisionPanel, EventTable, formatDuration, ListingBadge, matches, ReviewBadge, useArm, useQueryState } from '@/ui';
 
 const RELEASE_TYPE_KEYS = { single: 'releaseSingle', ep: 'releaseEp', album: 'releaseAlbum' } as const;
 
@@ -156,6 +156,7 @@ export function ModerationDetailPage({ kind }: { kind: SubmissionKind }) {
     [t('explicit'), sub.explicit ? t('yes') : t('no')],
     [t('fieldSubmitted'), date(sub.submittedAt)],
     [t('fieldStatus'), <ReviewBadge key="s" status={sub.status} />],
+    ...(sub.status === 'approved' ? ([[t('fieldListing'), <ListingBadge key="l" status={sub.listing ?? 'listed'} />]] as [string, ReactNode][]) : []),
     ...(sub.decidedAt ? ([[t('fieldDecided'), `${date(sub.decidedAt)} · ${staffName(sub.decidedBy)}`]] as [string, ReactNode][]) : []),
     ...(sub.reason ? ([[t('fieldReason'), <p key="r" className="bo-quote" style={{ margin: 0 }}>{sub.reason}</p>]] as [string, ReactNode][]) : []),
     ...(sub.note ? ([[t('fieldNote'), l(sub.note)]] as [string, ReactNode][]) : []),
