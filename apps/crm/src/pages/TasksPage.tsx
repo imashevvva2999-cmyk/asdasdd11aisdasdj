@@ -6,7 +6,7 @@ import { DemoBadge, EmptyState, FilterBar, FilterSelect, PageHeader, PermissionN
 import { useCrmCan } from '@/access';
 import { useCrmActions } from '@/data/actions';
 import { PRIORITY_ORDER } from '@/domain/tasks';
-import { TASK_PRIORITIES, TASK_STATUSES, type CrmContact, type CrmOrganization, type Deal, type Interaction, type Task, type TaskPriority, type TaskStatus } from '@/domain/types';
+import { TASK_PRIORITIES, TASK_STATUSES, type CrmArtist, type CrmContact, type CrmOrganization, type Deal, type Interaction, type Task, type TaskPriority, type TaskStatus } from '@/domain/types';
 import { fill, PRIORITY_KEYS, TASK_STATUS_KEYS } from '@/strings';
 import { matches, PriorityBadge, TaskStatusBadge, useCrm, useNow, useQueryState, ViewOnly } from '@/ui';
 
@@ -22,6 +22,7 @@ type Row = {
   dueAt?: string;
   contactId?: string;
   organizationId?: string;
+  artistId?: string;
   dealId?: string;
 };
 
@@ -39,18 +40,20 @@ export function TasksPage() {
   const interactions = useCollection<Interaction>('interactions');
   const contacts = useCollection<CrmContact>('contacts');
   const organizations = useCollection<CrmOrganization>('organizations');
+  const artists = useCollection<CrmArtist>('artists');
   const deals = useCollection<Deal>('deals');
   const query = useQueryState();
   const [q, status, priority, due, assignee, source] = ['q', 'status', 'priority', 'due', 'assignee', 'source'].map(query.get);
   const contactName = (id?: string) => contacts.find((c) => c.id === id)?.name;
   const orgName = (id?: string) => organizations.find((o) => o.id === id)?.name;
   const dealTitle = (id?: string) => deals.find((d) => d.id === id)?.title;
+  const artistName = (id?: string) => artists.find((a) => a.id === id)?.stageName;
 
   const all: Row[] = [
-    ...tasks.map((x): Row => ({ key: `t-${x.id}`, source: 'task', id: x.id, title: x.title, status: x.status, priority: x.priority, assigneeId: x.assigneeId, dueAt: x.dueAt, contactId: x.contactId, organizationId: x.organizationId, dealId: x.dealId })),
+    ...tasks.map((x): Row => ({ key: `t-${x.id}`, source: 'task', id: x.id, title: x.title, status: x.status, priority: x.priority, assigneeId: x.assigneeId, dueAt: x.dueAt, contactId: x.contactId, organizationId: x.organizationId, artistId: x.artistId, dealId: x.dealId })),
     ...interactions
       .filter((i) => i.followUpAt)
-      .map((i): Row => ({ key: `r-${i.id}`, source: 'reminder', id: i.id, title: i.summary, status: i.followUpDone ? 'completed' : 'pending', assigneeId: i.authorId, dueAt: i.followUpAt, contactId: i.contactId, organizationId: i.organizationId })),
+      .map((i): Row => ({ key: `r-${i.id}`, source: 'reminder', id: i.id, title: i.summary, status: i.followUpDone ? 'completed' : 'pending', assigneeId: i.authorId, dueAt: i.followUpAt, contactId: i.contactId, organizationId: i.organizationId, artistId: i.artistId })),
   ];
   const open = (r: Row) => r.status === 'pending' || r.status === 'in-progress';
   const overdue = (r: Row) => open(r) && !!r.dueAt && r.dueAt < now;
@@ -71,7 +74,7 @@ export function TasksPage() {
         (!priority || r.priority === priority) &&
         (!assignee || r.assigneeId === assignee) &&
         dueMatch(r) &&
-        (!q || matches(`${r.title} ${contactName(r.contactId) ?? ''} ${orgName(r.organizationId) ?? ''} ${dealTitle(r.dealId) ?? ''}`, q)),
+        (!q || matches(`${r.title} ${contactName(r.contactId) ?? ''} ${orgName(r.organizationId) ?? ''} ${artistName(r.artistId) ?? ''} ${dealTitle(r.dealId) ?? ''}`, q)),
     )
     .sort((a, b) => Number(open(b)) - Number(open(a)) || Number(overdue(b)) - Number(overdue(a)) || (a.dueAt ?? '9999').localeCompare(b.dueAt ?? '9999') || PRIORITY_ORDER[a.priority ?? 'normal'] - PRIORITY_ORDER[b.priority ?? 'normal']);
   const overdueCount = all.filter(overdue).length;
@@ -131,7 +134,7 @@ export function TasksPage() {
             <tbody>
               {rows.map((r) => {
                 const canComplete = open(r) && (r.source === 'task' ? canTasks : canReminders);
-                const link = r.source === 'task' ? `/tasks/${r.id}` : r.contactId ? `/contacts/${r.contactId}` : `/organizations/${r.organizationId}`;
+                const link = r.source === 'task' ? `/tasks/${r.id}` : r.contactId ? `/contacts/${r.contactId}` : r.artistId ? `/artists/${r.artistId}` : `/organizations/${r.organizationId}`;
                 return (
                   <tr key={r.key} data-row={r.key}>
                     <td style={{ minWidth: 220 }}>
@@ -144,7 +147,7 @@ export function TasksPage() {
                         </span>
                       )}
                     </td>
-                    <td className="muted">{[dealTitle(r.dealId), orgName(r.organizationId), contactName(r.contactId)].filter(Boolean).join(' · ') || '—'}</td>
+                    <td className="muted">{[dealTitle(r.dealId), artistName(r.artistId), orgName(r.organizationId), contactName(r.contactId)].filter(Boolean).join(' · ') || '—'}</td>
                     <td className="muted">{staffName(r.assigneeId)}</td>
                     <td className="nowrap">
                       <span className={overdue(r) ? 'crm-follow overdue' : 'bo-muted'}>{r.dueAt ? date(r.dueAt) : t('dueNone')}</span>

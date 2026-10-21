@@ -22,14 +22,54 @@ export type CrmContact = Contact & {
 export type RelationshipStatus = 'prospect' | 'negotiating' | 'active' | 'paused';
 export const RELATIONSHIP_STATUSES: readonly RelationshipStatus[] = ['prospect', 'negotiating', 'active', 'paused'];
 
-/** A fictional company; extends the shared back-office Organization. */
-export type CrmOrganization = Organization & {
+/**
+ * Entity type of a CRM organization (unified CRM): a music group / band, a record label, an agency, an event organizer
+ * (venues, festivals), a media outlet, a company or another organization. A music group is a creative collective — it
+ * is not assumed to be a registered legal entity. Older saved types are mapped by the migration (`crmOrgKind`), which
+ * keeps the original type in `formerKind`.
+ */
+export type CrmOrgKind = 'group' | 'label' | 'agency' | 'event-organizer' | 'media' | 'company' | 'other';
+export const CRM_ORG_KINDS: readonly CrmOrgKind[] = ['group', 'label', 'agency', 'event-organizer', 'media', 'company', 'other'];
+
+/** A member of a music group: a reference to one artist record (never a copy), with the member's role in the group. */
+export type GroupMember = { artistId: string; role: string; joinedAt: string };
+
+/** A fictional organization or music group; extends the shared back-office Organization with the CRM entity type. */
+export type CrmOrganization = Omit<Organization, 'kind'> & {
+  kind: CrmOrgKind;
+  /** Music groups only: members (artist references) and their roles. */
+  members?: GroupMember[];
+  /** The organization type before the unified CRM (e.g. 'sponsor'), kept by the migration; never edited. */
+  formerKind?: string;
   relationship: RelationshipStatus;
   relationshipChangedAt?: string;
   /** Short internal description of what the organization does (fictional). */
   about?: string;
   /** Fictional tags (M6). */
   tags?: string[];
+  updatedAt?: string;
+};
+
+/**
+ * A fictional solo artist (unified CRM). The same record is referenced by every music group the artist belongs to,
+ * so a person who plays in a group is never stored twice. Collaboration status reuses the relationship scale.
+ */
+export type CrmArtist = Entity & {
+  stageName: string;
+  /** Optional; demo records leave it empty. */
+  legalName?: string;
+  /** Profile image as a small data URL kept in this browser (demo records use generated initials). */
+  avatar?: string;
+  genres: string[];
+  city: string;
+  email?: string;
+  phone?: string;
+  /** Manager or representative: a CRM contact. */
+  managerContactId?: string;
+  collaboration: RelationshipStatus;
+  collaborationChangedAt?: string;
+  notes?: string;
+  createdAt: string;
   updatedAt?: string;
 };
 
@@ -44,6 +84,8 @@ export type Interaction = Entity & {
   summary: string;
   contactId?: string;
   organizationId?: string;
+  /** Unified CRM: the solo artist the interaction was with. */
+  artistId?: string;
   /** Demo staff member (StaffUser.id) who logged it. */
   authorId: string;
   /** Optional follow-up reminder (shown on the dashboard until marked done). */
@@ -90,11 +132,21 @@ export type RoleConfig = Entity & { permissions: string[]; updatedAt?: string };
 /** Demo role assignment of a CRM staff member (id = StaffUser.id). */
 export type StaffAssignment = Entity & { roleId: string; updatedAt?: string };
 
-/** A fictional partnership opportunity with an organization. The value is a fictional estimate, not revenue. */
+/**
+ * A fictional partnership opportunity with exactly one counterparty: an organization / music group or (unified CRM)
+ * a solo artist. The value is a fictional estimate, not revenue.
+ */
 export type Deal = Entity & {
   title: string;
-  organizationId: string;
-  /** Optional contact person (must belong to the organization). */
+  organizationId?: string;
+  artistId?: string;
+  /**
+   * Optional secondary participant (e.g. the label of an artist deal): at most one, an organization or an artist,
+   * never the primary counterparty again. The pipeline, stage and owner stay with the one deal record.
+   */
+  secondaryOrganizationId?: string;
+  secondaryArtistId?: string;
+  /** Optional contact person (must belong to the organization when the deal is with one). */
   contactId?: string;
   /** Responsible CRM staff member (StaffUser.id). */
   ownerId: string;
@@ -116,7 +168,7 @@ export const TASK_STATUSES: readonly TaskStatus[] = ['pending', 'in-progress', '
 export type TaskPriority = 'low' | 'normal' | 'high';
 export const TASK_PRIORITIES: readonly TaskPriority[] = ['high', 'normal', 'low'];
 
-/** A CRM task for a staff member, optionally about a contact, an organization and/or a deal. Reminders stay in-app. */
+/** A CRM task for a staff member, optionally about a contact, an organization, an artist and/or a deal. Reminders stay in-app. */
 export type Task = Entity & {
   title: string;
   description?: string;
@@ -126,6 +178,8 @@ export type Task = Entity & {
   dueAt?: string;
   contactId?: string;
   organizationId?: string;
+  /** Unified CRM: the solo artist the task is about. */
+  artistId?: string;
   dealId?: string;
   /** Latest completion (the full history is in the change log). */
   completedAt?: string;
@@ -138,6 +192,7 @@ export type Task = Entity & {
 export type CrmCollections = {
   contacts: CrmContact[];
   organizations: CrmOrganization[];
+  artists: CrmArtist[];
   interactions: Interaction[];
   deals: Deal[];
   tasks: Task[];

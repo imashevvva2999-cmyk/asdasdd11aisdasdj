@@ -47,7 +47,7 @@ void test('seed: fictional, labelled and consistent', () => {
   assert.ok(seed.organizations.every((o) => o.name.endsWith('(демо)') && RELATIONSHIP_STATUSES.includes(o.relationship)));
   assert.ok(seed.contacts.every((c) => !c.organizationId || seed.organizations.some((o) => o.id === c.organizationId)));
   for (const i of seed.interactions) {
-    assert.ok(i.contactId || i.organizationId, i.id);
+    assert.ok(i.contactId || i.organizationId || i.artistId, i.id); // unified CRM: an interaction may be with an artist only
     if (i.contactId) assert.ok(seed.contacts.some((c) => c.id === i.contactId), i.id);
     if (i.contactId && i.organizationId) assert.equal(contact(i.contactId).organizationId, i.organizationId, `${i.id} organization matches the contact`);
     assert.ok(DEMO_STAFF.some((s) => s.id === i.authorId && s.app === 'crm'));
@@ -140,7 +140,8 @@ void test('interactions: target required, contact organization attached, follow-
 
 void test('dashboard figures are counted from the demo records', () => {
   const s = crmSummary(seed, NOW);
-  assert.deepEqual(s, { activeContacts: 7, contacts: 8, organizations: 7, activePartners: 3, prospective: 3, interactions30d: 12, openFollowUps: 5, overdueFollowUps: 1 });
+  // Unified CRM seed: + 1 group contact, 2 music groups (one in talks, one prospect), 3 interactions (1 reminder).
+  assert.deepEqual(s, { activeContacts: 8, contacts: 9, organizations: 9, activePartners: 3, prospective: 5, interactions30d: 15, openFollowUps: 6, overdueFollowUps: 1 });
   const follow = openFollowUps(seed.interactions, NOW);
   assert.ok(follow.every((f, i, arr) => i === 0 || arr[i - 1]!.interaction.followUpAt! <= f.interaction.followUpAt!));
   assert.equal(follow.find((f) => f.overdue)?.interaction.id, 'int-5');

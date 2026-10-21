@@ -9,9 +9,9 @@ import { useCrmCan, usePipeline } from '@/access';
 import { useCrmActions } from '@/data/actions';
 import { dealOutcome } from '@/domain/pipeline';
 import { isOverdueTask } from '@/domain/tasks';
-import type { CrmContact, CrmOrganization, Deal, DealStage, Task } from '@/domain/types';
+import type { CrmContact, Deal, DealStage, Task } from '@/domain/types';
 import { fill } from '@/strings';
-import { AuditTable, DealStageBadge, SelectField, TaskStatusBadge, useCrm, useNow, ViewOnly } from '@/ui';
+import { AuditTable, DealStageBadge, SelectField, TaskStatusBadge, useCounterparty, useCrm, useNow, ViewOnly } from '@/ui';
 
 type Pending = { to: DealStage; kind: 'move' | 'won' | 'lost' | 'reopen' };
 
@@ -26,7 +26,7 @@ export function DealDetailPage() {
   const canClose = useCrmCan('crm.deals.close');
   const pipeline = usePipeline();
   const deal = useCollection<Deal>('deals').find((d) => d.id === id);
-  const organizations = useCollection<CrmOrganization>('organizations');
+  const counterparty = useCounterparty();
   const contacts = useCollection<CrmContact>('contacts');
   const tasks = useCollection<Task>('tasks');
   const events = useCollection<ActivityEvent>('activity');
@@ -46,12 +46,14 @@ export function DealDetailPage() {
       </>
     );
   }
-  const org = organizations.find((o) => o.id === deal.organizationId);
+  const party = counterparty(deal);
+  const second = counterparty({ organizationId: deal.secondaryOrganizationId, artistId: deal.secondaryArtistId });
   const contact = contacts.find((c) => c.id === deal.contactId);
   const outcome = dealOutcome(deal.stage);
   const own = tasks.filter((x) => x.dealId === deal.id).sort((a, b) => (a.dueAt ?? '9999').localeCompare(b.dueAt ?? '9999'));
   const details: [string, ReactNode][] = [
-    [t('fieldOrganization'), org ? <Link key="o" className="bo-link" to={`/organizations/${org.id}`}>{org.name}</Link> : '—'],
+    [t('primaryCounterparty'), party ? <span key="o">{party.artist ? t('counterpartyArtist') : t('counterpartyOrg')}: <Link className="bo-link" to={party.path}>{party.name}</Link></span> : '—'],
+    [t('secondaryParticipant'), second ? <span key="s2">{second.artist ? t('counterpartyArtist') : t('counterpartyOrg')}: <Link className="bo-link" to={second.path}>{second.name}</Link></span> : '—'],
     [t('fieldContact'), contact ? <Link key="c" className="bo-link" to={`/contacts/${contact.id}`}>{contact.name}</Link> : '—'],
     [t('fieldOwner'), staffName(deal.ownerId)],
     [t('fieldStage'), <DealStageBadge key="s" stage={deal.stage} />],
@@ -100,7 +102,7 @@ export function DealDetailPage() {
       {back}
       <PageHeader
         title={deal.title}
-        subtitle={`${org?.name ?? '—'} · ${staffName(deal.ownerId)}`}
+        subtitle={`${party?.name ?? '—'}${second ? ` + ${second.name}` : ''} · ${staffName(deal.ownerId)}`}
         actions={
           <span className="crm-head-actions">
             <DealStageBadge stage={deal.stage} />

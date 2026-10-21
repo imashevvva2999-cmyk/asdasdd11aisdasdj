@@ -2,7 +2,7 @@ import { checkReason } from '@mmusic/backoffice/review';
 
 import { audit, type CrmContext } from './permissions.ts';
 import { allowed, clean, validDate, type Audit, type Failure, type FieldErrors } from './rules.ts';
-import { type CrmContact, type CrmOrganization, type Deal, type DealOutcome, type DealStage } from './types.ts';
+import { type CrmArtist, type CrmContact, type CrmOrganization, type Deal, type DealOutcome, type DealStage } from './types.ts';
 
 /**
  * Deal pipeline rules (M5, M6) as pure functions: validation, the (prototype) permission checks — crm.deals.edit for
@@ -14,14 +14,21 @@ export const MAX_ESTIMATE_KGS = 100_000_000;
 
 export const dealOutcome = (stage: DealStage): DealOutcome => (stage === 'won' ? 'won' : stage === 'lost' ? 'lost' : 'open');
 
-export type DealInput = { title: string; organizationId: string; contactId: string; ownerId: string; estimatedValue: string; expectedCloseAt: string; description: string; stage: DealStage };
+/**
+ * `organizationId` or (unified CRM) `artistId`: exactly one primary counterparty; optionally one secondary participant
+ * (`secondaryOrganizationId` or `secondaryArtistId`), never the primary again.
+ */
+export type DealInput = { title: string; organizationId: string; artistId?: string; secondaryOrganizationId?: string; secondaryArtistId?: string; contactId: string; ownerId: string; estimatedValue: string; expectedCloseAt: string; description: string; stage: DealStage };
 export type DealField = keyof DealInput;
-type DealValue = Pick<Deal, 'title' | 'organizationId' | 'contactId' | 'ownerId' | 'estimatedValueKgs' | 'expectedCloseAt' | 'description'>;
+type DealValue = Pick<Deal, 'title' | 'organizationId' | 'artistId' | 'secondaryOrganizationId' | 'secondaryArtistId' | 'contactId' | 'ownerId' | 'estimatedValueKgs' | 'expectedCloseAt' | 'description'>;
 
 export function dealInput(d?: Deal, ownerId = ''): DealInput {
   return {
     title: d?.title ?? '',
     organizationId: d?.organizationId ?? '',
+    artistId: d?.artistId ?? '',
+    secondaryOrganizationId: d?.secondaryOrganizationId ?? '',
+    secondaryArtistId: d?.secondaryArtistId ?? '',
     contactId: d?.contactId ?? '',
     ownerId: d?.ownerId ?? ownerId,
     estimatedValue: d?.estimatedValueKgs === undefined ? '' : String(d.estimatedValueKgs),
@@ -38,16 +45,29 @@ export function parseKgs(text: string): number | undefined {
   return /^\d+$/.test(t) ? Number(t) : Number.NaN;
 }
 
-/** `openStages`: enabled open stage ids; when given, the (create-time) stage must be one of them. */
-export function validateDeal(input: DealInput, organizations: CrmOrganization[], contacts: CrmContact[], staffIds: string[], openStages?: readonly string[]): { ok: true; value: DealValue } | { ok: false; fields: FieldErrors<DealField> } {
+/**
+ * `openStages`: enabled open stage ids; when given, the (create-time) stage must be one of them. `artists`: the solo
+ * artists a deal may be with instead of an organization (exactly one counterparty).
+ */
+export function validateDeal(input: DealInput, organizations: CrmOrganization[], contacts: CrmContact[], staffIds: string[], openStages?: readonly string[], artists: CrmArtist[] = []): { ok: true; value: DealValue } | { ok: false; fields: FieldErrors<DealField> } {
   const fields: FieldErrors<DealField> = {};
   const title = clean(input.title);
   const contact = contacts.find((c) => c.id === input.contactId);
   const value = parseKgs(input.estimatedValue);
   if (!title) fields.title = 'required';
   else if (title.length > 120) fields.title = 'too-long';
-  if (!input.organizationId) fields.organizationId = 'required';
-  else if (!organizations.some((o) => o.id === input.organizationId)) fields.organizationId = 'unknown-organization';
+  const artistId = input.artistId ?? '';
+  if (!input.organizationId && !artistId) fields.organizationId = 'required';
+  else if (input.organizationId && artistId) fields.organizationId = 'counterparty-required';
+  else if (input.organizationId && !organizations.some((o) => o.id === input.organizationId)) fields.organizationId = 'unknown-organization';
+  else if (artistId && !artists.some((a) => a.id === artistId)) fields.artistId = 'unknown-artist';
+  const secondOrg = input.secondaryOrganizationId ?? '';
+  const secondArtist = input.secondaryArtistId ?? '';
+  if (secondOrg && secondArtist) fields.secondaryOrganizationId = 'counterparty-required';
+  else if (secondOrg && !organizations.some((o) => o.id === secondOrg)) fields.secondaryOrganizationId = 'unknown-organization';
+  else if (secondArtist && !artists.some((a) => a.id === secondArtist)) fields.secondaryArtistId = 'unknown-artist';
+  else if (secondOrg && secondOrg === input.organizationId) fields.secondaryOrganizationId = 'same-participant';
+  else if (secondArtist && secondArtist === artistId) fields.secondaryArtistId = 'same-participant';
   if (input.contactId && !contact) fields.contactId = 'unknown-contact';
   else if (contact && input.organizationId && contact.organizationId !== input.organizationId) fields.contactId = 'contact-not-in-org';
   if (!input.ownerId) fields.ownerId = 'required';
@@ -61,7 +81,10 @@ export function validateDeal(input: DealInput, organizations: CrmOrganization[],
     ok: true,
     value: {
       title,
-      organizationId: input.organizationId,
+      organizationId: input.organizationId || undefined,
+      artistId: artistId || undefined,
+      secondaryOrganizationId: secondOrg || undefined,
+      secondaryArtistId: secondArtist || undefined,
       contactId: input.contactId || undefined,
       ownerId: input.ownerId,
       estimatedValueKgs: value,
@@ -74,9 +97,9 @@ export function validateDeal(input: DealInput, organizations: CrmOrganization[],
 /** Drops undefined keys so stored records stay clean. */
 const compact = <T extends object>(o: T): T => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined)) as T;
 
-export function createDeal(input: DealInput, organizations: CrmOrganization[], contacts: CrmContact[], staffIds: string[], openStages: readonly string[], ctx: CrmContext): { ok: true; record: Omit<Deal, 'id' | 'mock'>; audit: (id: string) => Audit } | Failure<DealField> {
+export function createDeal(input: DealInput, organizations: CrmOrganization[], contacts: CrmContact[], staffIds: string[], openStages: readonly string[], ctx: CrmContext, artists: CrmArtist[] = []): { ok: true; record: Omit<Deal, 'id' | 'mock'>; audit: (id: string) => Audit } | Failure<DealField> {
   if (!allowed(ctx, 'crm.deals.edit')) return { ok: false, error: 'forbidden' };
-  const v = validateDeal(input, organizations, contacts, staffIds, openStages);
+  const v = validateDeal(input, organizations, contacts, staffIds, openStages, artists);
   if (!v.ok) return { ok: false, error: 'invalid', fields: v.fields };
   return {
     ok: true,
@@ -86,9 +109,9 @@ export function createDeal(input: DealInput, organizations: CrmOrganization[], c
 }
 
 /** Edits the deal's details; the stage moves only through moveDeal. */
-export function updateDeal(deal: Deal, input: DealInput, organizations: CrmOrganization[], contacts: CrmContact[], staffIds: string[], ctx: CrmContext): { ok: true; patch: Partial<Deal>; event: Audit } | Failure<DealField> {
+export function updateDeal(deal: Deal, input: DealInput, organizations: CrmOrganization[], contacts: CrmContact[], staffIds: string[], ctx: CrmContext, artists: CrmArtist[] = []): { ok: true; patch: Partial<Deal>; event: Audit } | Failure<DealField> {
   if (!allowed(ctx, 'crm.deals.edit')) return { ok: false, error: 'forbidden' };
-  const v = validateDeal(input, organizations, contacts, staffIds);
+  const v = validateDeal(input, organizations, contacts, staffIds, undefined, artists);
   if (!v.ok) return { ok: false, error: 'invalid', fields: v.fields };
   return {
     ok: true,

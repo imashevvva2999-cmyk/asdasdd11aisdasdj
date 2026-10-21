@@ -17,6 +17,7 @@ import {
   type InteractionInput,
   type OrganizationInput,
 } from '@/domain/rules';
+import { addMember, changeCollaboration, changeMemberRole, createArtist, removeMember, updateArtist, type ArtistInput } from '@/domain/artists';
 import { applyRoleChanges, assignStaffRole, buildCrmMatrix, resetRole, type CrmContext, type RoleChange } from '@/domain/permissions';
 import { createDeal, moveDeal, updateDeal, type DealInput } from '@/domain/pipeline';
 import { addStage, addTag, deleteStage, deleteTag, disableStage, enableStage, moveStage, openStages, renameStage, renameTag, tagUsage, updatePreferences, PREFERENCES_ID, type PreferenceField, type TagEdit } from '@/domain/settings';
@@ -50,7 +51,8 @@ export function useCrmActions() {
     for (const id of edit.recordRemovals) await repo('tags').remove(id);
     if (edit.newRecord) await repo('tags').create(edit.newRecord);
   };
-  const links = async () => ({ contacts: await repo('contacts').list(), organizations: await repo('organizations').list(), deals: await repo('deals').list(), staffIds });
+  const artists = async () => (await repo('artists').list()) ?? [];
+  const links = async () => ({ contacts: await repo('contacts').list(), organizations: await repo('organizations').list(), deals: await repo('deals').list(), staffIds, artists: await artists() });
 
   return {
     async createContact(input: ContactInput): Promise<ActionResult<keyof ContactInput>> {
@@ -103,15 +105,68 @@ export function useCrmActions() {
       await audit(out.event);
       return { ok: true, id };
     },
+    // ------------------------------------------------------------ artists and groups (unified CRM)
+    async createArtist(input: ArtistInput): Promise<ActionResult<keyof ArtistInput>> {
+      const out = createArtist(input, await artists(), await repo('contacts').list(), ctx());
+      if (!out.ok) return out;
+      const created = await repo('artists').create(out.record);
+      await audit(out.audit(created.id));
+      return { ok: true, id: created.id };
+    },
+    async updateArtist(id: string, input: ArtistInput): Promise<ActionResult<keyof ArtistInput>> {
+      const item = await repo('artists').get(id);
+      if (!item) return { ok: false, error: 'not-found' };
+      const out = updateArtist(item, input, await artists(), await repo('contacts').list(), ctx());
+      if (!out.ok) return out;
+      await repo('artists').update(id, out.patch);
+      await audit(out.event);
+      return { ok: true, id };
+    },
+    async changeCollaboration(id: string, to: RelationshipStatus, note?: string): Promise<ActionResult> {
+      const item = await repo('artists').get(id);
+      if (!item) return { ok: false, error: 'not-found' };
+      const out = changeCollaboration(item, to, note, ctx());
+      if (!out.ok) return out;
+      await repo('artists').update(id, out.patch);
+      await audit(out.event);
+      return { ok: true, id };
+    },
+    async addMember(groupId: string, artistId: string, role: string): Promise<ActionResult<'artistId' | 'role'>> {
+      const group = await repo('organizations').get(groupId);
+      if (!group) return { ok: false, error: 'not-found' };
+      const out = addMember(group, artistId, role, await artists(), ctx());
+      if (!out.ok) return out;
+      await repo('organizations').update(groupId, out.patch);
+      await audit(out.event);
+      return { ok: true, id: groupId };
+    },
+    async changeMemberRole(groupId: string, artistId: string, role: string): Promise<ActionResult<'artistId' | 'role'>> {
+      const group = await repo('organizations').get(groupId);
+      if (!group) return { ok: false, error: 'not-found' };
+      const out = changeMemberRole(group, artistId, role, await artists(), ctx());
+      if (!out.ok) return out;
+      await repo('organizations').update(groupId, out.patch);
+      await audit(out.event);
+      return { ok: true, id: groupId };
+    },
+    async removeMember(groupId: string, artistId: string): Promise<ActionResult> {
+      const group = await repo('organizations').get(groupId);
+      if (!group) return { ok: false, error: 'not-found' };
+      const out = removeMember(group, artistId, await artists(), ctx());
+      if (!out.ok) return out;
+      await repo('organizations').update(groupId, out.patch);
+      await audit(out.event);
+      return { ok: true, id: groupId };
+    },
     async logInteraction(input: InteractionInput): Promise<ActionResult<keyof InteractionInput>> {
-      const out = logInteraction(input, await repo('contacts').list(), await repo('organizations').list(), ctx());
+      const out = logInteraction(input, await repo('contacts').list(), await repo('organizations').list(), ctx(), await artists());
       if (!out.ok) return out;
       const created = await repo('interactions').create(out.record);
       await audit(out.audit(created.id));
       return { ok: true, id: created.id };
     },
     async createDeal(input: DealInput): Promise<ActionResult<keyof DealInput>> {
-      const out = createDeal(input, await repo('organizations').list(), await repo('contacts').list(), staffIds, openIds(), ctx());
+      const out = createDeal(input, await repo('organizations').list(), await repo('contacts').list(), staffIds, openIds(), ctx(), await artists());
       if (!out.ok) return out;
       const created = await repo('deals').create(out.record);
       await audit(out.audit(created.id));
@@ -120,7 +175,7 @@ export function useCrmActions() {
     async updateDeal(id: string, input: DealInput): Promise<ActionResult<keyof DealInput>> {
       const item = await repo('deals').get(id);
       if (!item) return { ok: false, error: 'not-found' };
-      const out = updateDeal(item, input, await repo('organizations').list(), await repo('contacts').list(), staffIds, ctx());
+      const out = updateDeal(item, input, await repo('organizations').list(), await repo('contacts').list(), staffIds, ctx(), await artists());
       if (!out.ok) return out;
       await repo('deals').update(id, out.patch);
       await audit(out.event);

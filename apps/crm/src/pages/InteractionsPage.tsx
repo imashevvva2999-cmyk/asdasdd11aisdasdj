@@ -7,7 +7,7 @@ import { useCrmCan } from '@/access';
 import { InteractionForm } from '@/components/InteractionForm';
 import { useCrmActions } from '@/data/actions';
 import { sortByDate } from '@/domain/rules';
-import { INTERACTION_KINDS, type CrmContact, type CrmOrganization, type Interaction } from '@/domain/types';
+import { INTERACTION_KINDS, type CrmArtist, type CrmContact, type CrmOrganization, type Interaction } from '@/domain/types';
 import { fill, INTERACTION_KIND_KEYS } from '@/strings';
 import { matches, Timeline, useCrm, useNow, useQueryState, ViewOnly } from '@/ui';
 
@@ -19,6 +19,7 @@ export function InteractionsPage() {
   const interactions = useCollection<Interaction>('interactions');
   const contacts = useCollection<CrmContact>('contacts');
   const organizations = useCollection<CrmOrganization>('organizations');
+  const artists = useCollection<CrmArtist>('artists');
   const query = useQueryState();
   const [logging, setLogging] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -27,7 +28,7 @@ export function InteractionsPage() {
   const follow = query.get('follow');
   const author = query.get('author');
   const now = useNow();
-  const text = (i: Interaction) => `${i.summary} ${contacts.find((c) => c.id === i.contactId)?.name ?? ''} ${organizations.find((o) => o.id === i.organizationId)?.name ?? ''}`;
+  const text = (i: Interaction) => `${i.summary} ${contacts.find((c) => c.id === i.contactId)?.name ?? ''} ${organizations.find((o) => o.id === i.organizationId)?.name ?? ''} ${artists.find((a) => a.id === i.artistId)?.stageName ?? ''}`;
   const rows = sortByDate(
     interactions.filter(
       (i) =>

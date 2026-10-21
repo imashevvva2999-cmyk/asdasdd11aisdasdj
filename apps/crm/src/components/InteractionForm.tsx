@@ -4,20 +4,21 @@ import { useCollection } from '@mmusic/backoffice/react';
 
 import { useCrmActions } from '@/data/actions';
 import type { FieldErrors, InteractionField, InteractionInput } from '@/domain/rules';
-import { INTERACTION_KINDS, type CrmContact, type CrmOrganization, type InteractionKind } from '@/domain/types';
+import { INTERACTION_KINDS, type CrmArtist, type CrmContact, type CrmOrganization, type InteractionKind } from '@/domain/types';
 import { INTERACTION_KIND_KEYS } from '@/strings';
 import { SelectField, TextAreaField, TextField, toLocalInput, useCrm } from '@/ui';
 
 /**
  * Logs a meeting, call, e-mail or note (permission crm.activity.edit). Opened from the interactions page or from a
- * contact / organization, which preselects the target. A contact's organization is attached automatically.
+ * contact / organization / artist, which preselects the target. A contact's organization is attached automatically.
  */
-export function InteractionForm({ contactId = '', organizationId = '', kind = 'meeting', onClose }: { contactId?: string; organizationId?: string; kind?: InteractionKind; onClose: (saved: boolean) => void }) {
+export function InteractionForm({ contactId = '', organizationId = '', artistId = '', kind = 'meeting', onClose }: { contactId?: string; organizationId?: string; artistId?: string; kind?: InteractionKind; onClose: (saved: boolean) => void }) {
   const { t, fieldError, resultError } = useCrm();
   const actions = useCrmActions();
   const contacts = useCollection<CrmContact>('contacts');
   const organizations = useCollection<CrmOrganization>('organizations');
-  const [input, setInput] = useState<InteractionInput>(() => ({ kind, at: toLocalInput(new Date().toISOString()), summary: '', contactId, organizationId, followUpAt: '' }));
+  const artists = useCollection<CrmArtist>('artists');
+  const [input, setInput] = useState<InteractionInput>(() => ({ kind, at: toLocalInput(new Date().toISOString()), summary: '', contactId, organizationId, artistId, followUpAt: '' }));
   const [fields, setFields] = useState<FieldErrors<InteractionField>>({});
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState(false);
@@ -62,6 +63,13 @@ export function InteractionForm({ contactId = '', organizationId = '', kind = 'm
           onChange={set('organizationId')}
           error={fieldError(fields.organizationId)}
           options={[{ value: '', label: t('none') }, ...[...organizations].sort((a, b) => a.name.localeCompare(b.name)).map((o) => ({ value: o.id, label: o.name }))]}
+        />
+        <SelectField
+          label={t('fieldArtist')}
+          value={input.artistId ?? ''}
+          onChange={set('artistId')}
+          error={fieldError(fields.artistId)}
+          options={[{ value: '', label: t('none') }, ...[...artists].sort((a, b) => a.stageName.localeCompare(b.stageName)).map((a) => ({ value: a.id, label: a.stageName }))]}
         />
       </div>
       <TextAreaField label={t('fieldSummary')} required value={input.summary} onChange={set('summary')} error={fieldError(fields.summary)} hint={t('fieldSummaryHint')} />

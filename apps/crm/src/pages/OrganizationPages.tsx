@@ -1,21 +1,22 @@
 import { useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 
-import type { ActivityEvent, OrganizationKind } from '@mmusic/backoffice/domain';
+import type { ActivityEvent } from '@mmusic/backoffice/domain';
 import { useCollection } from '@mmusic/backoffice/react';
 import { BackLink, ConfirmDialog, DemoBadge, DetailList, EmptyState, FilterBar, FilterSelect, PageHeader, PermissionNote, SearchField } from '@mmusic/backoffice/ui';
 
 import { useCrmCan } from '@/access';
+import { GroupMembers } from '@/components/GroupMembers';
 import { InteractionForm } from '@/components/InteractionForm';
 import { useCrmActions } from '@/data/actions';
 import { organizationInput, sortByDate, type FieldErrors, type OrganizationField, type OrganizationInput } from '@/domain/rules';
-import { RELATIONSHIP_STATUSES, type CrmContact, type CrmOrganization, type Interaction, type RelationshipStatus } from '@/domain/types';
-import { fill, ORGANIZATION_KIND_LABELS, RELATIONSHIP_LABELS } from '@/strings';
-import { AuditTable, ContactStatusBadge, matches, RelationshipBadge, SelectField, TextAreaField, TextField, Timeline, useCrm, useNow, useQueryState, ViewOnly } from '@/ui';
+import { CRM_ORG_KINDS, RELATIONSHIP_STATUSES, type CrmContact, type CrmOrganization, type Interaction, type RelationshipStatus } from '@/domain/types';
+import { fill, FORMER_KIND_LABELS, ORGANIZATION_KIND_LABELS, RELATIONSHIP_LABELS } from '@/strings';
+import { AuditTable, ContactStatusBadge, KindBadge, matches, RelationshipBadge, SelectField, TextAreaField, TextField, Timeline, useCrm, useNow, useQueryState, ViewOnly } from '@/ui';
 
-const KINDS = Object.keys(ORGANIZATION_KIND_LABELS) as OrganizationKind[];
+const KINDS = CRM_ORG_KINDS;
 
-/** Fictional organizations: search, type and relationship filters kept in the URL. */
+/** Fictional music groups and organizations (unified CRM): search, type and relationship filters kept in the URL. */
 export function OrganizationsPage() {
   const { t, l, date } = useCrm();
   const canEdit = useCrmCan('crm.organizations.edit');
@@ -68,23 +69,27 @@ export function OrganizationsPage() {
                 <th>{t('colKind')}</th>
                 <th>{t('colCity')}</th>
                 <th>{t('colRelationship')}</th>
+                <th>{t('colMembers')}</th>
                 <th>{t('colContacts')}</th>
                 <th>{t('colLastInteraction')}</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((o) => (
-                <tr key={o.id}>
+                <tr key={o.id} data-org={o.id}>
                   <td>
                     <Link className="bo-link" to={`/organizations/${o.id}`}>
                       {o.name}
                     </Link>
                   </td>
-                  <td className="muted">{l(ORGANIZATION_KIND_LABELS[o.kind])}</td>
+                  <td>
+                    <KindBadge kind={o.kind} />
+                  </td>
                   <td className="muted">{o.city}</td>
                   <td>
                     <RelationshipBadge status={o.relationship} />
                   </td>
+                  <td className="muted">{o.kind === 'group' ? (o.members?.length ?? 0) : '—'}</td>
                   <td className="muted">{contacts.filter((c) => c.organizationId === o.id).length}</td>
                   <td className="muted nowrap">{date(last(o.id))}</td>
                 </tr>
@@ -132,6 +137,7 @@ export function OrganizationDetailPage() {
   const free = contacts.filter((c) => !c.organizationId).sort((a, b) => a.name.localeCompare(b.name));
   const details: [string, ReactNode][] = [
     [t('fieldKind'), l(ORGANIZATION_KIND_LABELS[org.kind])],
+    ...(org.formerKind ? ([[t('fieldFormerKind'), FORMER_KIND_LABELS[org.formerKind] ? l(FORMER_KIND_LABELS[org.formerKind]!) : org.formerKind]] as [string, ReactNode][]) : []),
     [t('fieldCity'), org.city],
     [t('fieldAbout'), org.about || '—'],
     [t('fieldTags'), org.tags?.join(', ') || '—'],
@@ -163,6 +169,7 @@ export function OrganizationDetailPage() {
         subtitle={`${l(ORGANIZATION_KIND_LABELS[org.kind])} · ${org.city}`}
         actions={
           <span className="crm-head-actions">
+            <KindBadge kind={org.kind} />
             <RelationshipBadge status={org.relationship} />
             <DemoBadge />
             {canEdit && (
@@ -173,6 +180,11 @@ export function OrganizationDetailPage() {
           </span>
         }
       />
+      {org.kind === 'group' && (
+        <div style={{ marginBottom: 16 }}>
+          <PermissionNote icon="groups" text={t('groupNote')} />
+        </div>
+      )}
       <div className="bo-detail-grid">
         <section className="bo-card" aria-label={t('detailsTitle')}>
           <h2>{t('detailsTitle')}</h2>
@@ -253,6 +265,7 @@ export function OrganizationDetailPage() {
           </section>
         </div>
       </div>
+      {org.kind === 'group' && <GroupMembers group={org} />}
       <section className="bo-card bo-section" aria-label={t('timelineTitle')}>
         <h2>{t('timelineTitle')}</h2>
         {canLog ? (
@@ -341,9 +354,14 @@ export function OrganizationFormPage() {
         )}
         <div className="crm-form-grid">
           <TextField label={t('fieldOrgName')} required value={input.name} onChange={set('name')} error={fieldError(fields.name)} />
-          <SelectField label={t('fieldKind')} value={input.kind} onChange={set('kind')} options={KINDS.map((k) => ({ value: k, label: l(ORGANIZATION_KIND_LABELS[k]) }))} />
+          <SelectField label={t('fieldKind')} value={input.kind} onChange={set('kind')} error={fieldError(fields.kind)} options={KINDS.map((k) => ({ value: k, label: l(ORGANIZATION_KIND_LABELS[k]) }))} />
           <TextField label={t('fieldCity')} required value={input.city} onChange={set('city')} error={fieldError(fields.city)} />
         </div>
+        {input.kind === 'group' && (
+          <div style={{ marginBottom: 16 }}>
+            <PermissionNote icon="groups" text={t('groupNote')} />
+          </div>
+        )}
         <TextField label={t('fieldTags')} value={input.tags} onChange={set('tags')} hint={t('fieldTagsHint')} />
         <TextAreaField label={t('fieldAbout')} value={input.about} onChange={set('about')} error={fieldError(fields.about)} hint={t('fieldAboutHint')} />
         {error && (

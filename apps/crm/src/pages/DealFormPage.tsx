@@ -8,10 +8,13 @@ import { useCrmActor, usePipeline } from '@/access';
 import { useCrmActions } from '@/data/actions';
 import { dealInput, type DealField, type DealInput } from '@/domain/pipeline';
 import type { FieldErrors } from '@/domain/rules';
-import type { CrmContact, CrmOrganization, Deal } from '@/domain/types';
+import type { CrmArtist, CrmContact, CrmOrganization, Deal } from '@/domain/types';
 import { SelectField, TextAreaField, TextField, useCrm } from '@/ui';
 
-/** Create (/deals/new, optional ?organizationId=) or edit (/deals/:id/edit) a demo deal; permission crm.deals.edit. */
+/**
+ * Create (/deals/new, optional ?organizationId= or ?artistId=) or edit (/deals/:id/edit) a demo deal; permission
+ * crm.deals.edit. The counterparty is a group / organization or (unified CRM) a solo artist.
+ */
 export function DealFormPage() {
   const { id } = useParams();
   const [params] = useSearchParams();
@@ -22,13 +25,16 @@ export function DealFormPage() {
   const { staff: actor } = useCrmActor();
   const organizations = useCollection<CrmOrganization>('organizations');
   const contacts = useCollection<CrmContact>('contacts');
+  const artists = useCollection<CrmArtist>('artists');
   const existing = useCollection<Deal>('deals').find((d) => d.id === id);
   const staff = bo.staff.filter((s) => s.app === 'crm');
   const pipeline = usePipeline();
   const [input, setInput] = useState<DealInput>(() => {
     const base = dealInput(existing, actor?.app === 'crm' ? actor.id : '');
-    return existing ? base : { ...base, organizationId: params.get('organizationId') ?? '', stage: pipeline.openIds[0] ?? base.stage };
+    return existing ? base : { ...base, organizationId: params.get('organizationId') ?? '', artistId: params.get('artistId') ?? '', stage: pipeline.openIds[0] ?? base.stage };
   });
+  const [withArtist, setWithArtist] = useState(() => !!(existing?.artistId ?? params.get('artistId')));
+  const [secondKind, setSecondKind] = useState<'' | 'organization' | 'artist'>(() => (existing?.secondaryArtistId ? 'artist' : existing?.secondaryOrganizationId ? 'organization' : ''));
   const [fields, setFields] = useState<FieldErrors<DealField>>({});
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState(false);
@@ -53,7 +59,21 @@ export function DealFormPage() {
     setError(resultError(out));
     if (out.error === 'invalid') setFields(out.fields);
   };
-  const orgContacts = contacts.filter((c) => c.organizationId === input.organizationId).sort((a, b) => a.name.localeCompare(b.name));
+  // A deal with an artist may name any contact (e.g. the manager); a deal with an organization, only its people.
+  const orgContacts = (withArtist ? contacts : contacts.filter((c) => c.organizationId === input.organizationId)).sort((a, b) => a.name.localeCompare(b.name));
+  const switchSecond = (kind: '' | 'organization' | 'artist') => {
+    setSecondKind(kind);
+    setInput((st) => ({ ...st, secondaryOrganizationId: '', secondaryArtistId: '' }));
+    setFields((f) => ({ ...f, secondaryOrganizationId: undefined, secondaryArtistId: undefined }));
+  };
+  // The secondary participant can never be the primary counterparty: it is left out of the choices.
+  const secondOrgs = [...organizations].filter((o) => withArtist || o.id !== input.organizationId).sort((a, b) => a.name.localeCompare(b.name));
+  const secondArtists = [...artists].filter((a) => !withArtist || a.id !== input.artistId).sort((a, b) => a.stageName.localeCompare(b.stageName));
+  const switchTo = (artist: boolean) => {
+    setWithArtist(artist);
+    setInput((st) => ({ ...st, organizationId: '', artistId: '', contactId: '', ...(secondKind === (artist ? 'artist' : 'organization') ? { secondaryOrganizationId: '', secondaryArtistId: '' } : {}) }));
+    setFields((f) => ({ ...f, organizationId: undefined, artistId: undefined }));
+  };
 
   return (
     <>
@@ -74,13 +94,62 @@ export function DealFormPage() {
         <TextField label={t('fieldTitle')} required value={input.title} onChange={set('title')} error={fieldError(fields.title)} />
         <div className="crm-form-grid">
           <SelectField
-            label={t('fieldOrganization')}
-            required
-            value={input.organizationId}
-            onChange={set('organizationId')}
-            error={fieldError(fields.organizationId)}
-            options={[{ value: '', label: '—' }, ...[...organizations].sort((a, b) => a.name.localeCompare(b.name)).map((o) => ({ value: o.id, label: o.name }))]}
+            label={t('primaryCounterparty')}
+            value={withArtist ? 'artist' : 'organization'}
+            onChange={(v) => switchTo(v === 'artist')}
+            options={[
+              { value: 'organization', label: t('counterpartyOrg') },
+              { value: 'artist', label: t('counterpartyArtist') },
+            ]}
           />
+          {withArtist ? (
+            <SelectField
+              label={t('fieldArtist')}
+              required
+              value={input.artistId ?? ''}
+              onChange={set('artistId')}
+              error={fieldError(fields.artistId ?? fields.organizationId)}
+              options={[{ value: '', label: '—' }, ...[...artists].sort((a, b) => a.stageName.localeCompare(b.stageName)).map((a) => ({ value: a.id, label: a.stageName }))]}
+            />
+          ) : (
+            <SelectField
+              label={t('fieldOrganization')}
+              required
+              value={input.organizationId}
+              onChange={set('organizationId')}
+              error={fieldError(fields.organizationId)}
+              options={[{ value: '', label: '—' }, ...[...organizations].sort((a, b) => a.name.localeCompare(b.name)).map((o) => ({ value: o.id, label: o.name }))]}
+            />
+          )}
+          <SelectField
+            label={t('secondaryParticipant')}
+            value={secondKind}
+            onChange={(v) => switchSecond(v as '' | 'organization' | 'artist')}
+            hint={t('secondaryHint')}
+            options={[
+              { value: '', label: t('secondaryNone') },
+              { value: 'organization', label: t('counterpartyOrg') },
+              { value: 'artist', label: t('counterpartyArtist') },
+            ]}
+          />
+          {secondKind === 'organization' && (
+            <SelectField
+              label={`${t('secondaryParticipant')}: ${t('counterpartyOrg')}`}
+              value={input.secondaryOrganizationId ?? ''}
+              onChange={set('secondaryOrganizationId')}
+              error={fieldError(fields.secondaryOrganizationId)}
+              options={[{ value: '', label: '—' }, ...secondOrgs.map((o) => ({ value: o.id, label: o.name }))]}
+            />
+          )}
+          {secondKind === 'artist' && (
+            <SelectField
+              label={`${t('secondaryParticipant')}: ${t('counterpartyArtist')}`}
+              value={input.secondaryArtistId ?? ''}
+              onChange={set('secondaryArtistId')}
+              error={fieldError(fields.secondaryArtistId)}
+              options={[{ value: '', label: '—' }, ...secondArtists.map((a) => ({ value: a.id, label: a.stageName }))]}
+            />
+          )}
           <SelectField label={t('fieldContact')} value={input.contactId} onChange={set('contactId')} error={fieldError(fields.contactId)} options={[{ value: '', label: t('none') }, ...orgContacts.map((c) => ({ value: c.id, label: c.name }))]} />
           <SelectField label={t('fieldOwner')} required value={input.ownerId} onChange={set('ownerId')} error={fieldError(fields.ownerId)} options={[{ value: '', label: '—' }, ...staff.map((s) => ({ value: s.id, label: s.name }))]} />
           {!id && <SelectField label={t('fieldStage')} value={input.stage} onChange={set('stage')} error={fieldError(fields.stage)} options={pipeline.open.map((s) => ({ value: s.id, label: pipeline.label(s.id) }))} />}

@@ -104,7 +104,7 @@ void test('pipeline settings: stable ids, unique labels, order, disable with an 
   const off = disableStage('qualified', 'proposal', config, seed.deals, lead);
   assert.ok(off.ok);
   if (off.ok) {
-    assert.deepEqual(off.dealPatches.map((p) => `${p.id}→${p.patch.stage}`).sort(), ['deal-4→proposal', 'deal-6→proposal']);
+    assert.deepEqual(off.dealPatches.map((p) => `${p.id}→${p.patch.stage}`).sort(), ['deal-4→proposal', 'deal-6→proposal', 'deal-a1→proposal']); // + the artist demo deal
     assert.ok(off.events.filter((e) => e.action === 'deal.stage').every((e) => e.fromStatus === 'qualified' && e.toStatus === 'proposal'));
     assert.equal(off.events.at(-1)?.action, 'stage.disable');
   }

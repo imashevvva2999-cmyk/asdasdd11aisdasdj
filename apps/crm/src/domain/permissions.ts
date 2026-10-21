@@ -4,7 +4,7 @@ import { auditEvent, type Actor } from '@mmusic/backoffice/review';
 import type { RoleConfig, StaffAssignment } from './types.ts';
 
 /**
- * CRM permissions (M6). A CRM-local catalogue on top of the shared back-office `crm.*` rights, plus two rights the
+ * CRM permissions (M6; unified CRM adds crm.artists.view / .edit). A CRM-local catalogue on top of the shared back-office `crm.*` rights, plus two rights the
  * shared list does not have: closing deals (`crm.deals.close`) and staff / role management (`crm.roles.manage`).
  * The matrix is editable demo data in this browser — it shapes a local prototype and is NOT access control or
  * authentication. Real enforcement belongs to a future backend (OQ-56, OQ-57).
@@ -21,6 +21,8 @@ export type CrmPermission =
   | 'crm.contacts.edit'
   | 'crm.organizations.view'
   | 'crm.organizations.edit'
+  | 'crm.artists.view'
+  | 'crm.artists.edit'
   | 'crm.partners.view'
   | 'crm.partners.edit'
   | 'crm.activity.view'
@@ -43,8 +45,16 @@ export const PERMISSION_GROUPS: { id: string; label: Localized; items: { key: Cr
     items: [
       { key: 'crm.contacts.view', label: { ru: 'Просмотр контактов', en: 'View contacts' } },
       { key: 'crm.contacts.edit', label: { ru: 'Создание и правка контактов, привязка к организациям', en: 'Create and edit contacts, link to organizations' }, requires: 'crm.contacts.view' },
-      { key: 'crm.organizations.view', label: { ru: 'Просмотр организаций', en: 'View organizations' } },
-      { key: 'crm.organizations.edit', label: { ru: 'Создание и правка организаций', en: 'Create and edit organizations' }, requires: 'crm.organizations.view' },
+      { key: 'crm.organizations.view', label: { ru: 'Просмотр групп и организаций', en: 'View groups and organizations' } },
+      { key: 'crm.organizations.edit', label: { ru: 'Создание и правка организаций и групп, состав групп', en: 'Create and edit organizations and groups, group members' }, requires: 'crm.organizations.view' },
+    ],
+  },
+  {
+    id: 'artists',
+    label: { ru: 'Артисты', en: 'Artists' },
+    items: [
+      { key: 'crm.artists.view', label: { ru: 'Просмотр соло-артистов', en: 'View solo artists' } },
+      { key: 'crm.artists.edit', label: { ru: 'Создание и правка соло-артистов', en: 'Create and edit solo artists' }, requires: 'crm.artists.view' },
     ],
   },
   {

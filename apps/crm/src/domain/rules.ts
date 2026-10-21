@@ -1,8 +1,6 @@
-import type { OrganizationKind } from '@mmusic/backoffice/domain';
-
 import { audit, crmCan, type Audit, type CrmContext, type CrmPermission } from './permissions.ts';
 
-import type { ContactStatus, CrmCollections, CrmContact, CrmOrganization, Interaction, InteractionKind, RelationshipStatus } from './types.ts';
+import { CRM_ORG_KINDS, type ContactStatus, type CrmArtist, type CrmCollections, type CrmContact, type CrmOrgKind, type CrmOrganization, type Interaction, type InteractionKind, type RelationshipStatus } from './types.ts';
 
 /**
  * CRM rules as pure functions (unit-tested): input validation, the (prototype, client-side) permission check and
@@ -28,9 +26,14 @@ export type FieldError =
   | 'follow-up-before'
   | 'target-required'
   | 'duplicate'
-  | 'tag-invalid';
+  | 'tag-invalid'
+  | 'unknown-artist'
+  | 'counterparty-required'
+  | 'has-members'
+  | 'image-invalid'
+  | 'same-participant';
 export type FieldErrors<K extends string> = Partial<Record<K, FieldError>>;
-export type Failure<K extends string> = { ok: false; error: 'forbidden' | 'not-found' | 'same-status' | 'invalid-transition' | 'in-use' | 'last-open-stage' | 'system-stage' | 'locked' | 'unknown-role' | 'last-lead' } | { ok: false; error: 'invalid'; fields: FieldErrors<K> };
+export type Failure<K extends string> = { ok: false; error: 'forbidden' | 'not-found' | 'same-status' | 'invalid-transition' | 'in-use' | 'last-open-stage' | 'system-stage' | 'locked' | 'unknown-role' | 'last-lead' | 'not-group' } | { ok: false; error: 'invalid'; fields: FieldErrors<K> };
 /** Fictional data only: reserved example.* e-mail domains and the +996 555 000 0xx demo number range. */
 export const DEMO_EMAIL = /^[^\s@]+@example\.(kg|com|org|net)$/i;
 export const DEMO_PHONE = /^\+996 555 000 0\d{2}$/;
@@ -113,7 +116,7 @@ export function linkContact(contact: CrmContact, organizationId: string, organiz
 
 // ---------------------------------------------------------------- organizations
 
-export type OrganizationInput = { name: string; kind: OrganizationKind; city: string; about: string; tags: string };
+export type OrganizationInput = { name: string; kind: CrmOrgKind; city: string; about: string; tags: string };
 export type OrganizationField = keyof OrganizationInput;
 
 export const parseTags = (text: string) => [...new Set(text.split(',').map((t) => t.trim().replace(/\s+/g, ' ').toLocaleLowerCase()).filter(Boolean))];
@@ -125,6 +128,7 @@ export function validateOrganization(input: OrganizationInput): { ok: true; valu
   else if (name.length > 80) fields.name = 'too-long';
   if (!clean(input.city)) fields.city = 'required';
   if (clean(input.about).length > 300) fields.about = 'too-long';
+  if (!CRM_ORG_KINDS.includes(input.kind)) fields.kind = 'required';
   if (Object.keys(fields).length > 0) return { ok: false, fields };
   return { ok: true, value: { name, kind: input.kind, city: clean(input.city), about: clean(input.about), tags: parseTags(input.tags) } };
 }
@@ -146,6 +150,8 @@ export function updateOrganization(org: CrmOrganization, input: OrganizationInpu
   if (!allowed(ctx, 'crm.organizations.edit')) return { ok: false, error: 'forbidden' };
   const v = validateOrganization(input);
   if (!v.ok) return { ok: false, error: 'invalid', fields: v.fields };
+  // A music group with members keeps its type: the members would otherwise lose their group.
+  if (org.members?.length && v.value.kind !== 'group') return { ok: false, error: 'invalid', fields: { kind: 'has-members' } };
   return { ok: true, patch: { ...v.value, about: v.value.about || undefined, updatedAt: ctx.now }, event: audit({ action: 'organization.update', entity: { type: 'organization', id: org.id, label: v.value.name } }, ctx) };
 }
 
@@ -165,12 +171,13 @@ export const isProspective = (o: CrmOrganization) => o.relationship === 'prospec
 
 // ---------------------------------------------------------------- interactions
 
-export type InteractionInput = { kind: InteractionKind; at: string; summary: string; contactId: string; organizationId: string; followUpAt: string };
+export type InteractionInput = { kind: InteractionKind; at: string; summary: string; contactId: string; organizationId: string; artistId?: string; followUpAt: string };
 export type InteractionField = keyof InteractionInput;
 
 export const validDate = (s: string) => s !== '' && !Number.isNaN(Date.parse(s));
 
-export function logInteraction(input: InteractionInput, contacts: CrmContact[], organizations: CrmOrganization[], ctx: CrmContext): { ok: true; record: Omit<Interaction, 'id' | 'mock'>; audit: (id: string) => Audit } | Failure<InteractionField> {
+/** `artists` (unified CRM): an interaction may be with a solo artist, a contact and/or an organization. */
+export function logInteraction(input: InteractionInput, contacts: CrmContact[], organizations: CrmOrganization[], ctx: CrmContext, artists: CrmArtist[] = []): { ok: true; record: Omit<Interaction, 'id' | 'mock'>; audit: (id: string) => Audit } | Failure<InteractionField> {
   if (!allowed(ctx, 'crm.activity.edit')) return { ok: false, error: 'forbidden' };
   const fields: FieldErrors<InteractionField> = {};
   const summary = clean(input.summary);
@@ -180,7 +187,8 @@ export function logInteraction(input: InteractionInput, contacts: CrmContact[], 
   if (!validDate(input.at)) fields.at = 'date-invalid';
   if (input.contactId && !contact) fields.contactId = 'unknown-contact';
   if (input.organizationId && !organizations.some((o) => o.id === input.organizationId)) fields.organizationId = 'unknown-organization';
-  if (!input.contactId && !input.organizationId) fields.contactId = 'target-required';
+  if (input.artistId && !artists.some((a) => a.id === input.artistId)) fields.artistId = 'unknown-artist';
+  if (!input.contactId && !input.organizationId && !input.artistId) fields.contactId = 'target-required';
   if (input.followUpAt && !validDate(input.followUpAt)) fields.followUpAt = 'date-invalid';
   else if (input.followUpAt && validDate(input.at) && Date.parse(input.followUpAt) <= Date.parse(input.at)) fields.followUpAt = 'follow-up-before';
   if (Object.keys(fields).length > 0) return { ok: false, error: 'invalid', fields };
@@ -195,6 +203,7 @@ export function logInteraction(input: InteractionInput, contacts: CrmContact[], 
       summary,
       ...(input.contactId ? { contactId: input.contactId } : {}),
       ...(organizationId ? { organizationId } : {}),
+      ...(input.artistId ? { artistId: input.artistId } : {}),
       authorId: ctx.actor.staffId,
       ...(input.followUpAt ? { followUpAt: new Date(input.followUpAt).toISOString() } : {}),
       createdAt: ctx.now,

@@ -12,6 +12,8 @@ import { CRM_DATA_VERSION, migrateStoredCrmData } from '@/domain/migrate';
 import type { CrmPermission } from '@/domain/permissions';
 import { crmSeed } from '@/domain/seed';
 import { AnalyticsPage } from '@/pages/AnalyticsPage';
+import { ArtistFormPage } from '@/pages/ArtistFormPage';
+import { ArtistDetailPage, ArtistsPage } from '@/pages/ArtistPages';
 import { ContactDetailPage, ContactFormPage, ContactsPage } from '@/pages/ContactPages';
 import { DealDetailPage } from '@/pages/DealDetailPage';
 import { DealFormPage } from '@/pages/DealFormPage';
@@ -26,8 +28,8 @@ import { TaskDetailPage, TaskFormPage } from '@/pages/TaskPages';
 import { TasksPage } from '@/pages/TasksPage';
 
 const storage = createSafeStorage();
-// Documented upgrades (domain/migrate.ts): v2 → v3 → v4 keep every saved record and local edit; only new
-// collections (M5 deals and tasks, M6 settings and roles) are added.
+// Documented upgrades (domain/migrate.ts): v2 → v3 → v4 → v5 keep every saved record and local edit; only new
+// collections and fields (M5 deals and tasks, M6 settings and roles, unified CRM artists and groups) are added.
 migrateStoredCrmData(storage);
 
 /** CRM's own back-office instance: storage namespace `mmusic-crm`, fictional contacts and companies, provisional CRM roles. */
@@ -37,6 +39,7 @@ export const backoffice = createBackoffice({
   namespace: 'mmusic-crm',
   // v2 (M4): contact status, organization relationship, interactions; saved v1 data is re-seeded.
   // v3 (M5): + deals and tasks; v4 (M6): + pipeline, tags, preferences, roles, staff roles — migrated, not re-seeded.
+  // v5 (unified CRM): + artists, music groups with members, artist links on deals / tasks / interactions — migrated.
   dataVersion: CRM_DATA_VERSION,
   seed: crmSeed,
   staff: DEMO_STAFF,
@@ -53,7 +56,8 @@ const GROUPS: { label: Localized; sections: CrmNavItem[] }[] = [
     label: { ru: 'Отношения', en: 'Relationships' },
     sections: [
       { path: '/contacts', label: { ru: 'Контакты', en: 'Contacts' }, icon: 'contacts', permission: 'crm.contacts.view', },
-      { path: '/organizations', label: { ru: 'Организации', en: 'Organizations' }, icon: 'business', permission: 'crm.organizations.view', },
+      { path: '/artists', label: { ru: 'Артисты', en: 'Artists' }, icon: 'mic', permission: 'crm.artists.view' },
+      { path: '/organizations', label: { ru: 'Группы и организации', en: 'Groups and organizations' }, icon: 'groups', permission: 'crm.organizations.view', },
       { path: '/partners', label: { ru: 'Партнёры', en: 'Partners' }, icon: 'handshake', permission: 'crm.partners.view', },
     ],
   },
@@ -100,6 +104,10 @@ export const router = createBrowserRouter([
       { path: 'organizations/new', element: guard('crm.organizations.edit', <OrganizationFormPage key="new" />) },
       { path: 'organizations/:id', element: guard('crm.organizations.view', <OrganizationDetailPage />) },
       { path: 'organizations/:id/edit', element: guard('crm.organizations.edit', <OrganizationFormPage />) },
+      { path: 'artists', element: guard('crm.artists.view', <ArtistsPage />) },
+      { path: 'artists/new', element: guard('crm.artists.edit', <ArtistFormPage key="new" />) },
+      { path: 'artists/:id', element: guard('crm.artists.view', <ArtistDetailPage />) },
+      { path: 'artists/:id/edit', element: guard('crm.artists.edit', <ArtistFormPage />) },
       { path: 'partners', element: guard('crm.partners.view', <PartnersPage />) },
       { path: 'activity', element: guard('crm.activity.view', <InteractionsPage />) },
       { path: 'deals', element: guard('crm.deals.view', <DealsPage />) },

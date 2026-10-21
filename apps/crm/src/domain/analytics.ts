@@ -2,7 +2,7 @@ import type { ActivityEvent, StaffUser } from '@mmusic/backoffice/domain';
 
 import { dealOutcome } from './pipeline.ts';
 import { isOpenTask, isOverdueTask } from './tasks.ts';
-import { INTERACTION_KINDS, RELATIONSHIP_STATUSES, TASK_STATUSES, type CrmOrganization, type Deal, type DealStage, type Interaction, type InteractionKind, type RelationshipStatus, type Task, type TaskStatus } from './types.ts';
+import { INTERACTION_KINDS, RELATIONSHIP_STATUSES, TASK_STATUSES, type CrmArtist, type CrmOrganization, type Deal, type DealStage, type Interaction, type InteractionKind, type RelationshipStatus, type Task, type TaskStatus } from './types.ts';
 
 /**
  * CRM analytics (M5) as pure aggregations of the demo records in this browser. Deal values are summed fictional
@@ -63,6 +63,19 @@ export function interactionsByKind(interactions: Interaction[], now: string, sin
 
 export function relationshipDistribution(organizations: CrmOrganization[]): Record<RelationshipStatus, number> {
   return Object.fromEntries(RELATIONSHIP_STATUSES.map((s) => [s, organizations.filter((o) => o.relationship === s).length])) as Record<RelationshipStatus, number>;
+}
+
+/** Unified CRM: solo artists per collaboration status (same scale as organizations). */
+export function collaborationDistribution(artists: Pick<CrmArtist, 'collaboration'>[]): Record<RelationshipStatus, number> {
+  return Object.fromEntries(RELATIONSHIP_STATUSES.map((s) => [s, artists.filter((a) => a.collaboration === s).length])) as Record<RelationshipStatus, number>;
+}
+
+/** Unified CRM: deals with solo artists vs with groups and organizations (open / all). */
+export function dealsByCounterparty(deals: Deal[]): { artists: number; organizations: number; openArtists: number; openOrganizations: number } {
+  const withArtist = deals.filter((d) => d.artistId);
+  const withOrg = deals.filter((d) => !d.artistId);
+  const open = (ds: Deal[]) => ds.filter((d) => dealOutcome(d.stage) === 'open').length;
+  return { artists: withArtist.length, organizations: withOrg.length, openArtists: open(withArtist), openOrganizations: open(withOrg) };
 }
 
 export type StaffRow = { staffId: string; openDeals: number; openTasks: number; overdueTasks: number; completedTasks: number; interactions: number; changes: number };

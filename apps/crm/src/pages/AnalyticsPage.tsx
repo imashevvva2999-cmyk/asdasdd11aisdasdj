@@ -5,9 +5,9 @@ import { useBackoffice, useCollection } from '@mmusic/backoffice/react';
 import { DemoBadge, FilterBar, FilterSelect, PageHeader, PermissionNote } from '@mmusic/backoffice/ui';
 
 import { usePipeline } from '@/access';
-import { dealTotals, interactionsByKind, periodStart, PERIODS, pipelineByStage, relationshipDistribution, reminderTotals, staffActivity, taskTotals, type Period } from '@/domain/analytics';
-import { INTERACTION_KINDS, RELATIONSHIP_STATUSES, TASK_STATUSES, type CrmOrganization, type Deal, type Interaction, type Task } from '@/domain/types';
-import { INTERACTION_KIND_KEYS, RELATIONSHIP_LABELS, TASK_STATUS_KEYS, type CrmStringKey } from '@/strings';
+import { collaborationDistribution, dealsByCounterparty, dealTotals, interactionsByKind, periodStart, PERIODS, pipelineByStage, relationshipDistribution, reminderTotals, staffActivity, taskTotals, type Period } from '@/domain/analytics';
+import { type CrmArtist, type CrmOrganization, type Deal, type Interaction, INTERACTION_KINDS, RELATIONSHIP_STATUSES, type Task, TASK_STATUSES } from '@/domain/types';
+import { COLLABORATION_LABELS, INTERACTION_KIND_KEYS, RELATIONSHIP_LABELS, TASK_STATUS_KEYS, type CrmStringKey } from '@/strings';
 import { useCrm, useNow, useQueryState } from '@/ui';
 
 /** A fixed, labelled indicator table; the first cell of each row is its unique label. */
@@ -63,12 +63,15 @@ export function AnalyticsPage() {
   const tasks = useCollection<Task>('tasks');
   const interactions = useCollection<Interaction>('interactions');
   const organizations = useCollection<CrmOrganization>('organizations');
+  const artists = useCollection<CrmArtist>('artists');
   const activity = useCollection<ActivityEvent>('activity');
   const totals = dealTotals(deals);
   const taskSum = taskTotals(tasks, now, since);
   const reminders = reminderTotals(interactions, now);
   const byKind = interactionsByKind(interactions, now, since);
   const rel = relationshipDistribution(organizations);
+  const collab = collaborationDistribution(artists);
+  const parties = dealsByCounterparty(deals);
   const staff = staffActivity(bo.staff, { deals, tasks, interactions, activity }, now, since);
 
   return (
@@ -121,6 +124,19 @@ export function AnalyticsPage() {
         <div className="crm-columns">
           <Table id="interactions" title={t('aInteractions')} head={[t('colKind'), t('colCount')]} numeric={[1]} rows={INTERACTION_KINDS.map((k): [string, number] => [t(INTERACTION_KIND_KEYS[k]), byKind[k]])} />
           <Table id="relationships" title={t('aRelationships')} head={[t('colRelationship'), t('colCount')]} numeric={[1]} rows={RELATIONSHIP_STATUSES.map((s): [string, number] => [l(RELATIONSHIP_LABELS[s]), rel[s]])} />
+        </div>
+        <div className="crm-columns">
+          <Table id="artists" title={t('artistCollaboration')} head={[t('colCollaboration'), t('colCount')]} numeric={[1]} rows={RELATIONSHIP_STATUSES.map((s): [string, number] => [l(COLLABORATION_LABELS[s]), collab[s]])} />
+          <Table
+            id="counterparties"
+            title={t('dealsByCounterparty')}
+            head={[t('colIndicator'), t('openDeals'), t('colCount')]}
+            numeric={[1, 2]}
+            rows={[
+              [t('dealsWithArtists'), parties.openArtists, parties.artists],
+              [t('dealsWithOrgs'), parties.openOrganizations, parties.organizations],
+            ]}
+          />
         </div>
         <Table
           id="staff"

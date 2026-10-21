@@ -1,16 +1,18 @@
-import type { Localized, OrganizationKind } from '@mmusic/backoffice/domain';
+import type { Localized } from '@mmusic/backoffice/domain';
 import type { StringTable } from '@mmusic/backoffice/i18n';
 
-import type { DealStage, InteractionKind, RelationshipStatus, TaskPriority, TaskStatus } from '@/domain/types';
+import type { CrmOrgKind, DealStage, InteractionKind, RelationshipStatus, TaskPriority, TaskStatus } from '@/domain/types';
 
 import { M5_STRINGS } from './strings-m5';
 import { M6_STRINGS } from './strings-m6';
+import { ARTIST_STRINGS } from './strings-artists';
 
 /** CRM page text (RU default, EN). Shell text lives in @mmusic/backoffice. `{x}` = placeholder. */
 export const CRM_STRINGS = {
   ru: {
     ...M5_STRINGS.ru,
     ...M6_STRINGS.ru,
+    ...ARTIST_STRINGS.ru,
     // common
     dashboardTitle: 'Дашборд',
     dashboardSubtitle: 'CRM Mmusic — контакты, организации, партнёры, взаимодействия, сделки и задачи (этап M5). Все записи вымышленные.',
@@ -44,7 +46,7 @@ export const CRM_STRINGS = {
     errUnknownContact: 'Контакт не найден',
     errDateInvalid: 'Укажите дату и время',
     errFollowUpBefore: 'Напоминание должно быть позже даты взаимодействия',
-    errTargetRequired: 'Выберите контакт или организацию',
+    errTargetRequired: 'Выберите артиста, контакт или организацию',
     errForbidden: 'Недостаточно прав для этого действия (проверка прототипа).',
     errNotFound: 'Запись не найдена — возможно, демо-данные были сброшены.',
     errSameStatus: 'Ничего не изменилось.',
@@ -87,8 +89,8 @@ export const CRM_STRINGS = {
     noInteractions: 'Взаимодействий пока нет',
     // organizations
     organizations: 'Организации',
-    organizationsTitle: 'Организации',
-    organizationsSubtitle: 'Вымышленные лейблы, площадки, медиа, агентства и спонсоры и статус отношений с ними.',
+    organizationsTitle: 'Группы и организации',
+    organizationsSubtitle: 'Вымышленные музыкальные группы, лейблы, агентства, организаторы мероприятий и компании — и статус отношений с ними.',
     searchOrganizations: 'Название или город',
     filterOrgKind: 'Тип',
     filterRelationship: 'Отношения',
@@ -96,10 +98,10 @@ export const CRM_STRINGS = {
     colCity: 'Город',
     colRelationship: 'Отношения',
     colContacts: 'Контактов',
-    newOrganization: 'Новая организация',
-    editOrganization: 'Редактирование организации',
-    organizationNotFound: 'Организация не найдена',
-    backToOrganizations: 'К организациям',
+    newOrganization: 'Новая группа или организация',
+    editOrganization: 'Редактирование группы или организации',
+    organizationNotFound: 'Группа или организация не найдена',
+    backToOrganizations: 'К группам и организациям',
     fieldOrgName: 'Название',
     fieldKind: 'Тип',
     fieldCity: 'Город',
@@ -107,7 +109,7 @@ export const CRM_STRINGS = {
     fieldAboutHint: 'Коротко, до 300 символов. Без условий соглашений и финансовых данных.',
     fieldRelationship: 'Отношения',
     fieldRelationshipChanged: 'Статус изменён',
-    newOrgHint: 'Новая организация начинает со статуса «Потенциальный партнёр».',
+    newOrgHint: 'Новая запись начинает со статуса «Потенциальный партнёр». Для группы выберите тип «Музыкальная группа».',
     orgContacts: 'Контакты организации',
     noOrgContacts: 'Контактов пока нет',
     linkContact: 'Привязать контакт',
@@ -158,7 +160,7 @@ export const CRM_STRINGS = {
     loggedBy: 'Записал(а): {name}',
     // dashboard
     kpiActiveContacts: 'Активные контакты',
-    kpiOrganizations: 'Организации',
+    kpiOrganizations: 'Группы и организации',
     kpiActivePartners: 'Активные партнёры',
     kpiProspective: 'Потенциальные партнёры',
     kpiInteractions30: 'Взаимодействий за 30 дней',
@@ -188,6 +190,7 @@ export const CRM_STRINGS = {
   en: {
     ...M5_STRINGS.en,
     ...M6_STRINGS.en,
+    ...ARTIST_STRINGS.en,
     dashboardTitle: 'Dashboard',
     dashboardSubtitle: 'Mmusic CRM — contacts, organizations, partners, interactions, deals and tasks (milestone M5). All records are fictional.',
     shown: 'Showing {n} of {total}',
@@ -219,7 +222,7 @@ export const CRM_STRINGS = {
     errUnknownContact: 'Contact not found',
     errDateInvalid: 'Enter a date and time',
     errFollowUpBefore: 'The follow-up must be after the interaction',
-    errTargetRequired: 'Choose a contact or an organization',
+    errTargetRequired: 'Choose an artist, a contact or an organization',
     errForbidden: 'Not allowed for your role (prototype check).',
     errNotFound: 'Record not found — the demo data may have been reset.',
     errSameStatus: 'Nothing changed.',
@@ -260,8 +263,8 @@ export const CRM_STRINGS = {
     timelineTitle: 'Interactions',
     noInteractions: 'No interactions yet',
     organizations: 'Organizations',
-    organizationsTitle: 'Organizations',
-    organizationsSubtitle: 'Fictional labels, venues, media, agencies and sponsors, and where the relationship stands.',
+    organizationsTitle: 'Groups and organizations',
+    organizationsSubtitle: 'Fictional music groups, labels, agencies, event organizers and companies, and where the relationship stands.',
     searchOrganizations: 'Name or city',
     filterOrgKind: 'Type',
     filterRelationship: 'Relationship',
@@ -269,10 +272,10 @@ export const CRM_STRINGS = {
     colCity: 'City',
     colRelationship: 'Relationship',
     colContacts: 'Contacts',
-    newOrganization: 'New organization',
-    editOrganization: 'Edit organization',
-    organizationNotFound: 'Organization not found',
-    backToOrganizations: 'Back to organizations',
+    newOrganization: 'New group or organization',
+    editOrganization: 'Edit group or organization',
+    organizationNotFound: 'Group or organization not found',
+    backToOrganizations: 'Back to groups and organizations',
     fieldOrgName: 'Name',
     fieldKind: 'Type',
     fieldCity: 'City',
@@ -280,7 +283,7 @@ export const CRM_STRINGS = {
     fieldAboutHint: 'Short, up to 300 characters. No agreement terms or financial data.',
     fieldRelationship: 'Relationship',
     fieldRelationshipChanged: 'Status changed',
-    newOrgHint: 'A new organization starts as a “Prospective partner”.',
+    newOrgHint: 'A new record starts as a “Prospective partner”. For a band choose the type “Music group”.',
     orgContacts: 'Organization contacts',
     noOrgContacts: 'No contacts yet',
     linkContact: 'Link a contact',
@@ -328,7 +331,7 @@ export const CRM_STRINGS = {
     markDone: 'Mark as done',
     loggedBy: 'Logged by {name}',
     kpiActiveContacts: 'Active contacts',
-    kpiOrganizations: 'Organizations',
+    kpiOrganizations: 'Groups and organizations',
     kpiActivePartners: 'Active partners',
     kpiProspective: 'Prospective partners',
     kpiInteractions30: 'Interactions in 30 days',
@@ -363,13 +366,30 @@ export function fill(text: string, vars: Record<string, string | number>): strin
   return text.replace(/\{(\w+)\}/g, (m, key: string) => (key in vars ? String(vars[key]) : m));
 }
 
-export const ORGANIZATION_KIND_LABELS: Record<OrganizationKind, Localized> = {
-  label: { ru: 'Лейбл', en: 'Label' },
+/** Unified CRM entity types (a music group is not assumed to be a registered company). */
+export const ORGANIZATION_KIND_LABELS: Record<CrmOrgKind, Localized> = {
+  group: { ru: 'Музыкальная группа', en: 'Music group' },
+  label: { ru: 'Лейбл', en: 'Record label' },
+  agency: { ru: 'Агентство', en: 'Agency' },
+  'event-organizer': { ru: 'Организатор мероприятий', en: 'Event organizer' },
+  media: { ru: 'Медиа', en: 'Media' },
+  company: { ru: 'Компания', en: 'Company' },
+  other: { ru: 'Другая организация', en: 'Other organization' },
+};
+
+/** Organization types before the unified CRM, shown on records that kept one (`formerKind`). */
+export const FORMER_KIND_LABELS: Record<string, Localized> = {
   venue: { ru: 'Площадка', en: 'Venue' },
   sponsor: { ru: 'Спонсор / фестиваль', en: 'Sponsor / festival' },
-  media: { ru: 'Медиа', en: 'Media' },
-  agency: { ru: 'Агентство', en: 'Agency' },
   'bank-unit': { ru: 'Подразделение банка', en: 'Bank unit' },
+};
+
+/** Collaboration status of a solo artist: the same four steps as partners, worded for a person. */
+export const COLLABORATION_LABELS: Record<RelationshipStatus, Localized> = {
+  prospect: { ru: 'Потенциальный', en: 'Prospect' },
+  negotiating: { ru: 'Переговоры', en: 'In talks' },
+  active: { ru: 'Активный', en: 'Active' },
+  paused: { ru: 'Пауза', en: 'Paused' },
 };
 
 export const RELATIONSHIP_LABELS: Record<RelationshipStatus, Localized> = {

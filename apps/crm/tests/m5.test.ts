@@ -33,8 +33,10 @@ function memoryBackend(): StorageBackend {
 
 void test('M5 seed: referential integrity, fictional estimates, consistent states', () => {
   for (const d of seed.deals) {
-    assert.ok(d.mock && seed.organizations.some((o) => o.id === d.organizationId), d.id);
-    if (d.contactId) assert.equal(seed.contacts.find((c) => c.id === d.contactId)?.organizationId, d.organizationId, `${d.id}: contact belongs to the organization`);
+    // Unified CRM: exactly one counterparty — an organization / group or a solo artist.
+    assert.ok(d.mock && !!d.organizationId !== !!d.artistId, d.id);
+    assert.ok(d.organizationId ? seed.organizations.some((o) => o.id === d.organizationId) : seed.artists.some((a) => a.id === d.artistId), d.id);
+    if (d.contactId && d.organizationId) assert.equal(seed.contacts.find((c) => c.id === d.contactId)?.organizationId, d.organizationId, `${d.id}: contact belongs to the organization`);
     assert.ok(STAFF.includes(d.ownerId));
     assert.ok(d.estimatedValueKgs === undefined || Number.isInteger(d.estimatedValueKgs));
     assert.equal(!!d.closedAt, d.stage === 'won' || d.stage === 'lost', `${d.id}: closedAt only when closed`);
@@ -132,14 +134,16 @@ void test('analytics figures are derived from the records and agree with the das
   const stages = pipelineByStage(seed.deals, [...OPEN, 'won', 'lost']);
   assert.equal(stages.reduce((s, r) => s + r.count, 0), seed.deals.length);
   const totals = dealTotals(seed.deals);
-  assert.deepEqual(totals, { open: 5, won: 1, lost: 1, openEstimateKgs: 425000, wonEstimateKgs: 30000, withoutEstimate: 1 });
+  // Unified CRM seed: + 2 open demo deals (one with an artist, 40 000 KGS; one with a group, no estimate).
+  assert.deepEqual(totals, { open: 7, won: 1, lost: 1, openEstimateKgs: 465000, wonEstimateKgs: 30000, withoutEstimate: 2 });
   assert.equal(stages.filter((r) => r.stage !== 'won' && r.stage !== 'lost').reduce((s, r) => s + r.estimateKgs, 0), totals.openEstimateKgs);
   const tasks = taskTotals(seed.tasks, NOW);
-  assert.deepEqual(tasks, { byStatus: { pending: 5, 'in-progress': 1, completed: 1, cancelled: 1 }, open: 6, overdue: 1, completedInPeriod: 1 });
+  // Unified CRM seed: + 1 pending artist task and 1 in-progress group task (neither overdue on NOW).
+  assert.deepEqual(tasks, { byStatus: { pending: 6, 'in-progress': 2, completed: 1, cancelled: 1 }, open: 8, overdue: 1, completedInPeriod: 1 });
   assert.equal(taskTotals(seed.tasks, NOW, periodStart('7d', NOW)).completedInPeriod, 1);
   assert.equal(reminderTotals(seed.interactions, NOW).open, crmSummary(seed, NOW).openFollowUps, 'reminder count matches the dashboard card');
   assert.equal(Object.values(interactionsByKind(seed.interactions, NOW)).reduce((a, b) => a + b, 0), seed.interactions.length);
-  assert.equal(interactionsByKind(seed.interactions, NOW, periodStart('7d', NOW)).note, 1);
+  assert.equal(interactionsByKind(seed.interactions, NOW, periodStart('7d', NOW)).note, 2); // unified CRM seed: + 1 artist note on 2026-10-18
   const staff = staffActivity(DEMO_STAFF, seed, NOW);
   assert.equal(staff.length, 3);
   assert.equal(staff.reduce((s, r) => s + r.openDeals, 0), totals.open);

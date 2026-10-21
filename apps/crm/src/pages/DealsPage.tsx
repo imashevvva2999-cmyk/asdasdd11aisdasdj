@@ -7,9 +7,9 @@ import { useCrmCan, usePipeline, usePreferences } from '@/access';
 import { useCrmActions } from '@/data/actions';
 import { dealTotals } from '@/domain/analytics';
 import { dealOutcome, nextStage } from '@/domain/pipeline';
-import type { CrmOrganization, Deal, DealStage } from '@/domain/types';
+import type { Deal, DealStage } from '@/domain/types';
 import { fill } from '@/strings';
-import { DealStageBadge, matches, useCrm, useQueryState, ViewOnly } from '@/ui';
+import { DealStageBadge, matches, useCounterparty, useCrm, useQueryState, ViewOnly } from '@/ui';
 
 const SORTS = ['updated', 'value', 'close', 'title'] as const;
 type Sort = (typeof SORTS)[number];
@@ -34,7 +34,7 @@ export function DealsPage() {
   const actions = useCrmActions();
   const canEdit = useCrmCan('crm.deals.edit');
   const deals = useCollection<Deal>('deals');
-  const organizations = useCollection<CrmOrganization>('organizations');
+  const counterparty = useCounterparty();
   const query = useQueryState();
   const pipeline = usePipeline();
   const prefs = usePreferences();
@@ -44,9 +44,9 @@ export function DealsPage() {
   const outcome = query.get('outcome');
   const owner = query.get('owner');
   const sort = (SORTS as readonly string[]).includes(query.get('sort')) ? (query.get('sort') as Sort) : 'updated';
-  const orgName = (id: string) => organizations.find((o) => o.id === id)?.name ?? '—';
+  const orgName = (d: Deal) => counterparty(d)?.name ?? '—';
   const rows = sortDeals(
-    deals.filter((d) => (!stage || d.stage === stage) && (!outcome || dealOutcome(d.stage) === outcome) && (!owner || d.ownerId === owner) && (!q || matches(`${d.title} ${orgName(d.organizationId)}`, q))),
+    deals.filter((d) => (!stage || d.stage === stage) && (!outcome || dealOutcome(d.stage) === outcome) && (!owner || d.ownerId === owner) && (!q || matches(`${d.title} ${orgName(d)}`, q))),
     sort,
   );
   const totals = dealTotals(rows);
@@ -117,7 +117,7 @@ export function DealsPage() {
                         <Link className="bo-link" to={`/deals/${d.id}`}>
                           {d.title}
                         </Link>
-                        <span className="bo-muted">{orgName(d.organizationId)}</span>
+                        <span className="bo-muted">{orgName(d)}</span>
                         <span className="crm-deal-meta">
                           <span>{estimate(d)}</span>
                           <span className="bo-muted">{staffName(d.ownerId)}</span>
@@ -141,7 +141,7 @@ export function DealsPage() {
             <thead>
               <tr>
                 <th>{t('colDeal')}</th>
-                <th>{t('colOrganization')}</th>
+                <th>{t('counterparty')}</th>
                 <th>{t('colStage')}</th>
                 <th>{t('colOwner')}</th>
                 <th style={{ textAlign: 'right' }}>{t('colEstimate')}</th>
@@ -157,9 +157,16 @@ export function DealsPage() {
                     </Link>
                   </td>
                   <td className="muted">
-                    <Link className="bo-link" to={`/organizations/${d.organizationId}`}>
-                      {orgName(d.organizationId)}
-                    </Link>
+                    {counterparty(d) ? (
+                      <Link className="bo-link" to={counterparty(d)!.path}>
+                        {orgName(d)}
+                      </Link>
+                    ) : (
+                      '—'
+                    )}
+                    {(d.secondaryOrganizationId || d.secondaryArtistId) && (
+                      <span className="muted bo-sub">+ {counterparty({ organizationId: d.secondaryOrganizationId, artistId: d.secondaryArtistId })?.name ?? '—'}</span>
+                    )}
                   </td>
                   <td>
                     <DealStageBadge stage={d.stage} />

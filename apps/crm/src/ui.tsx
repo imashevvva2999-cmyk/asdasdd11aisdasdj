@@ -3,15 +3,15 @@ import { Link, useSearchParams } from 'react-router';
 
 import type { ActivityEvent, Locale } from '@mmusic/backoffice/domain';
 import { formatNumber } from '@mmusic/backoffice/i18n';
-import { useBackoffice, useLocale, useLocalized, useRole, useT } from '@mmusic/backoffice/react';
+import { useBackoffice, useCollection, useLocale, useLocalized, useRole, useT } from '@mmusic/backoffice/react';
 import { StatusBadge, type StatusTone } from '@mmusic/backoffice/ui';
 
 import { usePipeline } from '@/access';
 import type { ActionResult } from '@/data/actions';
 import { PERMISSION_GROUPS } from '@/domain/permissions';
 import type { FieldError } from '@/domain/rules';
-import type { ContactStatus, CrmContact, CrmOrganization, DealStage, Interaction, RelationshipStatus, TaskPriority, TaskStatus } from '@/domain/types';
-import { CRM_STRINGS, fill, INTERACTION_KIND_KEYS, PRIORITY_KEYS, RELATIONSHIP_LABELS, TASK_STATUS_KEYS, type CrmStringKey } from '@/strings';
+import type { ContactStatus, CrmArtist, CrmContact, CrmOrgKind, CrmOrganization, DealStage, Interaction, RelationshipStatus, TaskPriority, TaskStatus } from '@/domain/types';
+import { COLLABORATION_LABELS, CRM_STRINGS, fill, INTERACTION_KIND_KEYS, ORGANIZATION_KIND_LABELS, PRIORITY_KEYS, RELATIONSHIP_LABELS, TASK_STATUS_KEYS, type CrmStringKey } from '@/strings';
 
 import './crm.css';
 
@@ -68,6 +68,11 @@ const FIELD_ERROR_KEYS: Record<FieldError, CrmStringKey> = {
   'stage-invalid': 'errStageInvalid',
   duplicate: 'errDuplicate',
   'tag-invalid': 'errTagInvalid',
+  'unknown-artist': 'errUnknownArtist',
+  'counterparty-required': 'errCounterpartyRequired',
+  'has-members': 'errHasMembers',
+  'image-invalid': 'errImageInvalid',
+  'same-participant': 'errSameParticipant',
 };
 
 const RESULT_ERROR_KEYS: Record<string, CrmStringKey> = {
@@ -81,6 +86,7 @@ const RESULT_ERROR_KEYS: Record<string, CrmStringKey> = {
   locked: 'errLocked',
   'unknown-role': 'errUnknownRole',
   'last-lead': 'errLastLead',
+  'not-group': 'errNotGroup',
   invalid: 'errInvalid',
 };
 
@@ -123,6 +129,12 @@ const AUDIT_KEYS: Record<string, CrmStringKey> = {
   'role.revoke': 'auditRoleRevoke',
   'role.reset': 'auditRoleReset',
   'staff.role': 'auditStaffRole',
+  'artist.create': 'auditArtistCreate',
+  'artist.update': 'auditArtistUpdate',
+  'artist.collaboration': 'auditArtistCollaboration',
+  'organization.member-add': 'auditMemberAdd',
+  'organization.member-role': 'auditMemberRole',
+  'organization.member-remove': 'auditMemberRemove',
 };
 
 /** CRM page helpers: strings, dates, people, error texts. */
@@ -183,6 +195,12 @@ export function RelationshipBadge({ status }: { status: RelationshipStatus }) {
   return <StatusBadge tone={RELATIONSHIP_TONE[status]} label={l(RELATIONSHIP_LABELS[status])} />;
 }
 
+/** Collaboration status of a solo artist (same steps and colours as partners, artist wording). */
+export function CollaborationBadge({ status }: { status: RelationshipStatus }) {
+  const { l } = useCrm();
+  return <StatusBadge tone={RELATIONSHIP_TONE[status]} label={l(COLLABORATION_LABELS[status])} />;
+}
+
 const STAGE_TONES: Record<string, StatusTone> = { lead: 'neutral', qualified: 'pending', proposal: 'pending', negotiation: 'warning', won: 'success', lost: 'danger' };
 /** Badge / bar colour of a stage id (custom stages: pending). */
 export const stageTone = (stage: DealStage): StatusTone => STAGE_TONES[stage] ?? 'pending';
@@ -202,6 +220,40 @@ export function TaskStatusBadge({ status }: { status: TaskStatus }) {
 export function PriorityBadge({ priority }: { priority: TaskPriority }) {
   const { t } = useCrm();
   return <StatusBadge tone={priority === 'high' ? 'danger' : 'neutral'} label={t(PRIORITY_KEYS[priority])} />;
+}
+
+// ---------------------------------------------------------------- artists, groups and counterparties (unified CRM)
+
+export type Counterparty = { name: string; path: string; artist: boolean };
+
+/** The counterparty of a deal / task / interaction: a solo artist or a group / organization (with its link). */
+export function useCounterparty(): (r: { organizationId?: string; artistId?: string }) => Counterparty | undefined {
+  const organizations = useCollection<CrmOrganization>('organizations');
+  const artists = useCollection<CrmArtist>('artists');
+  return (r) => {
+    const a = r.artistId ? artists.find((x) => x.id === r.artistId) : undefined;
+    if (a) return { name: a.stageName, path: `/artists/${a.id}`, artist: true };
+    const o = r.organizationId ? organizations.find((x) => x.id === r.organizationId) : undefined;
+    return o ? { name: o.name, path: `/organizations/${o.id}`, artist: false } : undefined;
+  };
+}
+
+/** Profile image of an artist; without one, generated initials (decorative — the name is always shown next to it). */
+export function ArtistAvatar({ artist, size = 40 }: { artist: Pick<CrmArtist, 'id' | 'stageName' | 'avatar'>; size?: number }) {
+  if (artist.avatar) return <img className="crm-avatar" src={artist.avatar} alt="" width={size} height={size} />;
+  const initials = artist.stageName.replace(/\(.*?\)/g, '').trim().split(/[\s-]+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toLocaleUpperCase()).join('');
+  const hue = Array.from({ length: artist.id.length }, (_, i) => artist.id.charCodeAt(i)).reduce((h, c) => (h * 31 + c) % 360, 7);
+  return (
+    <span className="crm-avatar" aria-hidden="true" style={{ width: size, height: size, fontSize: Math.round(size * 0.38), background: `hsl(${hue} 45% 28%)` }}>
+      {initials}
+    </span>
+  );
+}
+
+/** Entity-type pill: music groups and solo artists stand out from labels, agencies and companies. */
+export function KindBadge({ kind }: { kind: CrmOrgKind | 'solo' }) {
+  const { t, l } = useCrm();
+  return <span className={`crm-kind ${kind}`}>{kind === 'solo' ? t('entitySolo') : l(ORGANIZATION_KIND_LABELS[kind])}</span>;
 }
 
 // ---------------------------------------------------------------- form fields
@@ -269,8 +321,11 @@ export function AuditTable({ events }: { events: ActivityEvent[] }) {
   const roleName = (id: string) => bo.roles.find((r) => r.id === id);
   const permissionName = (key: string) => PERMISSION_GROUPS.flatMap((g) => g.items).find((i) => i.key === key);
   const detailReason = (e: ActivityEvent) => (e.reason && (e.action === 'role.grant' || e.action === 'role.revoke') ? `${l(roleName(e.entity.id)?.label ?? { ru: e.entity.id, en: e.entity.id })}: ${permissionName(e.reason) ? l(permissionName(e.reason)!.label) : e.reason}` : e.action === 'role.reset' ? l(roleName(e.entity.id)?.label ?? { ru: e.entity.id, en: e.entity.id }) : e.reason ?? '');
-  const statusText = (s: string) =>
-    roleName(s)
+  // Artist events use the artist wording of the collaboration statuses; organizations keep the partner wording.
+  const statusText = (s: string, e?: ActivityEvent) =>
+    e?.entity.type === 'artist' && s in COLLABORATION_LABELS
+      ? l(COLLABORATION_LABELS[s as RelationshipStatus])
+      : roleName(s)
       ? l(roleName(s)!.label)
       : s in RELATIONSHIP_LABELS
       ? l(RELATIONSHIP_LABELS[s as RelationshipStatus])
@@ -303,7 +358,7 @@ export function AuditTable({ events }: { events: ActivityEvent[] }) {
                 <span className="muted bo-sub">{roleLabel(e.actorRoleId)}</span>
               </td>
               <td>{auditText(e.action)}</td>
-              <td className="muted">{[e.entity.type === 'staff' || e.entity.type === 'stage' || e.entity.type === 'tag' ? e.entity.label : '', e.fromStatus && e.toStatus ? `${statusText(e.fromStatus)} → ${statusText(e.toStatus)}` : e.toStatus ? statusText(e.toStatus) : '', detailReason(e)].filter(Boolean).join(' · ') || '—'}</td>
+              <td className="muted">{[e.entity.type === 'staff' || e.entity.type === 'stage' || e.entity.type === 'tag' ? e.entity.label : '', e.fromStatus && e.toStatus ? `${statusText(e.fromStatus, e)} → ${statusText(e.toStatus, e)}` : e.toStatus ? statusText(e.toStatus, e) : '', detailReason(e)].filter(Boolean).join(' · ') || '—'}</td>
             </tr>
           ))}
         </tbody>
@@ -312,15 +367,17 @@ export function AuditTable({ events }: { events: ActivityEvent[] }) {
   );
 }
 
-/** Interactions as a chronological timeline (newest first), with contact / organization links and follow-ups. */
+/** Interactions as a chronological timeline (newest first), with contact / organization / artist links and follow-ups. */
 export function Timeline({ items, contacts, organizations, now, canEdit, onDone, showTargets = true }: { items: Interaction[]; contacts: CrmContact[]; organizations: CrmOrganization[]; now: string; canEdit: boolean; onDone: (id: string) => void; showTargets?: boolean }) {
   const { t, date, staffName } = useCrm();
+  const artists = useCollection<CrmArtist>('artists');
   if (items.length === 0) return <p className="bo-muted">{t('noInteractions')}</p>;
   return (
     <ol className="crm-timeline">
       {items.map((i) => {
         const contact = contacts.find((c) => c.id === i.contactId);
         const org = organizations.find((o) => o.id === i.organizationId);
+        const artist = artists.find((a) => a.id === i.artistId);
         const overdue = !!i.followUpAt && !i.followUpDone && i.followUpAt < now;
         return (
           <li key={i.id} className={`crm-event ${i.kind}`} data-interaction={i.id}>
@@ -337,6 +394,11 @@ export function Timeline({ items, contacts, organizations, now, canEdit, onDone,
                 {showTargets && org && (
                   <Link className="bo-link" to={`/organizations/${org.id}`}>
                     {org.name}
+                  </Link>
+                )}
+                {showTargets && artist && (
+                  <Link className="bo-link" to={`/artists/${artist.id}`}>
+                    {artist.stageName}
                   </Link>
                 )}
               </div>

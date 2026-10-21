@@ -9,7 +9,7 @@ import { useCrmActor, useCrmCan, usePreferences } from '@/access';
 import { useCrmActions } from '@/data/actions';
 import type { FieldErrors } from '@/domain/rules';
 import { isOverdueTask, taskInput, type TaskField, type TaskInput } from '@/domain/tasks';
-import { TASK_PRIORITIES, type CrmContact, type CrmOrganization, type Deal, type Task, type TaskStatus } from '@/domain/types';
+import { TASK_PRIORITIES, type CrmArtist, type CrmContact, type CrmOrganization, type Deal, type Task, type TaskStatus } from '@/domain/types';
 import { fill, PRIORITY_KEYS } from '@/strings';
 import { AuditTable, PriorityBadge, SelectField, TaskStatusBadge, TextAreaField, TextField, toLocalInput, useCrm, useNow, ViewOnly } from '@/ui';
 
@@ -24,6 +24,7 @@ export function TaskDetailPage() {
   const deals = useCollection<Deal>('deals');
   const organizations = useCollection<CrmOrganization>('organizations');
   const contacts = useCollection<CrmContact>('contacts');
+  const artists = useCollection<CrmArtist>('artists');
   const events = useCollection<ActivityEvent>('activity');
   const [pending, setPending] = useState<TaskStatus | null>(null);
   const [reason, setReason] = useState('');
@@ -42,6 +43,7 @@ export function TaskDetailPage() {
   const deal = deals.find((d) => d.id === task.dealId);
   const org = organizations.find((o) => o.id === task.organizationId);
   const contact = contacts.find((c) => c.id === task.contactId);
+  const artist = artists.find((a) => a.id === task.artistId);
   const overdue = isOverdueTask(task, now);
   const details: [string, ReactNode][] = [
     [t('fieldStatus'), <TaskStatusBadge key="s" status={task.status} />],
@@ -50,6 +52,7 @@ export function TaskDetailPage() {
     [t('fieldDue'), <span key="d" className={overdue ? 'crm-follow overdue' : undefined}>{task.dueAt ? `${date(task.dueAt)}${overdue ? ` · ${t('overdue')}` : ''}` : t('dueNone')}</span>],
     [t('fieldDeal'), deal ? <Link key="dl" className="bo-link" to={`/deals/${deal.id}`}>{deal.title}</Link> : '—'],
     [t('fieldOrganization'), org ? <Link key="o" className="bo-link" to={`/organizations/${org.id}`}>{org.name}</Link> : '—'],
+    [t('fieldArtist'), artist ? <Link key="a" className="bo-link" to={`/artists/${artist.id}`}>{artist.stageName}</Link> : '—'],
     [t('fieldContact'), contact ? <Link key="c" className="bo-link" to={`/contacts/${contact.id}`}>{contact.name}</Link> : '—'],
     [t('fieldDescription'), task.description ?? '—'],
     [t('fieldCreated'), date(task.createdAt)],
@@ -157,7 +160,7 @@ export function TaskDetailPage() {
   );
 }
 
-/** Create (/tasks/new, optional ?dealId= / ?contactId= / ?organizationId=) or edit (/tasks/:id/edit); crm.tasks.edit. */
+/** Create (/tasks/new, optional ?dealId= / ?contactId= / ?organizationId= / ?artistId=) or edit (/tasks/:id/edit); crm.tasks.edit. */
 export function TaskFormPage() {
   const { id } = useParams();
   const [params] = useSearchParams();
@@ -170,13 +173,14 @@ export function TaskFormPage() {
   const deals = useCollection<Deal>('deals');
   const organizations = useCollection<CrmOrganization>('organizations');
   const contacts = useCollection<CrmContact>('contacts');
+  const artists = useCollection<CrmArtist>('artists');
   const staff = bo.staff.filter((s) => s.app === 'crm');
   const prefs = usePreferences();
   const [input, setInput] = useState<TaskInput>(() => {
     if (existing) return { ...taskInput(existing), dueAt: existing.dueAt ? toLocalInput(existing.dueAt) : '' };
     const dealId = params.get('dealId') ?? '';
     const deal = deals.find((d) => d.id === dealId);
-    return taskInput(undefined, { priority: prefs.taskPriority, assigneeId: actor?.app === 'crm' ? actor.id : '', dealId, organizationId: params.get('organizationId') ?? deal?.organizationId ?? '', contactId: params.get('contactId') ?? deal?.contactId ?? '' });
+    return taskInput(undefined, { priority: prefs.taskPriority, assigneeId: actor?.app === 'crm' ? actor.id : '', dealId, organizationId: params.get('organizationId') ?? deal?.organizationId ?? '', artistId: params.get('artistId') ?? deal?.artistId ?? '', contactId: params.get('contactId') ?? deal?.contactId ?? '' });
   });
   const [fields, setFields] = useState<FieldErrors<TaskField>>({});
   const [error, setError] = useState<string>();
@@ -224,6 +228,7 @@ export function TaskFormPage() {
           <TextField label={t('fieldDue')} type="datetime-local" value={input.dueAt} onChange={set('dueAt')} error={fieldError(fields.dueAt)} />
           <SelectField label={t('fieldDeal')} value={input.dealId} onChange={set('dealId')} error={fieldError(fields.dealId)} options={[{ value: '', label: t('none') }, ...[...deals].sort((a, b) => a.title.localeCompare(b.title)).map((d) => ({ value: d.id, label: d.title }))]} />
           <SelectField label={t('fieldOrganization')} value={input.organizationId} onChange={set('organizationId')} error={fieldError(fields.organizationId)} hint={t('taskLinksHint')} options={[{ value: '', label: t('none') }, ...byName(organizations).map((o) => ({ value: o.id, label: o.name }))]} />
+          <SelectField label={t('fieldArtist')} value={input.artistId ?? ''} onChange={set('artistId')} error={fieldError(fields.artistId)} options={[{ value: '', label: t('none') }, ...[...artists].sort((a, b) => a.stageName.localeCompare(b.stageName)).map((a) => ({ value: a.id, label: a.stageName }))]} />
           <SelectField label={t('fieldContact')} value={input.contactId} onChange={set('contactId')} error={fieldError(fields.contactId)} options={[{ value: '', label: t('none') }, ...byName(contacts).map((c) => ({ value: c.id, label: c.name }))]} />
         </div>
         <TextAreaField label={t('fieldDescription')} value={input.description} onChange={set('description')} error={fieldError(fields.description)} />

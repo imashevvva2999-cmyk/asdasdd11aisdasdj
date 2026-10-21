@@ -1,6 +1,6 @@
 import { audit, type CrmContext } from './permissions.ts';
 import { allowed, clean, validDate, type Audit, type Failure, type FieldErrors } from './rules.ts';
-import type { CrmContact, CrmOrganization, Deal, Interaction, Task, TaskPriority, TaskStatus } from './types.ts';
+import type { CrmArtist, CrmContact, CrmOrganization, Deal, Interaction, Task, TaskPriority, TaskStatus } from './types.ts';
 
 /**
  * CRM task rules (M5): validation, the (prototype) permission check crm.tasks.edit, status transitions with their
@@ -8,10 +8,10 @@ import type { CrmContact, CrmOrganization, Deal, Interaction, Task, TaskPriority
  * reminders — read from the interactions themselves, never copied, so nothing is lost or duplicated.
  */
 
-export type TaskInput = { title: string; description: string; priority: TaskPriority; assigneeId: string; dueAt: string; contactId: string; organizationId: string; dealId: string };
+export type TaskInput = { title: string; description: string; priority: TaskPriority; assigneeId: string; dueAt: string; contactId: string; organizationId: string; artistId?: string; dealId: string };
 export type TaskField = keyof TaskInput;
-export type TaskLinks = { contacts: CrmContact[]; organizations: CrmOrganization[]; deals: Deal[]; staffIds: string[] };
-type TaskValue = Pick<Task, 'title' | 'description' | 'priority' | 'assigneeId' | 'dueAt' | 'contactId' | 'organizationId' | 'dealId'>;
+export type TaskLinks = { contacts: CrmContact[]; organizations: CrmOrganization[]; deals: Deal[]; staffIds: string[]; artists?: CrmArtist[] };
+type TaskValue = Pick<Task, 'title' | 'description' | 'priority' | 'assigneeId' | 'dueAt' | 'contactId' | 'organizationId' | 'artistId' | 'dealId'>;
 
 export const isOpenTask = (t: Pick<Task, 'status'>) => t.status === 'pending' || t.status === 'in-progress';
 export const isOverdueTask = (t: Pick<Task, 'status' | 'dueAt'>, now: string) => isOpenTask(t) && !!t.dueAt && t.dueAt < now;
@@ -25,12 +25,13 @@ export function taskInput(t?: Task, preset: Partial<TaskInput> = {}): TaskInput 
     dueAt: t?.dueAt ?? '',
     contactId: t?.contactId ?? '',
     organizationId: t?.organizationId ?? '',
+    artistId: t?.artistId ?? '',
     dealId: t?.dealId ?? '',
     ...preset,
   };
 }
 
-/** The organization follows the deal, then the contact, when not chosen; all links must agree. */
+/** The organization follows the deal, then the contact, and the artist follows the deal, when not chosen; all links must agree. */
 export function validateTask(input: TaskInput, links: TaskLinks): { ok: true; value: TaskValue } | { ok: false; fields: FieldErrors<TaskField> } {
   const fields: FieldErrors<TaskField> = {};
   const title = clean(input.title);
@@ -45,8 +46,11 @@ export function validateTask(input: TaskInput, links: TaskLinks): { ok: true; va
   if (input.dealId && !deal) fields.dealId = 'unknown-deal';
   if (input.contactId && !contact) fields.contactId = 'unknown-contact';
   if (input.organizationId && !links.organizations.some((o) => o.id === input.organizationId)) fields.organizationId = 'unknown-organization';
+  if (input.artistId && !(links.artists ?? []).some((a) => a.id === input.artistId)) fields.artistId = 'unknown-artist';
   const organizationId = input.organizationId || deal?.organizationId || contact?.organizationId || '';
-  if (deal && organizationId && deal.organizationId !== organizationId) fields.dealId = 'deal-not-in-org';
+  const artistId = input.artistId || deal?.artistId || '';
+  if (deal && organizationId && deal.organizationId && deal.organizationId !== organizationId) fields.dealId = 'deal-not-in-org';
+  if (deal && deal.artistId && artistId !== deal.artistId) fields.dealId = 'deal-not-in-org';
   if (contact && organizationId && contact.organizationId && contact.organizationId !== organizationId) fields.contactId = 'contact-not-in-org';
   if (Object.keys(fields).length > 0) return { ok: false, fields };
   return {
@@ -59,6 +63,7 @@ export function validateTask(input: TaskInput, links: TaskLinks): { ok: true; va
       dueAt: input.dueAt ? new Date(input.dueAt).toISOString() : undefined,
       contactId: input.contactId || undefined,
       organizationId: organizationId || undefined,
+      artistId: artistId || undefined,
       dealId: input.dealId || undefined,
     },
   };

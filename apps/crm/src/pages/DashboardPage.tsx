@@ -9,7 +9,7 @@ import { useCrmCan, usePipeline, usePreferences } from '@/access';
 import { dealTotals, pipelineByStage } from '@/domain/analytics';
 import { crmSummary, sortByDate } from '@/domain/rules';
 import { agenda } from '@/domain/tasks';
-import type { CrmContact, CrmOrganization, Deal, Interaction, Task } from '@/domain/types';
+import type { CrmArtist, CrmContact, CrmOrganization, Deal, Interaction, Task } from '@/domain/types';
 import { fill, INTERACTION_KIND_KEYS } from '@/strings';
 import { stageTone, useCrm, useNow } from '@/ui';
 
@@ -24,12 +24,14 @@ export function DashboardPage() {
   const { t, locale, date, kgs, auditText, staffName } = useCrm();
   const contacts = useCollection<CrmContact>('contacts');
   const organizations = useCollection<CrmOrganization>('organizations');
+  const artists = useCollection<CrmArtist>('artists');
   const interactions = useCollection<Interaction>('interactions');
   const deals = useCollection<Deal>('deals');
   const tasks = useCollection<Task>('tasks');
   const events = useCollection<ActivityEvent>('activity');
   const canContacts = useCrmCan('crm.contacts.view');
   const canOrgs = useCrmCan('crm.organizations.view');
+  const canArtists = useCrmCan('crm.artists.view');
   const canPartners = useCrmCan('crm.partners.view');
   const canActivity = useCrmCan('crm.activity.view');
   const canDeals = useCrmCan('crm.deals.view');
@@ -41,7 +43,7 @@ export function DashboardPage() {
   const recent = sortByDate(interactions.filter((i) => i.at <= now)).slice(0, 4);
   const items = agenda(tasks, interactions, now);
   const overdue = items.filter((i) => i.overdue).length;
-  const who = (i: Interaction) => contacts.find((c) => c.id === i.contactId)?.name ?? organizations.find((o) => o.id === i.organizationId)?.name ?? '—';
+  const who = (i: Interaction) => contacts.find((c) => c.id === i.contactId)?.name ?? artists.find((a) => a.id === i.artistId)?.stageName ?? organizations.find((o) => o.id === i.organizationId)?.name ?? '—';
   const totals = dealTotals(deals);
   const pipeline = usePipeline();
   const prefs = usePreferences();
@@ -55,7 +57,8 @@ export function DashboardPage() {
       <section className="bo-section" aria-label={t('dashboardTitle')}>
         <div className="bo-grid">
           <KpiCard icon="contacts" label={t('kpiActiveContacts')} value={`${n(s.activeContacts)} / ${n(s.contacts)}`} hint={t('kpiHint')} demo footer={link('/contacts?status=active', canContacts)} />
-          <KpiCard icon="business" label={t('kpiOrganizations')} value={n(s.organizations)} hint={t('kpiHint')} demo footer={link('/organizations', canOrgs)} />
+          <KpiCard icon="mic" label={t('kpiArtists')} value={n(artists.length)} hint={t('kpiArtistsHint')} demo footer={link('/artists', canArtists)} />
+          <KpiCard icon="groups" label={t('kpiOrganizations')} value={n(s.organizations)} hint={t('kpiHint')} demo footer={link('/organizations', canOrgs)} />
           <KpiCard icon="handshake" label={t('kpiActivePartners')} value={n(s.activePartners)} hint={t('kpiHint')} demo footer={link('/partners', canPartners)} />
           <KpiCard icon="person-search" label={t('kpiProspective')} value={n(s.prospective)} hint={t('kpiHint')} demo footer={link('/partners', canPartners)} />
           <KpiCard icon="forum" label={t('kpiInteractions30')} value={n(s.interactions30d)} hint={t('kpiHint')} demo footer={link('/activity', canActivity)} />

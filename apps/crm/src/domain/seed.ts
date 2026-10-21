@@ -1,5 +1,7 @@
 import { DEMO_CONTACTS, DEMO_ORGANIZATIONS } from '@mmusic/backoffice/mocks';
 
+import { crmOrgKind, LEGACY_KINDS } from './artists.ts';
+import { unifiedSeed } from './seed-artists.ts';
 import { DEALS, SEED_M5_EVENTS, TASKS } from './seed-m5.ts';
 import { defaultM6Data } from './seed-m6.ts';
 import type { CrmCollections, CrmContact, CrmOrganization, Interaction, RelationshipStatus } from './types.ts';
@@ -52,11 +54,27 @@ const INTERACTIONS: Interaction[] = [
   interaction(12, 'note', '2026-10-20T09:00:00.000Z', 'Площадка просит прислать технические требования к афише (демо).', undefined, 'org-2', 'staff-crm-2'),
 ];
 
+/** Full demo set: M4–M6 records (organization types mapped to the unified CRM types) plus artists and groups. */
 export function crmSeed(): CrmCollections {
+  const unified = unifiedSeed();
+  // Shared demo organizations carry the pre-unified types; they are mapped from what each record describes, and the
+  // legacy type is kept in `formerKind` (same rule as the migration).
   const organizations: CrmOrganization[] = [
-    ...DEMO_ORGANIZATIONS.map((o) => ({ ...o, relationship: RELATIONSHIP[o.id] ?? 'prospect', ...(ABOUT[o.id] ? { about: ABOUT[o.id] } : {}) })),
-    ...EXTRA_ORGANIZATIONS,
+    ...DEMO_ORGANIZATIONS.map((o) => {
+      const own = { ...o, ...(ABOUT[o.id] ? { about: ABOUT[o.id] } : {}), tags: ORG_TAGS[o.id] ?? [] };
+      return { ...own, kind: crmOrgKind(o.kind, own), ...((LEGACY_KINDS as readonly string[]).includes(o.kind) ? { formerKind: o.kind } : {}), relationship: RELATIONSHIP[o.id] ?? 'prospect' };
+    }),
+    ...EXTRA_ORGANIZATIONS.map((o) => ({ ...o, tags: ORG_TAGS[o.id] ?? [] })),
   ];
-  const contacts: CrmContact[] = [...DEMO_CONTACTS.map((c) => ({ ...c, status: 'active' as const })), ...EXTRA_CONTACTS];
-  return structuredClone({ contacts, organizations: organizations.map((o) => ({ ...o, tags: ORG_TAGS[o.id] ?? [] })), interactions: INTERACTIONS, deals: DEALS, tasks: TASKS, activity: SEED_M5_EVENTS, ...defaultM6Data() });
+  const contacts: CrmContact[] = [...DEMO_CONTACTS.map((c) => ({ ...c, status: 'active' as const })), ...EXTRA_CONTACTS, ...unified.contacts];
+  return structuredClone({
+    contacts,
+    organizations: [...organizations, ...unified.groups],
+    artists: unified.artists,
+    interactions: [...INTERACTIONS, ...unified.interactions],
+    deals: [...DEALS, ...unified.deals],
+    tasks: [...TASKS, ...unified.tasks],
+    activity: SEED_M5_EVENTS,
+    ...defaultM6Data(),
+  });
 }
