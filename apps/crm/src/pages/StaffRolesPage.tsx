@@ -161,7 +161,9 @@ export function StaffRolesPage() {
             {t('matrixHint')}
           </p>
         )}
-        <div className="bo-table-wrap">
+        {/* Own scroll box (both axes) so the role headings stay visible while the rows scroll. Keyboard users reach every
+            row through its checkboxes, which scroll into view when focused. */}
+        <div className="bo-table-wrap crm-matrix-scroll" data-matrix-scroll>
           <table className="bo-table crm-matrix">
             <thead>
               <tr>
@@ -178,12 +180,12 @@ export function StaffRolesPage() {
                 <Fragment key={g.id}>
                   <tr className="crm-matrix-group">
                     <th colSpan={roles.length + 1} scope="colgroup">
-                      {l(g.label)}
+                      <span className="crm-matrix-group-label">{l(g.label)}</span>
                     </th>
                   </tr>
                   {g.items.map((item) => (
                     <tr key={item.key} data-permission={item.key}>
-                      <td style={{ minWidth: 220 }}>
+                      <td className="crm-matrix-name">
                         {l(item.label)}
                         <span className="muted bo-sub">{item.key}</span>
                       </td>
