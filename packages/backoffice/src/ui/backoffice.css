@@ -24,7 +24,7 @@ a { color: inherit; }
 .bo-app-mark { display: none; color: var(--text-medium); font: 800 11px/14px "Inter", system-ui, sans-serif; letter-spacing: 0.6px; }
 .bo-nav { display: grid; gap: 14px; }
 .bo-nav-group { display: grid; gap: 2px; }
-.bo-nav-group-label { padding: 0 12px 4px; color: var(--text-low); font: 700 11px/14px "Inter", system-ui, sans-serif; letter-spacing: 0.8px; text-transform: uppercase; white-space: nowrap; }
+.bo-nav-group-label { padding: 0 12px 4px; color: var(--text-medium); font: 700 11px/14px "Inter", system-ui, sans-serif; letter-spacing: 0.8px; text-transform: uppercase; white-space: nowrap; }
 .bo-nav-link {
   display: flex; align-items: center; gap: 12px; height: 42px; padding: 0 12px; border-radius: 12px; color: var(--text-medium);
   text-decoration: none; font: 600 14px/1 "Inter", system-ui, sans-serif; white-space: nowrap; transition: background-color 0.15s, color 0.15s;
@@ -32,7 +32,7 @@ a { color: inherit; }
 .bo-nav-link:hover { color: var(--text-high); background: rgba(255, 255, 255, 0.05); }
 .bo-nav-link.active { color: var(--primary); background: rgba(255, 75, 75, 0.12); }
 .bo-nav-link .mm-icon { flex-shrink: 0; }
-.bo-side-foot { margin: auto 8px 0; padding-top: 16px; color: var(--text-low); font: 500 12px/16px "Inter", system-ui, sans-serif; }
+.bo-side-foot { margin: auto 8px 0; padding-top: 16px; color: var(--text-medium); font: 500 12px/16px "Inter", system-ui, sans-serif; }
 
 /* Collapsed rail */
 .bo-app[data-expanded="false"] .bo-app-name,
@@ -62,7 +62,7 @@ a { color: inherit; }
 .bo-seg button { height: 30px; min-width: 40px; padding: 0 10px; border: 0; border-radius: 999px; background: none; color: var(--text-medium); font: 700 12px/1 "Inter", system-ui, sans-serif; cursor: pointer; }
 .bo-seg button.on { background: var(--primary); color: #fff; }
 .bo-role { display: inline-flex; align-items: center; gap: 8px; }
-.bo-role-label { color: var(--text-low); font: 600 11px/14px "Inter", system-ui, sans-serif; max-width: 120px; }
+.bo-role-label { color: var(--text-medium); font: 600 11px/14px "Inter", system-ui, sans-serif; max-width: 120px; }
 .bo-role select {
   height: 36px; max-width: 260px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-l1);
   color: var(--text-high); font: 600 13px/1 "Inter", system-ui, sans-serif;
@@ -139,7 +139,7 @@ a { color: inherit; }
 .bo-search:focus-within { border-color: var(--primary); }
 .bo-search input { flex: 1; min-width: 0; height: 100%; border: 0; outline: none; background: none; color: var(--text-high); font: 500 14px/18px "Inter", system-ui, sans-serif; }
 .bo-filter { display: grid; gap: 4px; }
-.bo-filter span { color: var(--text-low); font: 600 11px/14px "Inter", system-ui, sans-serif; letter-spacing: 0.4px; text-transform: uppercase; }
+.bo-filter span { color: var(--text-medium); font: 600 11px/14px "Inter", system-ui, sans-serif; letter-spacing: 0.4px; text-transform: uppercase; }
 .bo-filter select { height: 40px; min-width: 150px; padding: 0 10px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-l1); color: var(--text-high); font: 600 13px/1 "Inter", system-ui, sans-serif; }
 
 /* Segmented tabs (route links) */
@@ -152,7 +152,7 @@ a { color: inherit; }
 /* Tables */
 .bo-table-wrap { overflow-x: auto; border-radius: 20px; border: 1px solid var(--border); background: var(--surface-l1); }
 .bo-table { width: 100%; border-collapse: collapse; font: 500 14px/20px "Inter", system-ui, sans-serif; }
-.bo-table th { padding: 12px 16px; text-align: left; color: var(--text-low); font: 700 11px/14px "Inter", system-ui, sans-serif; letter-spacing: 0.5px; text-transform: uppercase; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.bo-table th { padding: 12px 16px; text-align: left; color: var(--text-medium); font: 700 11px/14px "Inter", system-ui, sans-serif; letter-spacing: 0.5px; text-transform: uppercase; border-bottom: 1px solid var(--border); white-space: nowrap; }
 .bo-table td { padding: 12px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); vertical-align: middle; }
 .bo-table tr:last-child td { border-bottom: 0; }
 .bo-table tbody tr:hover { background: rgba(255, 255, 255, 0.03); }
