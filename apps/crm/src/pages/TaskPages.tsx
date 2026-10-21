@@ -2,9 +2,10 @@ import { useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 
 import type { ActivityEvent } from '@mmusic/backoffice/domain';
-import { useActor, useBackoffice, useCan, useCollection } from '@mmusic/backoffice/react';
+import { useBackoffice, useCollection } from '@mmusic/backoffice/react';
 import { BackLink, ConfirmDialog, DemoBadge, DetailList, EmptyState, PageHeader, PermissionNote } from '@mmusic/backoffice/ui';
 
+import { useCrmActor, useCrmCan, usePreferences } from '@/access';
 import { useCrmActions } from '@/data/actions';
 import type { FieldErrors } from '@/domain/rules';
 import { isOverdueTask, taskInput, type TaskField, type TaskInput } from '@/domain/tasks';
@@ -18,7 +19,7 @@ export function TaskDetailPage() {
   const { t, date, staffName, resultError } = useCrm();
   const actions = useCrmActions();
   const now = useNow();
-  const canEdit = useCan('crm.tasks.edit');
+  const canEdit = useCrmCan('crm.tasks.edit');
   const task = useCollection<Task>('tasks').find((x) => x.id === id);
   const deals = useCollection<Deal>('deals');
   const organizations = useCollection<CrmOrganization>('organizations');
@@ -164,17 +165,18 @@ export function TaskFormPage() {
   const navigate = useNavigate();
   const actions = useCrmActions();
   const bo = useBackoffice();
-  const { staff: actor } = useActor();
+  const { staff: actor } = useCrmActor();
   const existing = useCollection<Task>('tasks').find((x) => x.id === id);
   const deals = useCollection<Deal>('deals');
   const organizations = useCollection<CrmOrganization>('organizations');
   const contacts = useCollection<CrmContact>('contacts');
   const staff = bo.staff.filter((s) => s.app === 'crm');
+  const prefs = usePreferences();
   const [input, setInput] = useState<TaskInput>(() => {
     if (existing) return { ...taskInput(existing), dueAt: existing.dueAt ? toLocalInput(existing.dueAt) : '' };
     const dealId = params.get('dealId') ?? '';
     const deal = deals.find((d) => d.id === dealId);
-    return taskInput(undefined, { assigneeId: actor?.app === 'crm' ? actor.id : '', dealId, organizationId: params.get('organizationId') ?? deal?.organizationId ?? '', contactId: params.get('contactId') ?? deal?.contactId ?? '' });
+    return taskInput(undefined, { priority: prefs.taskPriority, assigneeId: actor?.app === 'crm' ? actor.id : '', dealId, organizationId: params.get('organizationId') ?? deal?.organizationId ?? '', contactId: params.get('contactId') ?? deal?.contactId ?? '' });
   });
   const [fields, setFields] = useState<FieldErrors<TaskField>>({});
   const [error, setError] = useState<string>();

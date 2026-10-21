@@ -1,8 +1,9 @@
 import { Link } from 'react-router';
 
-import { useBackoffice, useCan, useCollection } from '@mmusic/backoffice/react';
+import { useBackoffice, useCollection } from '@mmusic/backoffice/react';
 import { DemoBadge, EmptyState, FilterBar, FilterSelect, PageHeader, PermissionNote, SearchField, StatusBadge } from '@mmusic/backoffice/ui';
 
+import { useCrmCan } from '@/access';
 import { useCrmActions } from '@/data/actions';
 import { PRIORITY_ORDER } from '@/domain/tasks';
 import { TASK_PRIORITIES, TASK_STATUSES, type CrmContact, type CrmOrganization, type Deal, type Interaction, type Task, type TaskPriority, type TaskStatus } from '@/domain/types';
@@ -32,8 +33,8 @@ export function TasksPage() {
   const bo = useBackoffice();
   const actions = useCrmActions();
   const now = useNow();
-  const canTasks = useCan('crm.tasks.edit');
-  const canReminders = useCan('crm.activity.edit');
+  const canTasks = useCrmCan('crm.tasks.edit');
+  const canReminders = useCrmCan('crm.activity.edit');
   const tasks = useCollection<Task>('tasks');
   const interactions = useCollection<Interaction>('interactions');
   const contacts = useCollection<CrmContact>('contacts');

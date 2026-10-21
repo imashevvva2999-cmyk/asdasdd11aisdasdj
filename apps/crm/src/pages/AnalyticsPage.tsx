@@ -4,9 +4,10 @@ import type { ActivityEvent } from '@mmusic/backoffice/domain';
 import { useBackoffice, useCollection } from '@mmusic/backoffice/react';
 import { DemoBadge, FilterBar, FilterSelect, PageHeader, PermissionNote } from '@mmusic/backoffice/ui';
 
+import { usePipeline } from '@/access';
 import { dealTotals, interactionsByKind, periodStart, PERIODS, pipelineByStage, relationshipDistribution, reminderTotals, staffActivity, taskTotals, type Period } from '@/domain/analytics';
 import { INTERACTION_KINDS, RELATIONSHIP_STATUSES, TASK_STATUSES, type CrmOrganization, type Deal, type Interaction, type Task } from '@/domain/types';
-import { DEAL_STAGE_KEYS, INTERACTION_KIND_KEYS, RELATIONSHIP_LABELS, TASK_STATUS_KEYS, type CrmStringKey } from '@/strings';
+import { INTERACTION_KIND_KEYS, RELATIONSHIP_LABELS, TASK_STATUS_KEYS, type CrmStringKey } from '@/strings';
 import { useCrm, useNow, useQueryState } from '@/ui';
 
 /** A fixed, labelled indicator table; the first cell of each row is its unique label. */
@@ -55,6 +56,7 @@ export function AnalyticsPage() {
   const bo = useBackoffice();
   const now = useNow();
   const query = useQueryState();
+  const pipeline = usePipeline();
   const period = (PERIODS as readonly string[]).includes(query.get('period')) ? (query.get('period') as Period) : 'all';
   const since = periodStart(period, now);
   const deals = useCollection<Deal>('deals');
@@ -80,7 +82,7 @@ export function AnalyticsPage() {
       </div>
       <div style={{ display: 'grid', gap: 16 }}>
         <div className="crm-columns">
-          <Table id="pipeline" title={t('aPipeline')} head={[t('colStage'), t('colCount'), t('colEstimateSum')]} numeric={[1, 2]} rows={pipelineByStage(deals).map((r) => [t(DEAL_STAGE_KEYS[r.stage]), r.count, r.estimateKgs ? kgs(r.estimateKgs) : '—'])} />
+          <Table id="pipeline" title={t('aPipeline')} head={[t('colStage'), t('colCount'), t('colEstimateSum')]} numeric={[1, 2]} rows={pipelineByStage(deals, pipeline.boardIds).map((r) => [pipeline.label(r.stage), r.count, r.estimateKgs ? kgs(r.estimateKgs) : '—'])} />
           <Table
             id="outcomes"
             title={t('aOutcomes')}

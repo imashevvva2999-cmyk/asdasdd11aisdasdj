@@ -2,9 +2,10 @@ import { useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 
 import type { ActivityEvent, OrganizationKind } from '@mmusic/backoffice/domain';
-import { useCan, useCollection } from '@mmusic/backoffice/react';
+import { useCollection } from '@mmusic/backoffice/react';
 import { BackLink, ConfirmDialog, DemoBadge, DetailList, EmptyState, FilterBar, FilterSelect, PageHeader, PermissionNote, SearchField } from '@mmusic/backoffice/ui';
 
+import { useCrmCan } from '@/access';
 import { InteractionForm } from '@/components/InteractionForm';
 import { useCrmActions } from '@/data/actions';
 import { organizationInput, sortByDate, type FieldErrors, type OrganizationField, type OrganizationInput } from '@/domain/rules';
@@ -17,7 +18,7 @@ const KINDS = Object.keys(ORGANIZATION_KIND_LABELS) as OrganizationKind[];
 /** Fictional organizations: search, type and relationship filters kept in the URL. */
 export function OrganizationsPage() {
   const { t, l, date } = useCrm();
-  const canEdit = useCan('crm.organizations.edit');
+  const canEdit = useCrmCan('crm.organizations.edit');
   const organizations = useCollection<CrmOrganization>('organizations');
   const contacts = useCollection<CrmContact>('contacts');
   const interactions = useCollection<Interaction>('interactions');
@@ -101,10 +102,10 @@ export function OrganizationDetailPage() {
   const { t, l, date, resultError } = useCrm();
   const actions = useCrmActions();
   const now = useNow();
-  const canEdit = useCan('crm.organizations.edit');
-  const canPartners = useCan('crm.partners.edit');
-  const canContacts = useCan('crm.contacts.edit');
-  const canLog = useCan('crm.activity.edit');
+  const canEdit = useCrmCan('crm.organizations.edit');
+  const canPartners = useCrmCan('crm.partners.edit');
+  const canContacts = useCrmCan('crm.contacts.edit');
+  const canLog = useCrmCan('crm.activity.edit');
   const organizations = useCollection<CrmOrganization>('organizations');
   const contacts = useCollection<CrmContact>('contacts');
   const interactions = useCollection<Interaction>('interactions');
@@ -133,6 +134,7 @@ export function OrganizationDetailPage() {
     [t('fieldKind'), l(ORGANIZATION_KIND_LABELS[org.kind])],
     [t('fieldCity'), org.city],
     [t('fieldAbout'), org.about || '—'],
+    [t('fieldTags'), org.tags?.join(', ') || '—'],
     [t('fieldRelationship'), <RelationshipBadge key="r" status={org.relationship} />],
     ...(org.relationshipChangedAt ? ([[t('fieldRelationshipChanged'), date(org.relationshipChangedAt)]] as [string, ReactNode][]) : []),
     [t('fieldCreated'), date(org.createdAt)],
@@ -342,6 +344,7 @@ export function OrganizationFormPage() {
           <SelectField label={t('fieldKind')} value={input.kind} onChange={set('kind')} options={KINDS.map((k) => ({ value: k, label: l(ORGANIZATION_KIND_LABELS[k]) }))} />
           <TextField label={t('fieldCity')} required value={input.city} onChange={set('city')} error={fieldError(fields.city)} />
         </div>
+        <TextField label={t('fieldTags')} value={input.tags} onChange={set('tags')} hint={t('fieldTagsHint')} />
         <TextAreaField label={t('fieldAbout')} value={input.about} onChange={set('about')} error={fieldError(fields.about)} hint={t('fieldAboutHint')} />
         {error && (
           <p className="bo-field-error" role="alert">

@@ -1,5 +1,4 @@
-import { auditEvent, type DecisionContext } from '@mmusic/backoffice/review';
-
+import { audit, type CrmContext } from './permissions.ts';
 import { allowed, clean, validDate, type Audit, type Failure, type FieldErrors } from './rules.ts';
 import type { CrmContact, CrmOrganization, Deal, Interaction, Task, TaskPriority, TaskStatus } from './types.ts';
 
@@ -67,18 +66,18 @@ export function validateTask(input: TaskInput, links: TaskLinks): { ok: true; va
 
 const compact = <T extends object>(o: T): T => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined)) as T;
 
-export function createTask(input: TaskInput, links: TaskLinks, ctx: DecisionContext): { ok: true; record: Omit<Task, 'id' | 'mock'>; audit: (id: string) => Audit } | Failure<TaskField> {
+export function createTask(input: TaskInput, links: TaskLinks, ctx: CrmContext): { ok: true; record: Omit<Task, 'id' | 'mock'>; audit: (id: string) => Audit } | Failure<TaskField> {
   if (!allowed(ctx, 'crm.tasks.edit')) return { ok: false, error: 'forbidden' };
   const v = validateTask(input, links);
   if (!v.ok) return { ok: false, error: 'invalid', fields: v.fields };
-  return { ok: true, record: compact({ ...v.value, status: 'pending' as const, createdAt: ctx.now }), audit: (id) => auditEvent({ action: 'task.create', entity: { type: 'task', id, label: v.value.title }, toStatus: 'pending' }, ctx) };
+  return { ok: true, record: compact({ ...v.value, status: 'pending' as const, createdAt: ctx.now }), audit: (id) => audit({ action: 'task.create', entity: { type: 'task', id, label: v.value.title }, toStatus: 'pending' }, ctx) };
 }
 
-export function updateTask(task: Task, input: TaskInput, links: TaskLinks, ctx: DecisionContext): { ok: true; patch: Partial<Task>; event: Audit } | Failure<TaskField> {
+export function updateTask(task: Task, input: TaskInput, links: TaskLinks, ctx: CrmContext): { ok: true; patch: Partial<Task>; event: Audit } | Failure<TaskField> {
   if (!allowed(ctx, 'crm.tasks.edit')) return { ok: false, error: 'forbidden' };
   const v = validateTask(input, links);
   if (!v.ok) return { ok: false, error: 'invalid', fields: v.fields };
-  return { ok: true, patch: { ...v.value, updatedAt: ctx.now }, event: auditEvent({ action: v.value.assigneeId !== task.assigneeId ? 'task.assign' : 'task.update', entity: { type: 'task', id: task.id, label: v.value.title } }, ctx) };
+  return { ok: true, patch: { ...v.value, updatedAt: ctx.now }, event: audit({ action: v.value.assigneeId !== task.assigneeId ? 'task.assign' : 'task.update', entity: { type: 'task', id: task.id, label: v.value.title } }, ctx) };
 }
 
 const TRANSITIONS: Record<TaskStatus, TaskStatus[]> = {
@@ -91,7 +90,7 @@ const TRANSITIONS: Record<TaskStatus, TaskStatus[]> = {
 const ACTIONS: Record<TaskStatus, string> = { 'in-progress': 'task.start', completed: 'task.complete', cancelled: 'task.cancel', pending: 'task.reopen' };
 
 /** Status change; completing records who and when (earlier completions stay in the change log after a reopen). */
-export function changeTaskStatus(task: Task, to: TaskStatus, reason: string | undefined, ctx: DecisionContext): { ok: true; patch: Partial<Task>; event: Audit } | Failure<never> {
+export function changeTaskStatus(task: Task, to: TaskStatus, reason: string | undefined, ctx: CrmContext): { ok: true; patch: Partial<Task>; event: Audit } | Failure<never> {
   if (!allowed(ctx, 'crm.tasks.edit')) return { ok: false, error: 'forbidden' };
   if (task.status === to) return { ok: false, error: 'same-status' };
   if (!TRANSITIONS[task.status].includes(to)) return { ok: false, error: 'invalid-transition' };
@@ -101,7 +100,7 @@ export function changeTaskStatus(task: Task, to: TaskStatus, reason: string | un
   if (to === 'cancelled') Object.assign(patch, { cancelReason: note, completedAt: undefined, completedBy: undefined });
   if (to === 'pending' || to === 'in-progress') Object.assign(patch, { completedAt: undefined, completedBy: undefined, cancelReason: undefined });
   const action = to === 'pending' && task.status === 'in-progress' ? 'task.pause' : ACTIONS[to];
-  return { ok: true, patch, event: auditEvent({ action, entity: { type: 'task', id: task.id, label: task.title }, fromStatus: task.status, toStatus: to, reason: note }, ctx) };
+  return { ok: true, patch, event: audit({ action, entity: { type: 'task', id: task.id, label: task.title }, fromStatus: task.status, toStatus: to, reason: note }, ctx) };
 }
 
 /** One dated item of the agenda: an open task or an open interaction reminder (M4). */

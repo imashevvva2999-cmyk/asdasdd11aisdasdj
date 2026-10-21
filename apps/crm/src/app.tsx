@@ -3,12 +3,13 @@ import { createBrowserRouter, Navigate } from 'react-router';
 
 import type { Localized } from '@mmusic/backoffice/domain';
 import { DEMO_STAFF } from '@mmusic/backoffice/mocks';
-import type { Permission } from '@mmusic/backoffice/rbac';
-import { createBackoffice, useLocalized } from '@mmusic/backoffice/react';
+import { createBackoffice } from '@mmusic/backoffice/react';
 import { createSafeStorage } from '@mmusic/backoffice/storage';
-import { AppShell, ComingSoonPage, NotFoundPage, RequirePermission, type NavGroup, type NavItem } from '@mmusic/backoffice/ui';
+import { NotFoundPage } from '@mmusic/backoffice/ui';
 
+import { CrmGuard, CrmShell, type CrmNavGroup, type CrmNavItem } from '@/access';
 import { CRM_DATA_VERSION, migrateStoredCrmData } from '@/domain/migrate';
+import type { CrmPermission } from '@/domain/permissions';
 import { crmSeed } from '@/domain/seed';
 import { AnalyticsPage } from '@/pages/AnalyticsPage';
 import { ContactDetailPage, ContactFormPage, ContactsPage } from '@/pages/ContactPages';
@@ -19,11 +20,14 @@ import { DashboardPage } from '@/pages/DashboardPage';
 import { InteractionsPage } from '@/pages/InteractionsPage';
 import { OrganizationDetailPage, OrganizationFormPage, OrganizationsPage } from '@/pages/OrganizationPages';
 import { PartnersPage } from '@/pages/PartnersPage';
+import { SettingsPage } from '@/pages/SettingsPage';
+import { StaffRolesPage } from '@/pages/StaffRolesPage';
 import { TaskDetailPage, TaskFormPage } from '@/pages/TaskPages';
 import { TasksPage } from '@/pages/TasksPage';
 
 const storage = createSafeStorage();
-// M4 → M5: keep the saved M4 records (and local edits) and add the M5 demo deals and tasks (domain/migrate.ts).
+// Documented upgrades (domain/migrate.ts): v2 → v3 → v4 keep every saved record and local edit; only new
+// collections (M5 deals and tasks, M6 settings and roles) are added.
 migrateStoredCrmData(storage);
 
 /** CRM's own back-office instance: storage namespace `mmusic-crm`, fictional contacts and companies, provisional CRM roles. */
@@ -32,17 +36,15 @@ export const backoffice = createBackoffice({
   appName: { ru: 'CRM — отношения', en: 'CRM — Relationships' },
   namespace: 'mmusic-crm',
   // v2 (M4): contact status, organization relationship, interactions; saved v1 data is re-seeded.
-  // v3 (M5): + deals and tasks; saved v2 data is migrated above, not re-seeded.
+  // v3 (M5): + deals and tasks; v4 (M6): + pipeline, tags, preferences, roles, staff roles — migrated, not re-seeded.
   dataVersion: CRM_DATA_VERSION,
   seed: crmSeed,
   staff: DEMO_STAFF,
   storage,
 });
 
-type Section = NavItem & { milestone?: string; description?: Localized };
-
-/** CRM sections (docs/arm-crm-plan.md §4). `milestone`: built in that milestone; until then an honest placeholder. */
-const GROUPS: { label: Localized; sections: Section[] }[] = [
+/** CRM sections (docs/arm-crm-plan.md §4); each item is shown only to roles whose CRM matrix has its permission. */
+const GROUPS: { label: Localized; sections: CrmNavItem[] }[] = [
   {
     label: { ru: 'Обзор', en: 'Overview' },
     sections: [{ path: '/dashboard', label: { ru: 'Дашборд', en: 'Dashboard' }, icon: 'dashboard', permission: 'crm.dashboard.view' }],
@@ -71,26 +73,22 @@ const GROUPS: { label: Localized; sections: Section[] }[] = [
   },
   {
     label: { ru: 'Система', en: 'System' },
-    sections: [{ path: '/settings', label: { ru: 'Настройки', en: 'Settings' }, icon: 'tune', permission: 'crm.settings.manage', milestone: 'M6', description: { ru: 'Этапы воронки и теги. Этапы пока предварительные (OQ-55) и задаются в коде.', en: 'Pipeline stages and tags. Stages are provisional for now (OQ-55) and set in code.' } }],
+    sections: [
+      { path: '/settings', label: { ru: 'Настройки', en: 'Settings' }, icon: 'tune', permission: 'crm.settings.manage' },
+      { path: '/staff', label: { ru: 'Сотрудники и роли', en: 'Staff and roles' }, icon: 'admin-panel-settings', permission: 'crm.dashboard.view' },
+    ],
   },
 ];
 
-export const NAV: NavGroup[] = GROUPS.map((g) => ({ label: g.label, items: g.sections }));
+export const NAV: CrmNavGroup[] = GROUPS.map((g) => ({ label: g.label, items: g.sections }));
 
-function SectionPlaceholder({ section }: { section: Section }) {
-  const l = useLocalized();
-  return <ComingSoonPage title={l(section.label)} milestone={section.milestone ?? ''} description={section.description ? l(section.description) : undefined} />;
-}
-
-const planned = GROUPS.flatMap((g) => g.sections).filter((s) => s.milestone);
-
-/** Direct navigation respects the (prototype, client-side) permission matrix: no right → "Нет доступа". */
-const guard = (permission: Permission, page: ReactNode) => <RequirePermission permission={permission}>{page}</RequirePermission>;
+/** Every route asks the CRM matrix (prototype, browser-local): no right → "Нет доступа", whatever the URL. */
+const guard = (permission: CrmPermission, page: ReactNode) => <CrmGuard permission={permission}>{page}</CrmGuard>;
 
 export const router = createBrowserRouter([
   {
     path: '/',
-    element: <AppShell nav={NAV} />,
+    element: <CrmShell nav={NAV} />,
     children: [
       { index: true, element: <Navigate to="/dashboard" replace /> },
       { path: 'dashboard', element: guard('crm.dashboard.view', <DashboardPage />) },
@@ -113,10 +111,8 @@ export const router = createBrowserRouter([
       { path: 'tasks/:id', element: guard('crm.tasks.view', <TaskDetailPage />) },
       { path: 'tasks/:id/edit', element: guard('crm.tasks.edit', <TaskFormPage />) },
       { path: 'reports', element: guard('crm.reports.view', <AnalyticsPage />) },
-      ...planned.map((section) => ({
-        path: section.path.slice(1),
-        element: guard(section.permission, <SectionPlaceholder section={section} />),
-      })),
+      { path: 'settings', element: guard('crm.settings.manage', <SettingsPage />) },
+      { path: 'staff', element: guard('crm.dashboard.view', <StaffRolesPage />) },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

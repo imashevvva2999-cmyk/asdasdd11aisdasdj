@@ -2,7 +2,7 @@ import type { ActivityEvent, StaffUser } from '@mmusic/backoffice/domain';
 
 import { dealOutcome } from './pipeline.ts';
 import { isOpenTask, isOverdueTask } from './tasks.ts';
-import { DEAL_STAGES, INTERACTION_KINDS, RELATIONSHIP_STATUSES, TASK_STATUSES, type CrmOrganization, type Deal, type DealStage, type Interaction, type InteractionKind, type RelationshipStatus, type Task, type TaskStatus } from './types.ts';
+import { INTERACTION_KINDS, RELATIONSHIP_STATUSES, TASK_STATUSES, type CrmOrganization, type Deal, type DealStage, type Interaction, type InteractionKind, type RelationshipStatus, type Task, type TaskStatus } from './types.ts';
 
 /**
  * CRM analytics (M5) as pure aggregations of the demo records in this browser. Deal values are summed fictional
@@ -22,9 +22,14 @@ const inPeriod = (at: string | undefined, since: string | undefined, now: string
 
 export type StageRow = { stage: DealStage; count: number; estimateKgs: number };
 
-/** Deal count and summed fictional estimate per stage (all six stages, also empty ones). */
-export function pipelineByStage(deals: Deal[]): StageRow[] {
-  return DEAL_STAGES.map((stage) => {
+/**
+ * Deal count and summed fictional estimate per stage, in pipeline order (`stageIds`: the shown stages — enabled open
+ * stages, then won and lost). A stage that still holds deals but is not listed (e.g. disabled) is appended, so the
+ * counts always add up to the number of deals.
+ */
+export function pipelineByStage(deals: Deal[], stageIds: readonly DealStage[]): StageRow[] {
+  const extra = [...new Set(deals.map((d) => d.stage))].filter((s) => !stageIds.includes(s));
+  return [...stageIds, ...extra].map((stage) => {
     const items = deals.filter((d) => d.stage === stage);
     return { stage, count: items.length, estimateKgs: items.reduce((s, d) => s + (d.estimatedValueKgs ?? 0), 0) };
   });

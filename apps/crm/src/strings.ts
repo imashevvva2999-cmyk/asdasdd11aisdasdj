@@ -4,11 +4,13 @@ import type { StringTable } from '@mmusic/backoffice/i18n';
 import type { DealStage, InteractionKind, RelationshipStatus, TaskPriority, TaskStatus } from '@/domain/types';
 
 import { M5_STRINGS } from './strings-m5';
+import { M6_STRINGS } from './strings-m6';
 
 /** CRM page text (RU default, EN). Shell text lives in @mmusic/backoffice. `{x}` = placeholder. */
 export const CRM_STRINGS = {
   ru: {
     ...M5_STRINGS.ru,
+    ...M6_STRINGS.ru,
     // common
     dashboardTitle: 'Дашборд',
     dashboardSubtitle: 'CRM Mmusic — контакты, организации, партнёры, взаимодействия, сделки и задачи (этап M5). Все записи вымышленные.',
@@ -185,6 +187,7 @@ export const CRM_STRINGS = {
   },
   en: {
     ...M5_STRINGS.en,
+    ...M6_STRINGS.en,
     dashboardTitle: 'Dashboard',
     dashboardSubtitle: 'Mmusic CRM — contacts, organizations, partners, interactions, deals and tasks (milestone M5). All records are fictional.',
     shown: 'Showing {n} of {total}',

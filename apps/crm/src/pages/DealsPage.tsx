@@ -1,13 +1,14 @@
 import { Link } from 'react-router';
 
-import { useBackoffice, useCan, useCollection } from '@mmusic/backoffice/react';
+import { useBackoffice, useCollection } from '@mmusic/backoffice/react';
 import { DemoBadge, EmptyState, FilterBar, FilterSelect, PageHeader, PermissionNote, SearchField } from '@mmusic/backoffice/ui';
 
+import { useCrmCan, usePipeline, usePreferences } from '@/access';
 import { useCrmActions } from '@/data/actions';
 import { dealTotals } from '@/domain/analytics';
 import { dealOutcome, nextStage } from '@/domain/pipeline';
-import { DEAL_STAGES, type CrmOrganization, type Deal, type DealStage } from '@/domain/types';
-import { DEAL_STAGE_KEYS, fill } from '@/strings';
+import type { CrmOrganization, Deal, DealStage } from '@/domain/types';
+import { fill } from '@/strings';
 import { DealStageBadge, matches, useCrm, useQueryState, ViewOnly } from '@/ui';
 
 const SORTS = ['updated', 'value', 'close', 'title'] as const;
@@ -31,11 +32,13 @@ export function DealsPage() {
   const { t, kgs, day, staffName } = useCrm();
   const bo = useBackoffice();
   const actions = useCrmActions();
-  const canEdit = useCan('crm.deals.edit');
+  const canEdit = useCrmCan('crm.deals.edit');
   const deals = useCollection<Deal>('deals');
   const organizations = useCollection<CrmOrganization>('organizations');
   const query = useQueryState();
-  const view = query.get('view') === 'list' ? 'list' : 'board';
+  const pipeline = usePipeline();
+  const prefs = usePreferences();
+  const view = query.get('view') === 'list' || query.get('view') === 'board' ? (query.get('view') as 'list' | 'board') : prefs.dealsView;
   const q = query.get('q');
   const stage = query.get('stage');
   const outcome = query.get('outcome');
@@ -69,14 +72,14 @@ export function DealsPage() {
       {!canEdit && <ViewOnly />}
       <nav className="bo-tabs" aria-label={t('dealsTitle')}>
         {(['board', 'list'] as const).map((v) => (
-          <button key={v} type="button" className={v === view ? 'bo-tab active' : 'bo-tab'} style={{ border: 0, cursor: 'pointer', background: v === view ? undefined : 'none' }} aria-pressed={v === view} onClick={() => query.set('view', v === 'board' ? '' : v)}>
+          <button key={v} type="button" className={v === view ? 'bo-tab active' : 'bo-tab'} style={{ border: 0, cursor: 'pointer', background: v === view ? undefined : 'none' }} aria-pressed={v === view} onClick={() => query.set('view', v)}>
             {v === 'board' ? t('viewBoard') : t('viewList')}
           </button>
         ))}
       </nav>
       <FilterBar summary={`${fill(t('shown'), { n: rows.length, total: deals.length })} · ${fill(t('pipelineTotals'), { open: totals.open, won: totals.won, lost: totals.lost })}`}>
         <SearchField value={q} onChange={(v) => query.set('q', v)} placeholder={t('searchDeals')} />
-        {view === 'list' && <FilterSelect label={t('filterStage')} value={stage} onChange={(v) => query.set('stage', v)} options={[{ value: '', label: '—' }, ...DEAL_STAGES.map((s) => ({ value: s, label: t(DEAL_STAGE_KEYS[s]) }))]} />}
+        {view === 'list' && <FilterSelect label={t('filterStage')} value={stage} onChange={(v) => query.set('stage', v)} options={[{ value: '', label: '—' }, ...pipeline.boardIds.map((s) => ({ value: s, label: pipeline.label(s) }))]} />}
         <FilterSelect label={t('filterOutcome')} value={outcome} onChange={(v) => query.set('outcome', v)} options={[{ value: '', label: '—' }, { value: 'open', label: t('outcomeOpen') }, { value: 'won', label: t('stageWon') }, { value: 'lost', label: t('stageLost') }]} />
         <FilterSelect label={t('filterOwner')} value={owner} onChange={(v) => query.set('owner', v)} options={[{ value: '', label: '—' }, ...staff.map((s) => ({ value: s.id, label: s.name }))]} />
         <FilterSelect label={t('sortBy')} value={sort} onChange={(v) => query.set('sort', v === 'updated' ? '' : v)} options={[{ value: 'updated', label: t('sortUpdated') }, { value: 'value', label: t('sortValue') }, { value: 'close', label: t('sortClose') }, { value: 'title', label: t('sortTitle') }]} />
@@ -92,11 +95,11 @@ export function DealsPage() {
         </EmptyState>
       ) : view === 'board' ? (
         <div className="crm-board">
-          {DEAL_STAGES.map((s: DealStage) => {
+          {[...pipeline.boardIds, ...[...new Set(rows.map((d) => d.stage))].filter((s) => !pipeline.boardIds.includes(s))].map((s: DealStage) => {
             const items = rows.filter((d) => d.stage === s);
             const sum = items.reduce((acc, d) => acc + (d.estimatedValueKgs ?? 0), 0);
             return (
-              <section key={s} className={`crm-column ${dealOutcome(s)}`} aria-label={t(DEAL_STAGE_KEYS[s])} data-stage={s}>
+              <section key={s} className={`crm-column ${dealOutcome(s)}`} aria-label={pipeline.label(s)} data-stage={s}>
                 <header>
                   <DealStageBadge stage={s} />
                   <span className="bo-muted">
@@ -108,7 +111,7 @@ export function DealsPage() {
                   <p className="bo-muted crm-column-empty">{t('boardEmpty')}</p>
                 ) : (
                   items.map((d) => {
-                    const next = nextStage(d.stage);
+                    const next = nextStage(d.stage, pipeline.openIds);
                     return (
                       <article key={d.id} className="crm-deal-card" data-deal={d.id}>
                         <Link className="bo-link" to={`/deals/${d.id}`}>
@@ -121,7 +124,7 @@ export function DealsPage() {
                         </span>
                         {canEdit && next && (
                           <button type="button" className="bo-btn ghost small" onClick={() => void actions.moveDeal(d.id, next)}>
-                            → {t(DEAL_STAGE_KEYS[next])}
+                            → {pipeline.label(next)}
                           </button>
                         )}
                       </article>

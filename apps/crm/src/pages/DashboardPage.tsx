@@ -2,15 +2,16 @@ import { Link } from 'react-router';
 
 import type { ActivityEvent } from '@mmusic/backoffice/domain';
 import { formatNumber } from '@mmusic/backoffice/i18n';
-import { useCan, useCollection } from '@mmusic/backoffice/react';
+import { useCollection } from '@mmusic/backoffice/react';
 import { DemoBadge, KpiCard, PageHeader, StatusBadge } from '@mmusic/backoffice/ui';
 
+import { useCrmCan, usePipeline, usePreferences } from '@/access';
 import { dealTotals, pipelineByStage } from '@/domain/analytics';
 import { crmSummary, sortByDate } from '@/domain/rules';
 import { agenda } from '@/domain/tasks';
 import type { CrmContact, CrmOrganization, Deal, Interaction, Task } from '@/domain/types';
-import { DEAL_STAGE_KEYS, fill, INTERACTION_KIND_KEYS } from '@/strings';
-import { STAGE_TONE, useCrm, useNow } from '@/ui';
+import { fill, INTERACTION_KIND_KEYS } from '@/strings';
+import { stageTone, useCrm, useNow } from '@/ui';
 
 const cardTitle = { margin: 0, font: '700 18px/24px "Plus Jakarta Sans", system-ui, sans-serif' } as const;
 
@@ -27,12 +28,12 @@ export function DashboardPage() {
   const deals = useCollection<Deal>('deals');
   const tasks = useCollection<Task>('tasks');
   const events = useCollection<ActivityEvent>('activity');
-  const canContacts = useCan('crm.contacts.view');
-  const canOrgs = useCan('crm.organizations.view');
-  const canPartners = useCan('crm.partners.view');
-  const canActivity = useCan('crm.activity.view');
-  const canDeals = useCan('crm.deals.view');
-  const canTasks = useCan('crm.tasks.view');
+  const canContacts = useCrmCan('crm.contacts.view');
+  const canOrgs = useCrmCan('crm.organizations.view');
+  const canPartners = useCrmCan('crm.partners.view');
+  const canActivity = useCrmCan('crm.activity.view');
+  const canDeals = useCrmCan('crm.deals.view');
+  const canTasks = useCrmCan('crm.tasks.view');
   const now = useNow();
   const s = crmSummary({ contacts, organizations, interactions }, now);
   const n = (v: number) => formatNumber(v, locale);
@@ -42,7 +43,9 @@ export function DashboardPage() {
   const overdue = items.filter((i) => i.overdue).length;
   const who = (i: Interaction) => contacts.find((c) => c.id === i.contactId)?.name ?? organizations.find((o) => o.id === i.organizationId)?.name ?? '—';
   const totals = dealTotals(deals);
-  const stages = pipelineByStage(deals);
+  const pipeline = usePipeline();
+  const prefs = usePreferences();
+  const stages = pipelineByStage(deals, pipeline.boardIds);
   const maxCount = Math.max(1, ...stages.map((r) => r.count));
   const dealEvents = [...events].filter((e) => e.entity.type === 'deal').sort((a, b) => b.at.localeCompare(a.at)).slice(0, 4);
 
@@ -81,14 +84,14 @@ export function DashboardPage() {
             {stages.map((r) => (
               <div key={r.stage} className="bo-bar-row">
                 <div className="bo-bar-head">
-                  <span>{t(DEAL_STAGE_KEYS[r.stage])}</span>
+                  <span>{pipeline.label(r.stage)}</span>
                   <span className="bo-muted">
                     {r.count}
                     {r.estimateKgs ? ` · ${kgs(r.estimateKgs)}` : ''}
                   </span>
                 </div>
                 <div className="bo-bar" aria-hidden="true">
-                  {r.count > 0 && <span className={STAGE_TONE[r.stage]} style={{ width: `${(r.count / maxCount) * 100}%` }} />}
+                  {r.count > 0 && <span className={stageTone(r.stage)} style={{ width: `${(r.count / maxCount) * 100}%` }} />}
                 </div>
               </div>
             ))}
@@ -106,7 +109,7 @@ export function DashboardPage() {
             <p className="bo-muted">{t('noAgenda')}</p>
           ) : (
             <ul className="bo-list">
-              {items.slice(0, 6).map((item) => (
+              {items.slice(0, prefs.agendaSize).map((item) => (
                 <li key={`${item.kind}-${item.id}`}>
                   <span className="grow">
                     {item.kind === 'task' ? (
@@ -153,7 +156,7 @@ export function DashboardPage() {
                   <span className="grow">
                     <span className="bo-ellipsis" style={{ fontWeight: 600 }}>
                       {auditText(e.action)}
-                      {(e.action === 'deal.stage' || e.action === 'deal.reopen' || e.action === 'deal.create') && e.toStatus && e.toStatus in DEAL_STAGE_KEYS ? ` · ${t(DEAL_STAGE_KEYS[e.toStatus as keyof typeof DEAL_STAGE_KEYS])}` : ''}
+                      {(e.action === 'deal.stage' || e.action === 'deal.reopen' || e.action === 'deal.create') && e.toStatus ? ` · ${pipeline.label(e.toStatus)}` : ''}
                     </span>
                     {canDeals ? (
                       <Link className="bo-link bo-ellipsis" to={`/deals/${e.entity.id}`} style={{ fontSize: 13 }}>

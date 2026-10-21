@@ -6,10 +6,12 @@ import { formatNumber } from '@mmusic/backoffice/i18n';
 import { useBackoffice, useLocale, useLocalized, useRole, useT } from '@mmusic/backoffice/react';
 import { StatusBadge, type StatusTone } from '@mmusic/backoffice/ui';
 
+import { usePipeline } from '@/access';
 import type { ActionResult } from '@/data/actions';
+import { PERMISSION_GROUPS } from '@/domain/permissions';
 import type { FieldError } from '@/domain/rules';
 import type { ContactStatus, CrmContact, CrmOrganization, DealStage, Interaction, RelationshipStatus, TaskPriority, TaskStatus } from '@/domain/types';
-import { CRM_STRINGS, DEAL_STAGE_KEYS, fill, INTERACTION_KIND_KEYS, PRIORITY_KEYS, RELATIONSHIP_LABELS, TASK_STATUS_KEYS, type CrmStringKey } from '@/strings';
+import { CRM_STRINGS, fill, INTERACTION_KIND_KEYS, PRIORITY_KEYS, RELATIONSHIP_LABELS, TASK_STATUS_KEYS, type CrmStringKey } from '@/strings';
 
 import './crm.css';
 
@@ -64,6 +66,22 @@ const FIELD_ERROR_KEYS: Record<FieldError, CrmStringKey> = {
   'deal-not-in-org': 'errDealNotInOrg',
   'value-invalid': 'errValueInvalid',
   'stage-invalid': 'errStageInvalid',
+  duplicate: 'errDuplicate',
+  'tag-invalid': 'errTagInvalid',
+};
+
+const RESULT_ERROR_KEYS: Record<string, CrmStringKey> = {
+  forbidden: 'errForbidden',
+  'not-found': 'errNotFound',
+  'same-status': 'errSameStatus',
+  'invalid-transition': 'errInvalidTransition',
+  'in-use': 'errInUse',
+  'last-open-stage': 'errLastOpenStage',
+  'system-stage': 'errSystemStage',
+  locked: 'errLocked',
+  'unknown-role': 'errUnknownRole',
+  'last-lead': 'errLastLead',
+  invalid: 'errInvalid',
 };
 
 const AUDIT_KEYS: Record<string, CrmStringKey> = {
@@ -91,6 +109,20 @@ const AUDIT_KEYS: Record<string, CrmStringKey> = {
   'task.complete': 'auditTaskComplete',
   'task.cancel': 'auditTaskCancel',
   'task.reopen': 'auditTaskReopen',
+  'stage.create': 'auditStageCreate',
+  'stage.rename': 'auditStageRename',
+  'stage.reorder': 'auditStageReorder',
+  'stage.disable': 'auditStageDisable',
+  'stage.enable': 'auditStageEnable',
+  'stage.delete': 'auditStageDelete',
+  'tag.create': 'auditTagCreate',
+  'tag.rename': 'auditTagRename',
+  'tag.delete': 'auditTagDelete',
+  'settings.preferences': 'auditPreferences',
+  'role.grant': 'auditRoleGrant',
+  'role.revoke': 'auditRoleRevoke',
+  'role.reset': 'auditRoleReset',
+  'staff.role': 'auditStaffRole',
 };
 
 /** CRM page helpers: strings, dates, people, error texts. */
@@ -111,8 +143,7 @@ export function useCrm() {
       return role ? l(role.label) : roleId;
     },
     fieldError: (e: FieldError | undefined) => (e ? t(FIELD_ERROR_KEYS[e]) : undefined),
-    resultError: (r: ActionResult) =>
-      r.ok ? undefined : r.error === 'forbidden' ? t('errForbidden') : r.error === 'not-found' ? t('errNotFound') : r.error === 'same-status' ? t('errSameStatus') : r.error === 'invalid-transition' ? t('errInvalidTransition') : t('errInvalid'),
+    resultError: (r: ActionResult) => (r.ok ? undefined : t(RESULT_ERROR_KEYS[r.error] ?? 'errInvalid')),
     kgs: (n: number) => fill(t('kgs'), { n: formatNumber(n, locale) }),
     auditText: (action: string) => (AUDIT_KEYS[action] ? t(AUDIT_KEYS[action]) : action.startsWith('interaction.') ? t('auditInteraction') : action),
   };
@@ -152,11 +183,13 @@ export function RelationshipBadge({ status }: { status: RelationshipStatus }) {
   return <StatusBadge tone={RELATIONSHIP_TONE[status]} label={l(RELATIONSHIP_LABELS[status])} />;
 }
 
-export const STAGE_TONE: Record<DealStage, StatusTone> = { lead: 'neutral', qualified: 'pending', proposal: 'pending', negotiation: 'warning', won: 'success', lost: 'danger' };
+const STAGE_TONES: Record<string, StatusTone> = { lead: 'neutral', qualified: 'pending', proposal: 'pending', negotiation: 'warning', won: 'success', lost: 'danger' };
+/** Badge / bar colour of a stage id (custom stages: pending). */
+export const stageTone = (stage: DealStage): StatusTone => STAGE_TONES[stage] ?? 'pending';
 
 export function DealStageBadge({ stage }: { stage: DealStage }) {
-  const { t } = useCrm();
-  return <StatusBadge tone={STAGE_TONE[stage]} label={t(DEAL_STAGE_KEYS[stage])} />;
+  const pipeline = usePipeline();
+  return <StatusBadge tone={stageTone(stage)} label={pipeline.label(stage)} />;
 }
 
 export const TASK_TONE: Record<TaskStatus, StatusTone> = { pending: 'pending', 'in-progress': 'warning', completed: 'success', cancelled: 'neutral' };
@@ -229,13 +262,20 @@ export function SelectField({ value, onChange, options, ...field }: FieldProps &
 /** The CRM change log of one record, newest first. */
 export function AuditTable({ events }: { events: ActivityEvent[] }) {
   const { t, l, date, staffName, roleLabel, auditText } = useCrm();
+  const pipeline = usePipeline();
+  const bo = useBackoffice();
   const sorted = [...events].sort((a, b) => b.at.localeCompare(a.at));
   if (sorted.length === 0) return <p className="bo-muted">{t('noChanges')}</p>;
+  const roleName = (id: string) => bo.roles.find((r) => r.id === id);
+  const permissionName = (key: string) => PERMISSION_GROUPS.flatMap((g) => g.items).find((i) => i.key === key);
+  const detailReason = (e: ActivityEvent) => (e.reason && (e.action === 'role.grant' || e.action === 'role.revoke') ? `${l(roleName(e.entity.id)?.label ?? { ru: e.entity.id, en: e.entity.id })}: ${permissionName(e.reason) ? l(permissionName(e.reason)!.label) : e.reason}` : e.action === 'role.reset' ? l(roleName(e.entity.id)?.label ?? { ru: e.entity.id, en: e.entity.id }) : e.reason ?? '');
   const statusText = (s: string) =>
-    s in RELATIONSHIP_LABELS
+    roleName(s)
+      ? l(roleName(s)!.label)
+      : s in RELATIONSHIP_LABELS
       ? l(RELATIONSHIP_LABELS[s as RelationshipStatus])
-      : s in DEAL_STAGE_KEYS
-        ? t(DEAL_STAGE_KEYS[s as DealStage])
+      : pipeline.config.some((st) => st.id === s)
+        ? pipeline.label(s)
         : s in TASK_STATUS_KEYS
           ? t(TASK_STATUS_KEYS[s as TaskStatus])
           : s === 'active'
@@ -263,7 +303,7 @@ export function AuditTable({ events }: { events: ActivityEvent[] }) {
                 <span className="muted bo-sub">{roleLabel(e.actorRoleId)}</span>
               </td>
               <td>{auditText(e.action)}</td>
-              <td className="muted">{[e.fromStatus && e.toStatus ? `${statusText(e.fromStatus)} → ${statusText(e.toStatus)}` : e.toStatus ? statusText(e.toStatus) : '', e.reason ?? ''].filter(Boolean).join(' · ') || '—'}</td>
+              <td className="muted">{[e.entity.type === 'staff' || e.entity.type === 'stage' || e.entity.type === 'tag' ? e.entity.label : '', e.fromStatus && e.toStatus ? `${statusText(e.fromStatus)} → ${statusText(e.toStatus)}` : e.toStatus ? statusText(e.toStatus) : '', detailReason(e)].filter(Boolean).join(' · ') || '—'}</td>
             </tr>
           ))}
         </tbody>

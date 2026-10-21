@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 
-import { useActor, useBackoffice, useCollection } from '@mmusic/backoffice/react';
+import { useBackoffice, useCollection } from '@mmusic/backoffice/react';
 import { BackLink, DemoBadge, EmptyState, PageHeader, PermissionNote } from '@mmusic/backoffice/ui';
 
+import { useCrmActor, usePipeline } from '@/access';
 import { useCrmActions } from '@/data/actions';
 import { dealInput, type DealField, type DealInput } from '@/domain/pipeline';
 import type { FieldErrors } from '@/domain/rules';
-import { OPEN_STAGES, type CrmContact, type CrmOrganization, type Deal } from '@/domain/types';
-import { DEAL_STAGE_KEYS } from '@/strings';
+import type { CrmContact, CrmOrganization, Deal } from '@/domain/types';
 import { SelectField, TextAreaField, TextField, useCrm } from '@/ui';
 
 /** Create (/deals/new, optional ?organizationId=) or edit (/deals/:id/edit) a demo deal; permission crm.deals.edit. */
@@ -19,14 +19,15 @@ export function DealFormPage() {
   const navigate = useNavigate();
   const actions = useCrmActions();
   const bo = useBackoffice();
-  const { staff: actor } = useActor();
+  const { staff: actor } = useCrmActor();
   const organizations = useCollection<CrmOrganization>('organizations');
   const contacts = useCollection<CrmContact>('contacts');
   const existing = useCollection<Deal>('deals').find((d) => d.id === id);
   const staff = bo.staff.filter((s) => s.app === 'crm');
+  const pipeline = usePipeline();
   const [input, setInput] = useState<DealInput>(() => {
     const base = dealInput(existing, actor?.app === 'crm' ? actor.id : '');
-    return existing ? base : { ...base, organizationId: params.get('organizationId') ?? '' };
+    return existing ? base : { ...base, organizationId: params.get('organizationId') ?? '', stage: pipeline.openIds[0] ?? base.stage };
   });
   const [fields, setFields] = useState<FieldErrors<DealField>>({});
   const [error, setError] = useState<string>();
@@ -82,7 +83,7 @@ export function DealFormPage() {
           />
           <SelectField label={t('fieldContact')} value={input.contactId} onChange={set('contactId')} error={fieldError(fields.contactId)} options={[{ value: '', label: t('none') }, ...orgContacts.map((c) => ({ value: c.id, label: c.name }))]} />
           <SelectField label={t('fieldOwner')} required value={input.ownerId} onChange={set('ownerId')} error={fieldError(fields.ownerId)} options={[{ value: '', label: '—' }, ...staff.map((s) => ({ value: s.id, label: s.name }))]} />
-          {!id && <SelectField label={t('fieldStage')} value={input.stage} onChange={set('stage')} error={fieldError(fields.stage)} options={OPEN_STAGES.map((s) => ({ value: s, label: t(DEAL_STAGE_KEYS[s]) }))} />}
+          {!id && <SelectField label={t('fieldStage')} value={input.stage} onChange={set('stage')} error={fieldError(fields.stage)} options={pipeline.open.map((s) => ({ value: s.id, label: pipeline.label(s.id) }))} />}
           <TextField label={t('fieldEstimate')} value={input.estimatedValue} onChange={set('estimatedValue')} error={fieldError(fields.estimatedValue)} placeholder="50 000" />
           <TextField label={t('fieldExpectedClose')} type="date" value={input.expectedCloseAt} onChange={set('expectedCloseAt')} error={fieldError(fields.expectedCloseAt)} />
         </div>

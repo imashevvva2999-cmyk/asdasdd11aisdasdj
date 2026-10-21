@@ -3,7 +3,6 @@ import { test } from 'node:test';
 
 import { createMockDataSource } from '@mmusic/backoffice/data';
 import { DEMO_STAFF } from '@mmusic/backoffice/mocks';
-import { buildMatrix, DEFAULT_ROLES } from '@mmusic/backoffice/rbac';
 import { createSafeStorage, type StorageBackend } from '@mmusic/backoffice/storage';
 
 import {
@@ -23,10 +22,11 @@ import {
   type ContactInput,
   type InteractionInput,
 } from '../src/domain/rules.ts';
+import { buildCrmMatrix, defaultRoleConfigs } from '../src/domain/permissions.ts';
 import { crmSeed } from '../src/domain/seed.ts';
 import { RELATIONSHIP_STATUSES, type CrmCollections, type CrmContact } from '../src/domain/types.ts';
 
-const matrix = buildMatrix(DEFAULT_ROLES);
+const matrix = buildCrmMatrix(defaultRoleConfigs());
 const NOW = '2026-10-21T12:00:00.000Z';
 const as = (roleId: string) => ({ matrix, actor: { staffId: DEMO_STAFF.find((s) => s.roleId === roleId)?.id ?? 'x', roleId }, now: NOW });
 const seed = crmSeed();
@@ -80,7 +80,7 @@ void test('permissions: viewer can only read; manager and lead can change (proto
   assert.deepEqual(linkContact(contact('contact-7'), 'org-1', seed.organizations, viewer), { ok: false, error: 'forbidden' });
   assert.deepEqual(changeRelationship(org('org-4'), 'negotiating', undefined, viewer), { ok: false, error: 'forbidden' });
   assert.deepEqual(logInteraction(LOG, seed.contacts, seed.organizations, viewer), { ok: false, error: 'forbidden' });
-  assert.deepEqual(createOrganization({ name: 'X (демо)', kind: 'label', city: 'Ош', about: '' }, viewer), { ok: false, error: 'forbidden' });
+  assert.deepEqual(createOrganization({ name: 'X (демо)', kind: 'label', city: 'Ош', about: '', tags: '' }, viewer), { ok: false, error: 'forbidden' });
   for (const role of ['crm-manager', 'crm-partnership-lead']) {
     assert.ok(createContact(NEW, seed.organizations, as(role)).ok, role);
     assert.ok(changeRelationship(org('org-4'), 'negotiating', undefined, as(role)).ok, role);
@@ -108,9 +108,9 @@ void test('contact edits, status and organization links write audit events', () 
 });
 
 void test('organizations start as prospects; relationship changes are audited', () => {
-  const created = createOrganization({ name: ' Новый лейбл (демо) ', kind: 'label', city: 'Бишкек', about: '' }, as('crm-manager'));
+  const created = createOrganization({ name: ' Новый лейбл (демо) ', kind: 'label', city: 'Бишкек', about: '', tags: '' }, as('crm-manager'));
   assert.ok(created.ok && created.record.relationship === 'prospect' && created.record.name === 'Новый лейбл (демо)');
-  const bad = createOrganization({ name: '', kind: 'label', city: '', about: 'x'.repeat(301) }, as('crm-manager'));
+  const bad = createOrganization({ name: '', kind: 'label', city: '', about: 'x'.repeat(301), tags: '' }, as('crm-manager'));
   assert.ok(!bad.ok && bad.error === 'invalid' && bad.fields.name === 'required' && bad.fields.city === 'required' && bad.fields.about === 'too-long');
   const moved = changeRelationship(org('org-2'), 'active', 'Договорились о пилотной афише (демо)', as('crm-partnership-lead'));
   assert.ok(moved.ok && moved.event.fromStatus === 'negotiating' && moved.event.toStatus === 'active' && moved.event.reason?.includes('пилотной'));

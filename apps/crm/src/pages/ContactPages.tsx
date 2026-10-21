@@ -2,9 +2,10 @@ import { useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 
 import type { ActivityEvent } from '@mmusic/backoffice/domain';
-import { useCan, useCollection } from '@mmusic/backoffice/react';
+import { useCollection } from '@mmusic/backoffice/react';
 import { BackLink, DemoBadge, DetailList, EmptyState, FilterBar, FilterSelect, PageHeader, PermissionNote, SearchField } from '@mmusic/backoffice/ui';
 
+import { useCrmCan } from '@/access';
 import { InteractionForm } from '@/components/InteractionForm';
 import { useCrmActions } from '@/data/actions';
 import { contactInput, sortByDate, type ContactField, type ContactInput, type FieldErrors } from '@/domain/rules';
@@ -15,7 +16,7 @@ import { AuditTable, ContactStatusBadge, matches, SelectField, TextField, Timeli
 /** Fictional contacts: search, status / organization / tag filters kept in the URL. */
 export function ContactsPage() {
   const { t, l, date } = useCrm();
-  const canEdit = useCan('crm.contacts.edit');
+  const canEdit = useCrmCan('crm.contacts.edit');
   const contacts = useCollection<CrmContact>('contacts');
   const organizations = useCollection<CrmOrganization>('organizations');
   const interactions = useCollection<Interaction>('interactions');
@@ -112,8 +113,8 @@ export function ContactDetailPage() {
   const { t, l, date } = useCrm();
   const actions = useCrmActions();
   const now = useNow();
-  const canEdit = useCan('crm.contacts.edit');
-  const canLog = useCan('crm.activity.edit');
+  const canEdit = useCrmCan('crm.contacts.edit');
+  const canLog = useCrmCan('crm.activity.edit');
   const contacts = useCollection<CrmContact>('contacts');
   const organizations = useCollection<CrmOrganization>('organizations');
   const interactions = useCollection<Interaction>('interactions');

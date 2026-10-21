@@ -1,8 +1,9 @@
 import { useState } from 'react';
 
-import { useCan, useCollection } from '@mmusic/backoffice/react';
+import { useCollection } from '@mmusic/backoffice/react';
 import { DemoBadge, EmptyState, FilterBar, FilterSelect, PageHeader, PermissionNote, SearchField } from '@mmusic/backoffice/ui';
 
+import { useCrmCan } from '@/access';
 import { InteractionForm } from '@/components/InteractionForm';
 import { useCrmActions } from '@/data/actions';
 import { sortByDate } from '@/domain/rules';
@@ -14,7 +15,7 @@ import { matches, Timeline, useCrm, useNow, useQueryState, ViewOnly } from '@/ui
 export function InteractionsPage() {
   const { t, staffName } = useCrm();
   const actions = useCrmActions();
-  const canLog = useCan('crm.activity.edit');
+  const canLog = useCrmCan('crm.activity.edit');
   const interactions = useCollection<Interaction>('interactions');
   const contacts = useCollection<CrmContact>('contacts');
   const organizations = useCollection<CrmOrganization>('organizations');

@@ -3,18 +3,18 @@ import { test } from 'node:test';
 
 import { createMockDataSource } from '@mmusic/backoffice/data';
 import { DEMO_STAFF } from '@mmusic/backoffice/mocks';
-import { buildMatrix, DEFAULT_ROLES } from '@mmusic/backoffice/rbac';
 import { createSafeStorage, type StorageBackend } from '@mmusic/backoffice/storage';
 
 import { dealTotals, interactionsByKind, periodStart, pipelineByStage, reminderTotals, staffActivity, taskTotals } from '../src/domain/analytics.ts';
 import { CRM_DATA_KEY, CRM_DATA_VERSION, migrateCrmData, migrateStoredCrmData } from '../src/domain/migrate.ts';
 import { createDeal, dealInput, moveDeal, nextStage, parseKgs, updateDeal, validateDeal, type DealInput } from '../src/domain/pipeline.ts';
 import { crmSummary } from '../src/domain/rules.ts';
+import { buildCrmMatrix, defaultRoleConfigs } from '../src/domain/permissions.ts';
 import { crmSeed } from '../src/domain/seed.ts';
 import { agenda, changeTaskStatus, createTask, isOverdueTask, taskInput, validateTask, type TaskInput } from '../src/domain/tasks.ts';
 import type { CrmCollections, Deal, Task } from '../src/domain/types.ts';
 
-const matrix = buildMatrix(DEFAULT_ROLES);
+const matrix = buildCrmMatrix(defaultRoleConfigs());
 const NOW = '2026-10-21T12:00:00.000Z';
 const as = (roleId: string) => ({ matrix, actor: { staffId: DEMO_STAFF.find((s) => s.roleId === roleId)?.id ?? 'x', roleId }, now: NOW });
 const seed = crmSeed();
@@ -23,6 +23,7 @@ const links = { contacts: seed.contacts, organizations: seed.organizations, deal
 const deal = (id: string) => seed.deals.find((d) => d.id === id)!;
 const task = (id: string) => seed.tasks.find((x) => x.id === id)!;
 const NEW_DEAL: DealInput = { ...dealInput(undefined, 'staff-crm-2'), title: 'Демо: подборка площадки', organizationId: 'org-2', contactId: 'contact-2', estimatedValue: '75 000', expectedCloseAt: '2026-12-01', stage: 'qualified' };
+const OPEN = ['lead', 'qualified', 'proposal', 'negotiation'];
 const NEW_TASK: TaskInput = { ...taskInput(), title: 'Демо-задача', assigneeId: 'staff-crm-2', dealId: 'deal-2', dueAt: '2026-10-25T10:00' };
 
 function memoryBackend(): StorageBackend {
@@ -55,7 +56,7 @@ void test('deal validation: organization required, contact must belong to it, es
   assert.ok(Number.isNaN(parseKgs('12,5')));
   const ok = validateDeal(NEW_DEAL, seed.organizations, seed.contacts, STAFF);
   assert.ok(ok.ok && ok.value.estimatedValueKgs === 75000);
-  const bad = validateDeal({ ...NEW_DEAL, title: '', organizationId: '', ownerId: 'staff-arm-1', estimatedValue: '-5', expectedCloseAt: 'x', stage: 'won' }, seed.organizations, seed.contacts, STAFF);
+  const bad = validateDeal({ ...NEW_DEAL, title: '', organizationId: '', ownerId: 'staff-arm-1', estimatedValue: '-5', expectedCloseAt: 'x', stage: 'won' }, seed.organizations, seed.contacts, STAFF, OPEN);
   assert.ok(!bad.ok);
   if (!bad.ok) assert.deepEqual(bad.fields, { title: 'required', organizationId: 'required', ownerId: 'unknown-staff', estimatedValue: 'value-invalid', expectedCloseAt: 'date-invalid', stage: 'stage-invalid' });
   const wrongContact = validateDeal({ ...NEW_DEAL, contactId: 'contact-1' }, seed.organizations, seed.contacts, STAFF);
@@ -63,8 +64,8 @@ void test('deal validation: organization required, contact must belong to it, es
 });
 
 void test('deals: permissions, create / edit / assign audited', () => {
-  assert.deepEqual(createDeal(NEW_DEAL, seed.organizations, seed.contacts, STAFF, as('crm-viewer')), { ok: false, error: 'forbidden' });
-  const created = createDeal(NEW_DEAL, seed.organizations, seed.contacts, STAFF, as('crm-manager'));
+  assert.deepEqual(createDeal(NEW_DEAL, seed.organizations, seed.contacts, STAFF, OPEN, as('crm-viewer')), { ok: false, error: 'forbidden' });
+  const created = createDeal(NEW_DEAL, seed.organizations, seed.contacts, STAFF, OPEN, as('crm-manager'));
   assert.ok(created.ok && created.record.stage === 'qualified' && created.audit('d').action === 'deal.create');
   const reassigned = updateDeal(deal('deal-2'), { ...dealInput(deal('deal-2')), ownerId: 'staff-crm-1' }, seed.organizations, seed.contacts, STAFF, as('crm-partnership-lead'));
   assert.ok(reassigned.ok && reassigned.event.action === 'deal.assign' && reassigned.patch.ownerId === 'staff-crm-1');
@@ -73,23 +74,23 @@ void test('deals: permissions, create / edit / assign audited', () => {
 });
 
 void test('deal transitions: stage moves, won, lost with a reason, reopen; closed → closed refused', () => {
-  const ctx = as('crm-manager');
-  const move = moveDeal(deal('deal-4'), 'proposal', undefined, ctx);
+  const ctx = as('crm-partnership-lead');
+  const move = moveDeal(deal('deal-4'), 'proposal', undefined, OPEN, ctx);
   assert.ok(move.ok && move.event.action === 'deal.stage' && move.event.fromStatus === 'qualified' && move.patch.closedAt === undefined);
-  const won = moveDeal(deal('deal-1'), 'won', undefined, ctx);
+  const won = moveDeal(deal('deal-1'), 'won', undefined, OPEN, ctx);
   assert.ok(won.ok && won.event.action === 'deal.won' && won.patch.closedAt === NOW);
-  assert.deepEqual(moveDeal(deal('deal-1'), 'lost', '', ctx), { ok: false, error: 'invalid', fields: { reason: 'required' } });
-  assert.deepEqual(moveDeal(deal('deal-1'), 'lost', 'коротко', ctx), { ok: false, error: 'invalid', fields: { reason: 'too-short' } });
-  const lost = moveDeal(deal('deal-1'), 'lost', 'Лейбл отложил подборку до весны (демо)', ctx);
+  assert.deepEqual(moveDeal(deal('deal-1'), 'lost', '', OPEN, ctx), { ok: false, error: 'invalid', fields: { reason: 'required' } });
+  assert.deepEqual(moveDeal(deal('deal-1'), 'lost', 'коротко', OPEN, ctx), { ok: false, error: 'invalid', fields: { reason: 'too-short' } });
+  const lost = moveDeal(deal('deal-1'), 'lost', 'Лейбл отложил подборку до весны (демо)', OPEN, ctx);
   assert.ok(lost.ok && lost.event.action === 'deal.lost' && lost.patch.lostReason?.includes('весны'));
-  assert.deepEqual(moveDeal(deal('deal-3'), 'lost', 'Причина достаточной длины', ctx), { ok: false, error: 'invalid-transition' });
-  const reopen = moveDeal(deal('deal-7'), 'qualified', undefined, ctx);
+  assert.deepEqual(moveDeal(deal('deal-3'), 'lost', 'Причина достаточной длины', OPEN, ctx), { ok: false, error: 'invalid-transition' });
+  const reopen = moveDeal(deal('deal-7'), 'qualified', undefined, OPEN, ctx);
   assert.ok(reopen.ok && reopen.event.action === 'deal.reopen' && reopen.patch.closedAt === undefined && reopen.patch.lostReason === undefined);
-  assert.deepEqual(moveDeal(deal('deal-1'), 'negotiation', undefined, ctx), { ok: false, error: 'same-status' });
-  assert.deepEqual(moveDeal(deal('deal-1'), 'won', undefined, as('crm-viewer')), { ok: false, error: 'forbidden' });
-  assert.equal(nextStage('lead'), 'qualified');
-  assert.equal(nextStage('negotiation'), undefined);
-  assert.equal(nextStage('won'), undefined);
+  assert.deepEqual(moveDeal(deal('deal-1'), 'negotiation', undefined, OPEN, ctx), { ok: false, error: 'same-status' });
+  assert.deepEqual(moveDeal(deal('deal-1'), 'won', undefined, OPEN, as('crm-viewer')), { ok: false, error: 'forbidden' });
+  assert.equal(nextStage('lead', OPEN), 'qualified');
+  assert.equal(nextStage('negotiation', OPEN), undefined);
+  assert.equal(nextStage('won', OPEN), undefined);
 });
 
 void test('tasks: links agree, create pending, completion history, invalid transitions refused', () => {
@@ -128,7 +129,7 @@ void test('agenda merges open tasks and M4 reminders without copying or duplicat
 });
 
 void test('analytics figures are derived from the records and agree with the dashboard', () => {
-  const stages = pipelineByStage(seed.deals);
+  const stages = pipelineByStage(seed.deals, [...OPEN, 'won', 'lost']);
   assert.equal(stages.reduce((s, r) => s + r.count, 0), seed.deals.length);
   const totals = dealTotals(seed.deals);
   assert.deepEqual(totals, { open: 5, won: 1, lost: 1, openEstimateKgs: 425000, wonEstimateKgs: 30000, withoutEstimate: 1 });

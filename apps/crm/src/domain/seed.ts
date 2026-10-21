@@ -1,6 +1,7 @@
 import { DEMO_CONTACTS, DEMO_ORGANIZATIONS } from '@mmusic/backoffice/mocks';
 
 import { DEALS, SEED_M5_EVENTS, TASKS } from './seed-m5.ts';
+import { defaultM6Data } from './seed-m6.ts';
 import type { CrmCollections, CrmContact, CrmOrganization, Interaction, RelationshipStatus } from './types.ts';
 
 /**
@@ -20,6 +21,9 @@ const ABOUT: Record<string, string> = {
   'org-5': 'Летний фестиваль на побережье (вымышленный).',
   'org-6': 'Внутренний отдел банка по партнёрским программам (вымышленный).',
 };
+
+/** Fictional organization tags (M6). */
+const ORG_TAGS: Record<string, string[]> = { 'org-1': ['лейбл'], 'org-2': ['площадка'], 'org-3': ['медиа'], 'org-5': ['фестиваль'], 'org-6': ['банк'], 'org-7': ['медиа'] };
 
 const EXTRA_ORGANIZATIONS: CrmOrganization[] = [
   { id: 'org-7', mock: true, name: 'Подкаст «Ритм города» (демо)', kind: 'media', city: 'Бишкек', createdAt: '2026-10-02T09:00:00.000Z', relationship: 'paused', relationshipChangedAt: '2026-10-14T11:00:00.000Z', about: 'Подкаст о городской музыкальной сцене (вымышленный).' },
@@ -54,5 +58,5 @@ export function crmSeed(): CrmCollections {
     ...EXTRA_ORGANIZATIONS,
   ];
   const contacts: CrmContact[] = [...DEMO_CONTACTS.map((c) => ({ ...c, status: 'active' as const })), ...EXTRA_CONTACTS];
-  return structuredClone({ contacts, organizations, interactions: INTERACTIONS, deals: DEALS, tasks: TASKS, activity: SEED_M5_EVENTS });
+  return structuredClone({ contacts, organizations: organizations.map((o) => ({ ...o, tags: ORG_TAGS[o.id] ?? [] })), interactions: INTERACTIONS, deals: DEALS, tasks: TASKS, activity: SEED_M5_EVENTS, ...defaultM6Data() });
 }

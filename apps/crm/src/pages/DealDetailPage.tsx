@@ -2,14 +2,15 @@ import { useState, type ReactNode } from 'react';
 import { Link, useParams } from 'react-router';
 
 import type { ActivityEvent } from '@mmusic/backoffice/domain';
-import { useCan, useCollection } from '@mmusic/backoffice/react';
+import { useCollection } from '@mmusic/backoffice/react';
 import { BackLink, ConfirmDialog, DemoBadge, DetailList, EmptyState, PageHeader, PermissionNote } from '@mmusic/backoffice/ui';
 
+import { useCrmCan, usePipeline } from '@/access';
 import { useCrmActions } from '@/data/actions';
 import { dealOutcome } from '@/domain/pipeline';
 import { isOverdueTask } from '@/domain/tasks';
-import { OPEN_STAGES, type CrmContact, type CrmOrganization, type Deal, type DealStage, type Task } from '@/domain/types';
-import { DEAL_STAGE_KEYS, fill } from '@/strings';
+import type { CrmContact, CrmOrganization, Deal, DealStage, Task } from '@/domain/types';
+import { fill } from '@/strings';
 import { AuditTable, DealStageBadge, SelectField, TaskStatusBadge, useCrm, useNow, ViewOnly } from '@/ui';
 
 type Pending = { to: DealStage; kind: 'move' | 'won' | 'lost' | 'reopen' };
@@ -20,14 +21,16 @@ export function DealDetailPage() {
   const { t, kgs, day, date, staffName, fieldError, resultError } = useCrm();
   const actions = useCrmActions();
   const now = useNow();
-  const canEdit = useCan('crm.deals.edit');
-  const canTasks = useCan('crm.tasks.edit');
+  const canEdit = useCrmCan('crm.deals.edit');
+  const canTasks = useCrmCan('crm.tasks.edit');
+  const canClose = useCrmCan('crm.deals.close');
+  const pipeline = usePipeline();
   const deal = useCollection<Deal>('deals').find((d) => d.id === id);
   const organizations = useCollection<CrmOrganization>('organizations');
   const contacts = useCollection<CrmContact>('contacts');
   const tasks = useCollection<Task>('tasks');
   const events = useCollection<ActivityEvent>('activity');
-  const [to, setTo] = useState<DealStage | ''>('');
+  const [to, setTo] = useState<DealStage>('');
   const [pending, setPending] = useState<Pending | null>(null);
   const [reason, setReason] = useState('');
   const [reasonError, setReasonError] = useState<string>();
@@ -81,7 +84,7 @@ export function DealDetailPage() {
     if (out.error === 'invalid') return setReasonError(fieldError(out.fields.reason));
     setError(resultError(out));
   };
-  const stageName = (s: DealStage) => t(DEAL_STAGE_KEYS[s]);
+  const stageName = (s: DealStage) => pipeline.label(s);
   const title = pending
     ? pending.kind === 'won'
       ? fill(t('confirmWon'), { title: deal.title })
@@ -123,15 +126,17 @@ export function DealDetailPage() {
             </p>
             {canEdit ? (
               <>
+                {(outcome === 'open' || canClose) && (
                 <div className="crm-form-grid" style={{ alignItems: 'end' }}>
-                  <SelectField label={t('moveTo')} value={to} onChange={(v) => setTo(v as DealStage | '')} options={[{ value: '', label: '—' }, ...OPEN_STAGES.filter((s) => s !== deal.stage).map((s) => ({ value: s, label: stageName(s) }))]} />
+                  <SelectField label={t('moveTo')} value={to} onChange={(v) => setTo(v)} options={[{ value: '', label: '—' }, ...pipeline.openIds.filter((s) => s !== deal.stage).map((s) => ({ value: s, label: stageName(s) }))]} />
                   <div className="bo-field">
                     <button type="button" className="bo-btn ghost" disabled={!to} onClick={() => to && open({ to, kind: outcome === 'open' ? 'move' : 'reopen' })}>
                       {outcome === 'open' ? t('moveAction') : t('reopenAction')}
                     </button>
                   </div>
                 </div>
-                {outcome === 'open' && (
+                )}
+                {outcome === 'open' && canClose && (
                   <div className="bo-actions">
                     <button type="button" className="bo-btn small" onClick={() => open({ to: 'won', kind: 'won' })}>
                       {t('markWon')}
@@ -144,6 +149,11 @@ export function DealDetailPage() {
               </>
             ) : (
               <ViewOnly />
+            )}
+            {canEdit && !canClose && (
+              <p className="bo-muted" data-note="close-right" style={{ margin: '0 0 12px', fontSize: 13 }}>
+                {t('closeRightNote')}
+              </p>
             )}
             {saved && <output className="bo-saved">{t('savedNotice')}</output>}
             <PermissionNote />

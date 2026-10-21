@@ -1,6 +1,6 @@
-import type { ActivityEvent, OrganizationKind } from '@mmusic/backoffice/domain';
-import { can, type Permission } from '@mmusic/backoffice/rbac';
-import { auditEvent, type DecisionContext } from '@mmusic/backoffice/review';
+import type { OrganizationKind } from '@mmusic/backoffice/domain';
+
+import { audit, crmCan, type Audit, type CrmContext, type CrmPermission } from './permissions.ts';
 
 import type { ContactStatus, CrmCollections, CrmContact, CrmOrganization, Interaction, InteractionKind, RelationshipStatus } from './types.ts';
 
@@ -26,17 +26,19 @@ export type FieldError =
   | 'stage-invalid'
   | 'date-invalid'
   | 'follow-up-before'
-  | 'target-required';
+  | 'target-required'
+  | 'duplicate'
+  | 'tag-invalid';
 export type FieldErrors<K extends string> = Partial<Record<K, FieldError>>;
-export type Failure<K extends string> = { ok: false; error: 'forbidden' | 'not-found' | 'same-status' | 'invalid-transition' } | { ok: false; error: 'invalid'; fields: FieldErrors<K> };
+export type Failure<K extends string> = { ok: false; error: 'forbidden' | 'not-found' | 'same-status' | 'invalid-transition' | 'in-use' | 'last-open-stage' | 'system-stage' | 'locked' | 'unknown-role' | 'last-lead' } | { ok: false; error: 'invalid'; fields: FieldErrors<K> };
 /** Fictional data only: reserved example.* e-mail domains and the +996 555 000 0xx demo number range. */
 export const DEMO_EMAIL = /^[^\s@]+@example\.(kg|com|org|net)$/i;
 export const DEMO_PHONE = /^\+996 555 000 0\d{2}$/;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export const allowed = (ctx: DecisionContext, p: Permission) => can(ctx.matrix, ctx.actor.roleId, p);
+export const allowed = (ctx: CrmContext, p: CrmPermission) => crmCan(ctx.matrix, ctx.actor.roleId, p);
 export const clean = (s: string | undefined) => (s ?? '').trim();
-export type Audit = Omit<ActivityEvent, 'id' | 'mock'>;
+export type { Audit };
 
 // ---------------------------------------------------------------- contacts
 
@@ -58,7 +60,7 @@ export function validateContact(input: ContactInput, organizations: CrmOrganizat
   if (phone && !DEMO_PHONE.test(phone)) fields.phone = 'phone-not-demo';
   if (input.organizationId && !organizations.some((o) => o.id === input.organizationId)) fields.organizationId = 'unknown-organization';
   if (Object.keys(fields).length > 0) return { ok: false, fields };
-  const tags = [...new Set(input.tags.split(',').map((t) => t.trim().toLocaleLowerCase()).filter(Boolean))];
+  const tags = parseTags(input.tags);
   return {
     ok: true,
     value: {
@@ -77,14 +79,14 @@ export function contactInput(c?: CrmContact): ContactInput {
   return { name: c?.name ?? '', positionRu: c?.position.ru ?? '', positionEn: c?.position.en ?? '', organizationId: c?.organizationId ?? '', email: c?.email ?? '', phone: c?.phone ?? '', tags: c?.tags.join(', ') ?? '', status: c?.status ?? 'active' };
 }
 
-export function createContact(input: ContactInput, organizations: CrmOrganization[], ctx: DecisionContext): { ok: true; record: Omit<CrmContact, 'id' | 'mock'>; audit: (id: string) => Audit } | Failure<ContactField> {
+export function createContact(input: ContactInput, organizations: CrmOrganization[], ctx: CrmContext): { ok: true; record: Omit<CrmContact, 'id' | 'mock'>; audit: (id: string) => Audit } | Failure<ContactField> {
   if (!allowed(ctx, 'crm.contacts.edit')) return { ok: false, error: 'forbidden' };
   const v = validateContact(input, organizations);
   if (!v.ok) return { ok: false, error: 'invalid', fields: v.fields };
-  return { ok: true, record: { ...v.value, createdAt: ctx.now }, audit: (id) => auditEvent({ action: 'contact.create', entity: { type: 'contact', id, label: v.value.name }, toStatus: v.value.status }, ctx) };
+  return { ok: true, record: { ...v.value, createdAt: ctx.now }, audit: (id) => audit({ action: 'contact.create', entity: { type: 'contact', id, label: v.value.name }, toStatus: v.value.status }, ctx) };
 }
 
-export function updateContact(contact: CrmContact, input: ContactInput, organizations: CrmOrganization[], ctx: DecisionContext): { ok: true; patch: Partial<CrmContact>; event: Audit } | Failure<ContactField> {
+export function updateContact(contact: CrmContact, input: ContactInput, organizations: CrmOrganization[], ctx: CrmContext): { ok: true; patch: Partial<CrmContact>; event: Audit } | Failure<ContactField> {
   if (!allowed(ctx, 'crm.contacts.edit')) return { ok: false, error: 'forbidden' };
   const v = validateContact(input, organizations);
   if (!v.ok) return { ok: false, error: 'invalid', fields: v.fields };
@@ -92,12 +94,12 @@ export function updateContact(contact: CrmContact, input: ContactInput, organiza
   return {
     ok: true,
     patch: { ...v.value, organizationId: v.value.organizationId, updatedAt: ctx.now },
-    event: auditEvent({ action: statusChanged ? 'contact.status' : 'contact.update', entity: { type: 'contact', id: contact.id, label: v.value.name }, ...(statusChanged ? { fromStatus: contact.status, toStatus: v.value.status } : {}) }, ctx),
+    event: audit({ action: statusChanged ? 'contact.status' : 'contact.update', entity: { type: 'contact', id: contact.id, label: v.value.name }, ...(statusChanged ? { fromStatus: contact.status, toStatus: v.value.status } : {}) }, ctx),
   };
 }
 
 /** Links a contact to an organization (or unlinks with ''). */
-export function linkContact(contact: CrmContact, organizationId: string, organizations: CrmOrganization[], ctx: DecisionContext): { ok: true; patch: Partial<CrmContact>; event: Audit } | Failure<'organizationId'> {
+export function linkContact(contact: CrmContact, organizationId: string, organizations: CrmOrganization[], ctx: CrmContext): { ok: true; patch: Partial<CrmContact>; event: Audit } | Failure<'organizationId'> {
   if (!allowed(ctx, 'crm.contacts.edit')) return { ok: false, error: 'forbidden' };
   const org = organizations.find((o) => o.id === organizationId);
   if (organizationId && !org) return { ok: false, error: 'invalid', fields: { organizationId: 'unknown-organization' } };
@@ -105,16 +107,18 @@ export function linkContact(contact: CrmContact, organizationId: string, organiz
   return {
     ok: true,
     patch: { organizationId: organizationId || undefined, updatedAt: ctx.now },
-    event: auditEvent({ action: organizationId ? 'contact.link' : 'contact.unlink', entity: { type: 'contact', id: contact.id, label: contact.name }, reason: org?.name }, ctx),
+    event: audit({ action: organizationId ? 'contact.link' : 'contact.unlink', entity: { type: 'contact', id: contact.id, label: contact.name }, reason: org?.name }, ctx),
   };
 }
 
 // ---------------------------------------------------------------- organizations
 
-export type OrganizationInput = { name: string; kind: OrganizationKind; city: string; about: string };
+export type OrganizationInput = { name: string; kind: OrganizationKind; city: string; about: string; tags: string };
 export type OrganizationField = keyof OrganizationInput;
 
-export function validateOrganization(input: OrganizationInput): { ok: true; value: OrganizationInput } | { ok: false; fields: FieldErrors<OrganizationField> } {
+export const parseTags = (text: string) => [...new Set(text.split(',').map((t) => t.trim().replace(/\s+/g, ' ').toLocaleLowerCase()).filter(Boolean))];
+
+export function validateOrganization(input: OrganizationInput): { ok: true; value: Omit<OrganizationInput, 'tags'> & { tags: string[] } } | { ok: false; fields: FieldErrors<OrganizationField> } {
   const fields: FieldErrors<OrganizationField> = {};
   const name = clean(input.name);
   if (!name) fields.name = 'required';
@@ -122,37 +126,37 @@ export function validateOrganization(input: OrganizationInput): { ok: true; valu
   if (!clean(input.city)) fields.city = 'required';
   if (clean(input.about).length > 300) fields.about = 'too-long';
   if (Object.keys(fields).length > 0) return { ok: false, fields };
-  return { ok: true, value: { name, kind: input.kind, city: clean(input.city), about: clean(input.about) } };
+  return { ok: true, value: { name, kind: input.kind, city: clean(input.city), about: clean(input.about), tags: parseTags(input.tags) } };
 }
 
 export function organizationInput(o?: CrmOrganization): OrganizationInput {
-  return { name: o?.name ?? '', kind: o?.kind ?? 'label', city: o?.city ?? '', about: o?.about ?? '' };
+  return { name: o?.name ?? '', kind: o?.kind ?? 'label', city: o?.city ?? '', about: o?.about ?? '', tags: o?.tags?.join(', ') ?? '' };
 }
 
 /** New organizations start as prospects; the relationship changes separately (partners permission). */
-export function createOrganization(input: OrganizationInput, ctx: DecisionContext): { ok: true; record: Omit<CrmOrganization, 'id' | 'mock'>; audit: (id: string) => Audit } | Failure<OrganizationField> {
+export function createOrganization(input: OrganizationInput, ctx: CrmContext): { ok: true; record: Omit<CrmOrganization, 'id' | 'mock'>; audit: (id: string) => Audit } | Failure<OrganizationField> {
   if (!allowed(ctx, 'crm.organizations.edit')) return { ok: false, error: 'forbidden' };
   const v = validateOrganization(input);
   if (!v.ok) return { ok: false, error: 'invalid', fields: v.fields };
   const { about, ...rest } = v.value;
-  return { ok: true, record: { ...rest, ...(about ? { about } : {}), relationship: 'prospect', createdAt: ctx.now }, audit: (id) => auditEvent({ action: 'organization.create', entity: { type: 'organization', id, label: rest.name }, toStatus: 'prospect' }, ctx) };
+  return { ok: true, record: { ...rest, ...(about ? { about } : {}), relationship: 'prospect', createdAt: ctx.now }, audit: (id) => audit({ action: 'organization.create', entity: { type: 'organization', id, label: rest.name }, toStatus: 'prospect' }, ctx) };
 }
 
-export function updateOrganization(org: CrmOrganization, input: OrganizationInput, ctx: DecisionContext): { ok: true; patch: Partial<CrmOrganization>; event: Audit } | Failure<OrganizationField> {
+export function updateOrganization(org: CrmOrganization, input: OrganizationInput, ctx: CrmContext): { ok: true; patch: Partial<CrmOrganization>; event: Audit } | Failure<OrganizationField> {
   if (!allowed(ctx, 'crm.organizations.edit')) return { ok: false, error: 'forbidden' };
   const v = validateOrganization(input);
   if (!v.ok) return { ok: false, error: 'invalid', fields: v.fields };
-  return { ok: true, patch: { ...v.value, about: v.value.about || undefined, updatedAt: ctx.now }, event: auditEvent({ action: 'organization.update', entity: { type: 'organization', id: org.id, label: v.value.name } }, ctx) };
+  return { ok: true, patch: { ...v.value, about: v.value.about || undefined, updatedAt: ctx.now }, event: audit({ action: 'organization.update', entity: { type: 'organization', id: org.id, label: v.value.name } }, ctx) };
 }
 
 /** Moves a relationship (prospect → negotiating → active ↔ paused …); permission crm.partners.edit, optional note. */
-export function changeRelationship(org: CrmOrganization, to: RelationshipStatus, note: string | undefined, ctx: DecisionContext): { ok: true; patch: Partial<CrmOrganization>; event: Audit } | Failure<never> {
+export function changeRelationship(org: CrmOrganization, to: RelationshipStatus, note: string | undefined, ctx: CrmContext): { ok: true; patch: Partial<CrmOrganization>; event: Audit } | Failure<never> {
   if (!allowed(ctx, 'crm.partners.edit')) return { ok: false, error: 'forbidden' };
   if (org.relationship === to) return { ok: false, error: 'same-status' };
   return {
     ok: true,
     patch: { relationship: to, relationshipChangedAt: ctx.now },
-    event: auditEvent({ action: 'organization.relationship', entity: { type: 'organization', id: org.id, label: org.name }, fromStatus: org.relationship, toStatus: to, reason: note }, ctx),
+    event: audit({ action: 'organization.relationship', entity: { type: 'organization', id: org.id, label: org.name }, fromStatus: org.relationship, toStatus: to, reason: note }, ctx),
   };
 }
 
@@ -166,7 +170,7 @@ export type InteractionField = keyof InteractionInput;
 
 export const validDate = (s: string) => s !== '' && !Number.isNaN(Date.parse(s));
 
-export function logInteraction(input: InteractionInput, contacts: CrmContact[], organizations: CrmOrganization[], ctx: DecisionContext): { ok: true; record: Omit<Interaction, 'id' | 'mock'>; audit: (id: string) => Audit } | Failure<InteractionField> {
+export function logInteraction(input: InteractionInput, contacts: CrmContact[], organizations: CrmOrganization[], ctx: CrmContext): { ok: true; record: Omit<Interaction, 'id' | 'mock'>; audit: (id: string) => Audit } | Failure<InteractionField> {
   if (!allowed(ctx, 'crm.activity.edit')) return { ok: false, error: 'forbidden' };
   const fields: FieldErrors<InteractionField> = {};
   const summary = clean(input.summary);
@@ -195,14 +199,14 @@ export function logInteraction(input: InteractionInput, contacts: CrmContact[], 
       ...(input.followUpAt ? { followUpAt: new Date(input.followUpAt).toISOString() } : {}),
       createdAt: ctx.now,
     },
-    audit: (id) => auditEvent({ action: `interaction.${input.kind}`, entity: { type: 'interaction', id, label } }, ctx),
+    audit: (id) => audit({ action: `interaction.${input.kind}`, entity: { type: 'interaction', id, label } }, ctx),
   };
 }
 
-export function completeFollowUp(item: Interaction, ctx: DecisionContext): { ok: true; patch: Partial<Interaction>; event: Audit } | Failure<never> {
+export function completeFollowUp(item: Interaction, ctx: CrmContext): { ok: true; patch: Partial<Interaction>; event: Audit } | Failure<never> {
   if (!allowed(ctx, 'crm.activity.edit')) return { ok: false, error: 'forbidden' };
   if (!item.followUpAt || item.followUpDone) return { ok: false, error: 'same-status' };
-  return { ok: true, patch: { followUpDone: true }, event: auditEvent({ action: 'interaction.follow-up-done', entity: { type: 'interaction', id: item.id, label: item.summary.slice(0, 60) } }, ctx) };
+  return { ok: true, patch: { followUpDone: true }, event: audit({ action: 'interaction.follow-up-done', entity: { type: 'interaction', id: item.id, label: item.summary.slice(0, 60) } }, ctx) };
 }
 
 // ---------------------------------------------------------------- dashboard

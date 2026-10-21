@@ -1,4 +1,4 @@
-import type { ActivityEvent, Contact, Entity, Organization } from '@mmusic/backoffice/domain';
+import type { ActivityEvent, Contact, Entity, Localized, Organization } from '@mmusic/backoffice/domain';
 
 /**
  * CRM data (M4). All records are fictional demo data (`mock: true`): invented people at invented companies, with
@@ -28,6 +28,8 @@ export type CrmOrganization = Organization & {
   relationshipChangedAt?: string;
   /** Short internal description of what the organization does (fictional). */
   about?: string;
+  /** Fictional tags (M6). */
+  tags?: string[];
   updatedAt?: string;
 };
 
@@ -51,13 +53,42 @@ export type Interaction = Entity & {
 };
 
 /**
- * Pipeline stages [П, provisional — OQ-55 is open]: lead → qualified → proposal → negotiation, then closed as won
- * (both sides agreed to proceed; no contract is recorded) or lost (reason required).
+ * A pipeline stage id (stable, never a translated label). Defaults [П, provisional — OQ-55]: lead → qualified →
+ * proposal → negotiation, then the two system stages `won` (both sides agreed to proceed; no contract is recorded)
+ * and `lost` (reason required). Since M6 open stages are configurable in Settings (labels, order, enabled, custom
+ * stages with ids `stage-<n>`); `won` and `lost` always exist.
  */
-export type DealStage = 'lead' | 'qualified' | 'proposal' | 'negotiation' | 'won' | 'lost';
-export const OPEN_STAGES: readonly DealStage[] = ['lead', 'qualified', 'proposal', 'negotiation'];
-export const DEAL_STAGES: readonly DealStage[] = [...OPEN_STAGES, 'won', 'lost'];
+export type DealStage = string;
+export const DEFAULT_OPEN_STAGES: readonly DealStage[] = ['lead', 'qualified', 'proposal', 'negotiation'];
+export const CLOSED_STAGES: readonly DealStage[] = ['won', 'lost'];
 export type DealOutcome = 'open' | 'won' | 'lost';
+
+/** Configuration of one pipeline stage (M6). `order` sorts the open stages; system stages stay last. */
+export type StageConfig = Entity & {
+  kind: DealOutcome;
+  label: Localized;
+  enabled: boolean;
+  order: number;
+  /** Custom stages added in Settings (deletable while unused); the defaults and won / lost are built in. */
+  custom?: boolean;
+};
+
+/** A fictional tag usable on contacts and organizations (M6 registry; also lists tags typed in forms). */
+export type TagRecord = Entity & { name: string; createdAt: string };
+
+/** CRM preferences of this browser's prototype (id 'prefs'). The interface language lives in the shell. */
+export type CrmPreferences = Entity & {
+  dealsView: 'board' | 'list';
+  agendaSize: number;
+  taskPriority: TaskPriority;
+  updatedAt?: string;
+};
+
+/** Editable permissions of one prototype role (id = role id), browser-local only — not access control. */
+export type RoleConfig = Entity & { permissions: string[]; updatedAt?: string };
+
+/** Demo role assignment of a CRM staff member (id = StaffUser.id). */
+export type StaffAssignment = Entity & { roleId: string; updatedAt?: string };
 
 /** A fictional partnership opportunity with an organization. The value is a fictional estimate, not revenue. */
 export type Deal = Entity & {
@@ -110,6 +141,11 @@ export type CrmCollections = {
   interactions: Interaction[];
   deals: Deal[];
   tasks: Task[];
+  pipeline: StageConfig[];
+  tags: TagRecord[];
+  preferences: CrmPreferences[];
+  roles: RoleConfig[];
+  staffRoles: StaffAssignment[];
   /** Audit trail of CRM changes (create / edit / status / link). */
   activity: ActivityEvent[];
 };
