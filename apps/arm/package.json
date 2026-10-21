@@ -1,0 +1,34 @@
+{
+  "name": "@mmusic/arm",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Mmusic ARM (АРМ) — internal administration workspace for Mmusic staff. Local prototype: fictional demo data, no authentication, no backend.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint --type-aware src vite.config.ts",
+    "verify:dist": "node ../../packages/backoffice/scripts/verify-dist.mjs dist"
+  },
+  "dependencies": {
+    "@mmusic/backoffice": "workspace:*",
+    "@mmusic/core": "workspace:*",
+    "@mmusic/ui-kit": "workspace:*",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-router": "7.18.4",
+    "zustand": "5.0.15"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.1",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.1.2",
+    "oxlint": "1.86.0",
+    "oxlint-tsgolint": "7.0.2003",
+    "typescript": "6.0.3",
+    "vite": "8.3.2"
+  }
+}

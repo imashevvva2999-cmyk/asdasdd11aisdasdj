@@ -1,0 +1,138 @@
+/* Back-office shell and components (ARM, CRM) on the shared Mmusic tokens: dark canvas, coral primary, glass
+   surfaces. Desktop ≥1100 px expanded sidebar; tablet 768–1099 px icon rail; narrower: off-canvas menu. */
+
+*, *::before, *::after { box-sizing: border-box; }
+html { background: var(--canvas); color-scheme: dark; }
+body { margin: 0; min-height: 100vh; background: var(--canvas); color: var(--text-high); font-family: "Inter", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+.bo-skip { position: fixed; left: 16px; top: -64px; z-index: 100; padding: 10px 16px; border-radius: 999px; background: var(--surface-l2); text-decoration: none; font: 600 14px/1 "Inter", system-ui, sans-serif; }
+.bo-skip:focus { top: 16px; }
+
+/* Layout */
+.bo-app { --side: 256px; display: grid; grid-template-columns: var(--side) minmax(0, 1fr); min-height: 100vh; }
+.bo-app[data-expanded="false"] { --side: 76px; }
+.bo-side {
+  position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; overflow-x: hidden;
+  padding: 18px 12px; background: rgba(20, 20, 24, 0.72); border-right: 1px solid var(--border);
+  backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); z-index: 20;
+}
+.bo-side-head { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 4px 8px 16px; min-height: 48px; }
+.bo-brand { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.bo-app-name { color: var(--text-medium); font: 600 13px/16px "Inter", system-ui, sans-serif; }
+.bo-app-mark { display: none; color: var(--text-medium); font: 800 11px/14px "Inter", system-ui, sans-serif; letter-spacing: 0.6px; }
+.bo-nav { display: grid; gap: 14px; }
+.bo-nav-group { display: grid; gap: 2px; }
+.bo-nav-group-label { padding: 0 12px 4px; color: var(--text-low); font: 700 11px/14px "Inter", system-ui, sans-serif; letter-spacing: 0.8px; text-transform: uppercase; white-space: nowrap; }
+.bo-nav-link {
+  display: flex; align-items: center; gap: 12px; height: 42px; padding: 0 12px; border-radius: 12px; color: var(--text-medium);
+  text-decoration: none; font: 600 14px/1 "Inter", system-ui, sans-serif; white-space: nowrap; transition: background-color 0.15s, color 0.15s;
+}
+.bo-nav-link:hover { color: var(--text-high); background: rgba(255, 255, 255, 0.05); }
+.bo-nav-link.active { color: var(--primary); background: rgba(255, 75, 75, 0.12); }
+.bo-nav-link .mm-icon { flex-shrink: 0; }
+.bo-side-foot { margin: auto 8px 0; padding-top: 16px; color: var(--text-low); font: 500 12px/16px "Inter", system-ui, sans-serif; }
+
+/* Collapsed rail */
+.bo-app[data-expanded="false"] .bo-app-name,
+.bo-app[data-expanded="false"] .bo-nav-text,
+.bo-app[data-expanded="false"] .bo-side-foot { display: none; }
+.bo-app[data-expanded="false"] .bo-nav-group-label { visibility: hidden; height: 6px; padding: 0; }
+.bo-app[data-expanded="false"] .bo-nav-link { justify-content: center; padding: 0; }
+.bo-app[data-expanded="false"] .bo-side-head { align-items: center; padding-inline: 0; }
+.bo-app[data-expanded="false"] .bo-brand .t-headline-md { display: none; }
+.bo-app[data-expanded="false"] .bo-app-mark { display: block; }
+
+/* Top bar */
+.bo-body { min-width: 0; display: flex; flex-direction: column; }
+.bo-top {
+  position: sticky; top: 0; z-index: 15; display: flex; align-items: center; gap: 12px; min-height: 68px; padding: 10px 28px;
+  background: rgba(10, 10, 12, 0.85); border-bottom: 1px solid var(--border); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  flex-wrap: wrap;
+}
+.bo-top-spacer { flex: 1; }
+.bo-proto {
+  display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 999px; white-space: nowrap;
+  background: rgba(245, 166, 35, 0.12); color: var(--secondary); font: 700 12px/1 "Inter", system-ui, sans-serif;
+}
+.bo-icon-btn { width: 40px; height: 40px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 12px; background: var(--surface-l1); color: var(--text-high); cursor: pointer; }
+.bo-icon-btn:hover { background: var(--surface-l2); }
+.bo-seg { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--surface-l1); border: 1px solid var(--border); }
+.bo-seg button { height: 30px; min-width: 40px; padding: 0 10px; border: 0; border-radius: 999px; background: none; color: var(--text-medium); font: 700 12px/1 "Inter", system-ui, sans-serif; cursor: pointer; }
+.bo-seg button.on { background: var(--primary); color: #fff; }
+.bo-role { display: inline-flex; align-items: center; gap: 8px; }
+.bo-role-label { color: var(--text-low); font: 600 11px/14px "Inter", system-ui, sans-serif; max-width: 120px; }
+.bo-role select {
+  height: 36px; max-width: 260px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-l1);
+  color: var(--text-high); font: 600 13px/1 "Inter", system-ui, sans-serif;
+}
+.bo-storage-note { display: flex; align-items: center; gap: 8px; margin: 0; padding: 10px 28px; background: rgba(245, 166, 35, 0.1); color: var(--secondary); font: 600 13px/18px "Inter", system-ui, sans-serif; }
+.bo-main { flex: 1; width: 100%; max-width: 1400px; padding: 28px 28px 64px; outline: none; }
+
+/* Buttons */
+.bo-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 0 18px; border: 0; border-radius: 999px;
+  background: var(--primary); color: #fff; font: 600 14px/1 "Inter", system-ui, sans-serif; text-decoration: none; cursor: pointer; white-space: nowrap;
+}
+.bo-btn.ghost { background: var(--surface-l2); color: var(--text-high); }
+.bo-btn.ghost:hover { background: var(--surface-l3); }
+.bo-btn.small { height: 36px; padding: 0 14px; font-size: 13px; }
+
+/* Page building blocks */
+.bo-page-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+.bo-page-title h1 { margin: 0; font: 800 32px/38px "Plus Jakarta Sans", system-ui, sans-serif; letter-spacing: -0.8px; }
+.bo-page-title p { margin: 6px 0 0; color: var(--text-medium); font: 400 15px/22px "Inter", system-ui, sans-serif; }
+.bo-page-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.bo-section { margin-bottom: 32px; }
+.bo-section h2 { margin: 0 0 14px; font: 700 20px/26px "Plus Jakarta Sans", system-ui, sans-serif; }
+.bo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+.bo-kpi { display: grid; gap: 6px; padding: 18px; border-radius: 20px; background: var(--surface-l1); border: 1px solid var(--border); min-width: 0; }
+.bo-kpi-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.bo-kpi-icon { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 12px; background: rgba(255, 75, 75, 0.12); color: var(--primary); }
+.bo-kpi-value { font: 800 30px/34px "Plus Jakarta Sans", system-ui, sans-serif; letter-spacing: -0.6px; }
+.bo-kpi-label { color: var(--text-high); font: 600 14px/18px "Inter", system-ui, sans-serif; }
+.bo-kpi-hint { color: var(--text-medium); font: 400 12px/16px "Inter", system-ui, sans-serif; }
+.bo-demo-badge { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 9px; border-radius: 999px; background: rgba(245, 166, 35, 0.12); color: var(--secondary); font: 700 11px/1 "Inter", system-ui, sans-serif; white-space: nowrap; }
+.bo-card { padding: 20px; border-radius: 20px; background: var(--surface-l1); border: 1px solid var(--border); }
+.bo-list { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.bo-list li { display: flex; align-items: center; gap: 12px; padding: 10px 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); min-width: 0; }
+.bo-list li:last-child { border-bottom: 0; }
+.bo-list .grow { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.bo-muted { color: var(--text-medium); }
+.bo-ellipsis { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bo-empty { display: grid; justify-items: center; gap: 10px; padding: 56px 24px; text-align: center; color: var(--text-medium); border-radius: 24px; background: var(--surface-l1); border: 1px solid var(--border); }
+.bo-empty h2 { margin: 0; color: var(--text-high); font: 700 20px/26px "Plus Jakarta Sans", system-ui, sans-serif; }
+.bo-empty p { margin: 0; max-width: 520px; font: 400 15px/22px "Inter", system-ui, sans-serif; }
+
+/* Dialog + toast */
+.bo-dialog { width: min(440px, calc(100vw - 32px)); padding: 24px; border: 1px solid var(--border); border-radius: 24px; background: var(--surface-l1); color: var(--text-high); }
+.bo-dialog::backdrop { background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(3px); }
+.bo-dialog h2 { margin: 0 0 8px; font: 700 20px/26px "Plus Jakarta Sans", system-ui, sans-serif; }
+.bo-dialog p { margin: 0 0 20px; color: var(--text-medium); font: 400 15px/22px "Inter", system-ui, sans-serif; }
+.bo-dialog-actions { display: flex; justify-content: flex-end; gap: 10px; }
+.bo-toast {
+  position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 50; display: flex; align-items: center; gap: 8px; padding: 12px 18px;
+  border-radius: 999px; background: var(--surface-l3); border: 1px solid var(--border); box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45); font: 600 14px/1 "Inter", system-ui, sans-serif;
+}
+.bo-toast .mm-icon { color: var(--primary); }
+
+/* Narrow screens: off-canvas menu */
+@media (max-width: 1099px) {
+  .bo-main { padding: 24px 20px 56px; }
+  .bo-top { padding: 10px 20px; }
+  .bo-role-label { display: none; }
+}
+@media (max-width: 767px) {
+  .bo-app, .bo-app[data-expanded="false"] { grid-template-columns: minmax(0, 1fr); --side: 256px; }
+  .bo-side { position: fixed; left: 0; top: 0; width: var(--side); transform: translateX(-100%); transition: transform 0.2s ease; background: rgba(16, 16, 20, 0.98); }
+  .bo-app[data-expanded="true"] .bo-side { transform: none; }
+  .bo-app .bo-app-mark { display: none; }
+  .bo-app .bo-brand .t-headline-md { display: revert; }
+  .bo-scrim { position: fixed; inset: 0; z-index: 19; border: 0; background: rgba(0, 0, 0, 0.5); }
+  .bo-hide-narrow { display: none; }
+  .bo-page-title h1 { font-size: 26px; line-height: 32px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0.01ms !important; }
+}
