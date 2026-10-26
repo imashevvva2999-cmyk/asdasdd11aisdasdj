@@ -15,6 +15,7 @@ import { scheduleOnRN, scheduleOnUI } from 'react-native-worklets';
 
 import { Artwork } from '@/components/ui';
 import { ParticleWaveArtwork } from '@/components/ui/particle-wave/particle-wave-artwork';
+import { Spacing } from '@/constants/theme';
 import { resolveSwipe, rubberBand } from '@/lib/gesture-math';
 import { getTrackIdsForGenre } from '@/lib/genre-tracks';
 import { getTrackById, type TrackId } from '@/mocks';
@@ -46,7 +47,7 @@ import { useDiscoveryStore } from '@/state/discovery-store';
  * performance problem identified and fixed elsewhere in this app (Living
  * Moods prototype).
  */
-export function DiscoveryFeed({ size }: { size: { width: number; height: number } }) {
+export function DiscoveryFeed({ size, layout }: { size: { width: number; height: number }; layout: DiscoverLayout }) {
   const step = size.height;
   const width = size.width;
   const reduceMotion = useReducedMotion();
@@ -254,6 +255,7 @@ export function DiscoveryFeed({ size }: { size: { width: number; height: number 
                   nextId={nextId}
                   pos={pos}
                   size={size}
+                  layout={layout}
                   step={step}
                   isPlaying={isPlaying}
                 />
@@ -276,6 +278,7 @@ function CurrentGenreSongs({
   nextId,
   pos,
   size,
+  layout,
   step,
   isPlaying,
 }: {
@@ -284,6 +287,7 @@ function CurrentGenreSongs({
   nextId: TrackId | undefined;
   pos: number;
   size: { width: number; height: number };
+  layout: DiscoverLayout;
   step: number;
   isPlaying: boolean;
 }) {
@@ -303,7 +307,7 @@ function CurrentGenreSongs({
   return (
     <Animated.View style={[StyleSheet.absoluteFill, stripStyle]}>
       {slots.map(({ id, at, current }) =>
-        id ? <Slot key={`slot-${at}`} trackId={id} at={at} size={size} step={step} current={current} playing={isPlaying} /> : null,
+        id ? <Slot key={`slot-${at}`} trackId={id} at={at} size={size} layout={layout} step={step} current={current} playing={isPlaying} /> : null,
       )}
     </Animated.View>
   );
@@ -325,6 +329,7 @@ function Slot({
   trackId,
   at,
   size,
+  layout,
   step,
   current,
   playing,
@@ -332,27 +337,53 @@ function Slot({
   trackId: TrackId;
   at: number;
   size: { width: number; height: number };
+  layout: DiscoverLayout;
   step: number;
   current: boolean;
   playing: boolean;
 }) {
   const track = getTrackById(trackId);
   const style = useAnimatedStyle(() => ({ opacity: fade(carouselPos, at) }));
-  const cover = Math.min(size.width * 0.74, 340, size.height * 0.42);
+  const { cover, coverTop, coverLeft } = layout;
+  // The ribbons centred on the cover, wide enough to flow around it on both sides.
+  const waveFrame = useMemo(() => ({ span: cover * WAVE_SPAN_PER_COVER, cx: coverLeft + cover / 2, cy: coverTop + cover / 2 }), [cover, coverLeft, coverTop]);
   return (
     <Animated.View style={[styles.slot, { width: size.width, height: size.height, top: at * step }, style]}>
       {current && (
         <View style={StyleSheet.absoluteFill} pointerEvents="none">
-          <ParticleWaveArtwork uri={track?.coverUri ?? ''} trackId={trackId} playing={playing} />
+          <ParticleWaveArtwork uri={track?.coverUri ?? ''} trackId={trackId} playing={playing} frame={waveFrame} />
         </View>
       )}
-      <View style={styles.coverWrap} pointerEvents="none">
-        <View style={styles.coverShadow}>
-          <Artwork uri={track?.coverUri} size={cover} radius={16} />
-        </View>
+      <View style={[styles.coverShadow, { top: coverTop, left: coverLeft }]} pointerEvents="none">
+        <Artwork uri={track?.coverUri} size={cover} radius={16} />
       </View>
     </Animated.View>
   );
+}
+
+/** Header row height under the status bar (close button + genre chip). */
+export const DISCOVER_HEADER_HEIGHT = 56;
+/** Play button size; the title row is this tall. */
+export const DISCOVER_PLAY_SIZE = 64;
+const COVER_TO_INFO_GAP = Spacing.xl;
+/** The wave's ribbons span this many cover widths, so the composition is the same on every phone. */
+const WAVE_SPAN_PER_COVER = 3.5;
+
+export type DiscoverLayout = { cover: number; coverTop: number; coverLeft: number; infoTop: number };
+
+/**
+ * One player block — cover, then title row — placed in the space between the
+ * header and the bottom safe area, slightly above centre. Shared by the feed
+ * (cover, wave) and the screen's overlay (title row) so they always line up.
+ */
+export function discoverLayout(width: number, height: number, insets: { top: number; bottom: number }): DiscoverLayout {
+  const top = insets.top + DISCOVER_HEADER_HEIGHT;
+  const bottom = height - insets.bottom - Spacing.lg;
+  const available = Math.max(0, bottom - top);
+  const cover = Math.max(0, Math.min(width * 0.74, 340, available - DISCOVER_PLAY_SIZE - COVER_TO_INFO_GAP - Spacing.xl));
+  const block = cover + COVER_TO_INFO_GAP + DISCOVER_PLAY_SIZE;
+  const coverTop = top + Math.max(0, available - block) * 0.45;
+  return { cover, coverTop, coverLeft: (width - cover) / 2, infoTop: coverTop + cover + COVER_TO_INFO_GAP };
 }
 
 function fade(p: SharedValue<number>, at: number): number {
@@ -364,6 +395,5 @@ const styles = StyleSheet.create({
   clip: { overflow: 'hidden' },
   genreSlot: { position: 'absolute', top: 0, overflow: 'hidden' },
   slot: { position: 'absolute', left: 0 },
-  coverWrap: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', paddingBottom: 80 },
-  coverShadow: { borderRadius: 16, boxShadow: '0 24px 60px rgba(0, 0, 0, 0.55)' },
+  coverShadow: { position: 'absolute', borderRadius: 16, boxShadow: '0 24px 60px rgba(0, 0, 0, 0.55)' },
 });

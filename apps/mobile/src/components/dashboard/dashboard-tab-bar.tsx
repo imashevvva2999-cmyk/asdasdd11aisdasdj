@@ -35,7 +35,7 @@ export const DASHBOARD_TAB_BAR_CLEARANCE = PILL_HEIGHT + PILL_BOTTOM_GAP + CAPSU
  * listener `(tabs)` group's state, and vice versa (OQ-56). No main-nav files
  * are imported for behavior, only its exported size constants for parity.
  */
-export function DashboardTabBar({ state, descriptors, navigation }: TabBarProps) {
+export function DashboardTabBar({ state, descriptors, navigateToTab }: TabBarProps) {
   const insets = useSafeAreaInsets();
   const { t } = useDashboardStrings();
   const reduceMotion = useReducedMotion();
@@ -88,7 +88,7 @@ export function DashboardTabBar({ state, descriptors, navigation }: TabBarProps)
               accessibilityRole="tab"
               accessibilityState={{ selected: focused }}
               accessibilityLabel={label}
-              onPress={() => navigation.navigate(route.name)}
+              onPress={() => navigateToTab(route.key)}
               onLayout={(e) => measure(index, e.nativeEvent.layout.x, e.nativeEvent.layout.width)}
               style={styles.item}
             >

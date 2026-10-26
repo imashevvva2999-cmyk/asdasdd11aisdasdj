@@ -115,7 +115,7 @@ export function TabPill({ items }: { items: TabPillItem[] }) {
 /** Tabs' own tab bar — builds the shared `TabPill` from the Tabs
  * navigator's state; the tabs, their stacks and the tabPress behaviour
  * (re-tap pops to the stack's root) are unchanged. */
-export function FloatingTabBar({ state, descriptors, navigation }: TabBarProps) {
+export function FloatingTabBar({ state, descriptors, emitter, navigateToTab }: TabBarProps) {
   const items: TabPillItem[] = state.routes.map((route, index) => {
     const { options } = descriptors[route.key];
     const focused = state.index === index;
@@ -126,8 +126,8 @@ export function FloatingTabBar({ state, descriptors, navigation }: TabBarProps) 
       focused,
       icon: ({ color, size }) => options.tabBarIcon?.({ focused, color, size }),
       onPress: () => {
-        const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-        if (!focused && !event.defaultPrevented) navigation.navigate(route.name, route.params);
+        const event = emitter.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+        if (!focused && !event.defaultPrevented) navigateToTab(route.key);
       },
     };
   });

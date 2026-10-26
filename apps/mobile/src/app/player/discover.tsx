@@ -1,10 +1,10 @@
 import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { DiscoveryFeed } from '@/components/player/discovery-feed';
+import { DISCOVER_HEADER_HEIGHT, DISCOVER_PLAY_SIZE, DiscoveryFeed, discoverLayout } from '@/components/player/discovery-feed';
 import { PlayerBackground } from '@/components/player/player-background';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -40,6 +40,13 @@ export default function DiscoverScreen() {
   const togglePlayPause = usePlayerStore((s) => s.togglePlayPause);
   const windowWidth = useContentWidth();
   const { height: windowHeight } = useWindowSize();
+  // From the root provider, not a SafeAreaView measured inside this transparent
+  // modal: the header always clears the status bar / Dynamic Island.
+  const insets = useSafeAreaInsets();
+  const layout = useMemo(
+    () => discoverLayout(windowWidth, windowHeight, insets),
+    [windowWidth, windowHeight, insets],
+  );
   const { locale, t } = useAppStrings();
   const genreIds = useDiscoveryStore((s) => s.genreIds);
   const genreIndex = useDiscoveryStore((s) => s.genreIndex);
@@ -116,15 +123,17 @@ export default function DiscoverScreen() {
   }
 
   const unavailable = playback === 'unavailable';
+  const failed = playback === 'error';
+  const notice = unavailable ? t('noAudioPreviewMessage') : failed ? t('playbackErrorMessage') : undefined;
 
   return (
     <ThemedView surface="canvas" style={styles.flex}>
       <Animated.View pointerEvents="none" style={StyleSheet.absoluteFill}>
         <PlayerBackground />
       </Animated.View>
-      <DiscoveryFeed size={{ width: windowWidth, height: windowHeight }} />
-      <SafeAreaView style={StyleSheet.absoluteFill} pointerEvents="box-none">
-        <View style={styles.header} pointerEvents="box-none">
+      <DiscoveryFeed size={{ width: windowWidth, height: windowHeight }} layout={layout} />
+      <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+        <View style={[styles.header, { marginTop: insets.top }]} pointerEvents="box-none">
           <IconButton variant="ghost" icon="close" iconSize={26} accessibilityLabel={t('closeLabel')} onPress={() => goBack()} />
           {genreId && (
             <View style={styles.genreChip}>
@@ -141,26 +150,35 @@ export default function DiscoverScreen() {
             </View>
           )}
         </View>
-        <View style={styles.footer} pointerEvents="box-none">
-          <View style={styles.titleBlock}>
-            <ThemedText variant="headline-md" numberOfLines={1}>
-              {track.title}
-            </ThemedText>
-            <ThemedText variant="label-lg" numberOfLines={1} style={styles.onColorMedium}>
-              {track.artistName}
-            </ThemedText>
+        {/* Lined up with the cover's edges, just under it (same layout as the feed). */}
+        <View style={[styles.info, { top: layout.infoTop, left: layout.coverLeft, width: layout.cover }]} pointerEvents="box-none">
+          <View style={styles.infoRow} pointerEvents="box-none">
+            <View style={styles.titleBlock}>
+              <ThemedText variant="headline-md" numberOfLines={1}>
+                {track.title}
+              </ThemedText>
+              <ThemedText variant="label-lg" numberOfLines={1} style={styles.onColorMedium}>
+                {track.artistName}
+              </ThemedText>
+            </View>
+            <CircleButton
+              icon={isPlaying ? 'pause' : 'play-arrow'}
+              accessibilityLabel={unavailable ? t('playUnavailableLabel') : playback === 'loading' ? t('loadingPauseLabel') : isPlaying ? t('pauseLabel') : t('playLabel')}
+              size={DISCOVER_PLAY_SIZE}
+              iconSize={32}
+              disabled={unavailable}
+              loading={playback === 'loading'}
+              onPress={togglePlayPause}
+            />
           </View>
-          <CircleButton
-            icon={isPlaying ? 'pause' : 'play-arrow'}
-            accessibilityLabel={unavailable ? t('playUnavailableLabel') : playback === 'loading' ? t('loadingPauseLabel') : isPlaying ? t('pauseLabel') : t('playLabel')}
-            size={64}
-            iconSize={32}
-            disabled={unavailable}
-            loading={playback === 'loading'}
-            onPress={togglePlayPause}
-          />
+          {/* Same messages as Now Playing: a failed load is said, never just a play icon again. */}
+          {notice && (
+            <ThemedText variant="label-md" style={styles.onColorMedium} accessibilityLiveRegion="polite">
+              {notice}
+            </ThemedText>
+          )}
         </View>
-      </SafeAreaView>
+      </View>
     </ThemedView>
   );
 }
@@ -169,7 +187,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   onColorMedium: { color: ON_COLOR_MEDIUM },
-  header: { height: 56, paddingHorizontal: Spacing.sm, flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  header: { height: DISCOVER_HEADER_HEIGHT, paddingHorizontal: Spacing.sm, flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   genreChip: {
     flexShrink: 1,
     paddingHorizontal: 12,
@@ -183,14 +201,7 @@ const styles = StyleSheet.create({
   genreDots: { marginLeft: 'auto', flexDirection: 'row', gap: 6, paddingRight: Spacing.sm },
   genreDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255, 255, 255, 0.3)' },
   genreDotActive: { width: 18, backgroundColor: '#fff' },
-  footer: {
-    marginTop: 'auto',
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.margin,
-    paddingBottom: Spacing.xl,
-    gap: Spacing.md,
-  },
+  info: { position: 'absolute', gap: Spacing.sm },
+  infoRow: { minHeight: DISCOVER_PLAY_SIZE, flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
   titleBlock: { flex: 1, minWidth: 0, gap: 2 },
 });

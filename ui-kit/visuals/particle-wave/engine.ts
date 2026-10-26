@@ -54,6 +54,13 @@ const DUST = 140;
 export const GHOSTS = 3;
 const STILL_TIME = 11.4;
 const FLOATS = 14; // per vertex: a0 (4) a1 (4) a2 (4) a3 (2)
+// The ribbons run x 56…458 around y 140 in artwork space (see VERT).
+export const RIBBON_SPAN = 402;
+const RIBBON_CENTER_X = 56 + RIBBON_SPAN / 2;
+const RIBBON_CENTER_Y = 140;
+
+/** Where to draw the ribbons, in drawing-buffer px: px per artwork unit and the ribbons' centre. */
+export type WaveFrame = { scale: number; cx: number; cy: number };
 
 const VERT = `
 precision highp float;
@@ -273,15 +280,98 @@ function program(gl: WebGLRenderingContext, vs: string, fs: string): WebGLProgra
   return p;
 }
 
+/**
+ * The platform-neutral WebGL part of Particle Wave B: the approved programs, the
+ * particle buffer and one frame. The web `ParticleWave` below drives it from a
+ * canvas; the native app drives it from an expo-gl context.
+ */
+export class ParticleWaveRenderer {
+  private readonly progs: { wave: WebGLProgram; bg: WebGLProgram };
+  private readonly bgBuf: WebGLBuffer | null;
+  private readonly buf: WebGLBuffer | null;
+  private count = 0;
+
+  /** Throws if the shaders cannot be compiled or linked. */
+  constructor(private readonly gl: WebGLRenderingContext) {
+    this.progs = { wave: program(gl, VERT, FRAG), bg: program(gl, BG_VERT, BG_FRAG) };
+    this.bgBuf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.bgBuf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+    this.buf = gl.createBuffer();
+  }
+
+  /** Uploads the particles for `density` (the same density always gives the same particles). */
+  upload(density: number) {
+    const gl = this.gl;
+    if (!this.buf) return;
+    const { data, count } = buildParticles(density);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.buf);
+    gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+    this.count = count;
+  }
+
+  /**
+   * Draws one frame into a `width` × `height` drawing buffer. `still` draws the
+   * reduced-motion frame. Without `frame` the artwork is shown with `cover`
+   * (the banner); a `frame` places the ribbons' centre at (cx, cy) instead.
+   */
+  draw(width: number, height: number, time: number, still: boolean, reactive: ReactiveInput, frame?: WaveFrame) {
+    const gl = this.gl;
+    const progs = this.progs;
+    gl.viewport(0, 0, width, height);
+    gl.disable(gl.BLEND);
+    gl.useProgram(progs.bg);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.bgBuf);
+    const bp = gl.getAttribLocation(progs.bg, 'p');
+    gl.enableVertexAttribArray(bp);
+    gl.vertexAttribPointer(bp, 2, gl.FLOAT, false, 0, 0);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    gl.disableVertexAttribArray(bp);
+
+    // `cover`: the same crop as the banner's image.
+    const scale = frame ? frame.scale : Math.max(width / ART_W, height / ART_H);
+    const offX = frame ? frame.cx - RIBBON_CENTER_X * scale : (width - ART_W * scale) / 2;
+    const offY = frame ? frame.cy - RIBBON_CENTER_Y * scale : (height - ART_H * scale) / 2;
+    const p = progs.wave;
+    gl.useProgram(p);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.buf);
+    const stride = FLOATS * 4;
+    const attrs: [string, number, number][] = [['a0', 4, 0], ['a1', 4, 16], ['a2', 4, 32], ['a3', 2, 48]];
+    const locs = attrs.map(([name, size, off]) => {
+      const loc = gl.getAttribLocation(p, name);
+      gl.enableVertexAttribArray(loc);
+      gl.vertexAttribPointer(loc, size, gl.FLOAT, false, stride, off);
+      return loc;
+    });
+    gl.uniform1f(gl.getUniformLocation(p, 'uTime'), still ? STILL_TIME : time + STILL_TIME);
+    gl.uniform2f(gl.getUniformLocation(p, 'uRes'), width, height);
+    gl.uniform3f(gl.getUniformLocation(p, 'uCover'), scale, offX, offY);
+    gl.uniform3f(gl.getUniformLocation(p, 'uTint'), ...reactive.tint);
+    gl.uniform1f(gl.getUniformLocation(p, 'uBass'), reactive.bass);
+    gl.uniform1f(gl.getUniformLocation(p, 'uMid'), reactive.mid);
+    gl.uniform1f(gl.getUniformLocation(p, 'uHigh'), reactive.high);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.ONE, gl.ONE);
+    gl.drawArrays(gl.POINTS, 0, this.count);
+    locs.forEach((l) => gl.disableVertexAttribArray(l));
+  }
+
+  /** Releases the buffers and programs (only while the context is alive). */
+  dispose() {
+    const gl = this.gl;
+    if (this.buf) gl.deleteBuffer(this.buf);
+    if (this.bgBuf) gl.deleteBuffer(this.bgBuf);
+    gl.deleteProgram(this.progs.wave);
+    gl.deleteProgram(this.progs.bg);
+  }
+}
+
 /** If a lost WebGL context is not restored within this time, show the still artwork. */
 const RESTORE_TIMEOUT_MS = 2500;
 
 export class ParticleWave {
   private gl: WebGLRenderingContext | null = null;
-  private progs: { wave: WebGLProgram; bg: WebGLProgram } | null = null;
-  private buf: WebGLBuffer | null = null;
-  private bgBuf: WebGLBuffer | null = null;
-  private count = 0;
+  private renderer: ParticleWaveRenderer | null = null;
   private time = 0;
   private last = 0;
   private raf = 0;
@@ -339,16 +429,11 @@ export class ParticleWave {
     this.canvas.removeEventListener('webglcontextrestored', this.restored);
     const gl = this.gl;
     if (gl && !gl.isContextLost()) {
-      if (this.buf) gl.deleteBuffer(this.buf);
-      if (this.bgBuf) gl.deleteBuffer(this.bgBuf);
-      if (this.progs) {
-        gl.deleteProgram(this.progs.wave);
-        gl.deleteProgram(this.progs.bg);
-      }
+      this.renderer?.dispose();
       gl.getExtension('WEBGL_lose_context')?.loseContext();
     }
     this.gl = null;
-    this.progs = null;
+    this.renderer = null;
   }
 
   private init(): boolean {
@@ -356,28 +441,20 @@ export class ParticleWave {
     if (!gl) return false;
     try {
       this.gl = gl;
-      this.progs = { wave: program(gl, VERT, FRAG), bg: program(gl, BG_VERT, BG_FRAG) };
-      this.bgBuf = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, this.bgBuf);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
-      this.buf = gl.createBuffer();
+      this.renderer = new ParticleWaveRenderer(gl);
       this.upload();
       return true;
     } catch (err) {
       console.warn('[ParticleWave]', err);
       this.gl = null;
+      this.renderer = null;
       return false;
     }
   }
 
   /** Particles for the requested density, lowered further only by adaptive quality. */
   private upload() {
-    const gl = this.gl;
-    if (!gl || !this.buf) return;
-    const { data, count } = buildParticles(Math.min(this.opts.density, this.quality.density));
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.buf);
-    gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
-    this.count = count;
+    this.renderer?.upload(Math.min(this.opts.density, this.quality.density));
   }
 
   private resize() {
@@ -392,46 +469,11 @@ export class ParticleWave {
 
   private draw() {
     const gl = this.gl;
-    const progs = this.progs;
-    if (!gl || !progs || gl.isContextLost()) return;
+    const renderer = this.renderer;
+    if (!gl || !renderer || gl.isContextLost()) return;
     this.resize();
     const { width, height } = this.canvas;
-    gl.viewport(0, 0, width, height);
-    gl.disable(gl.BLEND);
-    gl.useProgram(progs.bg);
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.bgBuf);
-    const bp = gl.getAttribLocation(progs.bg, 'p');
-    gl.enableVertexAttribArray(bp);
-    gl.vertexAttribPointer(bp, 2, gl.FLOAT, false, 0, 0);
-    gl.drawArrays(gl.TRIANGLES, 0, 3);
-    gl.disableVertexAttribArray(bp);
-
-    // `cover`: the same crop as the banner's image.
-    const scale = Math.max(width / ART_W, height / ART_H);
-    const offX = (width - ART_W * scale) / 2;
-    const offY = (height - ART_H * scale) / 2;
-    const p = progs.wave;
-    gl.useProgram(p);
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.buf);
-    const stride = FLOATS * 4;
-    const attrs: [string, number, number][] = [['a0', 4, 0], ['a1', 4, 16], ['a2', 4, 32], ['a3', 2, 48]];
-    const locs = attrs.map(([name, size, off]) => {
-      const loc = gl.getAttribLocation(p, name);
-      gl.enableVertexAttribArray(loc);
-      gl.vertexAttribPointer(loc, size, gl.FLOAT, false, stride, off);
-      return loc;
-    });
-    gl.uniform1f(gl.getUniformLocation(p, 'uTime'), this.reduceMotion ? STILL_TIME : this.time + STILL_TIME);
-    gl.uniform2f(gl.getUniformLocation(p, 'uRes'), width, height);
-    gl.uniform3f(gl.getUniformLocation(p, 'uCover'), scale, offX, offY);
-    gl.uniform3f(gl.getUniformLocation(p, 'uTint'), ...this.reactive.tint);
-    gl.uniform1f(gl.getUniformLocation(p, 'uBass'), this.reactive.bass);
-    gl.uniform1f(gl.getUniformLocation(p, 'uMid'), this.reactive.mid);
-    gl.uniform1f(gl.getUniformLocation(p, 'uHigh'), this.reactive.high);
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.ONE, gl.ONE);
-    gl.drawArrays(gl.POINTS, 0, this.count);
-    locs.forEach((l) => gl.disableVertexAttribArray(l));
+    renderer.draw(width, height, this.time, this.reduceMotion, this.reactive);
   }
 
   private loop = (now: number) => {

@@ -2,6 +2,7 @@
   "expo": {
     "name": "Mmusic",
     "slug": "mmusic",
+    "owner": "kalema29",
     "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -11,6 +12,7 @@
       "icon": "./assets/expo.icon"
     },
     "android": {
+      "package": "com.mmusic.app",
       "adaptiveIcon": {
         "backgroundColor": "#0A0A0C",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -32,11 +34,23 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
-      ]
+      ],
+      "expo-asset",
+      "expo-audio",
+      "expo-font",
+      "expo-image",
+      "expo-status-bar",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "36155e14-f57d-4f6c-bdde-4b2bf5b9407f"
+      }
     }
   }
 }

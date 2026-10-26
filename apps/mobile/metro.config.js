@@ -18,4 +18,17 @@ config.resolver.nodeModulesPaths = [
 config.resolver.unstable_enableSymlinks = true;
 config.resolver.unstable_enablePackageExports = true;
 
+// One copy of React and zustand in the bundle. @mmusic/core and @mmusic/ui-kit
+// keep their own dev copies (React 19.2.x, shared with the website), while this
+// app runs React 19.3 (Expo SDK 58); resolving these from the app for every
+// importer prevents two Reacts ("Invalid hook call") and two zustand instances.
+const singletons = ['react', 'zustand'];
+const appOrigin = path.join(projectRoot, 'package.json');
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (singletons.some((name) => moduleName === name || moduleName.startsWith(`${name}/`))) {
+    return context.resolveRequest({ ...context, originModulePath: appOrigin }, moduleName, platform);
+  }
+  return context.resolveRequest(context, moduleName, platform);
+};
+
 module.exports = config;
