@@ -1,6 +1,6 @@
 import { bindPositionAttribute, createFullscreenTriangle, program } from '../gl-utils';
 import type { PointerInput } from '../types';
-import { WebGLSceneController } from '../webgl-scene-controller';
+import { WebGLSceneController, type SceneRenderer } from '../webgl-scene-controller';
 
 /** Vertex shader is WebGL1-style ESSL 1.00 (`attribute`/`varying`), which a
  * WebGL2 context still accepts with no `#version` pragma — adapted from
@@ -141,13 +141,9 @@ const EXPANDED_TUNING = { amplitude: 0.42, frequencyX: 3.4, frequencyY: 2.6, tim
  * like it is gliding into place. */
 const MOUSE_EASE_TAU = 0.22;
 
-export class LiquidChromeScene extends WebGLSceneController {
-  /** No field initializers below — `WebGLSceneController`'s constructor
-   * calls `onInit` (and possibly `onResize`/`onFrame`) synchronously from
-   * inside `super()`, which runs before this subclass's own field
-   * initializers would execute. A `= value` initializer here would silently
-   * overwrite whatever `onInit` just assigned the moment `super()` returns.
-   * Everything is assigned explicitly inside `onInit` instead. */
+export class LiquidChromeRenderer implements SceneRenderer {
+  /** Everything is assigned in `onInit` (then `onResize`), so the state
+   * always starts fresh with the GL context that built it. */
   private prog!: WebGLProgram;
   private buffer!: WebGLBuffer;
   private uniforms!: Record<string, WebGLUniformLocation | null>;
@@ -155,7 +151,7 @@ export class LiquidChromeScene extends WebGLSceneController {
   private mouseX!: number;
   private mouseY!: number;
 
-  protected onInit(gl: WebGL2RenderingContext): void {
+  onInit(gl: WebGL2RenderingContext): void {
     const prog = program(gl, VERTEX_SRC, FRAGMENT_SRC);
     const buffer = createFullscreenTriangle(gl);
     bindPositionAttribute(gl, prog, buffer);
@@ -186,7 +182,7 @@ export class LiquidChromeScene extends WebGLSceneController {
     this.applyTuning(gl);
   }
 
-  protected onResize(gl: WebGL2RenderingContext, width: number, height: number): void {
+  onResize(gl: WebGL2RenderingContext, width: number, height: number): void {
     gl.useProgram(this.prog);
     gl.uniform3f(this.uniforms.uResolution, width, height, width / height);
     const nextTuning = width >= EXPANDED_WIDTH_PX ? EXPANDED_TUNING : CARD_TUNING;
@@ -196,7 +192,7 @@ export class LiquidChromeScene extends WebGLSceneController {
     }
   }
 
-  protected onFrame(gl: WebGL2RenderingContext, dt: number, time: number, pointer: PointerInput): void {
+  onFrame(gl: WebGL2RenderingContext, dt: number, time: number, pointer: PointerInput): void {
     const targetX = pointer.active ? pointer.x : 0.5;
     const targetY = pointer.active ? 1 - pointer.y : 0.5;
     const ease = dt > 0 ? 1 - Math.exp(-dt / MOUSE_EASE_TAU) : 1;
@@ -210,7 +206,7 @@ export class LiquidChromeScene extends WebGLSceneController {
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
-  protected onDispose(gl: WebGL2RenderingContext): void {
+  onDispose(gl: WebGL2RenderingContext): void {
     gl.deleteProgram(this.prog);
     gl.deleteBuffer(this.buffer);
   }
@@ -221,5 +217,14 @@ export class LiquidChromeScene extends WebGLSceneController {
     gl.uniform1f(this.uniforms.uFrequencyY, this.tuning.frequencyY);
     gl.uniform1i(this.uniforms.uWarpIterations, this.tuning.warpIterations);
     gl.uniform1i(this.uniforms.uSupersample, this.tuning.supersample);
+  }
+}
+
+/** The website's canvas-driven Liquid Chrome; the native app runs `Renderer` through expo-gl. */
+export class LiquidChromeScene extends WebGLSceneController {
+  static readonly Renderer = LiquidChromeRenderer;
+
+  constructor(canvas: HTMLCanvasElement, onFallback: () => void) {
+    super(canvas, onFallback, new LiquidChromeRenderer());
   }
 }

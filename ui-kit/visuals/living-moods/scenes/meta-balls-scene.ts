@@ -1,6 +1,6 @@
 import { bindPositionAttribute, createFullscreenTriangle, program } from '../gl-utils';
 import type { PointerInput } from '../types';
-import { WebGLSceneController } from '../webgl-scene-controller';
+import { WebGLSceneController, type SceneRenderer } from '../webgl-scene-controller';
 
 /** Minimal vertex shader — unlike `liquid-chrome-scene.ts` this scene reads
  * `gl_FragCoord` directly in the fragment shader (the reference MetaBalls
@@ -184,12 +184,9 @@ function anchor(ball: Ball, phase: number, halfWidth: number, halfHeight: number
   return [x, y];
 }
 
-export class MetaBallsScene extends WebGLSceneController {
-  /** No field initializers below, for the same reason documented in
-   * `liquid-chrome-scene.ts`: `WebGLSceneController`'s constructor calls
-   * `onInit` (then `onResize`) from inside `super()`, before this
-   * subclass's own `= value` initializers would run — any such initializer
-   * here would silently overwrite what `onInit`/`onResize` just set. */
+export class MetaBallsRenderer implements SceneRenderer {
+  /** Everything is assigned in `onInit` (then `onResize`), so the state
+   * always starts fresh with the GL context that built it. */
   private prog!: WebGLProgram;
   private buffer!: WebGLBuffer;
   private uniforms!: Record<string, WebGLUniformLocation | null>;
@@ -202,7 +199,7 @@ export class MetaBallsScene extends WebGLSceneController {
   private halfHeight!: number;
   private scale!: number;
 
-  protected onInit(gl: WebGL2RenderingContext): void {
+  onInit(gl: WebGL2RenderingContext): void {
     const prog = program(gl, VERTEX_SRC, FRAGMENT_SRC);
     const buffer = createFullscreenTriangle(gl);
     bindPositionAttribute(gl, prog, buffer);
@@ -247,7 +244,7 @@ export class MetaBallsScene extends WebGLSceneController {
     }
   }
 
-  protected onResize(gl: WebGL2RenderingContext, width: number, height: number): void {
+  onResize(gl: WebGL2RenderingContext, width: number, height: number): void {
     gl.useProgram(this.prog);
     gl.uniform2f(this.uniforms.uResolution, width, height);
     this.scale = ANIMATION_SIZE / height;
@@ -256,7 +253,7 @@ export class MetaBallsScene extends WebGLSceneController {
     this.halfWidth = (ANIMATION_SIZE * width) / height / 2;
   }
 
-  protected onFrame(gl: WebGL2RenderingContext, dt: number, time: number, pointer: PointerInput): void {
+  onFrame(gl: WebGL2RenderingContext, dt: number, time: number, pointer: PointerInput): void {
     const phase = time * DRIFT_SPEED;
     const halfWidth = this.halfWidth;
     const halfHeight = this.halfHeight;
@@ -320,8 +317,17 @@ export class MetaBallsScene extends WebGLSceneController {
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
-  protected onDispose(gl: WebGL2RenderingContext): void {
+  onDispose(gl: WebGL2RenderingContext): void {
     gl.deleteProgram(this.prog);
     gl.deleteBuffer(this.buffer);
+  }
+}
+
+/** The website's canvas-driven Meta Balls; the native app runs `Renderer` through expo-gl. */
+export class MetaBallsScene extends WebGLSceneController {
+  static readonly Renderer = MetaBallsRenderer;
+
+  constructor(canvas: HTMLCanvasElement, onFallback: () => void) {
+    super(canvas, onFallback, new MetaBallsRenderer());
   }
 }

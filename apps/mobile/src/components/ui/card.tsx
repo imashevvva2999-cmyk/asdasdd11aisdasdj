@@ -477,18 +477,20 @@ export type MoodCardProps = {
   /** Living Moods WebGL scene filling the card (replaces `visual` when set). */
   scene?: SceneEngineCtor;
   sceneColors?: [string, string];
+  /** Freeze the scene on its current frame (its screen is not in front). */
+  scenePaused?: boolean;
   style?: ViewStyle;
 };
 
 /** Mood & Vibe Mixes 2×2 grid card (docs/screens.md §3.1 S-01, §3.4 "Mood card"). */
-export function MoodCard({ title, subtitle, trackCountLabel, icon, tint = 'primary', visual, scene, sceneColors, onPress, style }: MoodCardProps) {
+export function MoodCard({ title, subtitle, trackCountLabel, icon, tint = 'primary', visual, scene, sceneColors, scenePaused, onPress, style }: MoodCardProps) {
   const tintColor = tint === 'primary' ? Colors.primary : tint === 'secondary' ? Colors.secondary : Colors.tertiary;
 
   return (
     <PressableScale onPress={onPress} accessibilityRole="button" style={[moodStyles.card, scene && moodStyles.sceneCard, style]}>
       {scene && (
         <>
-          <LivingMoodScene engine={scene} active fallbackColors={sceneColors ?? ['#121216', '#2a2a32']} style={StyleSheet.absoluteFill} />
+          <LivingMoodScene engine={scene} active paused={scenePaused} fallbackColors={sceneColors ?? ['#121216', '#2a2a32']} style={StyleSheet.absoluteFill} />
           <LinearGradient
             pointerEvents="none"
             colors={['rgba(10, 10, 12, 0.35)', 'rgba(10, 10, 12, 0)', 'rgba(10, 10, 12, 0.75)']}

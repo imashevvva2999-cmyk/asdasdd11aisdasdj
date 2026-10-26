@@ -244,6 +244,8 @@ export default function HomeScreen() {
                     visual={MOOD_VISUALS[mix.id]}
                     scene={MOOD_SCENES[mix.id]?.scene}
                     sceneColors={MOOD_SCENES[mix.id]?.colors}
+                    // Like the Late Night Flow wave: live only while Home is in front.
+                    scenePaused={!homeFocused}
                     onPress={() => {
                       play(mix.trackIds[0]!, mix.trackIds);
                       router.push('/player/now-playing');

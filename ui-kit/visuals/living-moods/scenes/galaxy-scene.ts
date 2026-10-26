@@ -1,6 +1,6 @@
 import { bindPositionAttribute, createFullscreenTriangle, program } from '../gl-utils';
 import type { PointerInput } from '../types';
-import { WebGLSceneController } from '../webgl-scene-controller';
+import { WebGLSceneController, type SceneRenderer } from '../webgl-scene-controller';
 
 /** Minimal vertex shader — like `meta-balls-scene.ts`/`orb-scene.ts`, the
  * fragment shader builds its own UV from `gl_FragCoord`, so no `varying`
@@ -249,12 +249,9 @@ const AWAKE_RISE_TAU = 0.25;
 const AWAKE_FALL_TAU = 0.5;
 const REPEL_POSITION_TAU = 0.28;
 
-export class GalaxyScene extends WebGLSceneController {
-  /** No field initializers below — `WebGLSceneController`'s constructor
-   * calls `onInit` (then `onResize`) synchronously from inside `super()`,
-   * before this subclass's own `= value` initializers would run. A default
-   * initializer here would silently overwrite whatever `onInit` just
-   * assigned the moment `super()` returns. */
+export class GalaxyRenderer implements SceneRenderer {
+  /** Everything is assigned in `onInit` (then `onResize`), so the state
+   * always starts fresh with the GL context that built it. */
   private prog!: WebGLProgram;
   private buffer!: WebGLBuffer;
   private uniforms!: Record<string, WebGLUniformLocation | null>;
@@ -267,7 +264,7 @@ export class GalaxyScene extends WebGLSceneController {
   private repelY!: number;
   private idlePhase!: number;
 
-  protected onInit(gl: WebGL2RenderingContext): void {
+  onInit(gl: WebGL2RenderingContext): void {
     const prog = program(gl, VERTEX_SRC, FRAGMENT_SRC);
     const buffer = createFullscreenTriangle(gl);
     bindPositionAttribute(gl, prog, buffer);
@@ -308,7 +305,7 @@ export class GalaxyScene extends WebGLSceneController {
     this.applyTuning(gl);
   }
 
-  protected onResize(gl: WebGL2RenderingContext, width: number, height: number): void {
+  onResize(gl: WebGL2RenderingContext, width: number, height: number): void {
     gl.useProgram(this.prog);
     gl.uniform2f(this.uniforms.uResolution, width, height);
     this.aspect = width / height;
@@ -319,7 +316,7 @@ export class GalaxyScene extends WebGLSceneController {
     }
   }
 
-  protected onFrame(gl: WebGL2RenderingContext, dt: number, time: number, pointer: PointerInput): void {
+  onFrame(gl: WebGL2RenderingContext, dt: number, time: number, pointer: PointerInput): void {
     const ease = (tau: number) => (dt > 0 ? 1 - Math.exp(-dt / tau) : 1);
 
     this.depth += dt * DEPTH_SPEED;
@@ -351,7 +348,7 @@ export class GalaxyScene extends WebGLSceneController {
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
-  protected onDispose(gl: WebGL2RenderingContext): void {
+  onDispose(gl: WebGL2RenderingContext): void {
     gl.deleteProgram(this.prog);
     gl.deleteBuffer(this.buffer);
   }
@@ -360,5 +357,14 @@ export class GalaxyScene extends WebGLSceneController {
     gl.uniform1f(this.uniforms.uDensity, this.tuning.density);
     gl.uniform1i(this.uniforms.uLayers, this.tuning.layers);
     gl.uniform1f(this.uniforms.uGlow, this.tuning.glow);
+  }
+}
+
+/** The website's canvas-driven Galaxy; the native app runs `Renderer` through expo-gl. */
+export class GalaxyScene extends WebGLSceneController {
+  static readonly Renderer = GalaxyRenderer;
+
+  constructor(canvas: HTMLCanvasElement, onFallback: () => void) {
+    super(canvas, onFallback, new GalaxyRenderer());
   }
 }
