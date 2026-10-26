@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { formatKgsAmount } from '@/lib/format-currency';
 import { currentUser } from '@/mocks';
 import { manageReleasesLabel } from '@/lib/i18n';
-import { useArtistStore } from '@/state/artist-store';
+import { useOwnArtist } from '@/state/demo-session-store';
 import { useAppStrings } from '@/state/locale-store';
 import { useProfileAvatarStore } from '@/state/profile-avatar-store';
 import { useSupportStore } from '@/state/support-store';
@@ -47,7 +47,8 @@ function pickPhoto(onPicked: (dataUri: string) => void) {
  */
 export default function ProfileScreen() {
   const history = useSupportStore((s) => s.history);
-  const myArtist = useArtistStore((s) => s.artist);
+  // Own account, even while the dashboard above shows the Demo Artist preview.
+  const myArtist = useOwnArtist();
   const avatarPhotoUri = useProfileAvatarStore((s) => s.photoUri);
   const setAvatarPhotoUri = useProfileAvatarStore((s) => s.setPhotoUri);
   const { showToast, toast } = useToast();

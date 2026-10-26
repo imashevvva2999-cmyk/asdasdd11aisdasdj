@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ACTIVE_CAMPAIGN, CAMPAIGN_HISTORY, PROMO_PACKAGES, type CampaignHistoryEntry } from '@/mocks/promotions';
 import { useDashboardStrings } from '@/state/dashboard-locale-store';
 import { useArtistStore } from '@/state/artist-store';
-import { ACTIVE_CAMPAIGN_KEY, useCampaignStore } from '@/state/campaign-store';
+import { ACTIVE_CAMPAIGN_KEY, PROMO_WALLET_START_KGS, useCampaignStore } from '@/state/campaign-store';
 import { artistBase, useIsGuestPreview } from '@/demo/guest-mode';
 import { useIsDemoArtist } from '@/state/demo-session-store';
 import { DEMO_CAMPAIGN_HISTORY } from '@/demo/demo-fixture';
@@ -25,14 +25,28 @@ const HISTORY_PREVIEW = 2;
 const EMERALD_400 = '#34d399';
 const EMERALD_500 = '#10b981';
 
+/** "Демо-данные" label on sample figures (the badge style of the artist header). */
+function DemoPill({ label, style }: { label: string; style?: ViewStyle }) {
+  return (
+    <View style={[styles.proBadge, style]}>
+      <SText v="mono-num" weight="600" color={S.onSurfaceVariant}>
+        {label}
+      </SText>
+    </View>
+  );
+}
+
 /** Web-only CSS blur for the hero card's glow bleeds (Tailwind blur-2xl/3xl). */
 function blur(px: number): ViewStyle {
   return Platform.OS === 'web' ? ({ filter: `blur(${px}px)` } as unknown as ViewStyle) : {};
 }
 
 /** Artist Dashboard — Promotion tab, Stitch "1. mmusic_studio" reproduced 1:1.
- * Entry point into the local Campaign Creation wizard (state/campaign-store.ts);
- * campaign numbers come from the existing mocks, Stitch-only figures are static. */
+ * Entry point into the local Campaign Creation wizard (state/campaign-store.ts).
+ * As on the website: the shared promotion mocks / demo fixture are shown only to
+ * the Solaris Echo demo (guest preview or demo login), labelled "Демо-данные"; a
+ * regular artist sees only their own campaigns, with "—" / "no data" where no
+ * real metric exists. */
 export default function PromotionScreen() {
   const { t, locale } = useDashboardStrings();
   const s = usePromoStrings(DashboardPromoStrings);
@@ -49,6 +63,8 @@ export default function PromotionScreen() {
   const demo = useIsDemoArtist();
   const guest = useIsGuestPreview();
   const dStr = DemoStrings[locale];
+  // Sample (mock) figures are the Solaris Echo demo's only — never shown as a regular artist's own.
+  const sample = demo || guest;
   const draftTrackId = useCampaignStore((st) => st.trackId);
   const draftPackageId = useCampaignStore((st) => st.packageId);
   const draftStage = useCampaignStore((st) => st.stage);
@@ -86,8 +102,8 @@ export default function PromotionScreen() {
     reach: 0,
     budgetKgs: c.totalKgs,
   }));
-  // Demo account: completed campaigns for its own catalog.
-  const completedHistory = demo ? DEMO_CAMPAIGN_HISTORY : CAMPAIGN_HISTORY;
+  // Sample completed campaigns only for the demo (its own catalog when signed in); none for a regular artist.
+  const completedHistory = demo ? DEMO_CAMPAIGN_HISTORY : guest ? CAMPAIGN_HISTORY : [];
   // An unfinished wizard draft is listed first and resumes where it stopped.
   const draftOpen = !!draftTrackId && !!draftPackageId && ['settingUp', 'confirming', 'failed'].includes(draftStage);
   const draftPkg = PROMO_PACKAGES.find((p) => p.id === draftPackageId);
@@ -113,7 +129,10 @@ export default function PromotionScreen() {
   };
   const visibleHistory = historyExpanded ? history : history.slice(0, HISTORY_PREVIEW);
 
-  const investmentKgs = completedHistory.reduce((sum, h) => sum + (h.budgetKgs ?? 0), 0);
+  // Regular artist: their own launched budgets (real, from this account); demo: the sample history.
+  const investmentKgs = sample ? completedHistory.reduce((sum, h) => sum + (h.budgetKgs ?? 0), 0) : launched.reduce((sum, c) => sum + c.totalKgs, 0);
+  const latestLaunched = launched[0];
+  const latestLaunchedTrack = entries.find((e) => e.track.id === latestLaunched?.trackId)?.track;
   const minPerDayKgs = Math.round(Math.min(...PROMO_PACKAGES.filter((p) => p.durationDays > 0).map((p) => p.priceKgs / p.durationDays)));
   const campaignTitle = activeTrack?.title ?? published[0]?.track.title ?? t('activeCampaignFallbackLabel');
   const campaignCover = activeTrack?.coverUri ?? published[0]?.track.coverUri;
@@ -146,18 +165,23 @@ export default function PromotionScreen() {
                 <SText v="headline-sm" weight="700" numberOfLines={1} style={styles.tight}>
                   {artist.name}
                 </SText>
-                <View style={styles.proBadge}>
-                  <SText v="mono-num" weight="600" color={S.secondary} style={styles.upperWide}>
-                    {s.artistBadge}
+                {sample && (
+                  <View style={styles.proBadge}>
+                    <SText v="mono-num" weight="600" color={S.secondary} style={styles.upperWide}>
+                      {s.artistBadge}
+                    </SText>
+                  </View>
+                )}
+              </View>
+              {/* "PRO ARTIST" / "smart targeting active" are demo claims; a regular artist just sees their name. */}
+              {sample && (
+                <View style={styles.rowGapXs}>
+                  <View style={styles.dotSm} />
+                  <SText v="body-sm" color={S.onSurfaceVariant} style={styles.flexShrink}>
+                    {s.artistMeta}
                   </SText>
                 </View>
-              </View>
-              <View style={styles.rowGapXs}>
-                <View style={styles.dotSm} />
-                <SText v="body-sm" color={S.onSurfaceVariant} style={styles.flexShrink}>
-                  {s.artistMeta}
-                </SText>
-              </View>
+              )}
             </View>
           </View>
           <Pressable accessibilityRole="button" accessibilityLabel={s.helpLabel} onPress={() => showToast(si.helpToast, 'help-outline')} style={styles.helpBtn}>
@@ -219,9 +243,7 @@ export default function PromotionScreen() {
                 {s.summaryTitle}
               </SText>
             </View>
-            <SText v="mono-num" color={S.onSurfaceVariant}>
-              {s.updated}
-            </SText>
+            {sample && <DemoPill label={t('demoDataBadge')} />}
           </View>
           <View style={styles.grid}>
             <View style={styles.statCard}>
@@ -233,14 +255,20 @@ export default function PromotionScreen() {
               </View>
               <View style={styles.statValue}>
                 <SText v="display-lg-mobile" weight="700" style={styles.tight}>
-                  {fmt(ACTIVE_CAMPAIGN.reach)}
+                  {sample ? fmt(ACTIVE_CAMPAIGN.reach) : '—'}
                 </SText>
-                <View style={styles.deltaRow}>
-                  <Icon name="trending-up" size={14} color={EMERALD_400} />
-                  <SText v="label-sm" color={EMERALD_400}>
-                    {s.reachDelta}
+                {sample ? (
+                  <View style={styles.deltaRow}>
+                    <Icon name="trending-up" size={14} color={EMERALD_400} />
+                    <SText v="label-sm" color={EMERALD_400}>
+                      {s.reachDelta}
+                    </SText>
+                  </View>
+                ) : (
+                  <SText v="body-sm" color={S.onSurfaceVariant} numberOfLines={1} style={styles.mt4}>
+                    {dStr.anNoData}
                   </SText>
-                </View>
+                )}
               </View>
             </View>
             <View style={styles.statCard}>
@@ -252,10 +280,10 @@ export default function PromotionScreen() {
               </View>
               <View style={styles.statValue}>
                 <SText v="display-lg-mobile" weight="700" style={styles.tight}>
-                  {ACTIVE_CAMPAIGN.conversionRatePct}%
+                  {sample ? `${ACTIVE_CAMPAIGN.conversionRatePct}%` : '—'}
                 </SText>
                 <SText v="body-sm" color={S.onSurfaceVariant} numberOfLines={1} style={styles.mt4}>
-                  {s.fansHint}
+                  {sample ? s.fansHint : dStr.anNoData}
                 </SText>
               </View>
             </View>
@@ -264,15 +292,21 @@ export default function PromotionScreen() {
                 <SText v="label-sm" color={S.onSurfaceVariant} style={styles.upperWide}>
                   {s.rotationLabel}
                 </SText>
-                <View style={styles.dotLive} />
+                {(sample || launched.length > 0) && <View style={styles.dotLive} />}
               </View>
               <View style={styles.statValue}>
                 <SText v="headline-lg" weight="700">
-                  1 {s.campaignWord}
+                  {sample ? `1 ${s.campaignWord}` : launched.length > 0 ? `${launched.length} ${s.campaignWord}` : '—'}
                 </SText>
-                <SText v="body-sm" weight="500" color={S.primaryContainer} numberOfLines={1} style={styles.mt4}>
-                  «{campaignTitle}»
-                </SText>
+                {sample || latestLaunchedTrack ? (
+                  <SText v="body-sm" weight="500" color={S.primaryContainer} numberOfLines={1} style={styles.mt4}>
+                    «{sample ? campaignTitle : latestLaunchedTrack?.title}»
+                  </SText>
+                ) : (
+                  <SText v="body-sm" color={S.onSurfaceVariant} numberOfLines={2} style={styles.mt4}>
+                    {dStr.promoNoActive}
+                  </SText>
+                )}
               </View>
             </View>
             <View style={styles.statCard}>
@@ -291,15 +325,22 @@ export default function PromotionScreen() {
                     {s.currency}
                   </SText>
                 </View>
-                <SText v="body-sm" weight="500" color={EMERALD_400} style={styles.mt4}>
-                  {s.roi}
-                </SText>
+                {sample ? (
+                  <SText v="body-sm" weight="500" color={EMERALD_400} style={styles.mt4}>
+                    {s.roi}
+                  </SText>
+                ) : (
+                  <SText v="body-sm" color={S.onSurfaceVariant} numberOfLines={1} style={styles.mt4}>
+                    {dStr.anNoData}
+                  </SText>
+                )}
               </View>
             </View>
           </View>
         </View>
 
-        {/* Current campaign */}
+        {/* Current campaign (demo sample) */}
+        {sample && (
         <View style={styles.sectionXl}>
           <View style={styles.sectionHead}>
             <View style={[styles.rowGap8, styles.flexShrink]}>
@@ -395,7 +436,55 @@ export default function PromotionScreen() {
           </View>
         </View>
 
-        {/* Listener geography */}
+        )}
+
+        {/* Current campaign (regular artist): their latest launched campaign, in review — no invented delivery figures */}
+        {!sample && (
+          <View style={styles.sectionXl}>
+            <View style={styles.sectionHead}>
+              <View style={[styles.rowGap8, styles.flexShrink]}>
+                <Icon name="radio-button-checked" size={20} color={S.primaryContainer} />
+                <SText v="headline-sm" weight="600" style={styles.flexShrink}>
+                  {s.currentTitle}
+                </SText>
+              </View>
+            </View>
+            {latestLaunched ? (
+              <View style={styles.liveCard}>
+                <View style={styles.liveTop}>
+                  <View style={styles.cover}>
+                    <Artwork uri={latestLaunchedTrack?.coverUri} size={80} radius={SR.xl} />
+                  </View>
+                  <View style={styles.flexMeta}>
+                    <SText v="label-sm" weight="700" color={S.secondary} style={[styles.upperWide, styles.flexShrink]}>
+                      {si.inReview}
+                    </SText>
+                    <SText v="headline-sm" weight="700" numberOfLines={1} style={styles.mt2}>
+                      {latestLaunchedTrack?.title ?? t('activeCampaignFallbackLabel')}
+                    </SText>
+                    <SText v="body-sm" color={S.onSurfaceVariant} numberOfLines={1}>
+                      {artist.name} • {s.budget} {fmt(latestLaunched.totalKgs)} {s.currency}
+                    </SText>
+                    <SText v="mono-num" color={S.onSurfaceVariant} style={styles.mt4}>
+                      {s.impressions}: —
+                    </SText>
+                  </View>
+                </View>
+                <View style={styles.actionRow}>
+                  <Pressable accessibilityRole="button" onPress={() => toStatistics(latestLaunched.id)} style={styles.detailsBtn}>
+                    <SText v="label-md">{s.details}</SText>
+                    <Icon name="arrow-forward" size={16} color={S.onSurface} />
+                  </Pressable>
+                </View>
+              </View>
+            ) : (
+              <EmptyState icon="campaign" title={dStr.promoNoActive} hint={dStr.promoNoActiveHint} />
+            )}
+          </View>
+        )}
+
+        {/* Listener geography (demo sample) */}
+        {sample && (
         <View style={styles.geoCard}>
           <View style={styles.geoHead}>
             <View style={[styles.rowGap8, styles.flexShrink]}>
@@ -426,6 +515,7 @@ export default function PromotionScreen() {
             ))}
           </View>
         </View>
+        )}
 
         {/* Campaign history */}
         <View style={styles.sectionXl}>
@@ -436,12 +526,19 @@ export default function PromotionScreen() {
                 {s.historyTitle}
               </SText>
             </View>
-            <Pressable accessibilityRole="button" accessibilityState={{ expanded: historyExpanded }} onPress={() => setHistoryExpanded((v) => !v)}>
-              <SText v="label-sm" color={S.primary}>
-                {historyExpanded ? si.collapse : `${s.all} ${history.length}`}
-              </SText>
-            </Pressable>
+            {history.length > HISTORY_PREVIEW && (
+              <Pressable accessibilityRole="button" accessibilityState={{ expanded: historyExpanded }} onPress={() => setHistoryExpanded((v) => !v)}>
+                <SText v="label-sm" color={S.primary}>
+                  {historyExpanded ? si.collapse : `${s.all} ${history.length}`}
+                </SText>
+              </Pressable>
+            )}
           </View>
+          {history.length === 0 && (
+            <SText v="body-sm" color={S.onSurfaceVariant} style={styles.historyEmpty}>
+              {dStr.promoNoHistory}
+            </SText>
+          )}
           <View style={styles.historyList}>
             {visibleHistory.map((h) => (
               <Pressable key={h.id} accessibilityRole="button" accessibilityLabel={h.trackTitle} onPress={() => openHistory(h)} style={styles.historyRow}>
@@ -473,7 +570,7 @@ export default function PromotionScreen() {
                     {h.metric[locale]}
                   </SText>
                   <SText v="body-sm" color={S.onSurfaceVariant}>
-                    {fmt(h.reach)} {s.reachSuffix}
+                    {h.reach > 0 ? `${fmt(h.reach)} ${s.reachSuffix}` : `— ${s.reachSuffix}`}
                   </SText>
                 </View>
               </Pressable>
@@ -502,10 +599,12 @@ export default function PromotionScreen() {
             </View>
           </View>
           <View style={styles.walletRight}>
+            {/* Guest preview: the demo account's balance, labelled; otherwise the account's own balance (0 for a regular artist). */}
             <SText v="headline-sm" weight="700">
-              {fmt(walletBalanceKgs)} {s.currency}
+              {fmt(guest ? PROMO_WALLET_START_KGS : walletBalanceKgs)} {s.currency}
             </SText>
-            <Pressable accessibilityRole="button" onPress={() => showToast(guest ? dStr.readOnlyToast : si.topUpToast)}>
+            {sample && <DemoPill label={t('demoDataBadge')} style={styles.mt2} />}
+            <Pressable accessibilityRole="button" onPress={() => showToast(guest ? dStr.readOnlyToast : si.topUpToast, guest ? 'lock' : undefined)}>
               <SText v="label-sm" color={S.secondary} style={styles.mt2}>
                 {s.walletTopUp}
               </SText>
@@ -655,6 +754,7 @@ const styles = StyleSheet.create({
   geoTrack: { height: 6, borderRadius: SR.full, backgroundColor: S.surfaceContainerHigh, overflow: 'hidden' },
 
   historyList: { gap: SS.xs },
+  historyEmpty: { paddingHorizontal: 4 },
   historyRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: SS.sm, borderRadius: SR.xl, backgroundColor: S.surfaceContainer },
   historyCover: { width: 48, height: 48, borderRadius: SR.lg, overflow: 'hidden', backgroundColor: S.surfaceContainerHighest },
   formatBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: SR.DEFAULT, backgroundColor: S.surfaceContainerHighest },

@@ -192,7 +192,8 @@ export default function CampaignSuccessScreen() {
         <View style={styles.ctaArea}>
           <Pressable
             accessibilityRole="button"
-            onPress={() => router.push('/profile/artist/campaign/statistics')}
+            // This campaign's own statistics (in review, no delivery yet) — never the demo campaign.
+            onPress={() => router.push({ pathname: '/profile/artist/campaign/statistics', params: { campaign: latest.id } })}
             style={({ pressed }) => [styles.cta, pressed && styles.pressed]}
           >
             <Icon name="insights" size={20} color={S.onPrimaryContainer} />

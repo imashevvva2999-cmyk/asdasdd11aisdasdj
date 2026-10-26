@@ -17,6 +17,7 @@ import { useArtistStore } from '../src/state/artist-store.ts';
 import { useCampaignStore } from '../src/state/campaign-store.ts';
 import { enterGuestPreview, exitGuestPreview, useDemoSessionStore } from '../src/state/demo-session-store.ts';
 import { isGuestPreview } from '../src/demo/guest-mode.ts';
+import { keepRealWalletAtZero } from '../src/state/promo-wallet-rule.ts';
 import { useSupportStore } from '../src/state/support-store.ts';
 
 let failures = 0;
@@ -151,6 +152,26 @@ check('leaving the preview clears its data', !isGuestPreview() && useArtistStore
 useCampaignStore.getState().setDescription('works again');
 check('stores are writable again after the preview', useCampaignStore.getState().description === 'works again');
 useCampaignStore.getState().setDescription('');
+
+// Promo wallet: 3 850 сом is the demo's balance; a regular artist has 0 (shared rule, both apps).
+const stopWalletRule = keepRealWalletAtZero();
+check('regular artist: promo wallet is 0 сом', useCampaignStore.getState().walletBalanceKgs === 0);
+useCampaignStore.setState({ walletBalanceKgs: 500 });
+check('regular artist: a non-zero balance is set back to 0', useCampaignStore.getState().walletBalanceKgs === 0);
+
+// Without storage (here, like the iOS/Android app) the own account survives a Demo Artist round trip.
+useArtistStore.getState().createArtistProfile({ stageName: 'Own Account' });
+enterGuestPreview();
+check('Demo Artist: the preview shows Solaris Echo', useArtistStore.getState().artist?.name === 'Solaris Echo');
+check('Demo Artist: the demo wallet balance is kept', useCampaignStore.getState().walletBalanceKgs === 3850);
+exitGuestPreview();
+check('My dashboard: the own account is back after the preview (no storage)', useArtistStore.getState().artist?.name === 'Own Account');
+check('My dashboard: the wallet is 0 again', useCampaignStore.getState().walletBalanceKgs === 0);
+useDemoSessionStore.getState().signIn();
+check('demo login: keeps its snapshot balance', useCampaignStore.getState().walletBalanceKgs === 3850);
+useDemoSessionStore.getState().signOut();
+check('after the demo login: the wallet is 0 again', useCampaignStore.getState().walletBalanceKgs === 0);
+stopWalletRule();
 
 if (failures > 0) {
   console.error(`\n${failures} demo-account check(s) failed.`);

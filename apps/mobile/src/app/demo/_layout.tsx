@@ -4,6 +4,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { Colors } from '@/constants/theme';
 import { DemoStrings } from '@/demo/demo-strings';
+import { isGuestPreview } from '@/demo/guest-mode';
 import { enterGuestPreview, exitGuestPreview } from '@/state/demo-session-store';
 import { useAppStrings } from '@/state/locale-store';
 
@@ -19,13 +20,18 @@ import { useAppStrings } from '@/state/locale-store';
  */
 export default function GuestPreviewLayout() {
   const { locale } = useAppStrings();
-  const [ready, setReady] = useState(false);
+  // Opened from the Artist Dashboard's in-place Demo Artist mode (e.g. a demo
+  // campaign's statistics): the dashboard owns that preview, so this stack must
+  // neither reload nor end it.
+  const [ownedElsewhere] = useState(isGuestPreview);
+  const [ready, setReady] = useState(ownedElsewhere);
 
   useEffect(() => {
+    if (ownedElsewhere) return;
     enterGuestPreview();
     setReady(true);
     return () => exitGuestPreview();
-  }, []);
+  }, [ownedElsewhere]);
 
   if (!ready) {
     return (
@@ -44,7 +50,8 @@ export default function GuestPreviewLayout() {
         contentStyle: { backgroundColor: Colors.canvas },
       }}
     >
-      <Stack.Screen name="artist/(dashboard)" options={{ title: DemoStrings[locale].guestDashboardTitle, headerBackVisible: false }} />
+      {/* Back (when there is history) and the dashboard's "Мой кабинет" switch both leave the preview. */}
+      <Stack.Screen name="artist/(dashboard)" options={{ title: DemoStrings[locale].guestDashboardTitle }} />
       <Stack.Screen name="artist/campaign/select-package" options={{ headerShown: false }} />
       <Stack.Screen
         name="artist/campaign/package-details"

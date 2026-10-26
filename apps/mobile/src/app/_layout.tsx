@@ -22,8 +22,15 @@ import { restoreArtistAccount } from '@/state/artist-account-persistence';
 import { loadedFonts } from '@/constants/fonts';
 import { Colors } from '@/constants/theme';
 import { MAX_CONTENT_WIDTH } from '@/hooks/use-content-width';
+import { keepRealWalletAtZero } from '@/state/promo-wallet-rule';
 
 SplashScreen.preventAutoHideAsync();
+
+/** The website opened at the public guest preview (/demo/*). Native has no
+ * `window.location` outside the dev runtime, so this is false there. */
+function isGuestPreviewUrl(): boolean {
+  return typeof window !== 'undefined' && !!window.location?.pathname?.startsWith('/demo');
+}
 
 /**
  * Mmusic is dark-first / dark-only (DESIGN.md; OQ-34). Always use expo-router's
@@ -90,7 +97,7 @@ export default function RootLayout() {
   // state/artist-account-persistence.ts). Runs before the demo session restore
   // so a signed-in demo then takes over; skipped in the guest preview.
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/demo')) return;
+    if (isGuestPreviewUrl()) return;
     restoreArtistAccount();
   }, []);
 
@@ -98,9 +105,13 @@ export default function RootLayout() {
   // Skipped entirely under the public guest preview (/demo/*), which must never
   // read the personal demo account's storage.
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/demo')) return;
+    if (isGuestPreviewUrl()) return;
     useDemoSessionStore.persist.rehydrate();
   }, []);
+
+  // Outside the demo the promo wallet is 0 — the website's rule, shared. After
+  // the two restores above, so a restored demo session keeps its balance.
+  useEffect(() => keepRealWalletAtZero(), []);
 
   const { t } = useAppStrings();
 

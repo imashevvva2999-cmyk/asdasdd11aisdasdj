@@ -64,6 +64,14 @@ const en = {
   readOnly: 'Read-only',
   readOnlyToast: 'Read-only demo preview — this action is disabled',
   guestDashboardTitle: 'Artist Dashboard • Demo preview',
+  // "My dashboard" / "Demo Artist" switch at the top of the Artist Dashboard.
+  modeLabel: 'Dashboard mode',
+  modeReal: 'My dashboard',
+  modeDemo: 'Demo Artist',
+  // A regular artist's Promotion tab before their first campaign.
+  promoNoActive: 'No active campaigns yet',
+  promoNoActiveHint: 'Promote a track — statistics appear once a campaign starts.',
+  promoNoHistory: 'No campaigns yet',
 };
 
 const ru: typeof en = {
@@ -132,6 +140,12 @@ const ru: typeof en = {
   readOnly: 'Только просмотр',
   readOnlyToast: 'Демо-просмотр только для чтения — действие недоступно',
   guestDashboardTitle: 'Кабинет артиста • Демо-просмотр',
+  modeLabel: 'Режим кабинета',
+  modeReal: 'Мой кабинет',
+  modeDemo: 'Demo Artist',
+  promoNoActive: 'Активных кампаний пока нет',
+  promoNoActiveHint: 'Запустите продвижение трека — статистика появится после старта кампании.',
+  promoNoHistory: 'Кампаний пока нет',
 };
 
 export const DemoStrings = { en, ru };

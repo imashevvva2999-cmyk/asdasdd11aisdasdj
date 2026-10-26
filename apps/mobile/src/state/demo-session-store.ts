@@ -7,5 +7,6 @@ export {
   exitGuestPreview,
   useDemoSessionStore,
   useIsDemoArtist,
+  useOwnArtist,
   type DemoSnapshot,
 } from '@mmusic/core/state/demo-session-store';

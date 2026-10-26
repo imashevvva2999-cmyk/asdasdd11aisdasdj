@@ -1,11 +1,10 @@
 // First: configures @mmusic/core storage before any persisted store below is created.
 import '@/platform/storage';
 
-import { isGuestPreview, useGuestPreviewStore } from '@mmusic/core/demo/guest-mode';
 import { restoreArtistAccount } from '@mmusic/core/state/artist-account-persistence';
-import { useCampaignStore } from '@mmusic/core/state/campaign-store';
 import { useDemoSessionStore } from '@mmusic/core/state/demo-session-store';
 import { useProfileAvatarStore } from '@mmusic/core/state/profile-avatar-store';
+import { keepRealWalletAtZero } from '@mmusic/core/state/promo-wallet-rule';
 
 /**
  * Website start-up restores, in the Expo app's order (apps/mobile/src/app/_layout.tsx): the profile avatar, the
@@ -26,14 +25,6 @@ if (!runtime.done && typeof window !== 'undefined') {
     void useDemoSessionStore.persist.rehydrate();
   }
 
-  // The promo wallet's 3 850 сом is the demo account's balance (part of its snapshot). A regular account has no
-  // stored balance and no way to top up, so outside the demo (no guest preview, no demo session) the wallet is 0:
-  // a wallet payment then honestly fails as insufficient, while the simulated MBANK payment keeps working.
-  const keepRealWalletAtZero = () => {
-    if (!isGuestPreview() && !useDemoSessionStore.getState().active && useCampaignStore.getState().walletBalanceKgs !== 0) useCampaignStore.setState({ walletBalanceKgs: 0 });
-  };
+  // Outside the demo the promo wallet is 0 (the shared rule, same as the Expo app).
   keepRealWalletAtZero();
-  useCampaignStore.subscribe(keepRealWalletAtZero);
-  useDemoSessionStore.subscribe(keepRealWalletAtZero);
-  useGuestPreviewStore.subscribe(keepRealWalletAtZero);
 }

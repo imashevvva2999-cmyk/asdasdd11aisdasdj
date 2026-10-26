@@ -53,6 +53,11 @@ function stripAssets(entries: ArtistTrackEntry[]): ArtistTrackEntry[] {
 
 let applying = false;
 
+/** The app's own account (in memory) while the guest preview has replaced it — see exitGuestPreview. */
+let beforeGuestPreview:
+  | { artist: Artist | undefined; entries: ArtistTrackEntry[]; campaign: ReturnType<typeof useCampaignStore.getState> }
+  | undefined;
+
 function applySnapshot(snapshot: DemoSnapshot) {
   applying = true;
   const artist: Artist = { ...snapshot.artist, photoUri: originalArtist?.photoUri ?? snapshot.artist.photoUri };
@@ -135,8 +140,11 @@ export const useDemoSessionStore = create<DemoSessionState>()(
         const snapshot = saved && saved.version === DEMO_FIXTURE_VERSION ? saved : freshSnapshot();
         // Regular artist persistence stops before demo data enters the app stores.
         setArtistPersistencePaused(true);
+        // Active before its data arrives: rules that watch the stores (the regular
+        // account's 0 сом promo wallet) must already see the demo's own balance.
+        set({ active: true });
         applySnapshot(snapshot);
-        set({ active: true, snapshot: captureSnapshot(DEMO_FIXTURE_VERSION) ?? snapshot });
+        set({ snapshot: captureSnapshot(DEMO_FIXTURE_VERSION) ?? snapshot });
       },
 
       signOut: () => {
@@ -189,12 +197,27 @@ export function useIsDemoArtist(): boolean {
 }
 
 /**
+ * The user's own artist profile, also while the guest preview has put the demo
+ * artist into the app stores (the app's Artist Dashboard switches to Demo
+ * Artist in place, over Profile): screens about "me" never show Solaris Echo.
+ */
+export function useOwnArtist(): Artist | undefined {
+  const artist = useArtistStore((s) => s.artist);
+  const guest = useGuestPreviewStore((s) => s.active);
+  return guest ? beforeGuestPreview?.artist : artist;
+}
+
+/**
  * Public Guest Demo Preview (/demo/artist): load a fresh, immutable copy of the
  * Solaris Echo fixture into the in-memory app stores and switch on read-only
  * mode. Touches no browser storage — neither reads nor writes the personal
  * demo account (`mmusic:demo-artist`).
  */
 export function enterGuestPreview() {
+  if (!isGuestPreview()) {
+    const { artist, entries } = useArtistStore.getState();
+    beforeGuestPreview = { artist, entries, campaign: useCampaignStore.getState() };
+  }
   useGuestPreviewStore.setState({ active: true });
   applySnapshot(freshSnapshot());
 }
@@ -205,4 +228,16 @@ export function exitGuestPreview() {
   clearApp();
   useGuestPreviewStore.setState({ active: false });
   restoreArtistAccount();
+  // Where nothing is persisted (the iOS/Android app has no storage) the restore
+  // above finds no account: bring back the one the preview was opened over.
+  const before = beforeGuestPreview;
+  beforeGuestPreview = undefined;
+  if (before?.artist && !useArtistStore.getState().artist) {
+    applying = true;
+    addMockArtist(before.artist);
+    before.entries.filter((e) => e.status === 'published').forEach((e) => addMockTrack(e.track));
+    useArtistStore.setState({ artist: before.artist, entries: before.entries });
+    useCampaignStore.setState(before.campaign);
+    applying = false;
+  }
 }

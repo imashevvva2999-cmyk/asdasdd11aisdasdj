@@ -85,7 +85,7 @@ for (const file of appFiles) {
   importers.push(rel);
   check(`${rel} imports ${hits.join(', ')} only after configuring storage (first import is '@/platform/storage')`, specs[0] === '@/platform/storage');
 }
-const REEXPORTS = ['locale-store', 'profile-avatar-store', 'floating-button-store', 'dashboard-locale-store', 'artist-account-persistence', 'demo-session-store', 'player-store'];
+const REEXPORTS = ['locale-store', 'profile-avatar-store', 'floating-button-store', 'dashboard-locale-store', 'artist-account-persistence', 'demo-session-store', 'player-store', 'promo-wallet-rule'];
 check('the compatibility re-exports in src/state are the only Expo app importers', JSON.stringify(importers.filter((f) => f.startsWith('apps/mobile/')).sort()) === JSON.stringify(REEXPORTS.map((n) => `apps/mobile/src/state/${n}.ts`).sort()));
 const setup = readFileSync(join(MOBILE, 'src', 'platform', 'storage.ts'), 'utf8');
 check('src/platform/storage.ts configures storage at module level', /^configureStorage\(browserLocalStorage\(\)\);$/m.test(setup));
