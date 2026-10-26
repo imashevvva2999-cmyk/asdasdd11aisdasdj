@@ -1,6 +1,9 @@
 import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 
 import { APP_STRINGS, type AppStringKey } from '../lib/i18n';
+import { currentUser } from '../mocks';
+import { appStateStorage, persistedOr } from '../platform/app-state-storage';
 
 export type NotificationTarget =
   | { kind: 'album'; id: string }
@@ -51,12 +54,35 @@ type NotificationsState = {
   clearAll: () => void;
 };
 
-export const useNotificationsStore = create<NotificationsState>((set) => ({
-  items: SEED,
-  markRead: (id) => set((state) => ({ items: state.items.map((item) => (item.id === id ? { ...item, read: true } : item)) })),
-  markAllRead: () => set((state) => ({ items: state.items.map((item) => ({ ...item, read: true })) })),
-  clearAll: () => set({ items: [] }),
-}));
+type SavedNotification = { id: string; read: boolean };
+const isSavedList = (value: unknown): value is SavedNotification[] =>
+  Array.isArray(value) && value.every((v) => !!v && typeof v === 'object' && typeof (v as SavedNotification).id === 'string' && typeof (v as SavedNotification).read === 'boolean');
+
+export const useNotificationsStore = create<NotificationsState>()(
+  persist(
+    (set) => ({
+      items: SEED,
+      markRead: (id) => set((state) => ({ items: state.items.map((item) => (item.id === id ? { ...item, read: true } : item)) })),
+      markAllRead: () => set((state) => ({ items: state.items.map((item) => ({ ...item, read: true })) })),
+      clearAll: () => set({ items: [] }),
+    }),
+    {
+      // Kept across launches by the native app only (platform/app-state-storage.ts):
+      // which fixed demo notifications are read or cleared. Icon and target always
+      // come from SEED; ids it no longer has are dropped.
+      name: `mmusic:notifications:${currentUser.username}`,
+      storage: createJSONStorage(() => appStateStorage),
+      skipHydration: true,
+      partialize: (state) => ({ items: state.items.map(({ id, read }) => ({ id, read })) }),
+      merge: (persisted, current) => {
+        const saved = persistedOr<SavedNotification[] | undefined>(persisted, 'items', isSavedList, undefined);
+        if (!saved) return current;
+        const seed = new Map(SEED.map((item) => [item.id, item]));
+        return { ...current, items: saved.flatMap(({ id, read }) => (seed.has(id) ? [{ ...seed.get(id)!, read }] : [])) };
+      },
+    },
+  ),
+);
 
 export function countUnread(items: DemoNotification[]): number {
   return items.filter((item) => !item.read).length;

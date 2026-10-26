@@ -1,7 +1,9 @@
 import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import { guardStoreActions } from '../demo/guest-mode';
 
-import { initialSupportHistory, type ArtistId, type SupportHistoryEntry } from '../mocks';
+import { currentUser, initialSupportHistory, type ArtistId, type SupportHistoryEntry } from '../mocks';
+import { appStateStorage, isRecordArray, persistedOr } from '../platform/app-state-storage';
 
 export type SupportStage = 'selecting' | 'confirming' | 'processing' | 'success';
 
@@ -35,7 +37,9 @@ type SupportState = {
   reset: () => void;
 };
 
-export const useSupportStore = create<SupportState>((set, get) => ({
+export const useSupportStore = create<SupportState>()(
+  persist(
+    (set, get) => ({
   artistId: undefined,
   amount: undefined,
   currency: 'KGS',
@@ -70,7 +74,21 @@ export const useSupportStore = create<SupportState>((set, get) => ({
   },
 
   reset: () => set({ artistId: undefined, amount: undefined, stage: 'selecting' }),
-}));
+    }),
+    {
+      // Kept across launches by the native app only (platform/app-state-storage.ts):
+      // the donation history; an unfinished donation is not resumed.
+      name: `mmusic:support-history:${currentUser.username}`,
+      storage: createJSONStorage(() => appStateStorage),
+      skipHydration: true,
+      partialize: (state) => ({ history: state.history }),
+      merge: (persisted, current) => ({
+        ...current,
+        history: persistedOr(persisted, 'history', isRecordArray('id', 'artistId', 'createdAt')<SupportHistoryEntry>, current.history),
+      }),
+    },
+  ),
+);
 
 // Guest Demo Preview (/demo/artist) never makes donations/payments.
 guardStoreActions(useSupportStore, ['startSupport', 'selectAmount', 'goToConfirm', 'confirm', 'reset'], { blocked: { confirm: Promise.resolve() } });

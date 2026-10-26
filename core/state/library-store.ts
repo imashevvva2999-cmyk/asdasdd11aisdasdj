@@ -1,6 +1,8 @@
 import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 
-import { libraryItems as seedLibraryItems, type LibraryItem, type LibraryItemKind } from '../mocks';
+import { currentUser, libraryItems as seedLibraryItems, type LibraryItem, type LibraryItemKind } from '../mocks';
+import { appStateStorage, isRecordArray, isStringArray, persistedOr } from '../platform/app-state-storage';
 
 /**
  * Session-local "Your Library" state (frontend functional QA pass). One
@@ -15,9 +17,9 @@ import { libraryItems as seedLibraryItems, type LibraryItem, type LibraryItemKin
  * - `followedGenreIds` backs the genre Follow button (OQ-40 — where followed
  *   genres are listed is still undecided; only the button state is kept).
  *
- * Frontend-only: nothing here is persisted or synced, and "downloaded" is a
- * flag only — no audio is stored offline (real downloads are backend/DRM
- * scope, OQ-21).
+ * Frontend-only: never synced, and "downloaded" is a flag only — no audio is
+ * stored offline (real downloads are backend/DRM scope, OQ-21). Kept across
+ * launches by the native app only (platform/app-state-storage.ts).
  */
 type LibraryState = {
   items: LibraryItem[];
@@ -36,7 +38,9 @@ function newItem(kind: LibraryItemKind, refId: string): LibraryItem {
   return { id: `li-${kind}-${refId}`, kind, refId, addedAt: new Date().toISOString() };
 }
 
-export const useLibraryStore = create<LibraryState>((set, get) => ({
+export const useLibraryStore = create<LibraryState>()(
+  persist(
+    (set, get) => ({
   items: seedLibraryItems,
   downloadedIds: new Set(seedLibraryItems.filter((item) => item.downloaded).map((item) => item.refId)),
   followedGenreIds: new Set(),
@@ -82,4 +86,18 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     }
     set({ followedGenreIds: next });
   },
-}));
+    }),
+    {
+      name: `mmusic:library:${currentUser.username}`,
+      storage: createJSONStorage(() => appStateStorage),
+      skipHydration: true,
+      partialize: (state) => ({ items: state.items, downloadedIds: [...state.downloadedIds], followedGenreIds: [...state.followedGenreIds] }),
+      merge: (persisted, current) => ({
+        ...current,
+        items: persistedOr(persisted, 'items', isRecordArray('id', 'kind', 'refId')<LibraryItem>, current.items),
+        downloadedIds: new Set(persistedOr(persisted, 'downloadedIds', isStringArray, [...current.downloadedIds])),
+        followedGenreIds: new Set(persistedOr(persisted, 'followedGenreIds', isStringArray, [...current.followedGenreIds])),
+      }),
+    },
+  ),
+);

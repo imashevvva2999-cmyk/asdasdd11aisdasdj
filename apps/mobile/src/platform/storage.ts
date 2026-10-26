@@ -8,9 +8,9 @@ import { browserLocalStorage } from './browser-storage';
  * re-export (src/state/*), so storage is configured before any of those stores
  * is created and long before the root layout's client-only rehydrate effects.
  *
- * Same choice the stores made themselves before: the browser's localStorage on
- * web, and no storage (a no-op) on native, during static rendering and when the
- * browser blocks site data.
+ * The browser's localStorage on web; no storage (a no-op) during static
+ * rendering, in Node checks and when the browser blocks site data. iOS and
+ * Android use storage.native.ts instead (Expo's SQLite key-value store).
  */
 
 // Development only: start-up ordering mistakes (a read or write before this

@@ -1,7 +1,12 @@
 import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 
 import type { LocalOrRemoteImage } from '../constants/stitch-artwork';
-import { playlists as seedPlaylists, type Playlist, type PlaylistId, type TrackId } from '../mocks';
+import { currentUser, playlists as seedPlaylists, type Playlist, type PlaylistId, type TrackId } from '../mocks';
+import { appStateStorage, isRecordArray, persistedOr } from '../platform/app-state-storage';
+
+/** Bundle-local images (numeric module ids) are not stable across builds: never stored; a seed playlist gets its cover back from the seed. */
+const storableCover = (cover: Playlist['coverUri']) => (typeof cover === 'number' ? undefined : cover);
 
 export type CreatePlaylistInput = {
   title: string;
@@ -30,7 +35,9 @@ type PlaylistsState = {
   removeTrackFromPlaylist: (playlistId: PlaylistId, trackId: TrackId) => void;
 };
 
-export const usePlaylistsStore = create<PlaylistsState>((set, get) => ({
+export const usePlaylistsStore = create<PlaylistsState>()(
+  persist(
+    (set, get) => ({
   playlists: seedPlaylists,
 
   createPlaylist: ({ title, description, coverUri, isPublic = true, isCollaborative = false, initialTrackId }) => {
@@ -75,4 +82,19 @@ export const usePlaylistsStore = create<PlaylistsState>((set, get) => ({
       }),
     }));
   },
-}));
+    }),
+    {
+      // Kept across launches by the native app only (platform/app-state-storage.ts).
+      name: `mmusic:playlists:${currentUser.username}`,
+      storage: createJSONStorage(() => appStateStorage),
+      skipHydration: true,
+      partialize: (state) => ({ playlists: state.playlists.map((p) => ({ ...p, coverUri: storableCover(p.coverUri) })) }),
+      merge: (persisted, current) => {
+        const saved = persistedOr(persisted, 'playlists', isRecordArray('id', 'title')<Playlist>, current.playlists);
+        if (saved === current.playlists) return current;
+        const seedCover = new Map(seedPlaylists.map((p) => [p.id, p.coverUri]));
+        return { ...current, playlists: saved.map((p) => (p.coverUri === undefined && seedCover.has(p.id) ? { ...p, coverUri: seedCover.get(p.id) } : p)) };
+      },
+    },
+  ),
+);

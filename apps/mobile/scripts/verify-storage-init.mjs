@@ -72,6 +72,7 @@ const reachesStorage = (f, seen = new Set()) => {
 const guarded = new Set(coreFiles.filter((f) => reachesStorage(f)).map((f) => relative(CORE, f).replace(/\.ts$/, '').replace(/\/index$/, '')));
 console.log(`core modules that use the storage adapter: ${[...guarded].sort().join(', ')}`);
 check('the persisted stores are among them', ['state/locale-store', 'state/profile-avatar-store', 'state/floating-button-store', 'state/dashboard-locale-store'].every((m) => guarded.has(m)));
+check('so are the native-only persisted stores', ['state/library-store', 'state/playlists-store', 'state/settings-store', 'state/support-store', 'state/notifications-store'].every((m) => guarded.has(m)));
 
 // --- 2. App files importing them must configure storage first ----------------------
 const coreTarget = (spec) => (spec.startsWith('@mmusic/core/') ? spec.slice('@mmusic/core/'.length).replace(/\.ts$/, '') : null);
@@ -82,13 +83,23 @@ for (const file of appFiles) {
   const hits = specs.filter((s) => guarded.has(coreTarget(s) ?? ''));
   if (!hits.length) continue;
   const rel = relative(REPO, file);
+  // The iOS/Android storage set-up itself (checked below), like src/platform/storage.ts.
+  if (rel === 'apps/mobile/src/platform/storage.native.ts') continue;
   importers.push(rel);
   check(`${rel} imports ${hits.join(', ')} only after configuring storage (first import is '@/platform/storage')`, specs[0] === '@/platform/storage');
 }
-const REEXPORTS = ['locale-store', 'profile-avatar-store', 'floating-button-store', 'dashboard-locale-store', 'artist-account-persistence', 'demo-session-store', 'player-store', 'promo-wallet-rule'];
+const REEXPORTS = [
+  'locale-store', 'profile-avatar-store', 'floating-button-store', 'dashboard-locale-store', 'artist-account-persistence', 'demo-session-store', 'player-store', 'promo-wallet-rule',
+  // Kept across launches on iOS/Android only (core platform/app-state-storage).
+  'library-store', 'playlists-store', 'settings-store', 'support-store', 'notifications-store',
+];
 check('the compatibility re-exports in src/state are the only Expo app importers', JSON.stringify(importers.filter((f) => f.startsWith('apps/mobile/')).sort()) === JSON.stringify(REEXPORTS.map((n) => `apps/mobile/src/state/${n}.ts`).sort()));
 const setup = readFileSync(join(MOBILE, 'src', 'platform', 'storage.ts'), 'utf8');
 check('src/platform/storage.ts configures storage at module level', /^configureStorage\(browserLocalStorage\(\)\);$/m.test(setup));
+const nativeSetup = readFileSync(join(MOBILE, 'src', 'platform', 'storage.native.ts'), 'utf8');
+check('iOS/Android: src/platform/storage.native.ts configures SQLite storage at module level', /^configureStorage\(sqliteKeyValueStorage\(\)\);$/m.test(nativeSetup));
+check('iOS/Android: and enables app-state persistence after it', /^configureStorage\(sqliteKeyValueStorage\(\)\);\nenableAppStatePersistence\(\);$/m.test(nativeSetup));
+check('website / Node: storage.ts never enables app-state persistence', !setup.includes('enableAppStatePersistence'));
 const WEB = join(REPO, 'apps', 'web');
 const webSetup = readFileSync(join(WEB, 'src', 'platform', 'storage.ts'), 'utf8');
 check('website: src/platform/storage.ts configures storage at module level', /^configureStorage\(browserLocalStorage\(\)\);$/m.test(webSetup));

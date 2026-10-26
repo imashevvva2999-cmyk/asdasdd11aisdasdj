@@ -1,4 +1,8 @@
 import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
+
+import { currentUser } from '../mocks';
+import { appStateStorage, isBoolean, isFiniteNumber, persistedOr } from '../platform/app-state-storage';
 
 export const STREAM_QUALITIES = ['Low', 'Normal', 'High'] as const;
 export type StreamQuality = (typeof STREAM_QUALITIES)[number];
@@ -41,7 +45,14 @@ type SettingsState = {
 export type BooleanSettingKey = 'lossless' | 'dolbyAtmos' | 'volumeNormalization' | 'gapless' | 'downloadOverCellular' | 'fastPayAuth' | 'supportReceipts';
 export type QualitySettingKey = 'wifiQuality' | 'cellularQuality' | 'downloadQuality';
 
-export const useSettingsStore = create<SettingsState>((set, get) => ({
+const BOOLEAN_KEYS: BooleanSettingKey[] = ['lossless', 'dolbyAtmos', 'volumeNormalization', 'gapless', 'downloadOverCellular', 'fastPayAuth', 'supportReceipts'];
+const QUALITY_KEYS: QualitySettingKey[] = ['wifiQuality', 'cellularQuality', 'downloadQuality'];
+const NUMBER_KEYS = ['crossfadeSec', 'musicStorageGb', 'cacheGb'] as const;
+const isQuality = (value: unknown): value is StreamQuality => (STREAM_QUALITIES as readonly unknown[]).includes(value);
+
+export const useSettingsStore = create<SettingsState>()(
+  persist(
+    (set, get) => ({
   lossless: true,
   dolbyAtmos: false,
   volumeNormalization: true,
@@ -65,4 +76,22 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   },
   setCrossfade: (sec) => set({ crossfadeSec: Math.max(0, Math.min(12, sec)) }),
   clearCache: () => set({ cacheGb: 0 }),
-}));
+    }),
+    {
+      // Kept across launches by the native app only (platform/app-state-storage.ts).
+      name: `mmusic:settings:${currentUser.username}`,
+      storage: createJSONStorage(() => appStateStorage),
+      skipHydration: true,
+      partialize: (state) => Object.fromEntries([...BOOLEAN_KEYS, ...QUALITY_KEYS, ...NUMBER_KEYS].map((key) => [key, state[key]])),
+      // Field by field: one corrupted value keeps its default, the others still load.
+      merge: (persisted, current) => {
+        const next = { ...current };
+        for (const key of BOOLEAN_KEYS) next[key] = persistedOr(persisted, key, isBoolean, current[key]);
+        for (const key of QUALITY_KEYS) next[key] = persistedOr(persisted, key, isQuality, current[key]);
+        for (const key of NUMBER_KEYS) next[key] = persistedOr(persisted, key, isFiniteNumber, current[key]);
+        next.crossfadeSec = Math.max(0, Math.min(12, next.crossfadeSec));
+        return next;
+      },
+    },
+  ),
+);
