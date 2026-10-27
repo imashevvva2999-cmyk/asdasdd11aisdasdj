@@ -13,6 +13,7 @@
     },
     "android": {
       "package": "com.mmusic.app",
+      "versionCode": 2,
       "adaptiveIcon": {
         "backgroundColor": "#0A0A0C",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
