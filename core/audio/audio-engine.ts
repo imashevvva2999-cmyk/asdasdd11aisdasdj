@@ -33,6 +33,10 @@ export interface AudioEngine {
   setLoop(on: boolean): void;
   /** Subscribes to playback status updates; returns an unsubscribe function. */
   onStatus(listener: (status: EngineStatus) => void): () => void;
+  /** Optional: get these tracks ready in the background (the next/previous in
+   * the queue) so skipping to them starts at once. Engines that stream (the
+   * website) leave it out. */
+  prefetch?(trackIds: TrackId[]): void;
 }
 
 /** Used until an engine is bound (server render, tests that don't need audio). */

@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
 import Animated from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { InsetSafeArea } from '@/components/player/inset-safe-area';
 
 import { hasDemoAudio } from '@/audio/demo-audio';
 import { ArtworkCarousel } from '@/components/player/artwork-carousel';
@@ -69,11 +69,11 @@ export default function NowPlayingScreen() {
   if (!track) {
     return (
       <ThemedView surface="canvas" style={styles.flex}>
-        <SafeAreaView style={styles.emptyState}>
+        <InsetSafeArea style={styles.emptyState}>
           <ThemedText variant="headline-sm" emphasis="medium">
             {t('nothingPlayingLabel')}
           </ThemedText>
-        </SafeAreaView>
+        </InsetSafeArea>
       </ThemedView>
     );
   }
@@ -94,7 +94,7 @@ export default function NowPlayingScreen() {
       <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, backgroundStyle]}>
         <PlayerBackground />
       </Animated.View>
-      <SafeAreaView style={styles.flex}>
+      <InsetSafeArea style={styles.flex}>
         <Animated.View style={[styles.header, chromeStyle]}>
           <IconButton variant="ghost" icon="keyboard-arrow-down" iconSize={28} accessibilityLabel={t('collapsePlayerLabel')} onPress={() => goBack()} />
           <View style={styles.headerCenter}>
@@ -128,10 +128,8 @@ export default function NowPlayingScreen() {
             </ThemedText>
             {/* Inline with the artist so the title block keeps one height for every track. */}
             <View style={styles.artistRow}>
-              <PressableLink
-                label={track.artistName}
-                onPress={() => router.push({ pathname: '/artist/[id]', params: { id: track.artistId } })}
-              />
+              {/* The artist sheet (artist + album, Apple Music style); the full profile is one tap inside it. */}
+              <PressableLink label={track.artistName} onPress={() => router.push({ pathname: '/sheets/now-playing-artist', params: { trackId: track.id } })} />
               {demoAudio && (
                 <PressableScale
                   accessibilityRole="button"
@@ -222,7 +220,7 @@ export default function NowPlayingScreen() {
           <PlayerTabButton label={t('audioTab')} icon="headphones" onPress={() => router.push('/profile/audio-quality')} />
         </View>
         </Animated.View>
-      </SafeAreaView>
+      </InsetSafeArea>
       </Animated.View>
     </GestureDetector>
   );

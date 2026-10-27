@@ -1,6 +1,7 @@
 import { Asset } from 'expo-asset';
 import { createAudioPlayer, setAudioModeAsync, type AudioPlayer, type AudioSample, type AudioSource, type AudioStatus } from 'expo-audio';
 
+import type { TrackId } from '@/mocks';
 import { bindAudioEngine } from '@/state/player-store';
 
 import { STATUS_INTERVAL_MS, type AudioEngine, type EngineStatus } from './audio-engine';
@@ -67,6 +68,14 @@ async function toLocalSource(source: AudioSource): Promise<AudioSource> {
   return { uri: asset.localUri ?? asset.uri };
 }
 
+/** Whether the track's file is already on the device this session (no download needed). */
+function isReady(source: AudioSource | undefined): boolean {
+  return typeof source !== 'number' || Asset.fromModule(source).downloaded;
+}
+
+const now = () => globalThis.performance?.now?.() ?? Date.now();
+const ms = (from: number) => `${Math.round(now() - from)} ms`;
+
 const LOAD_FAILED: Omit<EngineStatus, 'error'> = {
   currentTime: 0,
   duration: 0,
@@ -91,14 +100,47 @@ function createExpoAudioEngine(): AudioEngine {
   let pending = false;
   let wantPlay = false;
   let pendingSeek: number | null = null;
+  // The current track's file; neighbours are prefetched only after it, one at a
+  // time, so they never compete with the track the listener is waiting for.
+  let currentFile: Promise<unknown> = Promise.resolve();
+  let prefetchQueue: TrackId[] = [];
+  let prefetching = false;
+  // Development diagnostics: from the tap (load) to the first "playing" status.
+  let firstPlay: { trackId: TrackId; tapped: number; fileReady: number } | null = null;
 
   player.addListener('playbackStatusUpdate', (status) => {
     // The previous track's updates would show its position for the new one.
     if (pending) return;
     if (status.error && __DEV__) console.warn('[audio] playback error:', status.error);
+    if (__DEV__ && firstPlay && status.playing) {
+      console.log(`[audio] ${firstPlay.trackId}: playing ${ms(firstPlay.fileReady)} after its file was ready, ${ms(firstPlay.tapped)} after the tap`);
+      firstPlay = null;
+    }
     const update = toEngineStatus(status);
     statusListeners.forEach((l) => l(update));
   });
+
+  const runPrefetch = async () => {
+    if (prefetching) return;
+    prefetching = true;
+    try {
+      await currentFile.catch(() => {});
+      for (let id = prefetchQueue.shift(); id; id = prefetchQueue.shift()) {
+        const source = DEMO_SOURCES[id];
+        if (typeof source !== 'number' || isReady(source)) continue;
+        const started = now();
+        try {
+          // The same download a later load() of this track joins (expo-asset shares it).
+          await Asset.fromModule(source).downloadAsync();
+          if (__DEV__) console.log(`[audio] prefetched ${id} in ${ms(started)}`);
+        } catch (err) {
+          if (__DEV__) console.warn(`[audio] prefetch of ${id} failed (it loads on demand instead):`, err);
+        }
+      }
+    } finally {
+      prefetching = false;
+    }
+  };
 
   return {
     load: (trackId) => {
@@ -108,10 +150,18 @@ function createExpoAudioEngine(): AudioEngine {
       pending = true;
       pendingSeek = null;
       player.pause();
-      toLocalSource(source).then(
+      const tapped = now();
+      const cached = isReady(source);
+      const file = toLocalSource(source);
+      currentFile = file;
+      file.then(
         (local) => {
           if (seq !== loadSeq) return;
           pending = false;
+          if (__DEV__) {
+            console.log(`[audio] ${trackId}: file ready in ${ms(tapped)} (${cached ? 'already on the device' : 'downloaded'})`);
+            firstPlay = { trackId, tapped, fileReady: now() };
+          }
           player.replace(local);
           // Re-applied per source: replacing the item may reset the sampling tap.
           applySampling();
@@ -141,6 +191,10 @@ function createExpoAudioEngine(): AudioEngine {
     },
     setLoop: (on) => {
       player.loop = on;
+    },
+    prefetch: (trackIds) => {
+      prefetchQueue = [...trackIds];
+      void runPrefetch();
     },
     onStatus: (listener) => {
       statusListeners.add(listener);

@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -8,7 +8,7 @@ import { DISCOVER_HEADER_HEIGHT, DISCOVER_PLAY_SIZE, DiscoveryFeed, discoverLayo
 import { PlayerBackground } from '@/components/player/player-background';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { CircleButton, IconButton } from '@/components/ui';
+import { CircleButton, IconButton, PressableScale } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useContentWidth } from '@/hooks/use-content-width';
 import { useWindowSize } from '@/hooks/use-window-size';
@@ -157,9 +157,17 @@ export default function DiscoverScreen() {
               <ThemedText variant="headline-md" numberOfLines={1}>
                 {track.title}
               </ThemedText>
-              <ThemedText variant="label-lg" numberOfLines={1} style={styles.onColorMedium}>
-                {track.artistName}
-              </ThemedText>
+              {/* The player's artist sheet, as in Now Playing. */}
+              <PressableScale
+                accessibilityRole="link"
+                accessibilityLabel={track.artistName}
+                hitSlop={8}
+                onPress={() => router.push({ pathname: '/sheets/now-playing-artist', params: { trackId: track.id } })}
+              >
+                <ThemedText variant="label-lg" numberOfLines={1} style={styles.onColorMedium}>
+                  {track.artistName}
+                </ThemedText>
+              </PressableScale>
             </View>
             <CircleButton
               icon={isPlaying ? 'pause' : 'play-arrow'}

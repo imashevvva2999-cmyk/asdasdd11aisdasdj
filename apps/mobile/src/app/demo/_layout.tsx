@@ -47,6 +47,9 @@ export default function GuestPreviewLayout() {
         headerStyle: { backgroundColor: Colors.canvas },
         headerTintColor: Colors.text.high,
         headerShadowVisible: false,
+        // iOS shows the previous screen's title as the back label, and a screen without
+        // one falls back to its route name ("index", "(tabs)"): arrow only, everywhere.
+        headerBackButtonDisplayMode: 'minimal',
         contentStyle: { backgroundColor: Colors.canvas },
       }}
     >

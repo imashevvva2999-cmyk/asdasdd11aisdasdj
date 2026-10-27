@@ -1,7 +1,7 @@
 // First: configures @mmusic/core storage before the persisted player store is used.
 import '@/platform/storage';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 
 import { lyricOpenAccessibilityLabel } from '@mmusic/core/lib/i18n';
@@ -14,6 +14,7 @@ import { Artwork } from '@/components/Artwork';
 import { useAppStrings } from '@/i18n/locale';
 import { EmptyState } from '@/ui';
 
+import { ArtistSheet } from './ArtistSheet';
 import { ProgressRing, Waveform } from './desktop';
 import { PlayButton, Screen, SeekBar, useDocumentTitle, useEscape, useGoBack } from './shared';
 import { usePlayerStrings } from './strings';
@@ -38,7 +39,9 @@ export function NowPlayingPage() {
   const liked = usePlayerStore((s) => (track ? s.likedTrackIds.has(track.id) : false));
   const { next, previous, toggleShuffle, cycleRepeat, toggleLike } = usePlayerStore.getState();
   const goBack = useGoBack('/home');
-  useEscape(goBack);
+  const [artistSheetOpen, setArtistSheetOpen] = useState(false);
+  // While the artist sheet is open, Escape closes the sheet only.
+  useEscape(artistSheetOpen ? noop : goBack);
   useDocumentTitle(track ? `${track.title} — ${track.artistName}` : t('nothingPlayingLabel'));
 
   useEffect(() => {
@@ -96,7 +99,10 @@ export function NowPlayingPage() {
             <div className="np-title">
               <h1 className="ellipsis">{track.title}</h1>
               <p className="ellipsis pl-medium">
-                {track.artistName}
+                {/* The artist sheet (artist + album); the full profile is one click inside it. */}
+                <button type="button" className="np-artist-link ellipsis" aria-haspopup="dialog" onClick={() => setArtistSheetOpen(true)}>
+                  {track.artistName}
+                </button>
                 {track.explicit && <span className="badge-e">E</span>}
               </p>
             </div>
@@ -148,6 +154,9 @@ export function NowPlayingPage() {
           </nav>
         </div>
       </main>
+      {artistSheetOpen && <ArtistSheet track={track} onClose={() => setArtistSheetOpen(false)} />}
     </Screen>
   );
 }
+
+const noop = () => {};

@@ -36,9 +36,17 @@ export function PlayerSubHeader({ active }: { active: PlayerView }) {
               <ThemedText variant="label-lg" numberOfLines={1}>
                 {track.title}
               </ThemedText>
-              <ThemedText variant="body-sm" numberOfLines={1} style={styles.onColorMedium}>
-                {track.artistName}
-              </ThemedText>
+              {/* The player's artist sheet, as in Now Playing. */}
+              <PressableScale
+                accessibilityRole="link"
+                accessibilityLabel={track.artistName}
+                hitSlop={8}
+                onPress={() => router.push({ pathname: '/sheets/now-playing-artist', params: { trackId: track.id } })}
+              >
+                <ThemedText variant="body-sm" numberOfLines={1} style={styles.onColorMedium}>
+                  {track.artistName}
+                </ThemedText>
+              </PressableScale>
             </>
           )}
         </View>

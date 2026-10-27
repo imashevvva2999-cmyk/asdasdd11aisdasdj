@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { InsetSafeArea } from '@/components/player/inset-safe-area';
 
 import { PlayerBackground } from '@/components/player/player-background';
 import { PlayerSubHeader } from '@/components/player/player-subheader';
@@ -55,7 +55,7 @@ export default function QueueScreen() {
   return (
     <View style={styles.flex}>
       <PlayerBackground />
-      <SafeAreaView style={styles.flex}>
+      <InsetSafeArea style={styles.flex}>
         <PlayerSubHeader active="queue" />
 
         <ScrollView style={styles.flex} contentContainerStyle={styles.content}>
@@ -132,7 +132,7 @@ export default function QueueScreen() {
           </View>
         </ScrollView>
         <PlayerTransport />
-      </SafeAreaView>
+      </InsetSafeArea>
     </View>
   );
 }

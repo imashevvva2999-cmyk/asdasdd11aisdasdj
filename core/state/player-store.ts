@@ -153,6 +153,10 @@ export const usePlayerStore = create<PlayerState>()(
       engine.load(id!);
       engine.setLoop(get().repeat === 'one');
       engine.play();
+      // Skipping or swiping to a neighbour then starts without waiting for its file.
+      const { queue } = get();
+      const neighbours = [neighborIndex(1), neighborIndex(-1)].map((i) => (i === undefined ? undefined : queue[i]));
+      engine.prefetch?.(neighbours.filter((n): n is TrackId => n !== undefined && n !== id && hasDemoAudio(n)));
     };
     if (deferMs > 0) {
       engine.pause();

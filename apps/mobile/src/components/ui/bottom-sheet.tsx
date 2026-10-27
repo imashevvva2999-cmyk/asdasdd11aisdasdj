@@ -1,7 +1,9 @@
 import { BlurView } from 'expo-blur';
-import { forwardRef, useEffect, type ReactNode } from 'react';
+import { forwardRef, useEffect, useMemo, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   BottomSheetBackdrop,
@@ -56,7 +58,14 @@ export type SheetScreenProps = {
   children: ReactNode;
   /** Called when the dimmed backdrop is tapped. Defaults to closing the sheet. */
   onDismiss?: () => void;
+  /** 'glass': a frosted, translucent panel over a lighter scrim (the player
+   * stays visible), closed by dragging it down — the contextual player sheets. */
+  variant?: 'default' | 'glass';
 };
+
+/** Drag distance or release speed that closes a glass sheet. */
+const DISMISS_DISTANCE = 80;
+const DISMISS_VELOCITY = 800;
 
 /**
  * Route-level bottom drawer for the `sheets/*` screens (presented as a
@@ -65,32 +74,57 @@ export type SheetScreenProps = {
  * hairline top highlight and drag handle — the Stitch sheet shape (S-18…S-21).
  * Height follows the content, capped at 90% of the screen.
  */
-export function SheetScreen({ children, onDismiss }: SheetScreenProps) {
+export function SheetScreen({ children, onDismiss, variant = 'default' }: SheetScreenProps) {
   const insets = useSafeAreaInsets();
   const reduceMotion = useReducedMotion();
   const { t } = useAppStrings();
+  const glass = variant === 'glass';
+  const dismiss = onDismiss ?? (() => goBack());
   // Opening motion: the backdrop fades in while the panel rises into place.
   const open = useSharedValue(reduceMotion ? 1 : 0);
+  // Glass sheets follow a downward drag; released far or fast enough, they close.
+  const drag = useSharedValue(0);
   useEffect(() => {
-    if (!reduceMotion) open.value = withTiming(1, { duration: 260, easing: Easing.out(Easing.cubic) });
+    if (!reduceMotion) open.set(withTiming(1, { duration: 260, easing: Easing.out(Easing.cubic) }));
   }, [open, reduceMotion]);
-  const scrimStyle = useAnimatedStyle(() => ({ opacity: open.value }));
-  const panelStyle = useAnimatedStyle(() => ({ transform: [{ translateY: (1 - open.value) * 48 }], opacity: 0.4 + open.value * 0.6 }));
+  const scrimStyle = useAnimatedStyle(() => ({ opacity: open.get() * (1 - Math.min(drag.get() / 400, 0.6)) }));
+  const panelStyle = useAnimatedStyle(() => ({ transform: [{ translateY: (1 - open.get()) * 48 + drag.get() }], opacity: 0.4 + open.get() * 0.6 }));
+
+  const pan = useMemo(
+    () =>
+      Gesture.Pan()
+        .enabled(glass)
+        .activeOffsetY(8)
+        .onUpdate((e) => {
+          drag.set(Math.max(0, e.translationY));
+        })
+        .onEnd((e) => {
+          if (e.translationY > DISMISS_DISTANCE || e.velocityY > DISMISS_VELOCITY) {
+            if (reduceMotion) {
+              scheduleOnRN(dismiss);
+              return;
+            }
+            drag.set(withTiming(600, { duration: 200, easing: Easing.in(Easing.quad) }, (finished) => finished && scheduleOnRN(dismiss)));
+          } else {
+            drag.set(reduceMotion ? 0 : withTiming(0, { duration: 180, easing: Easing.out(Easing.cubic) }));
+          }
+        }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [glass, reduceMotion, onDismiss],
+  );
 
   return (
     <View style={sheetStyles.root}>
       <Animated.View style={[sheetStyles.scrimLayer, scrimStyle]}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t('closeLabel')}
-          style={sheetStyles.scrim}
-          onPress={onDismiss ?? (() => goBack())}
-        />
+        <Pressable accessibilityRole="button" accessibilityLabel={t('closeLabel')} style={[sheetStyles.scrim, glass && sheetStyles.scrimGlass]} onPress={dismiss} />
       </Animated.View>
-      <Animated.View style={[sheetStyles.panel, { paddingBottom: Math.max(insets.bottom, Spacing.lg) }, panelStyle]}>
-        <View style={sheetStyles.handle} />
-        {children}
-      </Animated.View>
+      <GestureDetector gesture={pan}>
+        <Animated.View style={[sheetStyles.panel, glass && sheetStyles.panelGlass, { paddingBottom: Math.max(insets.bottom, Spacing.lg) }, panelStyle]}>
+          {glass && <BlurView intensity={blur.overlay} tint="dark" style={StyleSheet.absoluteFill} />}
+          <View style={sheetStyles.handle} />
+          {children}
+        </Animated.View>
+      </GestureDetector>
     </View>
   );
 }
@@ -115,6 +149,7 @@ const sheetStyles = StyleSheet.create({
     left: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
   },
+  scrimGlass: { backgroundColor: 'rgba(0, 0, 0, 0.32)' },
   panel: {
     maxHeight: '90%',
     backgroundColor: Colors.surface.l1,
@@ -124,6 +159,8 @@ const sheetStyles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.1)',
     overflow: 'hidden',
   },
+  // Frosted: the blur shows through a translucent surface (the website's .glass).
+  panelGlass: { backgroundColor: 'rgba(20, 20, 24, 0.55)', borderColor: 'rgba(255, 255, 255, 0.14)' },
   handle: {
     alignSelf: 'center',
     width: 40,

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useReducedMotion } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { InsetSafeArea } from '@/components/player/inset-safe-area';
 
 import { PlayerBackground } from '@/components/player/player-background';
 import { PlayerSubHeader } from '@/components/player/player-subheader';
@@ -36,7 +36,7 @@ export default function LyricsScreen() {
   return (
     <View style={styles.flex}>
       <PlayerBackground />
-      <SafeAreaView style={styles.flex}>
+      <InsetSafeArea style={styles.flex}>
         <PlayerSubHeader active="lyrics" />
         {state.kind === 'synced' ? (
           <SyncedLyrics lines={state.lines} sample={state.source === 'sample'} progressMs={progressSec * 1000} />
@@ -46,7 +46,7 @@ export default function LyricsScreen() {
           </View>
         )}
         <PlayerTransport />
-      </SafeAreaView>
+      </InsetSafeArea>
     </View>
   );
 }
