@@ -1,6 +1,6 @@
 import { BlurView } from 'expo-blur';
 import { forwardRef, useEffect, useMemo, type ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
@@ -63,6 +63,11 @@ export type SheetScreenProps = {
   variant?: 'default' | 'glass';
 };
 
+/** expo-blur blurs on iOS and the web; on Android (without its experimental
+ * blur method) BlurView is only a translucent tint, so a translucent glass
+ * panel would let the screen underneath show through its text. */
+const BLUR_WORKS = Platform.OS !== 'android';
+
 /** Drag distance or release speed that closes a glass sheet. */
 const DISMISS_DISTANCE = 80;
 const DISMISS_VELOCITY = 800;
@@ -119,8 +124,10 @@ export function SheetScreen({ children, onDismiss, variant = 'default' }: SheetS
         <Pressable accessibilityRole="button" accessibilityLabel={t('closeLabel')} style={[sheetStyles.scrim, glass && sheetStyles.scrimGlass]} onPress={dismiss} />
       </Animated.View>
       <GestureDetector gesture={pan}>
-        <Animated.View style={[sheetStyles.panel, glass && sheetStyles.panelGlass, { paddingBottom: Math.max(insets.bottom, Spacing.lg) }, panelStyle]}>
-          {glass && <BlurView intensity={blur.overlay} tint="dark" style={StyleSheet.absoluteFill} />}
+        <Animated.View
+          style={[sheetStyles.panel, glass && (BLUR_WORKS ? sheetStyles.panelGlass : sheetStyles.panelGlassSolid), { paddingBottom: Math.max(insets.bottom, Spacing.lg) }, panelStyle]}
+        >
+          {glass && BLUR_WORKS && <BlurView intensity={blur.overlay} tint="dark" style={StyleSheet.absoluteFill} />}
           <View style={sheetStyles.handle} />
           {children}
         </Animated.View>
@@ -161,6 +168,8 @@ const sheetStyles = StyleSheet.create({
   },
   // Frosted: the blur shows through a translucent surface (the website's .glass).
   panelGlass: { backgroundColor: 'rgba(20, 20, 24, 0.55)', borderColor: 'rgba(255, 255, 255, 0.14)' },
+  // Android: the same dark glass colour, nearly opaque (no real blur there).
+  panelGlassSolid: { backgroundColor: 'rgba(24, 24, 28, 0.97)', borderColor: 'rgba(255, 255, 255, 0.14)' },
   handle: {
     alignSelf: 'center',
     width: 40,
