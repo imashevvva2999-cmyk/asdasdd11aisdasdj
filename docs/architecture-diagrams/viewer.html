@@ -1,0 +1,824 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mmusic — архитектура экосистемы</title>
+<style>
+  /*
+    Единая палитра: цвет = идентичность приложения (одинаково во всех диаграммах).
+    mobile = синий, web = зелёный, arm = оранжевый, crm = фиолетовый,
+    shared/storage = серый/бирюзовый (общие пакеты), future = жёлтый пунктир
+    (запланировано / не реализовано / не проверяемо — везде одинаковый смысл),
+    bank = розовый пунктир (внешняя система банка, диаграмма 5),
+    verified/local = отдельная шкала статуса деплоя (диаграмма 4).
+  */
+  :root {
+    --bg: #0a0c10;
+    --panel: #12151c;
+    --panel-2: #171b24;
+    --panel-border: #262c3d;
+    --text: #eef1f7;
+    --muted: #9aa3b8;
+    --accent: #ff5a5a;
+    --mobile: #4d9fff;
+    --web: #4ade80;
+    --arm: #fb923c;
+    --crm: #c084fc;
+    --future: #f59e0b;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    font-size: 17px;
+    line-height: 1.6;
+  }
+
+  header {
+    padding: 26px 28px 18px;
+    border-bottom: 1px solid var(--panel-border);
+    position: sticky;
+    top: 0;
+    background: rgba(10,12,16,0.92);
+    backdrop-filter: blur(8px);
+    z-index: 20;
+  }
+  header h1 {
+    margin: 0 0 6px;
+    font-size: 1.55rem;
+    font-weight: 680;
+    letter-spacing: -0.01em;
+  }
+  header p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.92rem;
+  }
+
+  nav {
+    display: flex;
+    gap: 10px;
+    padding: 16px 28px 0;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+  nav::-webkit-scrollbar { height: 6px; }
+  nav::-webkit-scrollbar-thumb { background: var(--panel-border); border-radius: 3px; }
+  nav button {
+    flex: 0 0 auto;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    color: var(--muted);
+    padding: 11px 18px;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 540;
+    cursor: pointer;
+    transition: all .15s ease;
+    white-space: nowrap;
+  }
+  nav button:hover { color: var(--text); border-color: #3a4160; }
+  nav button.active {
+    color: #fff;
+    border-color: var(--accent);
+    background: rgba(255,90,90,0.14);
+  }
+
+  main { padding: 22px 28px 70px; max-width: 1480px; margin: 0 auto; }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .panel-head {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .panel-head h2 { margin: 0; font-size: 1.35rem; font-weight: 640; }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 5px 11px;
+    border-radius: 100px;
+    border: 1px solid transparent;
+  }
+  .badge.current { background: rgba(74,222,128,0.14); color: #86f0ab; border-color: rgba(74,222,128,0.35); }
+  .badge.planned { background: rgba(245,158,11,0.14); color: #ffcd7a; border-color: rgba(245,158,11,0.4); }
+  .badge.mixed   { background: rgba(77,159,255,0.14); color: #9cc6ff; border-color: rgba(77,159,255,0.4); }
+
+  .desc {
+    color: var(--muted);
+    font-size: 0.95rem;
+    margin: 6px 0 18px;
+    max-width: 880px;
+    line-height: 1.55;
+  }
+  .desc code { color: #7fd1ff; background: rgba(127,209,255,0.08); padding: 1px 6px; border-radius: 5px; font-size: 0.9em; }
+
+  .diagram-card {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--panel-border);
+    background: var(--panel-2);
+  }
+  .toolbar .spacer { flex: 1; }
+  .toolbar button {
+    background: #1d2130;
+    border: 1px solid var(--panel-border);
+    color: var(--text);
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all .12s ease;
+  }
+  .toolbar button.wide { width: auto; padding: 0 14px; font-size: 0.82rem; font-weight: 600; letter-spacing: 0.01em; }
+  .toolbar button:hover { background: #262c3f; border-color: #424a68; }
+  .toolbar .hint { color: var(--muted); font-size: 0.78rem; }
+
+  .diagram-wrap {
+    position: relative;
+    background:
+      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px) 0 0/28px 28px,
+      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px) 0 0/28px 28px,
+      #07080b;
+    height: 68vh;
+    min-height: 420px;
+    overflow: hidden;
+    cursor: grab;
+    touch-action: none;
+  }
+  .diagram-wrap.dragging { cursor: grabbing; }
+  .diagram-wrap svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: 0 0;
+    max-width: none !important;
+    user-select: none;
+  }
+  .diagram-wrap .mermaid-loading {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--muted); font-size: 0.9rem;
+  }
+
+  .diagram-card:fullscreen,
+  .diagram-card:-webkit-full-screen {
+    border-radius: 0;
+  }
+  .diagram-card:fullscreen .diagram-wrap,
+  .diagram-card:-webkit-full-screen .diagram-wrap {
+    height: calc(100vh - 54px);
+  }
+
+  .legend {
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+    font-size: 0.82rem;
+    color: var(--muted);
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .dot { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+
+  .notes {
+    margin-top: 18px;
+    font-size: 0.92rem;
+    color: var(--muted);
+    line-height: 1.65;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 12px;
+    padding: 16px 20px;
+  }
+  .notes b { color: var(--text); }
+  .notes code { color: #7fd1ff; background: rgba(127,209,255,0.08); padding: 1px 6px; border-radius: 5px; font-size: 0.88em; }
+
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.8rem;
+    padding: 26px 0 46px;
+  }
+
+  @media (max-width: 720px) {
+    body { font-size: 16px; }
+    header, main { padding-left: 16px; padding-right: 16px; }
+    nav { padding-left: 16px; padding-right: 16px; }
+    .diagram-wrap { height: 58vh; }
+    .panel-head h2 { font-size: 1.15rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Mmusic — архитектура экосистемы</h1>
+  <p>4 приложения · анализ фактического кода + утверждённого ТЗ, 2026-10-22 · цвет = приложение, жёлтый пунктир = запланировано/не реализовано</p>
+</header>
+
+<nav>
+  <button data-target="dexec" class="active">0. Для руководства</button>
+  <button data-target="d1">1. Обзор экосистемы</button>
+  <button data-target="d2">2. Техническая архитектура</button>
+  <button data-target="d3">3. Поток данных</button>
+  <button data-target="dfuture">5. Целевая архитектура</button>
+  <button data-target="d4">4. Деплой</button>
+</nav>
+
+<main>
+
+  <!-- 0. EXECUTIVE OVERVIEW -->
+  <section class="panel active" id="dexec">
+    <div class="panel-head">
+      <h2>Обзор для руководства</h2>
+      <span class="badge current">текущее · упрощено</span>
+    </div>
+    <p class="desc">Без технических терминов: кто и чем пользуется сегодня. Подробности — на следующих вкладках.</p>
+    <div class="diagram-card">
+      <div class="toolbar" data-for="dexec">
+        <button data-action="zoomout" title="Уменьшить">−</button>
+        <button data-action="zoomin" title="Увеличить">+</button>
+        <button class="wide" data-action="fit" title="Вписать в экран">Вписать</button>
+        <div class="spacer"></div>
+        <span class="hint">перетаскивайте мышью, колесо мыши — зум</span>
+        <button class="wide" data-action="fullscreen" title="Полный экран">Экран</button>
+      </div>
+      <div class="diagram-wrap" id="wrap-dexec"><div class="mermaid" id="mmd-dexec"></div></div>
+    </div>
+    <div class="legend">
+      <span><i class="dot" style="background:var(--mobile)"></i>Mobile</span>
+      <span><i class="dot" style="background:var(--web)"></i>Website</span>
+      <span><i class="dot" style="background:var(--arm)"></i>ARM</span>
+      <span><i class="dot" style="background:var(--crm)"></i>CRM</span>
+    </div>
+  </section>
+
+  <!-- 1. ECOSYSTEM OVERVIEW -->
+  <section class="panel" id="d1">
+    <div class="panel-head">
+      <h2>Диаграмма 1 — обзор экосистемы</h2>
+      <span class="badge current">текущее</span>
+    </div>
+    <p class="desc">Четыре приложения связаны только общими пакетами монорепозитория, а не общим backend. Mobile+Website делят <code>@mmusic/core</code>; ARM+CRM делят <code>@mmusic/backoffice</code>. Единственное, что связывает все четыре — <code>@mmusic/ui-kit</code>.</p>
+    <div class="diagram-card">
+      <div class="toolbar" data-for="d1">
+        <button data-action="zoomout" title="Уменьшить">−</button>
+        <button data-action="zoomin" title="Увеличить">+</button>
+        <button class="wide" data-action="fit" title="Вписать в экран">Вписать</button>
+        <div class="spacer"></div>
+        <button class="wide" data-action="fullscreen" title="Полный экран">Экран</button>
+      </div>
+      <div class="diagram-wrap" id="wrap-d1"><div class="mermaid" id="mmd-d1"></div></div>
+    </div>
+    <div class="legend">
+      <span><i class="dot" style="background:var(--mobile)"></i>Mobile</span>
+      <span><i class="dot" style="background:var(--web)"></i>Website</span>
+      <span><i class="dot" style="background:var(--arm)"></i>ARM</span>
+      <span><i class="dot" style="background:var(--crm)"></i>CRM</span>
+      <span><i class="dot" style="background:#888"></i>Общие пакеты</span>
+      <span><i class="dot" style="background:#3a3a3a;border:1px dashed var(--future)"></i>Не используется сегодня</span>
+    </div>
+  </section>
+
+  <!-- 2. TECHNICAL ARCHITECTURE -->
+  <section class="panel" id="d2">
+    <div class="panel-head">
+      <h2>Диаграмма 2 — техническая архитектура</h2>
+      <span class="badge current">текущее</span>
+    </div>
+    <p class="desc">Точные версии стека, state management и два независимых слоя персистентности (mobile/web vs ARM/CRM) — без общей базы данных.</p>
+    <div class="diagram-card">
+      <div class="toolbar" data-for="d2">
+        <button data-action="zoomout" title="Уменьшить">−</button>
+        <button data-action="zoomin" title="Увеличить">+</button>
+        <button class="wide" data-action="fit" title="Вписать в экран">Вписать</button>
+        <div class="spacer"></div>
+        <button class="wide" data-action="fullscreen" title="Полный экран">Экран</button>
+      </div>
+      <div class="diagram-wrap" id="wrap-d2"><div class="mermaid" id="mmd-d2"></div></div>
+    </div>
+  </section>
+
+  <!-- 3. DATA FLOW -->
+  <section class="panel" id="d3">
+    <div class="panel-head">
+      <h2>Диаграмма 3 — поток данных</h2>
+      <span class="badge mixed">текущее + запланированное</span>
+    </div>
+    <p class="desc">Сплошные цветные блоки — изолированные данные каждого приложения сегодня. Жёлтая пунктирная зона «Planned» — то, что задокументировано в <code>docs/architecture.md</code> как цель backend-вехи (не начата).</p>
+    <div class="diagram-card">
+      <div class="toolbar" data-for="d3">
+        <button data-action="zoomout" title="Уменьшить">−</button>
+        <button data-action="zoomin" title="Увеличить">+</button>
+        <button class="wide" data-action="fit" title="Вписать в экран">Вписать</button>
+        <div class="spacer"></div>
+        <button class="wide" data-action="fullscreen" title="Полный экран">Экран</button>
+      </div>
+      <div class="diagram-wrap" id="wrap-d3"><div class="mermaid" id="mmd-d3"></div></div>
+    </div>
+  </section>
+
+  <!-- 5. FUTURE ARCHITECTURE (TO-BE) -->
+  <section class="panel" id="dfuture">
+    <div class="panel-head">
+      <h2>Диаграмма 5 — целевая архитектура (TO-BE)</h2>
+      <span class="badge planned">запланировано · не реализовано</span>
+    </div>
+    <p class="desc">Основано на уже утверждённых разделах <code>docs/architecture.md</code> (§1, §3, §5, §6) и <code>docs/technical-specification.md</code> §3.19 — общий backend, собственная БД Mmusic, авторизация через MBANK, донаты через MBANK Payments API. Это существующий одобренный план, а не предложение этого анализа; его реализация отложена до отдельного одобрения backend-вехи.</p>
+    <div class="diagram-card">
+      <div class="toolbar" data-for="dfuture">
+        <button data-action="zoomout" title="Уменьшить">−</button>
+        <button data-action="zoomin" title="Увеличить">+</button>
+        <button class="wide" data-action="fit" title="Вписать в экран">Вписать</button>
+        <div class="spacer"></div>
+        <button class="wide" data-action="fullscreen" title="Полный экран">Экран</button>
+      </div>
+      <div class="diagram-wrap" id="wrap-dfuture"><div class="mermaid" id="mmd-dfuture"></div></div>
+    </div>
+    <div class="legend">
+      <span><i class="dot" style="background:var(--mobile)"></i>Mobile</span>
+      <span><i class="dot" style="background:var(--web)"></i>Website</span>
+      <span><i class="dot" style="background:var(--arm)"></i>ARM</span>
+      <span><i class="dot" style="background:var(--crm)"></i>CRM</span>
+      <span><i class="dot" style="background:#3a2a10;border:1px dashed var(--future)"></i>Backend / данные — не реализовано</span>
+      <span><i class="dot" style="background:#2a1420;border:1px dashed #f472b6"></i>MBANK (внешняя система банка)</span>
+    </div>
+  </section>
+
+  <!-- 4. DEPLOYMENT -->
+  <section class="panel" id="d4">
+    <div class="panel-head">
+      <h2>Диаграмма 4 — архитектура деплоя</h2>
+      <span class="badge mixed">текущее (непроверяемое отмечено)</span>
+    </div>
+    <p class="desc">Только <code>apps/mobile</code> имеет закоммиченную Vercel-конфигурацию. Git <code>origin/main</code> отстаёт от локальной работы. Нет CI/CD.</p>
+    <div class="diagram-card">
+      <div class="toolbar" data-for="d4">
+        <button data-action="zoomout" title="Уменьшить">−</button>
+        <button data-action="zoomin" title="Увеличить">+</button>
+        <button class="wide" data-action="fit" title="Вписать в экран">Вписать</button>
+        <div class="spacer"></div>
+        <button class="wide" data-action="fullscreen" title="Полный экран">Экран</button>
+      </div>
+      <div class="diagram-wrap" id="wrap-d4"><div class="mermaid" id="mmd-d4"></div></div>
+    </div>
+  </section>
+
+  <div class="notes" id="notes"></div>
+</main>
+
+<footer>Mmusic · docs/architecture-diagrams · сгенерировано из анализа кода и утверждённого ТЗ, ничего в приложениях не изменено</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: 'dark',
+    securityLevel: 'loose',
+    fontFamily: 'inherit',
+    themeVariables: { fontSize: '17px' },
+    flowchart: { htmlLabels: true, curve: 'basis', nodeSpacing: 60, rankSpacing: 85, padding: 18, subGraphTitleMargin: { top: 12, bottom: 14 } }
+  });
+
+  const diagrams = {
+    dexec: `flowchart TB
+  classDef mobile fill:#1e3a5f,stroke:#4d9fff,color:#e8f0ff
+  classDef web fill:#1f3d2e,stroke:#4ade80,color:#e8fff0
+  classDef arm fill:#4a2e12,stroke:#fb923c,color:#fff4e8
+  classDef crm fill:#3a1f4d,stroke:#c084fc,color:#f5e8ff
+  classDef people fill:#20242b,stroke:#64748b,color:#e7eaf1
+  classDef note fill:#1a1a1a,stroke:#555,color:#aaa
+
+  LISTENERS(["Слушатели музыки"]):::people
+  STAFF(["Внутренняя команда"]):::people
+
+  MOBILE["Mmusic Mobile<br/>мобильное приложение"]:::mobile
+  WEBSITE["Mmusic Website<br/>сайт"]:::web
+  ARM["ARM<br/>модерация и управление"]:::arm
+  CRM["CRM<br/>работа с артистами"]:::crm
+
+  LISTENERS --> MOBILE
+  LISTENERS --> WEBSITE
+  STAFF --> ARM
+  STAFF --> CRM
+
+  NOTE["Сегодня это четыре отдельных приложения с собственными демо-данными.<br/>Общего сервера и общей базы данных пока нет."]:::note`,
+
+    d1: `flowchart TB
+  classDef mobile fill:#1e3a5f,stroke:#4d9fff,color:#e8f0ff
+  classDef web fill:#1f3d2e,stroke:#4ade80,color:#e8fff0
+  classDef arm fill:#4a2e12,stroke:#fb923c,color:#fff4e8
+  classDef crm fill:#3a1f4d,stroke:#c084fc,color:#f5e8ff
+  classDef shared fill:#2a2a2a,stroke:#9ca3af,color:#f0f0f0
+  classDef future stroke-dasharray: 6 4,stroke:#f59e0b,color:#ffe8c8,fill:#2a1f10
+
+  subgraph ConsumerApps["Приложения для слушателей"]
+    MOBILE["Mmusic Mobile<br/>Expo / React Native<br/>apps/mobile"]:::mobile
+    WEB["Mmusic Website<br/>Vite + React<br/>apps/web"]:::web
+  end
+
+  subgraph BackOfficeApps["Внутренние back-office приложения"]
+    ARM["ARM<br/>рабочее место администратора/модератора<br/>apps/arm"]:::arm
+    CRM["CRM<br/>работа с артистами и организациями<br/>apps/crm"]:::crm
+  end
+
+  subgraph Shared["Общие основы (pnpm workspace)"]
+    CORE["@mmusic/core<br/>мок-каталог, аудио-движок,<br/>zustand-сторы, storage-адаптер"]:::shared
+    UIKIT["@mmusic/ui-kit<br/>дизайн-токены, WebGL-визуалы,<br/>веб-компоненты, иконки"]:::shared
+    BACKOFFICE["@mmusic/backoffice<br/>RBAC, i18n, демо-данные,<br/>собственный storage-слой"]:::shared
+  end
+
+  subgraph BackendNotUsed["Backend — не используется ни одним приложением сегодня"]
+    API["apps/api — NestJS<br/>только hello-world + /health<br/>нереализованная заготовка"]:::future
+  end
+
+  MOBILE --> CORE & UIKIT
+  WEB --> CORE & UIKIT
+  ARM --> BACKOFFICE & UIKIT
+  CRM --> BACKOFFICE & UIKIT`,
+
+    d2: `flowchart TB
+  classDef mobile fill:#1e3a5f,stroke:#4d9fff,color:#e8f0ff
+  classDef web fill:#1f3d2e,stroke:#4ade80,color:#e8fff0
+  classDef arm fill:#4a2e12,stroke:#fb923c,color:#fff4e8
+  classDef crm fill:#3a1f4d,stroke:#c084fc,color:#f5e8ff
+  classDef shared fill:#2a2a2a,stroke:#9ca3af,color:#f0f0f0
+  classDef storage fill:#102a28,stroke:#2dd4bf,color:#e0fff8
+  classDef future stroke-dasharray: 6 4,stroke:#f59e0b,color:#ffe8c8,fill:#2a1f10
+
+  subgraph Apps["Четыре приложения"]
+    direction LR
+    M["Mmusic Mobile<br/>Expo ~57 · React Native 0.86.3<br/>React 19.2.3 · Expo Router<br/>Zustand 5.0.15 · Reanimated 4.5.1<br/>build: expo export --platform web<br/>dev :8081"]:::mobile
+    W["Mmusic Website<br/>React 19.2.3 · Vite 8.3.2<br/>react-router 7.18.4 · TS 6.0.3 · Zustand 5<br/>dev :5180 / preview :5181"]:::web
+    A["ARM<br/>React 19.2.3 · Vite 8.3.2 · react-router 7.18.4<br/>Zustand 5 · без авторизации, без backend<br/>dev :5182 / preview :5183"]:::arm
+    C["CRM<br/>React 19.2.3 · Vite 8.3.2 · react-router 7.18.4<br/>Zustand 5 · без авторизации, без backend<br/>dev :5184 / preview :5185"]:::crm
+  end
+
+  subgraph SharedPkgs["Общие пакеты"]
+    direction LR
+    CORE["@mmusic/core<br/>чистый TS, без DOM/RN<br/>constants · lib · mocks<br/>audio · demo · promotion<br/>state (zustand-сторы)<br/>platform/storage-адаптер"]:::shared
+    UIKIT["@mmusic/ui-kit<br/>tokens · visuals (WebGL)<br/>web (DOM-компоненты,<br/>встроенные иконки)"]:::shared
+    BO["@mmusic/backoffice<br/>типы домена · RBAC (useRole)<br/>i18n · мок seed-данные<br/>свой storage · только ui-kit"]:::shared
+  end
+
+  subgraph Persistence["Хранение данных — только на клиенте, базы данных нет"]
+    direction LR
+    LS1["localStorage через core/platform/storage.ts<br/>mmusic:artist-account:&lt;user&gt;<br/>mmusic:liked-tracks:&lt;user&gt;<br/>mmusic:locale · mmusic:demo-artist"]:::storage
+    LS2["localStorage через packages/backoffice/storage.ts<br/>(другой, отдельный адаптер)<br/>CRM data v6 / ARM data v5"]:::storage
+  end
+
+  subgraph Backend["Backend — не реализован"]
+    API["apps/api — NestJS 12 (Express)<br/>6 файлов: hello-world GET /<br/>+ заглушка /health<br/>нет БД, нет роутов, нет авторизации"]:::future
+    PAY["mobile-only: EXPO_PUBLIC_PAYMENTS_API_URL<br/>живой MBANK-адаптер платежей —<br/>переменная не задана"]:::future
+  end
+
+  M --> CORE & UIKIT
+  W --> CORE & UIKIT
+  A --> BO & UIKIT
+  C --> BO & UIKIT
+
+  CORE --> LS1
+  BO --> LS2
+
+  M -.->|"не настроено"| PAY
+  PAY -.->|"вызвал бы"| API`,
+
+    d3: `flowchart TB
+  classDef mobile fill:#1e3a5f,stroke:#4d9fff,color:#e8f0ff
+  classDef web fill:#1f3d2e,stroke:#4ade80,color:#e8fff0
+  classDef arm fill:#4a2e12,stroke:#fb923c,color:#fff4e8
+  classDef crm fill:#3a1f4d,stroke:#c084fc,color:#f5e8ff
+  classDef future stroke-dasharray: 6 4,stroke:#f59e0b,color:#ffe8c8,fill:#2a1f10
+  classDef note fill:#1a1a1a,stroke:#555,color:#aaa
+
+  NOTE["Сегодня нет общего API, базы данных или сессии авторизации<br/>между Mobile, Website, ARM и CRM.<br/>Каждый блок ниже — изолированный локальный/мок контур данных."]:::note
+
+  M["Mobile<br/>core/mocks каталог + localStorage<br/>(лайки, locale, artist-account)"]:::mobile
+  W["Website<br/>core/mocks каталог + localStorage<br/>(лайки, locale, artist-account)"]:::web
+  AR["ARM<br/>backoffice seed/migrate (data v5)<br/>staff, roles, матрица прав"]:::arm
+  CR["CRM<br/>backoffice seed/migrate (data v6)<br/>артисты, группы, организации, сделки"]:::crm
+
+  subgraph Planned["ЗАПЛАНИРОВАНО — docs/architecture.md (Фазы 8-9, не начата)"]
+    AUTH["auth: MBANK IdP ↔ сессия Mmusic"]:::future
+    CATALOG["catalog: собственная БД Mmusic (PostgreSQL)"]:::future
+    MOD["модерация/проверка загруженных треков<br/>(роли и процесс не определены - OQ-49)"]:::future
+    PLAY["playback: подписанные CDN-ссылки"]:::future
+    DON["donations: MBANK Payments API<br/>+ биометрическое подтверждение"]:::future
+    AN["analytics → выгрузка в системы банка"]:::future
+  end
+
+  M -.->|"future: вход через банк"| AUTH
+  W -.->|"future: вход через банк"| AUTH
+  M -.->|"future: Upload Track S-28"| CATALOG
+  W -.->|"future: Upload Track S-28"| CATALOG
+  AR -.->|"ARM — прототип для Admin Panel FR-19.1"| MOD
+  CATALOG -.-> MOD
+  MOD -.->|"future: одобренный трек"| CATALOG
+  CATALOG -.-> PLAY
+  M -.->|"future: Support / донат"| DON
+  W -.->|"future: Support / донат"| DON
+  M -.-> AN
+  CR -.->|"модель CRM не описана в архитектуре — доп. прототип вне ТЗ"| MOD`,
+
+    dfuture: `flowchart TB
+  classDef mobile fill:#1e3a5f,stroke:#4d9fff,color:#e8f0ff
+  classDef web fill:#1f3d2e,stroke:#4ade80,color:#e8fff0
+  classDef arm fill:#4a2e12,stroke:#fb923c,color:#fff4e8
+  classDef crm fill:#3a1f4d,stroke:#c084fc,color:#f5e8ff
+  classDef future stroke-dasharray: 6 4,stroke:#f59e0b,color:#ffe8c8,fill:#2a1f10
+  classDef bank stroke-dasharray: 6 4,stroke:#f472b6,color:#ffe0ef,fill:#2a1420
+
+  subgraph Clients["Клиенты (сегодня — frontend-only, мок-данные)"]
+    direction LR
+    MOBILE3["Mmusic Mobile"]:::mobile
+    WEBSITE3["Mmusic Website"]:::web
+    ARM3["ARM"]:::arm
+    CRM3["CRM"]:::crm
+  end
+
+  GW["API Gateway<br/>TLS, rate limit, WAF"]:::future
+
+  subgraph BackendSvc["Mmusic Backend — модульный монолит (apps/api, NestJS)"]
+    direction LR
+    AUTH3["auth"]:::future
+    CATALOG3["catalog"]:::future
+    DON3["donations"]:::future
+    ADMIN3["admin<br/>(Admin Panel, FR-19.1,<br/>роли не определены — OQ-54)"]:::future
+    AN3["analytics"]:::future
+  end
+
+  subgraph DataLayer["Данные"]
+    direction LR
+    PG["PostgreSQL"]:::future
+    RD["Redis"]:::future
+    SE["OpenSearch / Meilisearch"]:::future
+    S3["S3 + CDN"]:::future
+  end
+
+  subgraph Bank["MBANK"]
+    direction LR
+    IDP["IdP / SSO"]:::bank
+    PAY3["Payments API"]:::bank
+    BIO["Биометрия"]:::bank
+  end
+
+  MOBILE3 --> GW
+  WEBSITE3 --> GW
+  ARM3 -.->|"ARM — прототип admin,<br/>не подключён формально к ТЗ"| GW
+  CRM3 -.->|"модель CRM не описана в ТЗ"| GW
+
+  GW --> AUTH3 & CATALOG3 & DON3 & ADMIN3 & AN3
+
+  CATALOG3 --> PG
+  DON3 --> PG
+  AUTH3 --> RD
+  CATALOG3 --> SE
+  CATALOG3 --> S3
+
+  AUTH3 --> IDP
+  DON3 --> PAY3 --> BIO
+  AN3 -.->|"выгрузка событий"| IDP`,
+
+    d4: `flowchart TB
+  classDef verified fill:#132b1f,stroke:#22c55e,color:#d7ffe8
+  classDef unverified stroke-dasharray: 6 4,stroke:#f59e0b,color:#ffe8c8,fill:#2a1f10
+  classDef local fill:#1a1a2e,stroke:#6366f1,color:#e0e0ff
+
+  LOCAL["Локальная рабочая копия<br/>ветка w2-shared-foundations<br/>(этот checkout)"]:::local
+  GH["GitHub origin (приватный репозиторий)<br/>main — устаревший коммит,<br/>ДО web/ARM/CRM"]:::unverified
+  LOCAL -.->|"не запушено — web, arm, crm и<br/>последние изменения mobile только локально"| GH
+
+  BUILD["Turborepo build pipeline (turbo.json)<br/>build зависит от ^build, без Vercel-специфики<br/>web/arm/crm — обычный vite build"]:::verified
+
+  subgraph VercelMobile["Vercel-проект \\"mobile\\""]
+    CFG1["apps/mobile/vercel.json<br/>buildCommand: pnpm build:web<br/>outputDirectory: dist<br/>закоммичено, привязано через .vercel/project.json"]:::verified
+  end
+
+  subgraph VercelOthers["Деплои Web / ARM / CRM"]
+    CFG2["Нет vercel.json, нет привязки .vercel в репозитории.<br/>Ручные vercel deploy из scratchpad-копий —<br/>live-статус не проверяем локально"]:::unverified
+  end
+
+  API2["apps/api (NestJS)<br/>нет vercel.json, нет Dockerfile<br/>не задеплоен никуда"]:::unverified
+  CI["CI/CD: нет<br/>нет .github/workflows —<br/>каждый деплой — ручной CLI-запуск"]:::unverified
+
+  LOCAL --> BUILD
+  BUILD --> CFG1
+  BUILD -.-> CFG2
+  LOCAL --> CFG1
+  LOCAL -.->|"ручной CLI, не привязан к репо"| CFG2`
+  };
+
+  const notesByTab = {
+    dexec: `<b>Для руководства.</b> Технические детали за этой упрощённой картинкой — на вкладках 1-4. Целевая архитектура (что нужно построить, чтобы это стало одной системой) — на вкладке «Целевая архитектура».`,
+    d1: `<b>Диаграмма 1.</b> Mobile и Website делят <code>@mmusic/core</code> + <code>@mmusic/ui-kit</code>. ARM и CRM делят <code>@mmusic/backoffice</code> + <code>@mmusic/ui-kit</code> — CRM вообще не импортирует <code>@mmusic/core</code>. Прямой связи между двумя парами нет.`,
+    d2: `<b>Диаграмма 2.</b> Единственный реальный внешний <code>fetch()</code> во всём репозитории — живой MBANK-адаптер платежей в <code>apps/mobile</code>, выключен по умолчанию (переменные окружения не заданы).`,
+    d3: `<b>Диаграмма 3.</b> ARM — рабочий прототип подтверждённого, но не спроектированного требования «Admin Panel» (FR-19.1, OQ-54). Модель данных CRM не описана ни в одном утверждённом документе — стоит явно сверить её назначение с продуктом.`,
+    dfuture: `<b>Диаграмма 5.</b> Это не предложение этого анализа — это существующий, ранее одобренный лидом продукта план (<code>docs/architecture.md</code>), реализация которого официально отложена до отдельного одобрения backend-вехи. Связи ARM/CRM с этим планом показаны пунктиром с пояснением, так как формально они туда не вписаны.`,
+    d4: `<b>Диаграмма 4.</b> Только <code>apps/mobile</code> имеет закоммиченную Vercel-конфигурацию. Ветка <code>w2-shared-foundations</code> с web/ARM/CRM не запушена в GitHub — риск потери работы при потере этой локальной копии.`
+  };
+
+  // --- Custom pan/zoom (no external library) ---
+  // Rationale: svg-pan-zoom computed its initial transform against hidden
+  // (display:none) panels, got a zero-size viewport, and permanently broke
+  // ("matrix not invertible" on every later resize/fit). Mermaid's own
+  // returned SVG already carries an accurate viewBox (computed internally,
+  // independent of page layout), so we use that directly and only ever
+  // measure the *container* when its panel is actually visible.
+  const diagramState = {}; // id -> { svgEl, wrap, vbW, vbH, scale, x, y }
+
+  function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
+
+  function applyTransform(id) {
+    const st = diagramState[id];
+    if (!st) return;
+    st.svgEl.style.transform = `translate(${st.x}px, ${st.y}px) scale(${st.scale})`;
+  }
+
+  function fitDiagram(id) {
+    const st = diagramState[id];
+    if (!st) return;
+    const wrapW = st.wrap.clientWidth;
+    const wrapH = st.wrap.clientHeight;
+    if (!wrapW || !wrapH || !st.vbW || !st.vbH) return; // panel not visible yet
+    const scale = Math.min(wrapW / st.vbW, wrapH / st.vbH) * 0.94;
+    st.scale = scale;
+    st.minScale = scale * 0.25;
+    st.maxScale = scale * 8;
+    st.x = (wrapW - st.vbW * scale) / 2;
+    st.y = (wrapH - st.vbH * scale) / 2;
+    applyTransform(id);
+  }
+
+  function zoomBy(id, factor, originX, originY) {
+    const st = diagramState[id];
+    if (!st) return;
+    const wrap = st.wrap;
+    const cx = originX != null ? originX : wrap.clientWidth / 2;
+    const cy = originY != null ? originY : wrap.clientHeight / 2;
+    const newScale = clamp(st.scale * factor, st.minScale || st.scale * 0.25, st.maxScale || st.scale * 8);
+    const contentX = (cx - st.x) / st.scale;
+    const contentY = (cy - st.y) / st.scale;
+    st.x = cx - contentX * newScale;
+    st.y = cy - contentY * newScale;
+    st.scale = newScale;
+    applyTransform(id);
+  }
+
+  function attachPanning(id) {
+    const st = diagramState[id];
+    const wrap = st.wrap;
+    let dragging = false, lastX = 0, lastY = 0;
+
+    wrap.addEventListener('pointerdown', (e) => {
+      dragging = true;
+      lastX = e.clientX; lastY = e.clientY;
+      wrap.classList.add('dragging');
+      wrap.setPointerCapture(e.pointerId);
+    });
+    wrap.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      const dx = e.clientX - lastX, dy = e.clientY - lastY;
+      lastX = e.clientX; lastY = e.clientY;
+      st.x += dx; st.y += dy;
+      applyTransform(id);
+    });
+    const endDrag = (e) => {
+      dragging = false;
+      wrap.classList.remove('dragging');
+      try { wrap.releasePointerCapture(e.pointerId); } catch (_) {}
+    };
+    wrap.addEventListener('pointerup', endDrag);
+    wrap.addEventListener('pointerleave', endDrag);
+    wrap.addEventListener('pointercancel', endDrag);
+
+    wrap.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const rect = wrap.getBoundingClientRect();
+      const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+      zoomBy(id, factor, e.clientX - rect.left, e.clientY - rect.top);
+    }, { passive: false });
+  }
+
+  function parseViewBox(svgEl) {
+    const vb = svgEl.viewBox && svgEl.viewBox.baseVal;
+    if (vb && vb.width && vb.height) return { w: vb.width, h: vb.height };
+    const attr = svgEl.getAttribute('viewBox');
+    if (attr) {
+      const parts = attr.trim().split(/[\s,]+/).map(Number);
+      if (parts.length === 4 && parts[2] > 0 && parts[3] > 0) return { w: parts[2], h: parts[3] };
+    }
+    return { w: svgEl.getAttribute('width') ? parseFloat(svgEl.getAttribute('width')) : 0, h: 0 };
+  }
+
+  async function renderOne(id) {
+    const host = document.getElementById('mmd-' + id);
+    const { svg } = await mermaid.render('svg-' + id, diagrams[id]);
+    host.innerHTML = svg;
+    const svgEl = host.querySelector('svg');
+    svgEl.removeAttribute('style'); // drop mermaid's own max-width/width/height% so our transform fully controls size
+    const { w, h } = parseViewBox(svgEl);
+    svgEl.setAttribute('width', w);
+    svgEl.setAttribute('height', h);
+
+    const wrap = document.getElementById('wrap-' + id);
+    diagramState[id] = { svgEl, wrap, vbW: w, vbH: h, scale: 1, x: 0, y: 0 };
+    attachPanning(id);
+  }
+
+  async function renderAll() {
+    for (const id of Object.keys(diagrams)) {
+      await renderOne(id);
+    }
+    fitDiagram('dexec'); // initially visible tab — safe to fit immediately
+  }
+
+  const buttons = document.querySelectorAll('nav button');
+  const panels = document.querySelectorAll('.panel');
+  const notesEl = document.getElementById('notes');
+  let activeTarget = 'dexec';
+
+  function setNotes(target) {
+    notesEl.innerHTML = notesByTab[target] || '';
+  }
+
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.target;
+      activeTarget = target;
+      buttons.forEach(b => b.classList.toggle('active', b === btn));
+      panels.forEach(p => p.classList.toggle('active', p.id === target));
+      setNotes(target);
+      // Panel is now display:block (synchronous style change above) —
+      // clientWidth/Height are correct to read right now, no rAF/timing needed.
+      fitDiagram(target);
+    });
+  });
+
+  document.querySelectorAll('.toolbar').forEach(toolbar => {
+    const id = toolbar.dataset.for;
+    toolbar.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const action = btn.dataset.action;
+        if (action === 'fullscreen') {
+          const card = toolbar.closest('.diagram-card');
+          if (!document.fullscreenElement) {
+            (card.requestFullscreen || card.webkitRequestFullscreen).call(card);
+          } else {
+            (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+          }
+          return;
+        }
+        if (action === 'zoomin') zoomBy(id, 1.25);
+        if (action === 'zoomout') zoomBy(id, 0.8);
+        if (action === 'fit') fitDiagram(id);
+      });
+    });
+  });
+
+  document.addEventListener('fullscreenchange', () => {
+    requestAnimationFrame(() => fitDiagram(activeTarget));
+  });
+
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => fitDiagram(activeTarget), 120);
+  });
+
+  setNotes('dexec');
+  renderAll();
+</script>
+
+</body>
+</html>
